@@ -31,7 +31,7 @@ void MyClass::Loop()
     Long64_t nentries = fChain->GetEntriesFast();
 
     Long64_t nbytes = 0, nb = 0;
-    for (Long64_t jentry=0; jentry<nentries;jentry++) {
+    for (Long64_t jentry=0; jentry<nentries;jentry++) { // loop for events
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
     nb = fChain->GetEntry(jentry);   nbytes += nb;
@@ -39,7 +39,7 @@ void MyClass::Loop()
     t+=1;
     if(jentry%1000==0) {cout << t<< " ivents were loaded, "<<t*100/nentries<<"% complete" <<endl;}
     //Q вектора для интегрального потока
-    for (int i=0;i<Nch;i++){ // loop for particles
+    for (int i=0;i<Nch;i++){ // loop for particles - nested loop method
         Q+=cos(n*(phi[i]-psiRP));
         for (int j=0;j<Nch;j++){
             if(i!=j){
@@ -56,7 +56,7 @@ void MyClass::Loop()
             }
 
         }  
-    }
+    } // end of loop for particles
     //Кол-во событий
     Mq2+=Nch;
     MQ2+=Nch*(Nch-1);MQ4+=Nch*(Nch-1)*(Nch-2)*(Nch-3);
@@ -95,7 +95,7 @@ void MyClass::Loop()
     cout <<"MQ2 -"<<MQ2<<", DiffMQ2 -"<<DiffMQ2<<endl;
     cout <<"MQ4 -"<<MQ4<<", DiffMQ4 -"<<DiffMQ4<<endl;}*/
 
-    } // end of loop for particles
+    } // end of loop for events
     //korQx2=korQx2/Mq2;korQy2=korQy2/Mq2;v2=(Qx2-Mq2)/(MQ2)-korQx2*korQx2-korQy2*korQy2;v2=pow(fabs(v2),0.5);
 
     //Интегральный поток

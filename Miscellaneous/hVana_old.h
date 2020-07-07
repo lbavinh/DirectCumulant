@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Tue Jul  7 13:08:48 2020 by ROOT version 6.19/01
+// Fri Jul  3 01:14:31 2020 by ROOT version 6.19/01
 // from TTree htree/Hadron EMC + TOF tree
 // found on file: v2hadron.root
 //////////////////////////////////////////////////////////
@@ -11,8 +11,20 @@
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
-#include <TComplex.h>
-#include <TString.h>
+#include "TProfile.h"
+#include "TFile.h"
+#include "TNtuple.h"
+#include "TStyle.h"
+#include "TCanvas.h"
+#include "TMath.h"
+#include "TPave.h"
+#include "TH1F.h"
+#include "TF1.h"
+#include "TGraph.h"
+#include "TString.h"
+#include "TLatex.h"
+#include "TComplex.h"
+#include "Riostream.h"
 
 // Header file for the classes stored in the TTree if any.
 
@@ -24,8 +36,8 @@ public :
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
    // Declaration of leaf types
-   Float_t         rp;
-   Int_t           nh;
+   Float_t         rp; // reaction plane angle
+   Int_t           nh; // number of hadrons
    Float_t         pt[543];   //[nh]
    Float_t         phi0[543];   //[nh]
 
@@ -44,24 +56,22 @@ public :
    virtual void     Loop();
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
-   // additional function
-   void Booking(TString outFile);
-   void Loop_a_file(TString file);
-   void Ana_end();
-   void Ana_event();
-   Double_t CalCor22(TComplex Q2, Double_t M, Double_t w2);
-   Double_t CalCor24(TComplex Q2, TComplex Q4, Double_t M, Double_t w4);
-   Double_t CalRedCor22(TComplex Q2, TComplex p2, Double_t M, Double_t mp, 
-                        Double_t mq, Double_t wred2);
-   Double_t CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2,
-                        TComplex q2, TComplex q4, Double_t M,
-                        Double_t mp, Double_t mq, Double_t wred2);                  
+   // additional member functions
+   void ana_event(int jevent, int ievent);
+   void ana_init(char *outfile);
+   void loop_a_file(char *file);
+   void ana_end();
+   void book_hist(char *outfile);
+   void CalculateQvectors(Int_t nParticles, Float_t *angles);
+   void GenericFormulas(Int_t nParticles, Float_t *angles);
+   TComplex Q(Int_t n, Int_t p);
+   TComplex Two(Int_t n1, Int_t n2);
+   TComplex Four(Int_t n1, Int_t n2, Int_t n3, Int_t n4);
+   float TwoNestedLoops(Int_t n1,Int_t n2, Int_t nPOI, Int_t nRFP, float *anglePOI, float *angleRFP);
+   float FourNestedLoops(Int_t n1,Int_t n2,Int_t n3,Int_t n4, Int_t nPOI, Int_t nRFP, float *anglePOI, float *angleRFP);
 };
 
 #endif
-
-// phần code kẹp giữa #ifdef hVana_cxx và #endif chỉ compile khi hVana_cxx
-// được xác định (#define hVana_cxx trong hVana.C)
 
 #ifdef hVana_cxx
 hVana::hVana(TTree *tree) : fChain(0) 

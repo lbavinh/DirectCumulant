@@ -36,15 +36,15 @@ void v2QCplot(){
     gStyle->SetOptStat(0);
 
     c1->GetFrame()->SetFillColor(19);
-    c1->GetFrame()->SetBorderSize(12);
 
-    gStyle->SetOptStat(0);
+
+
     gStyle->SetPalette(0);
     gStyle->SetCanvasColor(0);
     gStyle->SetHistFillColor(10);
     gStyle->SetHistFillStyle(0);
     gStyle->SetOptTitle(1);
-    gStyle->SetOptStat(0);
+
     c1->SetBorderMode(0);
 
     c1->SetFillColor(0);
@@ -76,16 +76,4 @@ void v2QCplot(){
     gr1->SetMarkerStyle(20);
     gr1->SetMarkerSize(1.3);
     gr1->Draw("P");
-
-
-
-    // TLegend *legC12 = new TLegend(0.15,.7,0.6,.87);
-    // legC12->AddEntry(gr1,"V_{2} [Gen]","lp");
-    // //legC12->AddEntry(gr2,"V_{2}[E+W]","lp");
-
-
-
-    // legC12->SetFillColor(0);
-    // legC12->SetBorderSize(0);
-    // legC12->Draw();
 }

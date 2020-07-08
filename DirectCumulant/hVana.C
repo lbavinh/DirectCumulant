@@ -24,6 +24,7 @@ static const float minptRFP = 0.2; // min pt
 TFile *d_outfile;
 TH1F *hpt[npt];
 TH1F *hv2pt[npt];
+TH1F *hv2;
 TProfile *hv22pt[npt];
 TProfile *hv24pt[npt];
 TProfile *hv22;
@@ -33,6 +34,7 @@ void hVana::Booking(TString outFile){
    char name[800];
    char title[800];
    d_outfile = new TFile(outFile.Data(),"recreate");
+   hv2 = new TH1F("hv2","v2 distribution;v_{2}",400,-1,1);
    for(int kpt=0; kpt<npt; kpt++){
 
       sprintf(name,"hpt_%d",kpt);
@@ -123,6 +125,7 @@ void hVana::Ana_event(){
          hpt[ipt]->Fill(pT);
          Double_t v2rxn = TMath::Cos(2*(phi0[i] - rp));
          hv2pt[ipt]->Fill(v2rxn);
+         hv2 -> Fill(v2rxn);
       }//track's momentum selection
 
       // RFP

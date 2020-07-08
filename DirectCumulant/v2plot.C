@@ -1,3 +1,14 @@
+#include "TFile.h"
+#include "TH1.h"
+#include "TH2.h"
+#include "TGraph.h"
+#include "TGraphErrors.h"
+#include "TLegend.h"
+#include "TFrame.h"
+
+using namespace std;
+#include <fstream>
+
 void v2plot()
 {
   TFile *file = new TFile("v2QC.root");
@@ -77,6 +88,13 @@ void v2plot()
     v24difE[i] = sqrt(pow(-c24,-1.5)*d24E[i]*d24E[i] + 9/16*d24[i]*d24[i]*pow(-c24,-3.5)*c24E*c24E);
   }
 
+  for(int i=0;i<3;i++){
+    v22dif[i] = 0.; v22difE[i] = 0.; v24dif[i] = 0.; v24difE[i] = 0.;
+  }
+  
+
+
+
   auto c1 = new TCanvas("c1","Flow analysis results",200,10,700,550);
     
   c1->GetFrame()->SetBorderSize(12);
@@ -95,7 +113,7 @@ void v2plot()
   c1->SetFillColor(0);
   float xmin1=0.1;
   float xmax1=3.8;
-  float ymin1=0.0;
+  float ymin1=-0.05;
   float ymax1=0.3;
 
 
@@ -105,19 +123,19 @@ void v2plot()
   
   hr2->Draw();
 
-  auto gr1 = new TGraphErrors(24,hpt,v2,hpte,v2e);
+  auto gr1 = new TGraphErrors(npt,hpt,v2,hpte,v2e);
   gr1->SetMarkerColor(kRed);
   gr1->SetMarkerStyle(20);
   gr1->SetMarkerSize(1.3);
   gr1->Draw("P");
 
-  auto gr2 = new TGraphErrors(24,hpt,v22dif,hpte,v22difE);
+  auto gr2 = new TGraphErrors(npt,hpt,v22dif,hpte,v22difE);
   gr2->SetMarkerColor(kBlue);
   gr2->SetMarkerStyle(21);
   gr2->SetMarkerSize(1.3);
   gr2->Draw("P");
 
-  auto gr3 = new TGraphErrors(24,hpt,v24dif,hpte,v24difE);
+  auto gr3 = new TGraphErrors(npt,hpt,v24dif,hpte,v24difE);
   gr3->SetMarkerColor(kGreen);
   gr3->SetMarkerStyle(22);
   gr3->SetMarkerSize(1.3);
@@ -132,47 +150,15 @@ void v2plot()
   leg->Draw();
 
   ofstream ofile("v2pt.txt");
-  ofile << "pT";
+  ofile.precision(5);
+  ofile << "pT" << "\t\t\tv2(MC)" << "\t\t\tE(v2(MC))" << "\t\t\tv2{2}"
+        << "\t\t\tE(v2{2})" << "\t\t\tv2{4}" << "\t\t\tE(v2{4})" << endl;
   for(int i=0; i<npt; i++){
-    ofile << "\t" << hpt[i];
+    ofile << std::setprecision(5) << hpt[i] << "\t\t\t" << v2[i] << "\t\t\t" << v2e[i]
+          << "\t\t\t" << v22dif[i] << "\t\t\t" << v22difE[i]
+          << "\t\t\t" << v24dif[i] << "\t\t\t" << v24difE[i] << endl;
   }
-  ofile << endl;
-  ofile << "v2MC";
-  for(int i=0; i<npt; i++){
-    ofile << "\t" << v2[i];
-  }
-  ofile << endl;
-
-  ofile << "v2MCe";
-  for(int i=0; i<npt; i++){
-    ofile << "\t" << v2e[i];
-  }
-  ofile << endl;
-
-  ofile << "v2{2,QC}";
-  for(int i=0; i<npt; i++){
-    ofile << "\t" << v22dif[i];
-  }
-  ofile << endl;
-
-  ofile << "Er v22";
-  for(int i=0; i<npt; i++){
-    ofile << "\t" << v22difE[i];
-  }
-  ofile << endl;
-
-  ofile << "v2{4,QC}";
-  for(int i=0; i<npt; i++){
-    ofile << "\t" << v24dif[i];
-  }
-  ofile << endl;
-
-  ofile << "Er v24";
-  for(int i=0; i<npt; i++){
-    ofile << "\t" << v24difE[i];
-  }
-  ofile << endl;
-
+  
   // integrated flow calculation
 
   float v2int, v2intE;
@@ -185,7 +171,7 @@ void v2plot()
   float v2compare[3], v2compareE[3];
   float x[3] = {0.5,1.5,2.5};
   float xE[3] = {0};
-  for (int i=0;i<3;i++) cout << x[i] << " ";
+
   v2compare[0]=v2int;
   v2compareE[0]=v2intE;
   v2compare[1]=v22int;
@@ -194,15 +180,17 @@ void v2plot()
   v2compareE[2]=v24intE;
 
   auto c2 = new TCanvas("c2","Integrated flow result",200,10,700,550);
-
-  TH2F *hr3 = new TH2F("hr3","Integrated flow result", 3,0,3,10,0.073,0.075);
+  float ymin2=v2int-v2intE*15;
+  float ymax2=v2int+v2intE*15;
+  TH2F *hr3 = new TH2F("hr3","Integrated flow result", 3,0,3,10,ymin2,ymax2);
   hr3->SetYTitle("v_{n}");
   hr3->SetCanExtend(TH1::kAllAxes);
   const char *method[3]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}"};
   TAxis* a = hr3 -> GetXaxis();
-  hr3 -> Fill(method[0],0.073,1);
-  hr3 -> Fill(method[1],0.073,1);
-  hr3 -> Fill(method[2],0.073,1);
+  hr3 -> Fill(method[0],(ymin2+ymax2)/2,1);
+  hr3 -> Fill(method[1],(ymin2+ymax2)/2,1);
+  hr3 -> Fill(method[2],(ymin2+ymax2)/2,1);
+  hr3->GetXaxis()->SetLabelSize(0.05);
   a->SetNdivisions(300);
   // a->ChangeLabel(0,-1,-1,-1,-1,-1,"#v_{2}{MC}");
   // a->ChangeLabel(0,-1,-1,-1,-1,-1,"#v_2{2,QC}");

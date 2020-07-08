@@ -18,15 +18,19 @@ static const double bin_pT[25]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,
 static const float maxpt = 3.5; // max pt
 static const float minpt = 0.2; // min pt
 
-static const float maxptRFP = 3.5; // max pt
-static const float minptRFP = 0.2; // min pt
+static const float maxptRFP = 0.5; // max pt of RFP
+static const float minptRFP = 0.2; // min pt of RFP
+
+static const float maxptPOI = 3.5; // max pt of RFP
+static const float minptPOI = 0.5; // min pt of RFP
 
 TFile *d_outfile;      // out file with histograms and profiles
 TH1F *hpt[npt];
 TH1F *hv2pt[npt];      // dif. v2 distribution in each pT bin from MC toy
-TH1F *hv2;             // integrated v2 distribution from toy Monte-Carlo
+TH1F *hv2;             // integrated v2 distribution from toy Monte-Carlo for comparision with integrated v2{2} and v2{4}
 TProfile *hv22pt[npt]; // profile <<2'>> from 2nd Q-Cumulants
 TProfile *hv24pt[npt]; // profile <<4'>> from 4th Q-Cumulants
+TProfile *hv2MC;       // profile for MC integrated v2
 TProfile *hv22;        // profile <<2>> from 2nd Q-Cumulants
 TProfile *hv24;        // profile <<4>> from 4th Q-Cumulants
 
@@ -59,6 +63,8 @@ void hVana::Booking(TString outFile){
    hv22->Sumw2();
    hv24 = new TProfile("hv24","Reference flow from 4th QC",1,0.,1.);
    hv24->Sumw2();
+   hv2MC = new TProfile("hv2MC","Reference flow from MC",1,0.,1.);
+   hv2MC->Sumw2();
    cout << "Histograms have been initialized" << endl;
 }
 
@@ -112,12 +118,12 @@ void hVana::Ana_event(){
    TComplex p2[npt], p4[npt], q2[npt], q4[npt];
    // q-vector of particles marked as POI and RFP, which is used for 
    // autocorrelation substraction
-   Double_t qx2[npt], qy2[npt], qx4[npt], qy4[npt];
-   // My RFP selection - all particles in event
-   Double_t M = nh;
+   Double_t qx2[npt]={0.}, qy2[npt]={0.}, qx4[npt]={0.}, qy4[npt]={0.};
+   // My RFP selection
+   Double_t M = 0.;
    // numbers of POI (mp) and particles marked both POI and RFP (mq) are equal
    // due to my selection
-   Double_t mq[npt],mp[npt];
+   Double_t mq[npt]={0.},mp[npt];
    // average reduced single-event 2- and 4-particle correlations
    Double_t redCor22[npt], redCor24[npt];
    // event weights for correlation calculation
@@ -132,13 +138,19 @@ void hVana::Ana_event(){
          if(pT>=bin_pT[j] && pT<bin_pT[j+1]) ipt = j;
       }
 
-      // calculate v2 from MC toy
-      if(pT>=minpt && pT<maxpt){ 
+      Double_t v2rxn = TMath::Cos(2*(phi0[i] - rp));
+
+      // calculate differential v2 from MC toy
+      if(pT>=minpt && pT<maxpt){
          hpt[ipt]->Fill(pT);
-         Double_t v2rxn = TMath::Cos(2*(phi0[i] - rp));
          hv2pt[ipt]->Fill(v2rxn);
-         hv2 -> Fill(v2rxn);
       }
+
+      // calculate integrated v2 from MC toy for RFP
+      if(pT>=minptRFP && pT<maxptRFP){
+         hv2 -> Fill(v2rxn);
+         hv2MC -> Fill(0.5,v2rxn,1);
+      }      
 
       // RFP
       if(pT>=minptRFP && pT<maxptRFP){
@@ -146,19 +158,25 @@ void hVana::Ana_event(){
          Qy2+=TMath::Sin(2*phi0[i]);
          Qx4+=TMath::Cos(4*phi0[i]);
          Qy4+=TMath::Sin(4*phi0[i]);
+         M++;
       }
+
+      // POI
+      if(pT>=minptPOI && pT<maxptPOI){ // we can also use gap in eta, in this case I use pT region division
       px2[ipt]+=TMath::Cos(2*phi0[i]);
       py2[ipt]+=TMath::Sin(2*phi0[i]);
-      // px4[ipt]+=TMath::Cos(4*phi0[i]);
-      // py4[ipt]+=TMath::Sin(4*phi0[i]);
       mp[ipt]++;
+      }
 
       // POI + RFP (mq)
+      Bool_t overLap = kFALSE; // POI and RFP have overlap zone at bin 
+      if (overLap){
       qx2[ipt]+=TMath::Cos(2*phi0[i]);
       qy2[ipt]+=TMath::Sin(2*phi0[i]);
       qx4[ipt]+=TMath::Cos(4*phi0[i]);
       qy4[ipt]+=TMath::Sin(4*phi0[i]);
       mq[ipt]++;
+      }
    } // end of track loop
 
    Q2 = TComplex(Qx2, Qy2);
@@ -218,7 +236,8 @@ Double_t hVana::CalRedCor22(TComplex Q2, TComplex p2, Double_t M, Double_t mp,
 
    // Calculate the average reduced single-event 2-particle correlations                      
    TComplex Q2Star = TComplex::Conjugate(Q2);
-   Double_t coor22 = (p2*Q2Star).Re()-mq;
+   //Double_t coor22 = (p2*Q2Star).Re()-mq;
+   Double_t coor22 = p2.Re() * Q2.Re() + p2.Im() * Q2.Im() - mq;
 
    return coor22/wred2;
 }

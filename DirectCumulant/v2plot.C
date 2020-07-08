@@ -52,7 +52,7 @@ void v2plot()
   cor4E = pr->GetBinError(1);
   c24 = cor4-2*cor2*cor2;
   c24E = sqrt(cor4E*cor4E+pow(4*cor2*cor2E,2));
-  v24int = pow(c24,0.25);
+  v24int = pow(-c24,0.25);
   v24intE = 0.25*pow(-c24,-0.75)*c24E;
 
   float corr4Red[npt], corr4RedE[npt];
@@ -184,6 +184,7 @@ void v2plot()
   v2intE = err;
   float v2compare[3], v2compareE[3];
   float x[3] = {0.5,1.5,2.5};
+  float xE[3] = {0};
   for (int i=0;i<3;i++) cout << x[i] << " ";
   v2compare[0]=v2int;
   v2compareE[0]=v2intE;
@@ -193,10 +194,30 @@ void v2plot()
   v2compareE[2]=v24intE;
 
   auto c2 = new TCanvas("c2","Integrated flow result",200,10,700,550);
-  TH2F *hr3 = new TH2F("hr3","Integrated flow result", 3,0,3,10,-1,1);
+
+  TH2F *hr3 = new TH2F("hr3","Integrated flow result", 3,0,3,10,0.073,0.075);
   hr3->SetYTitle("v_{n}");
+  hr3->SetCanExtend(TH1::kAllAxes);
+  const char *method[3]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}"};
+  TAxis* a = hr3 -> GetXaxis();
+  hr3 -> Fill(method[0],0.073,1);
+  hr3 -> Fill(method[1],0.073,1);
+  hr3 -> Fill(method[2],0.073,1);
+  a->SetNdivisions(300);
+  // a->ChangeLabel(0,-1,-1,-1,-1,-1,"#v_{2}{MC}");
+  // a->ChangeLabel(0,-1,-1,-1,-1,-1,"#v_2{2,QC}");
+  // a->ChangeLabel(0,-1,-1,-1,-1,-1,"#v_2{4,QC}");
   hr3->Draw();
-  auto gr4 = new TGraphErrors(3,v2compare,x,v2compareE,0);
+
+  TGraph *grshade = new TGraph(8);
+  for (Int_t i=0; i<4; i++) {
+    grshade->SetPoint(i,i+0.005,v2compare[0]+v2compareE[0]);
+    grshade->SetPoint(4+i,3+0.005-i,v2compare[0]-v2compareE[0]);
+  }
+  grshade -> SetFillStyle(1001);
+  grshade -> SetFillColor(18);
+  grshade -> Draw("f");
+  auto gr4 = new TGraphErrors(3,x,v2compare,xE,v2compareE);
   gr4->SetMarkerColor(kRed);
   gr4->SetMarkerStyle(20);
   gr4->SetMarkerSize(1.3);

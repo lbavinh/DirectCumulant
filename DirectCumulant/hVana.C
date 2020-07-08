@@ -21,14 +21,14 @@ static const float minpt = 0.2; // min pt
 static const float maxptRFP = 3.5; // max pt
 static const float minptRFP = 0.2; // min pt
 
-TFile *d_outfile;
+TFile *d_outfile;      // out file with histograms and profiles
 TH1F *hpt[npt];
-TH1F *hv2pt[npt];
-TH1F *hv2;
-TProfile *hv22pt[npt];
-TProfile *hv24pt[npt];
-TProfile *hv22;
-TProfile *hv24;
+TH1F *hv2pt[npt];      // dif. v2 distribution in each pT bin from MC toy
+TH1F *hv2;             // integrated v2 distribution from toy Monte-Carlo
+TProfile *hv22pt[npt]; // profile <<2'>> from 2nd Q-Cumulants
+TProfile *hv24pt[npt]; // profile <<4'>> from 4th Q-Cumulants
+TProfile *hv22;        // profile <<2>> from 2nd Q-Cumulants
+TProfile *hv24;        // profile <<4>> from 4th Q-Cumulants
 
 void hVana::Booking(TString outFile){
    char name[800];
@@ -102,31 +102,43 @@ void hVana::Loop()
 }
 
 void hVana::Ana_event(){
-   
-   Double_t Qx2=0, Qy2=0, Qx4=0, Qy4=0; // notation as (26) in 
-   Double_t px2[npt], py2[npt];
-   // Double_t px4[npt]={NULL}, py4[npt]={NULL}; 
-   Double_t qx2[npt], qy2[npt], qx4[npt], qy4[npt];
-   Double_t M = nh; // выбор RFP - все частицы в событии
-   Double_t mq[npt],mp[npt];// DOI:10.1103/PhysRevC.83.044913
-   Double_t redCor22[npt], redCor24[npt];
+   // notation as (26) in DOI:10.1103/PhysRevC.83.044913
+
+   // Q-vector of RFP
+   Double_t Qx2=0, Qy2=0, Qx4=0, Qy4=0;
    TComplex Q2,Q4;
-   TComplex p2[npt],p4[npt],q2[npt],q4[npt];
-   Double_t wred2[npt],wred4[npt];
+   // p-vector of POI
+   Double_t px2[npt], py2[npt];
+   TComplex p2[npt], p4[npt], q2[npt], q4[npt];
+   // q-vector of particles marked as POI and RFP, which is used for 
+   // autocorrelation substraction
+   Double_t qx2[npt], qy2[npt], qx4[npt], qy4[npt];
+   // My RFP selection - all particles in event
+   Double_t M = nh;
+   // numbers of POI (mp) and particles marked both POI and RFP (mq) are equal
+   // due to my selection
+   Double_t mq[npt],mp[npt];
+   // average reduced single-event 2- and 4-particle correlations
+   Double_t redCor22[npt], redCor24[npt];
+   // event weights for correlation calculation
    Double_t w2,w4;
+   // event weights for reduced correlation calculation
+   Double_t wred2[npt],wred4[npt];
+   
    for(int i=0;i<nh;i++) { // track loop
       Int_t ipt = 0;
       Float_t pT = pt[i];
       for(int j=0; j<npt;j++){
          if(pT>=bin_pT[j] && pT<bin_pT[j+1]) ipt = j;
-      }      
-      
-      if(pT>=minpt && pT<maxpt){ // track's momentum selection
+      }
+
+      // calculate v2 from MC toy
+      if(pT>=minpt && pT<maxpt){ 
          hpt[ipt]->Fill(pT);
          Double_t v2rxn = TMath::Cos(2*(phi0[i] - rp));
          hv2pt[ipt]->Fill(v2rxn);
          hv2 -> Fill(v2rxn);
-      }//track's momentum selection
+      }
 
       // RFP
       if(pT>=minptRFP && pT<maxptRFP){
@@ -135,42 +147,42 @@ void hVana::Ana_event(){
          Qx4+=TMath::Cos(4*phi0[i]);
          Qy4+=TMath::Sin(4*phi0[i]);
       }
-      // POI
       px2[ipt]+=TMath::Cos(2*phi0[i]);
       py2[ipt]+=TMath::Sin(2*phi0[i]);
       // px4[ipt]+=TMath::Cos(4*phi0[i]);
       // py4[ipt]+=TMath::Sin(4*phi0[i]);
       mp[ipt]++;
 
-      // POI + RFP
+      // POI + RFP (mq)
       qx2[ipt]+=TMath::Cos(2*phi0[i]);
       qy2[ipt]+=TMath::Sin(2*phi0[i]);
       qx4[ipt]+=TMath::Cos(4*phi0[i]);
       qy4[ipt]+=TMath::Sin(4*phi0[i]);
       mq[ipt]++;
    } // end of track loop
+
    Q2 = TComplex(Qx2, Qy2);
    Q4 = TComplex(Qx4, Qy4);
 
-   w2 = M*(M-1);
-   w4 = M*(M-1)*(M-2)*(M-3); 
+   w2 = M*(M-1);                                         // w(<2>)
+   w4 = M*(M-1)*(M-2)*(M-3);                             // w(<4>)
 
-   Double_t cor22 = CalCor22(Q2, M, w2);
-   Double_t cor24 = CalCor24(Q2, Q4, M, w4);
+   Double_t cor22 = CalCor22(Q2, M, w2);     // <2>
+   Double_t cor24 = CalCor24(Q2, Q4, M, w4); // <4>
 
-   hv22 -> Fill(0.5,cor22,w2);
-   hv24 -> Fill(0.5,cor24,w4);
+   hv22 -> Fill(0.5,cor22,w2); // <<2>>
+   hv24 -> Fill(0.5,cor24,w4); // <<4>>
 
    for(int ipt=0; ipt<npt;ipt++){
       p2[ipt] = TComplex(px2[ipt], py2[ipt]);
       q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
       q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
-      wred2[ipt] = mp[ipt]*M-mq[ipt];
-      wred4[ipt] = (mp[ipt]*M-3*mq[ipt])*(M-1)*(M-2);
-      redCor22[ipt] = CalRedCor22(Q2,p2[ipt],M,mp[ipt],mq[ipt],wred2[ipt]);
-      hv22pt[ipt] -> Fill(0.5,redCor22[ipt],wred2[ipt]);
-      redCor24[ipt] = CalRedCor24(Q2,Q4,p2[ipt],q2[ipt],q4[ipt],M,mp[ipt],mq[ipt],wred4[ipt]);
-      hv24pt[ipt] -> Fill(0.5,redCor24[ipt],wred4[ipt]);
+      wred2[ipt] = mp[ipt]*M-mq[ipt];                    // w(<2'>)
+      wred4[ipt] = (mp[ipt]*M-3*mq[ipt])*(M-1)*(M-2);    // w(<4'>)
+      redCor22[ipt] = CalRedCor22(Q2,p2[ipt],M,mp[ipt],mq[ipt],wred2[ipt]);                     // <2'>
+      hv22pt[ipt] -> Fill(0.5,redCor22[ipt],wred2[ipt]);                                        // <<2'>>
+      redCor24[ipt] = CalRedCor24(Q2,Q4,p2[ipt],q2[ipt],q4[ipt],M,mp[ipt],mq[ipt],wred4[ipt]);  // <4'>
+      hv24pt[ipt] -> Fill(0.5,redCor24[ipt],wred4[ipt]);                                        // <<4'>>
    }
 }
 
@@ -204,6 +216,7 @@ Double_t hVana::CalCor24(TComplex Q2, TComplex Q4, Double_t M, Double_t w4){
 Double_t hVana::CalRedCor22(TComplex Q2, TComplex p2, Double_t M, Double_t mp, 
                      Double_t mq, Double_t wred2){
 
+   // Calculate the average reduced single-event 2-particle correlations                      
    TComplex Q2Star = TComplex::Conjugate(Q2);
    Double_t coor22 = (p2*Q2Star).Re()-mq;
 
@@ -212,6 +225,7 @@ Double_t hVana::CalRedCor22(TComplex Q2, TComplex p2, Double_t M, Double_t mp,
 
 Double_t hVana::CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
                      TComplex q4, Double_t M, Double_t mp, Double_t mq, Double_t wred2){
+   // Calculate the average reduced single-event 2-particle correlations                      
    TComplex Q2Star = TComplex::Conjugate(Q2);
    TComplex Q4Star = TComplex::Conjugate(Q4);
    TComplex q2Star = TComplex::Conjugate(q2);

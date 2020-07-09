@@ -1,11 +1,8 @@
-#include "hTana.C"
+#include "/mnt/pool/2/lbavinh/EventGenerator/hTana.C"
 using namespace std;
-void v2hadron()
-{
-    //gSystem->Load("./hTana_C.so");
+void v2hadron(char *outFile) {
     hTana *ana=new hTana();
-    ana->ana_init("v2hadron_10000.root"); // name for root file with results 
-    ana->v2gen(10000,50,10);
+    ana->ana_init(outFile);
+    ana->v2gen(100000,150,50);
     ana->ana_end();
-    cout<<"histfile written"<<endl;
 }

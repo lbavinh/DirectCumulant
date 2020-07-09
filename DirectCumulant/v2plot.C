@@ -112,8 +112,8 @@ void v2plot()
 
   c1->SetFillColor(0);
   float xmin1=0.5;
-  float xmax1=3.8;
-  float ymin1=-0.05;
+  float xmax1=2.;
+  float ymin1=0.;
   float ymax1=0.3;
 
 
@@ -122,23 +122,32 @@ void v2plot()
   TH2F *hr2 = new TH2F("hr2",title1, 2,xmin1,xmax1,2,ymin1,ymax1);
   
   hr2->Draw();
-
+  
   auto gr1 = new TGraphErrors(npt,hpt,v2,hpte,v2e);
   gr1->SetMarkerColor(kRed);
   gr1->SetMarkerStyle(20);
   gr1->SetMarkerSize(1.3);
+  gr1->SetLineWidth(2);
   gr1->Draw("P");
 
-  auto gr2 = new TGraphErrors(npt,hpt,v22dif,hpte,v22difE);
+  float hptv22[npt], hptv24[npt];
+  for (int i=0; i<npt; i++) {
+    hptv22[i]=hpt[i]+0.007;
+    hptv24[i]=hpt[i]-0.007;
+  }
+
+  auto gr2 = new TGraphErrors(npt,hptv22,v22dif,hpte,v22difE);
   gr2->SetMarkerColor(kBlue);
   gr2->SetMarkerStyle(21);
   gr2->SetMarkerSize(1.3);
   gr2->Draw("P");
+  gr2->SetLineWidth(2);
 
-  auto gr3 = new TGraphErrors(npt,hpt,v24dif,hpte,v24difE);
+  auto gr3 = new TGraphErrors(npt,hptv24,v24dif,hpte,v24difE);
   gr3->SetMarkerColor(kGreen);
   gr3->SetMarkerStyle(22);
   gr3->SetMarkerSize(1.3);
+  gr3->SetLineWidth(2);
   gr3->Draw("P");
 
   TLegend *leg = new TLegend(0.15,.7,0.6,.87);
@@ -158,7 +167,7 @@ void v2plot()
           << "\t\t\t" << v22dif[i] << "\t\t\t" << v22difE[i]
           << "\t\t\t" << v24dif[i] << "\t\t\t" << v24difE[i] << endl;
   }
-  
+
   // integrated flow calculation
 
   float v2int, v2intE;

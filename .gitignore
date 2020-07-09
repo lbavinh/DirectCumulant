@@ -3,3 +3,8 @@
 *.pcm
 *.so
 *.d
+*.png
+*.pdf
+*.jpg
+*.txt
+*.sh

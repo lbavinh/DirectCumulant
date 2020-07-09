@@ -28,9 +28,9 @@ public :
    Int_t           EVENT;
    Int_t           Nch;
    Float_t         psiRP;
-   Float_t         phi[41];   //[Nch]
-   Float_t         pt[41];   //[Nch]
-   Float_t         dPHI[41];   //[Nch]
+   Float_t         phi[100];   //[Nch]
+   Float_t         pt[100];   //[Nch]
+   Float_t         dPHI[100];   //[Nch]
 
    // List of branches
    TBranch        *b_event;   //!
@@ -54,6 +54,7 @@ public :
 //My func
 void Book(void);
 void SaveData(const char *outfile); 
+int Fm(float pt);
 };
 
 #endif

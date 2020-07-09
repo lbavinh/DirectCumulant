@@ -111,7 +111,7 @@ void v2plot()
   c1->SetBorderMode(0);
 
   c1->SetFillColor(0);
-  float xmin1=0.1;
+  float xmin1=0.5;
   float xmax1=3.8;
   float ymin1=-0.05;
   float ymax1=0.3;

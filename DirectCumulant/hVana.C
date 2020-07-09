@@ -112,10 +112,10 @@ void hVana::Ana_event(){
 
    // Q-vector of RFP
    Double_t Qx2=0, Qy2=0, Qx4=0, Qy4=0;
-   TComplex Q2,Q4;
+   TComplex Q2=0.,Q4=0.;
    // p-vector of POI
-   Double_t px2[npt], py2[npt];
-   TComplex p2[npt], p4[npt], q2[npt], q4[npt];
+   Double_t px2[npt]={0.}, py2[npt]={0.};
+   TComplex p2[npt]={0.}, p4[npt]={0.}, q2[npt]={0.}, q4[npt]={0.};
    // q-vector of particles marked as POI and RFP, which is used for 
    // autocorrelation substraction
    Double_t qx2[npt]={0.}, qy2[npt]={0.}, qx4[npt]={0.}, qy4[npt]={0.};
@@ -123,13 +123,13 @@ void hVana::Ana_event(){
    Double_t M = 0.;
    // numbers of POI (mp) and particles marked both POI and RFP (mq) are equal
    // due to my selection
-   Double_t mq[npt]={0.},mp[npt];
+   Double_t mq[npt]={0.},mp[npt]={0.};
    // average reduced single-event 2- and 4-particle correlations
-   Double_t redCor22[npt], redCor24[npt];
+   Double_t redCor22[npt]={0.}, redCor24[npt]={0.};
    // event weights for correlation calculation
-   Double_t w2,w4;
+   Double_t w2=0.,w4=0.;
    // event weights for reduced correlation calculation
-   Double_t wred2[npt],wred4[npt];
+   Double_t wred2[npt]={0.},wred4[npt]={0.};
    
    for(int i=0;i<nh;i++) { // track loop
       Int_t ipt = 0;
@@ -169,8 +169,8 @@ void hVana::Ana_event(){
       }
 
       // POI + RFP (mq)
-      Bool_t overLap = kFALSE; // POI and RFP have overlap zone at bin 
-      if (overLap){
+      Bool_t bOverLap = kFALSE; // POI and RFP have overlap zone at bin 
+      if (bOverLap){
       qx2[ipt]+=TMath::Cos(2*phi0[i]);
       qy2[ipt]+=TMath::Sin(2*phi0[i]);
       qx4[ipt]+=TMath::Cos(4*phi0[i]);
@@ -192,6 +192,7 @@ void hVana::Ana_event(){
    hv24 -> Fill(0.5,cor24,w4); // <<4>>
 
    for(int ipt=0; ipt<npt;ipt++){
+      if (mp[ipt] == 0) continue;
       p2[ipt] = TComplex(px2[ipt], py2[ipt]);
       q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
       q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
@@ -214,7 +215,7 @@ Double_t hVana::CalCor22(TComplex Q2, Double_t M, Double_t w2){
   return coor22/w2;
 }
 
-Double_t hVana::CalCor24(TComplex Q2, TComplex Q4, Double_t M, Double_t w4){ 
+Double_t hVana::CalCor24(TComplex Q2, TComplex Q4, Double_t M, Double_t w4){
    // single-event average 4-particle azimuthal correlation <4>
 
    TComplex Q2Star   = TComplex::Conjugate(Q2);
@@ -236,14 +237,14 @@ Double_t hVana::CalRedCor22(TComplex Q2, TComplex p2, Double_t M, Double_t mp,
 
    // Calculate the average reduced single-event 2-particle correlations                      
    TComplex Q2Star = TComplex::Conjugate(Q2);
-   //Double_t coor22 = (p2*Q2Star).Re()-mq;
-   Double_t coor22 = p2.Re() * Q2.Re() + p2.Im() * Q2.Im() - mq;
+   Double_t coor22 = (p2*Q2Star-mq).Re();
 
    return coor22/wred2;
 }
 
 Double_t hVana::CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
-                     TComplex q4, Double_t M, Double_t mp, Double_t mq, Double_t wred2){
+                            TComplex q4, Double_t M, Double_t mp, Double_t mq, Double_t wred4){
+
    // Calculate the average reduced single-event 2-particle correlations                      
    TComplex Q2Star = TComplex::Conjugate(Q2);
    TComplex Q4Star = TComplex::Conjugate(Q4);
@@ -254,5 +255,5 @@ Double_t hVana::CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
                   - Q2*q2Star+q4*Q4Star+2.0*p2*Q2Star
                   + 2.0*mq*M-6.0*mq;
    Double_t coor24 = coorc.Re(); 
-   return coor24/wred2;
+   return coor24/wred4;
 }

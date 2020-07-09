@@ -25,7 +25,7 @@ void v2plot()
   char hname[800];
   float rms; // root of mean squared = standard deviation
   int nent; // number of entries
-  float err; // error
+  float err; // standard error
   TH1F *h;
 
   for(int i=0; i<npt; i++){
@@ -56,7 +56,7 @@ void v2plot()
   c22 = cor2;
   c22E = cor2E;
   v22int = sqrt(c22);
-  v22intE = 0.5*c22E/v22int;
+  v22intE = 0.5*pow(c22,-0.5)*c22E;
 
   pr = (TProfile*) file->Get("hv24");
   cor4 = pr->GetBinContent(1);
@@ -84,7 +84,7 @@ void v2plot()
     corr4RedE[i] = pr->GetBinError(1);
     d24[i] = corr4Red[i]-2*d22[i]*c22;
     d24E[i] = sqrt(corr4RedE[i]*corr4RedE[i]+pow(2*c22*d22E[i],2)+pow(2*c22E*d22[i],2));
-    v24dif[i] = d24[i]*pow(-c24,-0.75);
+    v24dif[i] = -d24[i]*pow(-c24,-0.75);
     v24difE[i] = sqrt(pow(-c24,-1.5)*d24E[i]*d24E[i] + 9/16*d24[i]*d24[i]*pow(-c24,-3.5)*c24E*c24E);
   }
 

@@ -9,6 +9,7 @@
 #include "TString.h"
 
 #include <iostream>
+#include <fstream>
 using namespace std;
 
 static const int npt = 24; // 0.2 - 3.5 GeV/c 
@@ -18,13 +19,20 @@ static const double bin_pT[25]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,
 static const float maxpt = 3.5; // max pt
 static const float minpt = 0.2; // min pt
 
-static const float maxptRFP = 0.5; // max pt of RFP
+static const float maxptRFP = 1.0; // max pt of RFP
 static const float minptRFP = 0.2; // min pt of RFP
 
 static const float maxptPOI = 3.5; // max pt of RFP
-static const float minptPOI = 0.5; // min pt of RFP
+static const float minptPOI = 1.0; // min pt of RFP
 
 TFile *d_outfile;      // out file with histograms and profiles
+
+TH1F *hRP; // reaction plane distribution
+TH1F *hPt; // transverse momentum distribution
+TH1F *hPhi; // distribution of particle azimuthal angle with respect to RP 
+TH1F *hPhil; // distribution of particle azimuthal angle in the laboratory coordinate system
+
+
 TH1F *hpt[npt];
 TH1F *hv2pt[npt];      // dif. v2 distribution in each pT bin from MC toy
 TH1F *hv2;             // integrated v2 distribution from toy Monte-Carlo for comparision with integrated v2{2} and v2{4}
@@ -38,6 +46,12 @@ void hVana::Booking(TString outFile){
    char name[800];
    char title[800];
    d_outfile = new TFile(outFile.Data(),"recreate");
+
+   hPt  = new TH1F("hPt","p_{T}-distribution;GeV/c;dN/dp_{T}",500,0.0,6);
+   hRP  = new TH1F("hRP","Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}",300,0,7);
+   hPhi = new TH1F("hPhi","Particle azimuthal angle distribution with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})",300,0.,7.);
+   hPhil = new TH1F("hPhil","Azimuthal angle distribution in laboratory coordinate system; #phi; dN/d#phi",300,0.,7.);
+
    hv2 = new TH1F("hv2","v2 distribution;v_{2}",400,-1,1);
    for(int kpt=0; kpt<npt; kpt++){
 
@@ -70,6 +84,10 @@ void hVana::Booking(TString outFile){
 
 void hVana::Loop_a_file(TString file){
    TFile *treefile = TFile::Open(file.Data());
+   TH1F *hRPtemp   = (TH1F*)treefile->Get("hRP");
+   TH1F *hPttemp   = (TH1F*)treefile->Get("hPt");
+   TH1F *hPhitemp  = (TH1F*)treefile->Get("hPhi");
+   TH1F *hPhiltemp = (TH1F*)treefile->Get("hPhil");
    TTree *tree = (TTree*)treefile->Get("htree");
    if(tree == 0) {
       cout << "htree is not found in "<< file << endl;
@@ -79,6 +97,12 @@ void hVana::Loop_a_file(TString file){
    cout << file << " is opened" << endl;
    Init(tree);
    Loop();
+
+   hRP   -> Add(hRPtemp);
+   hPt   -> Add(hPttemp);
+   hPhi  -> Add(hPhitemp);
+   hPhil -> Add(hPhiltemp);
+
    treefile->Close();
    cout << file  <<" file processed"<<endl;
 }
@@ -103,7 +127,7 @@ void hVana::Loop()
       nb = fChain->GetEntry(jentry);   nbytes += nb;
       // if (Cut(ientry) < 0) continue;
       Ana_event();
-      if (ientry%1000==0) cout << ientry << endl;
+      if (ientry%100000==0) cout << ientry << endl;
    }
 }
 
@@ -256,4 +280,21 @@ Double_t hVana::CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
                   + 2.0*mq*M-6.0*mq;
    Double_t coor24 = coorc.Re(); 
    return coor24/wred4;
+}
+
+void loop_a_list_of_tree(){
+   hVana *ana = new hVana();
+   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/v2QC_5mil.root");
+   
+   ifstream ifile("/home/lbavinh/maindir/EventGenerator/OUT/runlist.list");
+   char filename[200];
+   int nfiles=1;
+   while(ifile.getline(filename,200)) {
+      cout << nfiles <<" file is processing "<<filename <<endl;
+      ana->Loop_a_file(filename);
+      nfiles++;
+   }
+   cout<< "Done. " << nfiles << " files are processed." << endl;
+   ana -> Ana_end();
+   cout << "Histfile written. Congratz!" << endl;
 }

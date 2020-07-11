@@ -27,8 +27,8 @@ using namespace std;
 static const float PI = TMath::Pi();
 static const float pTmax=4900.;
 
-static TH1F *hRP;
-static TH1F *hPt;
+static TH1F *hRP; // reaction plane distribution
+static TH1F *hPt; // transverse momentum distribution
 
 // static TH1F *hRun;
 // static TH1F *hbbcz=0;// BBC vertex 
@@ -45,7 +45,7 @@ TH1F *hv4pt[npt];
 TH1F *hPhi;
 TH1F *hPhil;
 
-static const int max_nh = 800;
+static const int max_nh = 300;
 
 float d_rp; // reaction plane azimuthal angle 
 int     d_nh; // number of hadrons
@@ -182,7 +182,7 @@ void hTana::ana_end() {
 void hTana::book_hist(char *outfile) {
   d_outfile = new TFile(outfile,"recreate");
 
-  htree = new TTree("htree","Hadron EMC + TOF tree");
+  htree = new TTree("htree","Monte Carlo Toy");
 
   htree->Branch("rp",&d_rp,"rp/F");
   htree->Branch("nh",&d_nh,"nh/I");
@@ -205,7 +205,7 @@ void hTana::book_hist(char *outfile) {
     sprintf(title,"v_{4}(P_{T})  for pions, %2.1f<pt<%2.1f GeV/c",bin_w[kpt],bin_w[kpt+1]);
     hv4pt[kpt]=new TH1F(name,title,400,-1,1);
   }
-  hPt  = new TH1F("hPt","Pt-distribution",500,0.0,6);
+  hPt  = new TH1F("hPt","p_{T}-distribution;GeV/c;dN/dp_{T}",500,0.0,6);
   hRP  = new TH1F("hRP","Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}",300,0,7);
   hPhi = new TH1F("hPhi","Particle azimuthal angle distribution with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})",300,0.,7.);
   hPhil = new TH1F("hPhil","Azimuthal angle distribution in laboratory coordinate system; #phi; dN/d#phi",300,0.,7.);

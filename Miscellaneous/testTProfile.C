@@ -35,8 +35,8 @@
 
     cout << "Ymax = " << pr -> GetYmax() << endl;
     cout << "Ymin = " << pr -> GetYmin() << endl;
-    Float_t *bins = pr -> GetArray();
-    Double_t wtest = TArrayD::fArray[1];
-    cout << "w = " << wtest << endl;
+    // Float_t *bins = pr -> GetArray();
+    // Double_t wtest = TArrayD::fArray[1];
+    // cout << "w = " << wtest << endl;
      
 }

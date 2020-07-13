@@ -28,7 +28,7 @@ Double_t sx(TProfile *pr){ // Unbiased estimator for the root of variance (C.3)
   pr -> SetErrorOption("s");
   Double_t stdevw = pr -> GetBinError(1);
 
-  temp = stdevw/(1-sumw2/sumw/sumw);
+  temp = stdevw*stdevw/(1-sumw2/sumw/sumw);
   return sqrt(temp);
 }
 
@@ -77,7 +77,7 @@ void plot(TString inFile)
   TProfile *pr; // temporary TProfile for TProfile extracting from root file
   TProfile *prx, *pry, *prxy;
 
-  Double_t stats[6]; //stats of TProfile
+  Double_t stats[6]; // stats of TProfile
 
   //==========================================================================================================================
 
@@ -153,7 +153,6 @@ void plot(TString inFile)
   sumwcor2 = stats[0];
   sumw2cor2 = stats[1];
   v22intE = 0.5*pow(cor2,-0.5)*sqrt(sumw2cor2)/sumwcor2*cor2E;
-  v22intE = sqrt(v22intE);
 
 
   // v2{4,QC}
@@ -164,7 +163,7 @@ void plot(TString inFile)
   cor4 = pr->GetBinContent(1);  // <<4>>
   v24int = pow(2*cor2*cor2-cor4,0.25);
 
-  // statistical error of the 2-particle reference flow estimate (C.28)
+  // statistical error of the 4-particle reference flow estimate (C.28)
 
   cor4E = sx(pr);
   pr -> GetStats(stats);
@@ -176,8 +175,8 @@ void plot(TString inFile)
   pry = (TProfile*) file->Get("hv24");
   cov24 = Cov(prxy,prx,pry);
   sumwcor24 = Sumwxwy(prxy);
-  v24intE = pow(2*cor2*cor2-cor4,-1.5)*(cor2*cor2*sumw2cor2/sumwcor2/sumwcor2*cor2E*cor2E
-          + 1/16*sumw2cor4/sumwcor4/sumwcor4*cor4E*cor4E - 0.5*cor2*sumwcor24/sumwcor2/sumwcor4*cov24);  
+  v24intE = pow(2*cor2*cor2-cor4,-1.5)*(sumw2cor2*pow(cor2*cor2E/sumwcor2,2)
+          + 1/16*sumw2cor4*pow(cor4E/sumwcor4,2) - 0.5*cor2*sumwcor24*cov24/sumwcor2/sumwcor4);  
   v24intE = sqrt(v24intE);
 
   // plotting
@@ -226,24 +225,24 @@ void plot(TString inFile)
 
   // TLatex shows pT range of RFP
   char text2[800];
-  sprintf(text2,"#splitline{RFP: %2.1f < p_{T} < %2.1f GeV/c}{5#upoint10^{6} events}",minptRFP,maxptRFP);
-  Double_t ylatex = ymin2;
-  TLatex *latex = new TLatex(0.,ylatex,text2);
+  sprintf(text2,"#splitline{M=250#pm50}{#splitline{5#upoint10^{6} events}{RFP: %2.1f < p_{T} < %2.1f GeV/c}}",minptRFP,maxptRFP);
+  Double_t ylatex = ymin2*1.002;
+  TLatex *latex = new TLatex(0.2,ylatex,text2);
   latex -> SetTextFont(62);latex -> SetTextSize(0.04);
   //latex2 -> SetTextAlign(13);
   latex -> Draw();
 
-  // ofstream ofile2("v2int.txt");
-  // ofile2 << "v2";
-  // for(int i=0; i<3; i++){
-  // ofile2 << "\t" << v2compare[i];
-  // }
-  // ofile2 << endl;
-  // ofile2 << "E(v2)";
-  // for(int i=0; i<3; i++){
-  // ofile2 << "\t" << v2compareE[i];
-  // }
-  // ofile2 << endl;
+  ofstream ofile2("v2int.txt");
+  ofile2 << "v2";
+  for(int i=0; i<3; i++){
+  ofile2 << "\t" << v2compare[i];
+  }
+  ofile2 << endl;
+  ofile2 << "E(v2)";
+  for(int i=0; i<3; i++){
+  ofile2 << "\t" << v2compareE[i];
+  }
+  ofile2 << endl;
 
   //==========================================================================================================================
 
@@ -338,7 +337,7 @@ void plot(TString inFile)
 
     // estimate of the 4-particle differential flow (C.45)
     cor4Red[i] = pr->GetBinContent(1);
-    v24dif[i] = 2*cor2*cor2Red[i]-cor4Red[i]*pow(2*cor2*cor2-cor4,0.75);
+    v24dif[i] = (2*cor2*cor2Red[i]-cor4Red[i])*pow(2*cor2*cor2-cor4,-0.75);
 
     // statistical error of the 4-particle differential flow estimate (C.46)
     cor4RedE[i] = sx(pr);
@@ -459,20 +458,20 @@ void plot(TString inFile)
   leg -> SetBorderSize(0);
   leg -> Draw();
 
-  TLatex *latex2 = new TLatex(1.1,0.025,text2);
+  TLatex *latex2 = new TLatex(1.1,0.04,text2);
   latex2 -> SetTextFont(62);latex2 -> SetTextSize(0.04);
   //latex2 -> SetTextAlign(13);
   latex2 -> Draw();
 
-  // ofstream ofile("v2pt.txt");
-  // ofile.precision(5);
-  // ofile << "pT" << "\t\t\tv2(MC)" << "\t\t\tE(v2(MC))" << "\t\t\tv2{2}"
-  //       << "\t\t\tE(v2{2})" << "\t\t\tv2{4}" << "\t\t\tE(v2{4})" << endl;
-  // for(int i=0; i<npt; i++){
-  //   ofile << std::setprecision(5) << hpt[i] << "\t\t\t" << v2[i] << "\t\t\t" << v2e[i]
-  //         << "\t\t\t" << v22dif[i] << "\t\t\t" << v22difE[i]
-  //         << "\t\t\t" << v24dif[i] << "\t\t\t" << v24difE[i] << endl;
-  // }
+  ofstream ofile("v2pt.txt");
+  ofile.precision(5);
+  ofile << "pT" << "\t\t\tv2(MC)" << "\t\t\tE(v2(MC))" << "\t\t\tv2{2}"
+        << "\t\t\tE(v2{2})" << "\t\t\tv2{4}" << "\t\t\tE(v2{4})" << endl;
+  for(int i=0; i<npt; i++){
+    ofile << std::setprecision(5) << hpt[i] << "\t\t\t" << v2[i] << "\t\t\t" << v2e[i]
+          << "\t\t\t" << v22dif[i] << "\t\t\t" << v22difE[i]
+          << "\t\t\t" << v24dif[i] << "\t\t\t" << v24difE[i] << endl;
+  }
 }
 
 void v2plot_sys_error(){

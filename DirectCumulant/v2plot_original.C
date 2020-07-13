@@ -14,9 +14,9 @@ void Cosmetics(Int_t &wtopx, Int_t &wtopy, Int_t &ww, Int_t &wh ){
   // 	wtopx,wtopy	are the pixel coordinates of the top left corner of the canvas
   // (if wtopx < 0) the menubar is not shown)
   wtopx = 200;
-  wtopy = 20;
-  ww = 800; // is the canvas size in pixels along X 
-  wh = 600; // is the canvas size in pixels along Y
+  wtopy = 10;
+  ww = 1920; // is the canvas size in pixels along X 
+  wh = 1080; // is the canvas size in pixels along Y
 }
 void plot(TString inFile)
 {
@@ -122,9 +122,9 @@ void plot(TString inFile)
 
   // TLatex shows pT range of RFP
   char text2[800];
-  sprintf(text2,"#splitline{RFP: %2.1f < p_{T} < %2.1f GeV/c}{5#upoint10^{6} events}",minptRFP,maxptRFP);
-  float ylatex = ymin2;
-  TLatex *latex = new TLatex(0.,ylatex,text2);
+  sprintf(text2,"#splitline{M=250#pm50}{#splitline{5#upoint10^{6} events}{RFP: %2.1f < p_{T} < %2.1f GeV/c}}",minptRFP,maxptRFP);
+  float ylatex = ymin2*1.002;
+  TLatex *latex = new TLatex(0.2,ylatex,text2);
   latex -> SetTextFont(62);latex -> SetTextSize(0.04);
   //latex2 -> SetTextAlign(13);
   latex -> Draw();
@@ -158,7 +158,7 @@ void plot(TString inFile)
     TH1F *h = (TH1F*) file->Get(hname);
     hpt[i]= h->GetMean();
     hpte[i] = 0.001;
-    cout << hpt[i] << endl;
+    // cout << hpt[i] << endl;
 
     sprintf(hname,"hv2pt_%i",i);
     h = (TH1F*) file->Get(hname);
@@ -249,7 +249,7 @@ void plot(TString inFile)
   leg -> SetBorderSize(0);
   leg -> Draw();
 
-  TLatex *latex2 = new TLatex(1.1,0.025,text2);
+  TLatex *latex2 = new TLatex(1.1,0.04,text2);
   latex2 -> SetTextFont(62);latex2 -> SetTextSize(0.04);
   //latex2 -> SetTextAlign(13);
   latex2 -> Draw();

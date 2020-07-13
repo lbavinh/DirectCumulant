@@ -36,12 +36,23 @@ TH1F *hPhil; // distribution of particle azimuthal angle in the laboratory coord
 TH1F *hpt[npt];
 TH1F *hv2pt[npt];      // dif. v2 distribution in each pT bin from MC toy
 TH1F *hv2;             // integrated v2 distribution from toy Monte-Carlo for comparision with integrated v2{2} and v2{4}
+
 TProfile *hv22pt[npt]; // profile <<2'>> from 2nd Q-Cumulants
 TProfile *hv24pt[npt]; // profile <<4'>> from 4th Q-Cumulants
+
 TProfile *hv2MC;       // profile for MC integrated v2
 TProfile *hv22;        // profile <<2>> from 2nd Q-Cumulants
 TProfile *hv24;        // profile <<4>> from 4th Q-Cumulants
 
+// TProfile for covariance calculation according to (C.12)
+// Bilandzic, A. (2012). Anisotropic flow measurements in ALICE at the large hadron collider. 
+// Appendix C
+TProfile *hcov24;      // <2>*<4>
+TProfile *hcov22prime[npt]; // <2>*<2'>
+TProfile *hcov24prime[npt]; // <2>*<4'>
+TProfile *hcov42prime[npt]; // <2>*<4'>
+TProfile *hcov44prime[npt]; // <4>*<4'>
+TProfile *hcov2prime4prime[npt]; // <2'>*<4'>
 void hVana::Booking(TString outFile){
    char name[800];
    char title[800];
@@ -72,6 +83,31 @@ void hVana::Booking(TString outFile){
       sprintf(title,"v_{2}(P_{T}) from 4th order cumulants, %2.1f<pt<%2.1f GeV/c",bin_pT[kpt],bin_pT[kpt+1]);
       hv24pt[kpt]=new TProfile(name,title,1,0.,1.);
       hv24pt[kpt]->Sumw2();
+
+      sprintf(name,"hcov22prime_%d",kpt);
+      sprintf(title,"<2>#upoint<2'> distribution, %2.1f<pt<%2.1f GeV/c",bin_pT[kpt],bin_pT[kpt+1]);
+      hcov22prime[kpt]=new TProfile(name,title,1,0.,1.);
+      hcov22prime[kpt]->Sumw2();
+
+      sprintf(name,"hcov24prime_%d",kpt);
+      sprintf(title,"<2>#upoint<4'> distribution, %2.1f<pt<%2.1f GeV/c",bin_pT[kpt],bin_pT[kpt+1]);
+      hcov24prime[kpt]=new TProfile(name,title,1,0.,1.);
+      hcov24prime[kpt]->Sumw2();
+
+      sprintf(name,"hcov42prime_%d",kpt);
+      sprintf(title,"<4>#upoint<2'> distribution, %2.1f<pt<%2.1f GeV/c",bin_pT[kpt],bin_pT[kpt+1]);
+      hcov42prime[kpt]=new TProfile(name,title,1,0.,1.);
+      hcov42prime[kpt]->Sumw2();
+
+      sprintf(name,"hcov44prime_%d",kpt);
+      sprintf(title,"<4>#upoint<4'> distribution, %2.1f<pt<%2.1f GeV/c",bin_pT[kpt],bin_pT[kpt+1]);
+      hcov44prime[kpt]=new TProfile(name,title,1,0.,1.);
+      hcov44prime[kpt]->Sumw2();
+
+      sprintf(name,"hcov2prime4prime_%d",kpt);
+      sprintf(title,"<4'>#upoint<2'> distribution, %2.1f<pt<%2.1f GeV/c",bin_pT[kpt],bin_pT[kpt+1]);
+      hcov2prime4prime[kpt]=new TProfile(name,title,1,0.,1.);
+      hcov2prime4prime[kpt]->Sumw2();
    }
    hv22 = new TProfile("hv22","Reference flow from 2nd QC",1,0.,1.);
    hv22->Sumw2();
@@ -79,6 +115,8 @@ void hVana::Booking(TString outFile){
    hv24->Sumw2();
    hv2MC = new TProfile("hv2MC","Reference flow from MC",1,0.,1.);
    hv2MC->Sumw2();
+   hcov24 = new TProfile("hcov24","<2>#upoint<4> distribution",1,0.,1.);
+   hcov24->Sumw2();
    cout << "Histograms have been initialized" << endl;
 }
 
@@ -215,6 +253,8 @@ void hVana::Ana_event(){
    hv22 -> Fill(0.5,cor22,w2); // <<2>>
    hv24 -> Fill(0.5,cor24,w4); // <<4>>
 
+   hcov24 -> Fill(0.5,cor22*cor24,w2*w4); // <2>*<4>
+
    for(int ipt=0; ipt<npt;ipt++){
       if (mp[ipt] == 0) continue;
       p2[ipt] = TComplex(px2[ipt], py2[ipt]);
@@ -226,6 +266,12 @@ void hVana::Ana_event(){
       hv22pt[ipt] -> Fill(0.5,redCor22[ipt],wred2[ipt]);                                        // <<2'>>
       redCor24[ipt] = CalRedCor24(Q2,Q4,p2[ipt],q2[ipt],q4[ipt],M,mp[ipt],mq[ipt],wred4[ipt]);  // <4'>
       hv24pt[ipt] -> Fill(0.5,redCor24[ipt],wred4[ipt]);                                        // <<4'>>
+
+      hcov22prime[ipt] -> Fill(0.5,cor22*redCor22[ipt],w2*wred2[ipt]);
+      hcov24prime[ipt] -> Fill(0.5,cor22*redCor24[ipt],w2*wred4[ipt]);
+      hcov42prime[ipt] -> Fill(0.5,cor24*redCor22[ipt],w4*wred2[ipt]);
+      hcov44prime[ipt] -> Fill(0.5,cor24*redCor24[ipt],w4*wred4[ipt]);
+      hcov2prime4prime[ipt] -> Fill(0.5,redCor22[ipt]*redCor24[ipt],wred2[ipt]*wred4[ipt]);
    }
 }
 

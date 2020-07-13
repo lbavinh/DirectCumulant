@@ -263,5 +263,8 @@ void plot(TString inFile)
   //         << "\t\t\t" << v22dif[i] << "\t\t\t" << v22difE[i]
   //         << "\t\t\t" << v24dif[i] << "\t\t\t" << v24difE[i] << endl;
   // }
+}
 
+void v2plot_original(){
+  plot("v2QC_5mil_ver2.root");
 }

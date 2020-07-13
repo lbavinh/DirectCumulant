@@ -41,13 +41,13 @@ static const float minpt = 0.2; // min pt
 
 TH1F *hpt[npt];
 TH1F *hv2pt[npt];
-TH1F *hv4pt[npt];
+// TH1F *hv4pt[npt];
 TH1F *hPhi;
 TH1F *hPhil;
 
 static const int max_nh = 300;
 
-float d_rp; // reaction plane azimuthal angle 
+float   d_rp; // reaction plane azimuthal angle 
 int     d_nh; // number of hadrons
 float   d_pt[max_nh]; // transverse momentum
 float   d_phi0[max_nh]; // particle azimuthal angle in laboratory system 
@@ -84,6 +84,14 @@ void hTana::v2gen(int nevent,int Mmean,int dmult) {
   double phi; // azimuthal angle
   double phil; // azimuthal angle in laboratory coordinates
   double phirp; // azimuthal angle of reation plane
+
+  float nonflow = 1; /* Simulating nonflow correlations: 
+		     0: no nonflow correlations; 
+		     1: "pair wise" emission (2 particles with same azimuth); // попарно
+		     1.5: "triplet" emission (3 particles with same azimuth);
+         2: "quadruplet" emission (4 particles with same azimuth).*/
+  float nonflowrate = 0.250;
+  /* Fraction of particles that are affected by nonflow effects. */
 
   /* Monte-Carlo simulation */
   for(int ne=0; ne<nevent; ne++) { /* Loop over events */
@@ -140,17 +148,79 @@ void hTana::v2gen(int nevent,int Mmean,int dmult) {
 
         double DphiR = (phil - phirp); 
         double v2rxn = TMath::Cos(2*DphiR);
-        double v4rxn = TMath::Cos(4*DphiR);
+        // double v4rxn = TMath::Cos(4*DphiR);
 
         hv2pt[ipt]->Fill(v2rxn);
-        hv4pt[ipt]->Fill(v4rxn);
+        // hv4pt[ipt]->Fill(v4rxn);
 
         d_phi0[nh] = phil;
         d_pt[nh]   = pT;
 
         nh++;
       }// end of track selection
-    }//end of the particle loop
+
+      if (nonflow>0 && (nm<=(mult-2*nonflow)) && (GR->Rndm()<=nonflowrate)){ /* NONFLOW CORRELATION simulation */
+	        /* Two tests: 
+           - a first, very inelegant one, to avoid having more particles in the 
+           event than the multiplicity which has been determined earlier;
+           - a second, more useful one, to have a fraction ~nonflowrate of 
+           particles affected by nonflow effects. */
+        if (nonflow==1) { // Pair-wise emission
+          // Generating a second particle with the same momentum and azimuth.
+          nm++;
+          hPt->Fill(pT);
+          hPhi -> Fill(phi);
+          hPhil -> Fill(phil);
+          if(pT>=0.2&&pT<=3.5){ //track selection 
+            int ipt = 0;
+            for(int i=0; i<npt-1;i++){
+              if(pT>=bin_w[i] && pT<bin_w[i+1]) ipt = i;
+            }
+            hpt[ipt]->Fill(pT);
+
+            double DphiR = (phil - phirp); 
+            double v2rxn = TMath::Cos(2*DphiR);
+            // double v4rxn = TMath::Cos(4*DphiR);
+
+            hv2pt[ipt]->Fill(v2rxn);
+            // hv4pt[ipt]->Fill(v4rxn);
+
+            d_phi0[nh] = phil;
+            d_pt[nh]   = pT;
+
+            nh++;
+          }// end of track selection
+        } // end of Pair-wise emission
+        else if (nonflow==2) { // Quadruplet-wise emission
+          // Generating three more particles with the same momentum and azimuth.
+          nm+=3;
+          for(int i=0; i<3;i++){ // Generate 3 more particle
+            hPt->Fill(pT);
+            hPhi -> Fill(phi);
+            hPhil -> Fill(phil);
+            if(pT>=0.2&&pT<=3.5){ //track selection 
+              int ipt = 0;
+              for(int i=0; i<npt-1;i++){
+                if(pT>=bin_w[i] && pT<bin_w[i+1]) ipt = i;
+              }
+              hpt[ipt]->Fill(pT);
+
+              double DphiR = (phil - phirp); 
+              double v2rxn = TMath::Cos(2*DphiR);
+              // double v4rxn = TMath::Cos(4*DphiR);
+
+              hv2pt[ipt]->Fill(v2rxn);
+              // hv4pt[ipt]->Fill(v4rxn);
+
+              d_phi0[nh] = phil;
+              d_pt[nh]   = pT;
+
+              nh++;
+            }// end of track selection            
+          } // end of 3 more particle generation
+        } // End of generation Quadruplet-wise emission
+      } // End of NONFLOW CORRELATION simulation
+    } // end of the particle loop
     d_nh = nh;   
     htree->Fill();
   }// end of event loop
@@ -162,7 +232,7 @@ void hTana::ana_end() {
   for(int fpt=0; fpt<npt-1; fpt++){
     hpt[fpt]->Write(); 
     hv2pt[fpt]->Write(); 
-    hv4pt[fpt]->Write(); 
+    // hv4pt[fpt]->Write(); 
   }
 
   htree->Write();
@@ -201,9 +271,9 @@ void hTana::book_hist(char *outfile) {
     sprintf(title,"v_{2}(P_{T})  for pions, %2.1f<pt<%2.1f GeV/c",bin_w[kpt],bin_w[kpt+1]);
     hv2pt[kpt]=new TH1F(name,title,400,-1,1);
 
-    sprintf(name,"hv4pt_%d",kpt);
-    sprintf(title,"v_{4}(P_{T})  for pions, %2.1f<pt<%2.1f GeV/c",bin_w[kpt],bin_w[kpt+1]);
-    hv4pt[kpt]=new TH1F(name,title,400,-1,1);
+    // sprintf(name,"hv4pt_%d",kpt);
+    // sprintf(title,"v_{4}(P_{T})  for pions, %2.1f<pt<%2.1f GeV/c",bin_w[kpt],bin_w[kpt+1]);
+    // hv4pt[kpt]=new TH1F(name,title,400,-1,1);
   }
   hPt  = new TH1F("hPt","p_{T}-distribution;GeV/c;dN/dp_{T}",500,0.0,6);
   hRP  = new TH1F("hRP","Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}",300,0,7);

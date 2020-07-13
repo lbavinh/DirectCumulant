@@ -1,7 +1,7 @@
 /* Monte Carlo event generator */
 
-/* This program simulates events with anisotropic flow, 
-   including possible mock-up nonflow two- and four-particle correlations. */
+/* This program simulates events with anisotropic flow, including possible
+   mock-up (макет, mô hình) nonflow two- and four-particle correlations. */
 
 /* The input is a file "data.dat" with the number of events, 
    the average emitted multiplicity,
@@ -11,7 +11,7 @@
    - a file "events.dat" with first the number of events, then for each event: 
      . the (emitted) multiplicity;
      . for each particle: the PID, transverse momentum (in MeV) and azimuth; 
-       !!! PID not yet implemented !!!
+       !!! Particle identification (PID) not yet implemented !!! 
    - a file "generator.txt" with informations, as the generation duration or 
    the average emitted multiplicity and anisotropic flow values. */
 
@@ -33,7 +33,7 @@
 
 #define nonflow 0 /* Simulating nonflow correlations: 
 		     0: no nonflow correlations; 
-		     1: "pair wise" emission (2 particles with same azimuth);
+		     1: "pair wise" emission (2 particles with same azimuth); // попарно
 		     2: "quadruplet" emission (4 particles with same azimuth).*/
 #define nonflowrate 0.250
 /* Fraction of particles that are affected by nonflow effects. */

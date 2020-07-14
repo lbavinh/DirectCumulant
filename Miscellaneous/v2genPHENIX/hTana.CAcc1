@@ -190,7 +190,7 @@ void hTana::v2gen(int nevent,int Mmean,int dmult) {
            double B=5*PI/16+PI/2;
            double C=11*PI/16+PI/2;
            double D=19*PI/16+PI/2;
-	   //if( ( (phil >-3*PI/16) && (phil < 5*PI/16) ) || ( (phil > 11*PI/16) && (phil < 19*PI/16) ) ){
+	   //if( ( (phil >-3*PI/16) && (phil < 5*PI/16) ) || ( (phil > 11*PI/16) && (phil < 19*PI/16) ) ){}
 
 
 

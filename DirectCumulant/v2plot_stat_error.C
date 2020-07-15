@@ -176,7 +176,7 @@ void plot(TString inFile)
   cov24 = Cov(prxy,prx,pry);
   sumwcor24 = Sumwxwy(prxy);
   v24intE = pow(2*cor2*cor2-cor4,-1.5)*(sumw2cor2*pow(cor2*cor2E/sumwcor2,2)
-          + 1/16*sumw2cor4*pow(cor4E/sumwcor4,2) - 0.5*cor2*sumwcor24*cov24/sumwcor2/sumwcor4);  
+          + 1./16.*sumw2cor4*pow(cor4E/sumwcor4,2) - 0.5*cor2*sumwcor24*cov24/sumwcor2/sumwcor4);  
   v24intE = sqrt(v24intE);
 
   // plotting
@@ -195,7 +195,7 @@ void plot(TString inFile)
   auto c2 = new TCanvas("c2","Integrated flow result",wtopx,wtopy,ww,wh);
   Double_t ymin2=v2int-v2intE*15;
   Double_t ymax2=v2int+v2intE*15;
-  TH2F *hr3 = new TH2F("hr3","Integrated flow result", 3,0,3,10,ymin2,ymax2);
+  TH2F *hr3 = new TH2F("hr3","Integrated elliptic flow", 3,0,3,10,ymin2,ymax2);
   hr3->SetYTitle("v_{n}");
   // Set name of methods on X axis
   hr3->SetCanExtend(TH1::kAllAxes);
@@ -225,7 +225,7 @@ void plot(TString inFile)
 
   // TLatex shows pT range of RFP
   char text2[800];
-  sprintf(text2,"#splitline{M=250#pm50}{#splitline{5#upoint10^{6} events}{RFP: %2.1f < p_{T} < %2.1f GeV/c}}",minptRFP,maxptRFP);
+  sprintf(text2,"#splitline{no non-flow contribution & uniform acceptance}{#splitline{M=250#pm50}{#splitline{5#upoint10^{6} events}{RFP: %2.1f < p_{T} < %2.1f GeV/c}}}",minptRFP,maxptRFP);
   Double_t ylatex = ymin2*1.002;
   TLatex *latex = new TLatex(0.2,ylatex,text2);
   latex -> SetTextFont(62);latex -> SetTextSize(0.04);
@@ -326,8 +326,8 @@ void plot(TString inFile)
     sumwcor22prime[i] = Sumwxwy(prxy);   
 
 
-    v22difE[i] = 0.25*pow(cor2,-3)*(cor2Red[i]*cor2Red[i]*sumw2cor2/sumwcor2/sumwcor2*cor2E*cor2E
-               + 4*cor2*cor2*sumw2cor2red[i]*pow(cor2RedE[i]/sumwcor2red[i],2) - 4*cor2*cor2Red[i]
+    v22difE[i] = 0.25*pow(cor2,-3.)*(cor2Red[i]*cor2Red[i]*sumw2cor2/sumwcor2/sumwcor2*cor2E*cor2E
+               + 4.*cor2*cor2*sumw2cor2red[i]*pow(cor2RedE[i]/sumwcor2red[i],2.) - 4.*cor2*cor2Red[i]
                * sumwcor22prime[i]/sumwcor2/sumwcor2red[i]*cov22prime[i]);
     v22difE[i] = sqrt(v22difE[i]);
 
@@ -385,26 +385,26 @@ void plot(TString inFile)
     cov2prime4prime[i] = Cov(prxy,prx,pry);
     sumwcor2prime4prime[i] = Sumwxwy(prxy);     
 
-    v24difE[i] = pow(2*cor2*cor2-cor4,-3.5)*
-    (pow(2*cor2*cor2*cor2Red[i]-3*cor2*cor4Red[i]+2*cor4*cor2Red[i],2)
-    * sumw2cor2*pow(cor2E/sumwcor2,2)
-    + 9/16*pow(2*cor2*cor2Red[i]-cor4Red[i],2)*sumw2cor4*pow(cor4E/sumwcor4,2)
-    + 4*cor2*cor2*pow(2*cor2*cor2-cor4,2)*sumw2cor2red[i]*pow(cor2RedE[i]/sumwcor2red[i],2)
-    + pow(2*cor2*cor2-cor4,2)*sumw2cor4red[i]*pow(cor4RedE[i]/sumwcor4red[i],2)
+    v24difE[i] = pow(2.*cor2*cor2-cor4,-3.5)*
+    (pow(2.*cor2*cor2*cor2Red[i]-3*cor2*cor4Red[i]+2.*cor4*cor2Red[i],2.)
+    * sumw2cor2*pow(cor2E/sumwcor2,2.)
+    + 9./16.*pow(2.*cor2*cor2Red[i]-cor4Red[i],2.)*sumw2cor4*pow(cor4E/sumwcor4,2.)
+    + 4.*cor2*cor2*pow(2*cor2*cor2-cor4,2.)*sumw2cor2red[i]*pow(cor2RedE[i]/sumwcor2red[i],2.)
+    + pow(2*cor2*cor2-cor4,2.)*sumw2cor4red[i]*pow(cor4RedE[i]/sumwcor4red[i],2.)
     - 1.5*(2*cor2*cor2Red[i]-cor4Red[i])
-    * (2*cor2*cor2*cor2Red[i]-3*cor2*cor4Red[i]+2*cor4*cor2Red[i])
+    * (2.*cor2*cor2*cor2Red[i]-3.*cor2*cor4Red[i]+2.*cor4*cor2Red[i])
     * sumwcor24/sumwcor2/sumwcor4*cov24
-    - 4*cor2*(2*cor2*cor2-cor4)
-    * (2*cor2*cor2*cor2Red[i]-3*cor2*cor4Red[i]+2*cor4*cor2Red[i])
+    - 4.*cor2*(2.*cor2*cor2-cor4)
+    * (2.*cor2*cor2*cor2Red[i]-3.*cor2*cor4Red[i]+2*cor4*cor2Red[i])
     * sumwcor22prime[i]/sumwcor2/sumwcor2red[i]*cov22prime[i]
-    + 2*(2*cor2*cor2-cor4)
-    * (2*cor2*cor2*cor2Red[i]-3*cor2*cor4Red[i]+2*cor4*cor2Red[i])
+    + 2.*(2.*cor2*cor2-cor4)
+    * (2.*cor2*cor2*cor2Red[i]-3.*cor2*cor4Red[i]+2.*cor4*cor2Red[i])
     * sumwcor24prime[i]/sumwcor2/sumwcor4red[i]*cov24prime[i]
-    + 3*cor2*(2*cor2*cor2-cor4)*(2*cor2*cor2Red[i]-cor4Red[i])
+    + 3.*cor2*(2.*cor2*cor2-cor4)*(2.*cor2*cor2Red[i]-cor4Red[i])
     * sumwcor42prime[i]/sumwcor4/sumwcor2red[i]*cov42prime[i]
-    - 1.5*(2*cor2*cor2-cor4)*(2*cor2*cor2Red[i]-cor4Red[i])
+    - 1.5*(2*cor2*cor2-cor4)*(2.*cor2*cor2Red[i]-cor4Red[i])
     * sumwcor44prime[i]/sumwcor4/sumwcor4red[i]*cov44prime[i]
-    - 4*cor2*pow(2*cor2*cor2-cor4,2)*sumwcor2prime4prime[i]/sumwcor2red[i]/sumwcor4red[i]*cov2prime4prime[i]
+    - 4.*cor2*pow(2.*cor2*cor2-cor4,2.)*sumwcor2prime4prime[i]/sumwcor2red[i]/sumwcor4red[i]*cov2prime4prime[i]
     );
     v24difE[i] = sqrt(v24difE[i]);
   } // end of loop for all pT bin
@@ -413,11 +413,11 @@ void plot(TString inFile)
     
   Double_t xmin1=maxptRFP;
   Double_t xmax1=3.5;
-  Double_t ymin1=0.;
-  Double_t ymax1=0.3;
+  Double_t ymin1=0.1;
+  Double_t ymax1=0.25;
 
 
-  TH2F *hr2 = new TH2F("hr2","v_{n} vs p_{T};p_{T}, GeV/c;v_{n}", 2,xmin1,xmax1,2,ymin1,ymax1);
+  TH2F *hr2 = new TH2F("hr2","Differential elliptic flow;p_{T}, GeV/c;v_{n}", 2,xmin1,xmax1,2,ymin1,ymax1);
   
   hr2->Draw();
   
@@ -458,7 +458,7 @@ void plot(TString inFile)
   leg -> SetBorderSize(0);
   leg -> Draw();
 
-  TLatex *latex2 = new TLatex(1.1,0.04,text2);
+  TLatex *latex2 = new TLatex(1.1,ymin1+0.03,text2);
   latex2 -> SetTextFont(62);latex2 -> SetTextSize(0.04);
   //latex2 -> SetTextAlign(13);
   latex2 -> Draw();
@@ -474,6 +474,6 @@ void plot(TString inFile)
   }
 }
 
-void v2plot_sys_error(){
+void v2plot_stat_error(){
   plot("v2QC_5mil_ver2.root");
 }

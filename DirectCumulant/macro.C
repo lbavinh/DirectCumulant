@@ -1,5 +1,5 @@
 #include "hVana.C"
-void v2QC() {
+void macro() {
     //gSystem->Load("./hVana_C.so");
     hVana *ana = new hVana();
     ana->Booking("v2QC.root");

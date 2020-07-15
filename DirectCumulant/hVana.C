@@ -7,6 +7,7 @@
 #include "TMath.h"
 #include "TH1F.h"
 #include "TString.h"
+#include "TVectorD.h"
 
 #include <iostream>
 #include <fstream>
@@ -53,6 +54,17 @@ TProfile *hcov24prime[npt]; // <2>*<4'>
 TProfile *hcov42prime[npt]; // <2>*<4'>
 TProfile *hcov44prime[npt]; // <4>*<4'>
 TProfile *hcov2prime4prime[npt]; // <2'>*<4'>
+
+Double_t cos2phi1=0, sin2phi1=0, cos2phi12=0, sin2phi12=0, cos2phi123=0, sin2phi123=0; // for non-uniform acceptance RF calc
+Double_t cos2psi1[npt]={0}, sin2psi1[npt]={0}, cos2psi1phi2[npt]={0}, sin2psi1phi2[npt]={0},
+         cos2psi1pphi23[npt]={0}, sin2psi1pphi23[npt]={0}, cos2psi1mphi23[npt]={0}, sin2psi1mphi23[npt]={0}; // for non-uniform acceptance DF calc
+Double_t sumM=0, sumMMm1=0, sumMMm1Mm2=0; // for non-uniform acceptance RF calc
+Double_t summp[npt]={0}, summpMmmq[npt]={0}, summpMm2mqMm1[npt]={0}; // for non-uniform acceptance DF calc
+
+TVectorD vcos2phi1(1), vsin2phi1(1), vcos2phi12(1), vsin2phi12(1), vcos2phi123(1), vsin2phi123(1);
+TVectorD vcos2psi1(npt), vsin2psi1(npt), vcos2psi1phi2(npt), vsin2psi1phi2(npt), vcos2psi1pphi23(npt), vsin2psi1pphi23(npt), vcos2psi1mphi23(npt), vsin2psi1mphi23(npt);
+
+
 void hVana::Booking(TString outFile){
    char name[800];
    char title[800];
@@ -146,8 +158,62 @@ void hVana::Loop_a_file(TString file){
 }
 
 void hVana::Ana_end(){
+   cos2phi1    /= sumM;
+   sin2phi1    /= sumM;
+   cos2phi12   /= sumMMm1;
+   sin2phi12   /= sumMMm1;
+   cos2phi123  /= sumMMm1Mm2;
+   sin2phi123  /= sumMMm1Mm2;
+
+   vcos2phi1(0)   = cos2phi1;
+   vsin2phi1(0)   = sin2phi1;
+   vcos2phi12(0)  = cos2phi12;
+   vsin2phi12(0)  = sin2phi12;
+   vcos2phi123(0) = cos2phi123;
+   vsin2phi123(0) = sin2phi123;
+
+   for(int i=0; i<npt; i++){
+      cos2psi1[i]         /= summp[i];
+      sin2psi1[i]         /= summp[i];
+      cos2psi1phi2[i]     /= summpMmmq[i];
+      sin2psi1phi2[i]     /= summpMmmq[i];
+      cos2psi1pphi23[i]   /= summpMm2mqMm1[i];
+      sin2psi1pphi23[i]   /= summpMm2mqMm1[i];
+      cos2psi1mphi23[i]   /= summpMm2mqMm1[i];
+      sin2psi1mphi23[i]   /= summpMm2mqMm1[i];
+
+      vcos2psi1(i)         = cos2psi1[i];
+      vsin2psi1(i)         = sin2psi1[i];
+      vcos2psi1phi2(i)     = cos2psi1phi2[i];
+      vsin2psi1phi2(i)     = sin2psi1phi2[i];
+      vcos2psi1pphi23(i)   = cos2psi1pphi23[i];
+      vsin2psi1pphi23(i)   = sin2psi1pphi23[i];
+      vcos2psi1mphi23(i)   = cos2psi1mphi23[i];
+      vsin2psi1mphi23(i)   = sin2psi1mphi23[i];
+
+   }
+
    d_outfile -> cd();
    d_outfile -> Write();
+
+   vcos2phi1.Write("vcos2phi1");
+   vsin2phi1.Write("vsin2phi1");
+   vcos2phi12.Write("vcos2phi12");
+   vsin2phi12.Write("vsin2phi12");
+   vcos2phi123.Write("vcos2phi123");
+   vsin2phi123.Write("vsin2phi123");
+
+
+   vcos2psi1.Write("vcos2psi1");
+   vsin2psi1.Write("vsin2psi1");
+   vcos2psi1phi2.Write("vcos2psi1phi2");
+   vsin2psi1phi2.Write("vsin2psi1phi2");
+   vcos2psi1pphi23.Write("vcos2psi1pphi23");
+   vsin2psi1pphi23.Write("vsin2psi1pphi23");
+   vcos2psi1mphi23.Write("vcos2psi1mphi23");
+   vsin2psi1mphi23.Write("vsin2psi1mphi23");
+
+
    d_outfile -> Close();
    cout << "Histfile has been written" << endl;
 }
@@ -253,7 +319,22 @@ void hVana::Ana_event(){
    hv22 -> Fill(0.5,cor22,w2); // <<2>>
    hv24 -> Fill(0.5,cor24,w4); // <<4>>
 
+   // TProfile for covariance calculation in statistic error
    hcov24 -> Fill(0.5,cor22*cor24,w2*w4); // <2>*<4>
+
+   // Non-uniform acceptance correction
+   cos2phi1   += Qx2; // formula (C2)
+   sin2phi1   += Qy2; // formula (C3)
+   cos2phi12  += (Q2*Q2-Q4).Re();
+   sin2phi12  += (Q2*Q2-Q4).Im();
+   cos2phi123 += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Re())
+               - 2.*(M-1)*(Qstar(Q2).Re());
+   sin2phi123 += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Im())
+               - 2.*(M-1)*(Qstar(Q2).Im());
+   sumM += M;
+   sumMMm1 += M*(M-1);
+   sumMMm1Mm2 += M*(M-1)*(M-2);
+
 
    for(int ipt=0; ipt<npt;ipt++){
       if (mp[ipt] == 0) continue;
@@ -266,13 +347,34 @@ void hVana::Ana_event(){
       hv22pt[ipt] -> Fill(0.5,redCor22[ipt],wred2[ipt]);                                        // <<2'>>
       redCor24[ipt] = CalRedCor24(Q2,Q4,p2[ipt],q2[ipt],q4[ipt],M,mp[ipt],mq[ipt],wred4[ipt]);  // <4'>
       hv24pt[ipt] -> Fill(0.5,redCor24[ipt],wred4[ipt]);                                        // <<4'>>
-
+      
+      // TProfile for covariance calculation in statistic error
       hcov22prime[ipt] -> Fill(0.5,cor22*redCor22[ipt],w2*wred2[ipt]);
       hcov24prime[ipt] -> Fill(0.5,cor22*redCor24[ipt],w2*wred4[ipt]);
       hcov42prime[ipt] -> Fill(0.5,cor24*redCor22[ipt],w4*wred2[ipt]);
       hcov44prime[ipt] -> Fill(0.5,cor24*redCor24[ipt],w4*wred4[ipt]);
       hcov2prime4prime[ipt] -> Fill(0.5,redCor22[ipt]*redCor24[ipt],wred2[ipt]*wred4[ipt]);
+
+      // Non-uniform acceptance correction
+      cos2psi1[ipt] += px2[ipt];
+      sin2psi1[ipt] += py2[ipt];
+      cos2psi1phi2[ipt] += (p2[ipt]*Q2-q4[ipt]).Re();
+      sin2psi1phi2[ipt] += (p2[ipt]*Q2-q4[ipt]).Im();
+      cos2psi1pphi23[ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Re()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Re());
+      sin2psi1pphi23[ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Im()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Im());
+      cos2psi1mphi23[ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Re())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Re());
+      sin2psi1mphi23[ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Im())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Im());
+
+      summp[ipt] += mp[ipt];
+      summpMmmq[ipt] += mp[ipt]*M-mq[ipt];
+      summpMm2mqMm1[ipt] += (mp[ipt]*M-2.*mq[ipt])*(M-1);
+
    }
+}
+
+TComplex hVana::Qstar(TComplex Q){
+   TComplex QStar   = TComplex::Conjugate(Q);
+   return QStar;
 }
 
 Double_t hVana::CalCor22(TComplex Q2, Double_t M, Double_t w2){
@@ -288,9 +390,9 @@ Double_t hVana::CalCor22(TComplex Q2, Double_t M, Double_t w2){
 Double_t hVana::CalCor24(TComplex Q2, TComplex Q4, Double_t M, Double_t w4){
    // single-event average 4-particle azimuthal correlation <4>
 
-   TComplex Q2Star   = TComplex::Conjugate(Q2);
+   TComplex Q2Star   = Qstar(Q2);
    // static TComplex Conjugate(const TComplex &c) {return TComplex(c.Re(),-c.Im());}
-   TComplex Q4Star   = TComplex::Conjugate(Q4);
+   TComplex Q4Star   = Qstar(Q4);
    
    Double_t Q2Square = Q2.Rho2();
    Double_t Q4Square = Q4.Rho2();
@@ -328,11 +430,28 @@ Double_t hVana::CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
    return coor24/wred4;
 }
 
+// void loop_a_list_of_tree(){
+//    hVana *ana = new hVana();
+//    ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/v2QC_5mil_acc.root");
+   
+//    ifstream ifile("/home/lbavinh/maindir/EventGenerator/OUT/Acceptance/runlist.list");
+//    char filename[200];
+//    int nfiles=1;
+//    while(ifile.getline(filename,200)) {
+//       cout << nfiles <<" file is processing "<<filename <<endl;
+//       ana->Loop_a_file(filename);
+//       nfiles++;
+//    }
+//    cout<< "Done. " << nfiles << " files are processed." << endl;
+//    ana -> Ana_end();
+//    cout << "Histfile written. Congratz!" << endl;
+// }
+
 void loop_a_list_of_tree(){
    hVana *ana = new hVana();
-   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/v2QC_5mil.root");
+   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/v2QC_5mil_nonflow.root");
    
-   ifstream ifile("/home/lbavinh/maindir/EventGenerator/OUT/runlist.list");
+   ifstream ifile("/home/lbavinh/maindir/EventGenerator/OUT/Non-flow/runlist.list");
    char filename[200];
    int nfiles=1;
    while(ifile.getline(filename,200)) {

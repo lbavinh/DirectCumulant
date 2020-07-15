@@ -49,6 +49,7 @@ public :
    void Loop_a_file(TString file);
    void Ana_end();
    void Ana_event();
+   TComplex Qstar(TComplex Q);
    Double_t CalCor22(TComplex Q2, Double_t M, Double_t w2);
    Double_t CalCor24(TComplex Q2, TComplex Q4, Double_t M, Double_t w4);
    Double_t CalRedCor22(TComplex Q2, TComplex p2, Double_t M, Double_t mp, 

@@ -20,11 +20,11 @@ static const double bin_pT[25]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,
 static const float maxpt = 3.5; // max pt
 static const float minpt = 0.2; // min pt
 
-static const float maxptRFP = 1.0; // max pt of RFP
+static const float maxptRFP = 3.5; // max pt of RFP
 static const float minptRFP = 0.2; // min pt of RFP
 
 static const float maxptPOI = 3.5; // max pt of RFP
-static const float minptPOI = 1.0; // min pt of RFP
+static const float minptPOI = 0.2; // min pt of RFP
 
 TFile *d_outfile;      // out file with histograms and profiles
 
@@ -240,7 +240,7 @@ void hVana::Ana_event(){
 
    // Q-vector of RFP
    Double_t Qx2=0, Qy2=0, Qx4=0, Qy4=0;
-   TComplex Q2=0.,Q4=0.;
+   TComplex Q2=0., Q4=0.;
    // p-vector of POI
    Double_t px2[npt]={0.}, py2[npt]={0.};
    TComplex p2[npt]={0.}, p4[npt]={0.}, q2[npt]={0.}, q4[npt]={0.};
@@ -297,7 +297,7 @@ void hVana::Ana_event(){
       }
 
       // POI + RFP (mq)
-      Bool_t bOverLap = kFALSE; // POI and RFP have overlap zone at bin 
+      Bool_t bOverLap = kTRUE; // POI and RFP have overlap zone at bin 
       if (bOverLap){
       qx2[ipt]+=TMath::Cos(2*phi0[i]);
       qy2[ipt]+=TMath::Sin(2*phi0[i]);
@@ -306,70 +306,71 @@ void hVana::Ana_event(){
       mq[ipt]++;
       }
    } // end of track loop
+   if (M >= 4.){ // <4> definition condition
+      Q2 = TComplex(Qx2, Qy2);
+      Q4 = TComplex(Qx4, Qy4);
 
-   Q2 = TComplex(Qx2, Qy2);
-   Q4 = TComplex(Qx4, Qy4);
+      w2 = M*(M-1);                                         // w(<2>)
+      w4 = M*(M-1)*(M-2)*(M-3);                             // w(<4>)
 
-   w2 = M*(M-1);                                         // w(<2>)
-   w4 = M*(M-1)*(M-2)*(M-3);                             // w(<4>)
+      Double_t cor22 = CalCor22(Q2, M, w2);     // <2>
+      Double_t cor24 = CalCor24(Q2, Q4, M, w4); // <4>
 
-   Double_t cor22 = CalCor22(Q2, M, w2);     // <2>
-   Double_t cor24 = CalCor24(Q2, Q4, M, w4); // <4>
+      hv22 -> Fill(0.5,cor22,w2); // <<2>>
+      hv24 -> Fill(0.5,cor24,w4); // <<4>>
 
-   hv22 -> Fill(0.5,cor22,w2); // <<2>>
-   hv24 -> Fill(0.5,cor24,w4); // <<4>>
-
-   // TProfile for covariance calculation in statistic error
-   hcov24 -> Fill(0.5,cor22*cor24,w2*w4); // <2>*<4>
-
-   // Non-uniform acceptance correction
-   cos2phi1   += Qx2; // formula (C2)
-   sin2phi1   += Qy2; // formula (C3)
-   cos2phi12  += (Q2*Q2-Q4).Re();
-   sin2phi12  += (Q2*Q2-Q4).Im();
-   cos2phi123 += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Re())
-               - 2.*(M-1)*(Qstar(Q2).Re());
-   sin2phi123 += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Im())
-               - 2.*(M-1)*(Qstar(Q2).Im());
-   sumM += M;
-   sumMMm1 += M*(M-1);
-   sumMMm1Mm2 += M*(M-1)*(M-2);
-
-
-   for(int ipt=0; ipt<npt;ipt++){
-      if (mp[ipt] == 0) continue;
-      p2[ipt] = TComplex(px2[ipt], py2[ipt]);
-      q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
-      q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
-      wred2[ipt] = mp[ipt]*M-mq[ipt];                    // w(<2'>)
-      wred4[ipt] = (mp[ipt]*M-3*mq[ipt])*(M-1)*(M-2);    // w(<4'>)
-      redCor22[ipt] = CalRedCor22(Q2,p2[ipt],M,mp[ipt],mq[ipt],wred2[ipt]);                     // <2'>
-      hv22pt[ipt] -> Fill(0.5,redCor22[ipt],wred2[ipt]);                                        // <<2'>>
-      redCor24[ipt] = CalRedCor24(Q2,Q4,p2[ipt],q2[ipt],q4[ipt],M,mp[ipt],mq[ipt],wred4[ipt]);  // <4'>
-      hv24pt[ipt] -> Fill(0.5,redCor24[ipt],wred4[ipt]);                                        // <<4'>>
-      
       // TProfile for covariance calculation in statistic error
-      hcov22prime[ipt] -> Fill(0.5,cor22*redCor22[ipt],w2*wred2[ipt]);
-      hcov24prime[ipt] -> Fill(0.5,cor22*redCor24[ipt],w2*wred4[ipt]);
-      hcov42prime[ipt] -> Fill(0.5,cor24*redCor22[ipt],w4*wred2[ipt]);
-      hcov44prime[ipt] -> Fill(0.5,cor24*redCor24[ipt],w4*wred4[ipt]);
-      hcov2prime4prime[ipt] -> Fill(0.5,redCor22[ipt]*redCor24[ipt],wred2[ipt]*wred4[ipt]);
+      hcov24 -> Fill(0.5,cor22*cor24,w2*w4); // <2>*<4>
 
       // Non-uniform acceptance correction
-      cos2psi1[ipt] += px2[ipt];
-      sin2psi1[ipt] += py2[ipt];
-      cos2psi1phi2[ipt] += (p2[ipt]*Q2-q4[ipt]).Re();
-      sin2psi1phi2[ipt] += (p2[ipt]*Q2-q4[ipt]).Im();
-      cos2psi1pphi23[ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Re()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Re());
-      sin2psi1pphi23[ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Im()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Im());
-      cos2psi1mphi23[ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Re())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Re());
-      sin2psi1mphi23[ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Im())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Im());
+      cos2phi1   += Qx2; // formula (C2)
+      sin2phi1   += Qy2; // formula (C3)
+      cos2phi12  += (Q2*Q2-Q4).Re();
+      sin2phi12  += (Q2*Q2-Q4).Im();
+      cos2phi123 += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Re())
+                  - 2.*(M-1)*(Qstar(Q2).Re());
+      sin2phi123 += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Im())
+                  - 2.*(M-1)*(Qstar(Q2).Im());
+      sumM += M;
+      sumMMm1 += M*(M-1);
+      sumMMm1Mm2 += M*(M-1)*(M-2);
 
-      summp[ipt] += mp[ipt];
-      summpMmmq[ipt] += mp[ipt]*M-mq[ipt];
-      summpMm2mqMm1[ipt] += (mp[ipt]*M-2.*mq[ipt])*(M-1);
 
-   }
+      for(int ipt=0; ipt<npt;ipt++){
+         if (mp[ipt] == 0) continue;
+         p2[ipt] = TComplex(px2[ipt], py2[ipt]);
+         q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
+         q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
+         wred2[ipt] = mp[ipt]*M-mq[ipt];                    // w(<2'>)
+         wred4[ipt] = (mp[ipt]*M-3*mq[ipt])*(M-1)*(M-2);    // w(<4'>)
+         redCor22[ipt] = CalRedCor22(Q2,p2[ipt],M,mp[ipt],mq[ipt],wred2[ipt]);                     // <2'>
+         hv22pt[ipt] -> Fill(0.5,redCor22[ipt],wred2[ipt]);                                        // <<2'>>
+         redCor24[ipt] = CalRedCor24(Q2,Q4,p2[ipt],q2[ipt],q4[ipt],M,mp[ipt],mq[ipt],wred4[ipt]);  // <4'>
+         hv24pt[ipt] -> Fill(0.5,redCor24[ipt],wred4[ipt]);                                        // <<4'>>
+         
+         // TProfile for covariance calculation in statistic error
+         hcov22prime[ipt] -> Fill(0.5,cor22*redCor22[ipt],w2*wred2[ipt]);
+         hcov24prime[ipt] -> Fill(0.5,cor22*redCor24[ipt],w2*wred4[ipt]);
+         hcov42prime[ipt] -> Fill(0.5,cor24*redCor22[ipt],w4*wred2[ipt]);
+         hcov44prime[ipt] -> Fill(0.5,cor24*redCor24[ipt],w4*wred4[ipt]);
+         hcov2prime4prime[ipt] -> Fill(0.5,redCor22[ipt]*redCor24[ipt],wred2[ipt]*wred4[ipt]);
+
+         // Non-uniform acceptance correction
+         cos2psi1[ipt] += px2[ipt];
+         sin2psi1[ipt] += py2[ipt];
+         cos2psi1phi2[ipt] += (p2[ipt]*Q2-q4[ipt]).Re();
+         sin2psi1phi2[ipt] += (p2[ipt]*Q2-q4[ipt]).Im();
+         cos2psi1pphi23[ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Re()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Re());
+         sin2psi1pphi23[ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Im()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Im());
+         cos2psi1mphi23[ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Re())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Re());
+         sin2psi1mphi23[ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Im())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Im());
+
+         summp[ipt] += mp[ipt];
+         summpMmmq[ipt] += mp[ipt]*M-mq[ipt];
+         summpMm2mqMm1[ipt] += (mp[ipt]*M-2.*mq[ipt])*(M-1);
+
+      }
+   } // end of <4> definition condition
 }
 
 TComplex hVana::Qstar(TComplex Q){

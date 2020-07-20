@@ -26,18 +26,14 @@ public :
    // Declaration of leaf types
    Float_t         rp;
    Int_t           nh;
-   Int_t           b;
-   Float_t         pt[1256];   //[nh]
-   Float_t         phi0[1256];   //[nh]
-   Float_t         eta[1256];   //[nh]
+   Float_t         pt[543];   //[nh]
+   Float_t         phi0[543];   //[nh]
 
    // List of branches
    TBranch        *b_rp;   //!
    TBranch        *b_nh;   //!
-   TBranch        *b_b;   //!
    TBranch        *b_pt;   //!
    TBranch        *b_phi0;   //!
-   TBranch        *b_eta;   //!
 
    hVana(TTree *tree=0);
    virtual ~hVana();
@@ -127,10 +123,8 @@ void hVana::Init(TTree *tree)
 
    fChain->SetBranchAddress("rp", &rp, &b_rp);
    fChain->SetBranchAddress("nh", &nh, &b_nh);
-   fChain->SetBranchAddress("b", &b, &b_b);
    fChain->SetBranchAddress("pt", pt, &b_pt);
    fChain->SetBranchAddress("phi0", phi0, &b_phi0);
-   fChain->SetBranchAddress("eta", eta, &b_eta);
    Notify();
 }
 

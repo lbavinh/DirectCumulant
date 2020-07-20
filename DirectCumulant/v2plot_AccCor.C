@@ -18,8 +18,8 @@ void Cosmetics(Int_t &wtopx, Int_t &wtopy, Int_t &ww, Int_t &wh ){
   // (if wtopx < 0) the menubar is not shown)
   wtopx = 200;
   wtopy = 10;
-  ww = 1920; // is the canvas size in pixels along X 
-  wh = 1080; // is the canvas size in pixels along Y
+  ww = 800; // is the canvas size in pixels along X 
+  wh = 600; // is the canvas size in pixels along Y
 }
 
 Double_t sx(TProfile *pr){ // Unbiased estimator for the root of variance (C.3)
@@ -63,7 +63,7 @@ Double_t Sumwxwy(TProfile *prxy){
 
 void plot(TString inFile)
 {
-  static const Double_t maxptRFP = 1.0; // max pt of RFP
+  static const Double_t maxptRFP = 3.5; // max pt of RFP
   static const Double_t minptRFP = 0.2; // min pt of RFP
   const int npt = 24; // number of pT bin
 
@@ -556,10 +556,10 @@ void plot(TString inFile)
   
   auto c1 = new TCanvas("c1","Flow analysis results",wtopx,wtopy,ww,wh);
     
-  Double_t xmin1=maxptRFP;
+  Double_t xmin1=0.2;
   Double_t xmax1=3.5;
-  Double_t ymin1=0.1;
-  Double_t ymax1=0.25;
+  Double_t ymin1=0.;
+  Double_t ymax1=0.3;
 
 
   TH2F *hr2 = new TH2F("hr2","Differential elliptic flow;p_{T}, GeV/c;v_{n}", 2,xmin1,xmax1,2,ymin1,ymax1);

@@ -13,6 +13,7 @@
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
+#include <TString.h>
 #define MAXNH 300
 class hTana {
 public :
@@ -20,68 +21,16 @@ public :
    Int_t           fCurrent; //!current Tree number in a TChain
 
    // Declaration of leave types
-   Int_t           run;
-   Float_t         bbcz;
-   Float_t         centclock;
-   Float_t         rp10;
-   Float_t         rp11;
-   Float_t         rp12;
-   Float_t         bbcQY10;
-   Float_t         bbcQY11;
-   Float_t         bbcQY12;
-   Float_t         bbcQX10;
-   Float_t         bbcQX11;
-   Float_t         bbcQX12;
+   Float_t         rp;
    Int_t           nh;
-   Float_t         p[MAXNH];   //[nh]
-   Short_t         charge[MAXNH];   //[nh]
    Float_t         phi0[MAXNH];   //[nh]
-   Float_t         the0[MAXNH];   //[nh]
-   Short_t         dcarm[MAXNH];   //[nh]
-   Short_t         sect[MAXNH];   //[nh]
-   Short_t         inemc[MAXNH];   //[nh]
-   Short_t         intof[MAXNH];   //[nh]
-   Float_t         isPi[MAXNH];   //[nh]
-   Float_t         isP[MAXNH];   //[nh]
-   Float_t         isK[MAXNH];   //[nh]
-   Float_t         m2tof[MAXNH];   //[nh]
-   Float_t         temc[MAXNH];   //[nh]
-   Float_t         plemc[MAXNH];   //[nh]
-   Float_t         ecent[MAXNH];   //[nh]
-   Short_t         twrid[MAXNH];   //[nh]
-   Short_t         n0[MAXNH];   //[nh]
+
 
    // List of branches
-   TBranch        *b_run;   //!
-   TBranch        *b_bbcz;   //!
-   TBranch        *b_centclock;   //!
-   TBranch        *b_rp10;   //!
-   TBranch        *b_rp11;   //!
-   TBranch        *b_rp12;   //!
-   TBranch        *b_bbcQY10;   //!
-   TBranch        *b_bbcQY11;   //!
-   TBranch        *b_bbcQY12;   //!
-   TBranch        *b_bbcQX10;   //!
-   TBranch        *b_bbcQX11;   //!
-   TBranch        *b_bbcQX12;   //!
+   TBranch        *b_rp;   //!
    TBranch        *b_nh;   //!
-   TBranch        *b_p;   //!
-   TBranch        *b_charge;   //!
    TBranch        *b_phi0;   //!
-   TBranch        *b_the0;   //!
-   TBranch        *b_dcarm;   //!
-   TBranch        *b_sect;   //!
-   TBranch        *b_inemc;   //!
-   TBranch        *b_intof;   //!
-   TBranch        *b_isPi;   //!
-   TBranch        *b_isP;   //!
-   TBranch        *b_isK;   //!
-   TBranch        *b_m2tof;   //!
-   TBranch        *b_temc;   //!
-   TBranch        *b_plemc;   //!
-   TBranch        *b_ecent;   //!
-   TBranch        *b_twrid;   //!
-   TBranch        *b_n0;   //!
+
 
    hTana(TTree *tree=0);
    virtual ~hTana();
@@ -96,16 +45,11 @@ public :
 
 
 
-// additional member functions
-   void ana_init(char *outfile);
-   void v2gen(int nevent,int mult,int dmult);
-   void book_hist(char *outfile);
+   // additional member functions
+   void ana_init(TString outfile);
+   void v2gen(int nevent,double mult);
+   void book_hist(TString outfile);
    void ana_end(void);
-
-
-
-
-
 
 };
 
@@ -160,37 +104,9 @@ void hTana::Init(TTree *tree)
    fChain = tree;
    fCurrent = -1;
    fChain->SetMakeClass(1);
-
-   fChain->SetBranchAddress("run", &run, &b_run);
-   fChain->SetBranchAddress("bbcz", &bbcz, &b_bbcz);
-   fChain->SetBranchAddress("centclock", &centclock, &b_centclock);
-   fChain->SetBranchAddress("rp10", &rp10, &b_rp10);
-   fChain->SetBranchAddress("rp11", &rp11, &b_rp11);
-   fChain->SetBranchAddress("rp12", &rp12, &b_rp12);
-   fChain->SetBranchAddress("bbcQY10", &bbcQY10, &b_bbcQY10);
-   fChain->SetBranchAddress("bbcQY11", &bbcQY11, &b_bbcQY11);
-   fChain->SetBranchAddress("bbcQY12", &bbcQY12, &b_bbcQY12);
-   fChain->SetBranchAddress("bbcQX10", &bbcQX10, &b_bbcQX10);
-   fChain->SetBranchAddress("bbcQX11", &bbcQX11, &b_bbcQX11);
-   fChain->SetBranchAddress("bbcQX12", &bbcQX12, &b_bbcQX12);
+   fChain->SetBranchAddress("rp", &rp, &b_rp);
    fChain->SetBranchAddress("nh", &nh, &b_nh);
-   fChain->SetBranchAddress("p", p, &b_p);
-   fChain->SetBranchAddress("charge", charge, &b_charge);
    fChain->SetBranchAddress("phi0", phi0, &b_phi0);
-   fChain->SetBranchAddress("the0", the0, &b_the0);
-   fChain->SetBranchAddress("dcarm", dcarm, &b_dcarm);
-   fChain->SetBranchAddress("sect", sect, &b_sect);
-   fChain->SetBranchAddress("inemc", inemc, &b_inemc);
-   fChain->SetBranchAddress("intof", intof, &b_intof);
-   fChain->SetBranchAddress("isPi", isPi, &b_isPi);
-   fChain->SetBranchAddress("isP", isP, &b_isP);
-   fChain->SetBranchAddress("isK", isK, &b_isK);
-   fChain->SetBranchAddress("m2tof", m2tof, &b_m2tof);
-   fChain->SetBranchAddress("temc", temc, &b_temc);
-   fChain->SetBranchAddress("plemc", plemc, &b_plemc);
-   fChain->SetBranchAddress("ecent", ecent, &b_ecent);
-   fChain->SetBranchAddress("twrid", twrid, &b_twrid);
-   fChain->SetBranchAddress("n0", n0, &b_n0);
    Notify();
 }
 

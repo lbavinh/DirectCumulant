@@ -59,3 +59,44 @@ double v4(double pT)
   temp=v2(pT)*v2(pT);
   return temp;
 }
+
+double GetProjectedRandom(double b, TH2F *const &hist)
+// Projects Npart or Ncoll distribution for given impact parameter and gives you random Npart or Ncoll
+// using the projected distribution as a probability function (i.e. gives you random number within RMS)
+{
+  TH1D *hist1D = hist->ProjectionY("tmp", hist->GetXaxis()->FindBin(b), hist->GetXaxis()->FindBin(b));
+  double result = hist1D->GetRandom();
+  return result;
+}
+
+double calc_v2(double b, double eta, double pt)
+{
+  float a1, a2, a3, a4;
+  a1 = 0.4397 * exp(-(b - 4.526) * (b - 4.526) / 72.0) + 0.636;
+  a2 = 1.916 / (b + 2) + 0.1;
+  a3 = 4.79 * 0.0001 * (b - 0.621) * (b - 10.172) * (b - 23) + 1.2;  // this is >0 for b>0
+  a4 = 0.135 * exp(-0.5 * (b - 10.855) * (b - 10.855) / 4.607 / 4.607) + 0.0120;
+
+  float temp1 = pow(pt, a1) / (1 + exp((pt - 3.0) / a3));
+  float temp2 = pow(pt + 0.1, -a2) / (1 + exp(-(pt - 4.5) / a3));
+  float temp3 = 0.01 / (1 + exp(-(pt - 4.5) / a3));
+
+  //v2 = (a4 * (temp1 + temp2) + temp3) * exp (-0.5 * eta * eta / 6.27 / 6.27);
+
+  // Adjust flow rapidity dependence to better match PHOBOS 200 GeV Au+Au data
+  // JGL 9/9/2019
+  // See JS ToG talk at https://indico.bnl.gov/event/6764/
+
+  double v2 = (a4 * (temp1 + temp2) + temp3) * exp(-0.5 * eta * eta / 2.0 / 2.0);
+
+  return v2;
+}
+
+double calc_v4(double b, double eta, double pt)
+{
+  double temp;
+
+  temp=calc_v2(b,eta,pt)*calc_v2(b,eta,pt);
+  return temp;
+}
+

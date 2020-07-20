@@ -48,13 +48,14 @@ void DrawMult(TString glauberFileName, TString outputFileName)
   timer.Start();
 
   // Main parameters:
-  //  f - Npart to Ncoll contribution to multiplicity. Essentially, it reflects how multiplicity behaves near its maximum (in the most central region).
+  //  f - Npart to Ncoll contribution to multiplicity. Essentially, it reflects how multiplicity behaves
+  //      near its maximum (in the most central region).
   //    f = 0 - Multiplicity is renormalized Ncoll
   //    f = 1 - Multiplicity is renormalized Npart
   //  MeanMult - mean value of the multiplicity
   //  Nevents - number of generated events
   const double f = 0.1, MeanMult = 50.;
-  const int Nevents = 2e5;
+  const int Nevents = 1e6;
 
   // Read histograms from the Glauber file
   TH1F *hBimp;
@@ -72,7 +73,7 @@ void DrawMult(TString glauberFileName, TString outputFileName)
   // Create output histograms
 
   TH1I *hMult = new TH1I("hMult", "Multiplicity", 2500, 0, 2500);
-  TH2F *hBimpvsMult = new TH2F("hBimpvsMult", "Multiplicity vs b", 2500, 0, 2500, 200, 0., 20.);
+  TH2F *hBimpvsMult = new TH2F("hBimpvsMult", "Multiplicity vs b", 2500, 0, 2500, 200, 0., 20.); //nbinx,xmin,xmax,nbiny,ymin,ymax
 
   for (int i = 0; i < Nevents; i++)
   {

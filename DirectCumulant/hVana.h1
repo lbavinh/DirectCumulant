@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Tue Jul  7 13:08:48 2020 by ROOT version 6.19/01
-// from TTree htree/Hadron EMC + TOF tree
-// found on file: v2hadron.root
+// Mon Jul 20 22:53:07 2020 by ROOT version 6.18/02
+// from TTree htree/Simulation
+// found on file: v2hadron_1.root
 //////////////////////////////////////////////////////////
 
 #ifndef hVana_h
@@ -11,8 +11,6 @@
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
-#include <TComplex.h>
-#include <TString.h>
 
 // Header file for the classes stored in the TTree if any.
 
@@ -48,25 +46,9 @@ public :
    virtual void     Loop();
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
-   // additional function
-   void Booking(TString outFile);
-   void Loop_a_file(TString file);
-   void Ana_end();
-   void Ana_event();
-   TComplex Qstar(TComplex Q);
-   Double_t CalCor22(TComplex Q2, Double_t M, Double_t w2);
-   Double_t CalCor24(TComplex Q2, TComplex Q4, Double_t M, Double_t w4);
-   Double_t CalRedCor22(TComplex Q2, TComplex p2, Double_t M, Double_t mp, 
-                        Double_t mq, Double_t wred2);
-   Double_t CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2,
-                        TComplex q2, TComplex q4, Double_t M,
-                        Double_t mp, Double_t mq, Double_t wred2);                  
 };
 
 #endif
-
-// phần code kẹp giữa #ifdef hVana_cxx và #endif chỉ compile khi hVana_cxx
-// được xác định (#define hVana_cxx trong hVana.C)
 
 #ifdef hVana_cxx
 hVana::hVana(TTree *tree) : fChain(0) 
@@ -74,9 +56,9 @@ hVana::hVana(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("v2hadron.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("v2hadron_1.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("v2hadron.root");
+         f = new TFile("v2hadron_1.root");
       }
       f->GetObject("htree",tree);
 

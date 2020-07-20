@@ -60,8 +60,11 @@ Double_t Sumwxwy(TProfile *prxy){
 
 void plot(TString inFile)
 {
-  static const Double_t maxptRFP = 3.5; // max pt of RFP
-  static const Double_t minptRFP = 0.2; // min pt of RFP
+static const Float_t maxetaRFP = 0.9; // max pt of RFP
+static const Float_t minetaRFP = 0.; // min pt of RFP
+
+static const Float_t maxetaPOI = 1.; // max pt of POI
+static const Float_t minetaPOI = 0.9; // min pt of POI
   const int npt = 24; // number of pT bin
 
   Int_t wtopx, wtopy, ww, wh;
@@ -175,8 +178,8 @@ void plot(TString inFile)
   v2compareE[2]=v24intE;
 
   auto c2 = new TCanvas("c2","Integrated flow result",wtopx,wtopy,ww,wh);
-  Double_t ymin2=v2int-v2intE*15;
-  Double_t ymax2=v2int+v2intE*15;
+  Double_t ymin2 = TMath::MinElement(3,v2compare)*0.98;
+  Double_t ymax2 = TMath::MaxElement(3,v2compare) + TMath::MaxElement(3,v2compareE)*1.1;
   TH2F *hr3 = new TH2F("hr3","Integrated elliptic flow", 3,0,3,10,ymin2,ymax2);
   hr3->SetYTitle("v_{n}");
   // Set name of methods on X axis
@@ -207,11 +210,13 @@ void plot(TString inFile)
 
   // TLatex shows pT range of RFP
   char text2[800];
-  sprintf(text2,"#splitline{no non-flow contribution}{#splitline{& uniform acceptance}{#splitline{M=250#pm50}{#splitline{5#upoint10^{6} events}{RFP: %2.1f < p_{T} < %2.1f GeV/c}}}}",minptRFP,maxptRFP);
-  Double_t ylatex = ymin2*1.002;
-  TLatex *latex = new TLatex(0.2,ylatex,text2);
-  latex -> SetTextFont(62);latex -> SetTextSize(0.04);
-  //latex2 -> SetTextAlign(13);
+  sprintf(text2,"#splitline{no non-flow contribution}{#splitline{& uniform acceptance}{#splitline{MultMean=250}{#splitline{5#upoint10^{5} events}{#splitline{RFP: #eta<0}{POI: #eta>0}}}}}");
+  Double_t ylatex = ymax2*0.985;
+  Double_t xlatex = 0.1;
+  TLatex *latex = new TLatex(xlatex,ylatex,text2);
+  latex -> SetTextFont(62);
+  latex -> SetTextSize(0.04);
+  latex -> SetTextAlign(13);
   latex -> Draw();
 
   ofstream ofile2("v2int.txt");
@@ -396,7 +401,7 @@ void plot(TString inFile)
   Double_t xmin1=0.2;
   Double_t xmax1=3.5;
   Double_t ymin1=0.;
-  Double_t ymax1=0.3;
+  Double_t ymax1=0.15;
 
 
   TH2F *hr2 = new TH2F("hr2","Differential elliptic flow;p_{T}, GeV/c;v_{n}", 2,xmin1,xmax1,2,ymin1,ymax1);
@@ -456,6 +461,6 @@ void plot(TString inFile)
   }
 }
 
-void v2plot_stat_error(){
-  plot("v2QC_5mil_pureflow.root");
+void v2plot_stat_error_EtaBimp(){
+  plot("v2QC_1mil_EtaBimp.root");
 }

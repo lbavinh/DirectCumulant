@@ -1,8 +1,8 @@
-#include "/mnt/pool/2/lbavinh/EventGenerator/hTana.C"
+#include "hTana.C" // /mnt/pool/2/lbavinh/EventGenerator/
 using namespace std;
-void v2hadron(char *outFile) {
+void v2hadron(TString outFile) {
     hTana *ana=new hTana();
-    ana->ana_init(outFile);
-    ana->v2gen(1000000,250,50);
+    ana->ana_init(outFile.Data());
+    ana->v2gen(500000,250.);
     ana->ana_end();
 }

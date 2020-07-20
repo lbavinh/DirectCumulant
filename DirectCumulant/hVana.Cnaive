@@ -5,7 +5,7 @@
 #include <TCanvas.h>
 #include "TProfile.h"
 #include "TMath.h"
-#include "TH1.h"
+#include "TH1F.h"
 #include "TString.h"
 #include "TVectorD.h"
 
@@ -17,8 +17,14 @@ static const int npt = 24; // 0.2 - 3.5 GeV/c
 static const double bin_pT[25]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,
                                 1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.0,2.2,2.4,
                                 2.6,2.8,3.0,3.2,3.5};
-static const Float_t maxpt = 3.5; // max pt
-static const Float_t minpt = 0.2; // min pt
+static const float maxpt = 3.5; // max pt
+static const float minpt = 0.2; // min pt
+
+static const float maxptRFP = 3.5; // max pt of RFP
+static const float minptRFP = 0.2; // min pt of RFP
+
+static const float maxptPOI = 3.5; // max pt of RFP
+static const float minptPOI = 0.2; // min pt of RFP
 
 TFile *d_outfile;      // out file with histograms and profiles
 
@@ -26,10 +32,7 @@ TH1F *hRP; // reaction plane distribution
 TH1F *hPt; // transverse momentum distribution
 TH1F *hPhi; // distribution of particle azimuthal angle with respect to RP 
 TH1F *hPhil; // distribution of particle azimuthal angle in the laboratory coordinate system
-TH1F *hEta; // pseudorapidity
-TH1F *hBimp;// impact parameter
-TH1I *hMult; // emitted multiplicity 
-TH2F *hBimpvsMult; // 2-D histogram impact parameter (y) vs mult (x)
+
 
 TH1F *hpt[npt];
 TH1F *hv2pt[npt];      // dif. v2 distribution in each pT bin from MC toy
@@ -52,14 +55,14 @@ TProfile *hcov42prime[npt]; // <2>*<4'>
 TProfile *hcov44prime[npt]; // <4>*<4'>
 TProfile *hcov2prime4prime[npt]; // <2'>*<4'>
 
-// Double_t cos2phi1=0, sin2phi1=0, cos2phi12=0, sin2phi12=0, cos2phi123=0, sin2phi123=0; // for non-uniform acceptance RF calc
-// Double_t cos2psi1[npt]={0}, sin2psi1[npt]={0}, cos2psi1phi2[npt]={0}, sin2psi1phi2[npt]={0},
-//          cos2psi1pphi23[npt]={0}, sin2psi1pphi23[npt]={0}, cos2psi1mphi23[npt]={0}, sin2psi1mphi23[npt]={0}; // for non-uniform acceptance DF calc
-// Double_t sumM=0, sumMMm1=0, sumMMm1Mm2=0; // for non-uniform acceptance RF calc
-// Double_t summp[npt]={0}, summpMmmq[npt]={0}, summpMm2mqMm1[npt]={0}; // for non-uniform acceptance DF calc
+Double_t cos2phi1=0, sin2phi1=0, cos2phi12=0, sin2phi12=0, cos2phi123=0, sin2phi123=0; // for non-uniform acceptance RF calc
+Double_t cos2psi1[npt]={0}, sin2psi1[npt]={0}, cos2psi1phi2[npt]={0}, sin2psi1phi2[npt]={0},
+         cos2psi1pphi23[npt]={0}, sin2psi1pphi23[npt]={0}, cos2psi1mphi23[npt]={0}, sin2psi1mphi23[npt]={0}; // for non-uniform acceptance DF calc
+Double_t sumM=0, sumMMm1=0, sumMMm1Mm2=0; // for non-uniform acceptance RF calc
+Double_t summp[npt]={0}, summpMmmq[npt]={0}, summpMm2mqMm1[npt]={0}; // for non-uniform acceptance DF calc
 
-// TVectorD vcos2phi1(1), vsin2phi1(1), vcos2phi12(1), vsin2phi12(1), vcos2phi123(1), vsin2phi123(1);
-// TVectorD vcos2psi1(npt), vsin2psi1(npt), vcos2psi1phi2(npt), vsin2psi1phi2(npt), vcos2psi1pphi23(npt), vsin2psi1pphi23(npt), vcos2psi1mphi23(npt), vsin2psi1mphi23(npt);
+TVectorD vcos2phi1(1), vsin2phi1(1), vcos2phi12(1), vsin2phi12(1), vcos2phi123(1), vsin2phi123(1);
+TVectorD vcos2psi1(npt), vsin2psi1(npt), vcos2psi1phi2(npt), vsin2psi1phi2(npt), vcos2psi1pphi23(npt), vsin2psi1pphi23(npt), vcos2psi1mphi23(npt), vsin2psi1mphi23(npt);
 
 
 void hVana::Booking(TString outFile){
@@ -68,14 +71,11 @@ void hVana::Booking(TString outFile){
    d_outfile = new TFile(outFile.Data(),"recreate");
    cout << outFile.Data() << " has been initialized" << endl;
 
-   hMult = new TH1I("hMult", "Multiplicity", 2500, 0, 2500);
-   hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", 2500, 0, 2500, 200, 0., 20.);
-   hBimp = new TH1F("hB","Impact parameter;b (fm);dN/db",200, 0., 20.);
-   hPt   = new TH1F("hPt","Pt-distribution;p_{T} (GeV/c); dN/dP_{T}",500,0.,6.);
-   hRP   = new TH1F("hRP","Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}",300,0.,7.);
-   hPhi  = new TH1F("hPhi","Particle azimuthal angle distribution with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})",300,0.,7.);
+   hPt  = new TH1F("hPt","p_{T}-distribution;GeV/c;dN/dp_{T}",500,0.0,6);
+   hRP  = new TH1F("hRP","Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}",300,0,7);
+   hPhi = new TH1F("hPhi","Particle azimuthal angle distribution with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})",300,0.,7.);
    hPhil = new TH1F("hPhil","Azimuthal angle distribution in laboratory coordinate system; #phi; dN/d#phi",300,0.,7.);
-   hEta  = new TH1F("hEta","Pseudorapidity distribution; #eta; dN/d#eta",300,-2.2,2.2);
+
    hv2 = new TH1F("hv2","v2 distribution;v_{2}",400,-1,1);
    for(int kpt=0; kpt<npt; kpt++){
 
@@ -135,16 +135,10 @@ void hVana::Booking(TString outFile){
 
 void hVana::Loop_a_file(TString file){
    TFile *treefile = TFile::Open(file.Data());
-
    TH1F *hRPtemp   = (TH1F*)treefile->Get("hRP");
    TH1F *hPttemp   = (TH1F*)treefile->Get("hPt");
    TH1F *hPhitemp  = (TH1F*)treefile->Get("hPhi");
    TH1F *hPhiltemp = (TH1F*)treefile->Get("hPhil");
-   TH1I *hMulttemp = (TH1I*)treefile->Get("hMult");
-   TH2F *hBimpvsMulttemp = (TH2F*)treefile->Get("hBimpvsMult");
-   TH1F *hBimptemp = (TH1F*)treefile->Get("hB");
-   TH1F *hEtatemp = (TH1F*)treefile->Get("hEta");
-
    TTree *tree = (TTree*)treefile->Get("htree");
    if(tree == 0) {
       cout << "htree is not found in "<< file << endl;
@@ -159,69 +153,67 @@ void hVana::Loop_a_file(TString file){
    hPt   -> Add(hPttemp);
    hPhi  -> Add(hPhitemp);
    hPhil -> Add(hPhiltemp);
-   hBimp -> Add(hBimptemp);
-   hEta  -> Add(hEtatemp);
-   hMult -> Add(hMulttemp);
-   hBimpvsMult -> Add(hBimpvsMulttemp);
 
    treefile->Close();
    cout << file  <<" file processed"<<endl;
 }
 
 void hVana::Ana_end(){
-   // cos2phi1    /= sumM;
-   // sin2phi1    /= sumM;
-   // cos2phi12   /= sumMMm1;
-   // sin2phi12   /= sumMMm1;
-   // cos2phi123  /= sumMMm1Mm2;
-   // sin2phi123  /= sumMMm1Mm2;
+   cos2phi1    /= sumM;
+   sin2phi1    /= sumM;
+   cos2phi12   /= sumMMm1;
+   sin2phi12   /= sumMMm1;
+   cos2phi123  /= sumMMm1Mm2;
+   sin2phi123  /= sumMMm1Mm2;
 
-   // vcos2phi1(0)   = cos2phi1;
-   // vsin2phi1(0)   = sin2phi1;
-   // vcos2phi12(0)  = cos2phi12;
-   // vsin2phi12(0)  = sin2phi12;
-   // vcos2phi123(0) = cos2phi123;
-   // vsin2phi123(0) = sin2phi123;
+   vcos2phi1(0)   = cos2phi1;
+   vsin2phi1(0)   = sin2phi1;
+   vcos2phi12(0)  = cos2phi12;
+   vsin2phi12(0)  = sin2phi12;
+   vcos2phi123(0) = cos2phi123;
+   vsin2phi123(0) = sin2phi123;
 
-   // for(int i=0; i<npt; i++){
-   //    cos2psi1[i]         /= summp[i];
-   //    sin2psi1[i]         /= summp[i];
-   //    cos2psi1phi2[i]     /= summpMmmq[i];
-   //    sin2psi1phi2[i]     /= summpMmmq[i];
-   //    cos2psi1pphi23[i]   /= summpMm2mqMm1[i];
-   //    sin2psi1pphi23[i]   /= summpMm2mqMm1[i];
-   //    cos2psi1mphi23[i]   /= summpMm2mqMm1[i];
-   //    sin2psi1mphi23[i]   /= summpMm2mqMm1[i];
+   for(int i=0; i<npt; i++){
+      cos2psi1[i]         /= summp[i];
+      sin2psi1[i]         /= summp[i];
+      cos2psi1phi2[i]     /= summpMmmq[i];
+      sin2psi1phi2[i]     /= summpMmmq[i];
+      cos2psi1pphi23[i]   /= summpMm2mqMm1[i];
+      sin2psi1pphi23[i]   /= summpMm2mqMm1[i];
+      cos2psi1mphi23[i]   /= summpMm2mqMm1[i];
+      sin2psi1mphi23[i]   /= summpMm2mqMm1[i];
 
-   //    vcos2psi1(i)         = cos2psi1[i];
-   //    vsin2psi1(i)         = sin2psi1[i];
-   //    vcos2psi1phi2(i)     = cos2psi1phi2[i];
-   //    vsin2psi1phi2(i)     = sin2psi1phi2[i];
-   //    vcos2psi1pphi23(i)   = cos2psi1pphi23[i];
-   //    vsin2psi1pphi23(i)   = sin2psi1pphi23[i];
-   //    vcos2psi1mphi23(i)   = cos2psi1mphi23[i];
-   //    vsin2psi1mphi23(i)   = sin2psi1mphi23[i];
+      vcos2psi1(i)         = cos2psi1[i];
+      vsin2psi1(i)         = sin2psi1[i];
+      vcos2psi1phi2(i)     = cos2psi1phi2[i];
+      vsin2psi1phi2(i)     = sin2psi1phi2[i];
+      vcos2psi1pphi23(i)   = cos2psi1pphi23[i];
+      vsin2psi1pphi23(i)   = sin2psi1pphi23[i];
+      vcos2psi1mphi23(i)   = cos2psi1mphi23[i];
+      vsin2psi1mphi23(i)   = sin2psi1mphi23[i];
 
-   // }
+   }
 
    d_outfile -> cd();
    d_outfile -> Write();
 
-   // vcos2phi1.Write("vcos2phi1");
-   // vsin2phi1.Write("vsin2phi1");
-   // vcos2phi12.Write("vcos2phi12");
-   // vsin2phi12.Write("vsin2phi12");
-   // vcos2phi123.Write("vcos2phi123");
-   // vsin2phi123.Write("vsin2phi123");
+   vcos2phi1.Write("vcos2phi1");
+   vsin2phi1.Write("vsin2phi1");
+   vcos2phi12.Write("vcos2phi12");
+   vsin2phi12.Write("vsin2phi12");
+   vcos2phi123.Write("vcos2phi123");
+   vsin2phi123.Write("vsin2phi123");
 
-   // vcos2psi1.Write("vcos2psi1");
-   // vsin2psi1.Write("vsin2psi1");
-   // vcos2psi1phi2.Write("vcos2psi1phi2");
-   // vsin2psi1phi2.Write("vsin2psi1phi2");
-   // vcos2psi1pphi23.Write("vcos2psi1pphi23");
-   // vsin2psi1pphi23.Write("vsin2psi1pphi23");
-   // vcos2psi1mphi23.Write("vcos2psi1mphi23");
-   // vsin2psi1mphi23.Write("vsin2psi1mphi23");
+
+   vcos2psi1.Write("vcos2psi1");
+   vsin2psi1.Write("vsin2psi1");
+   vcos2psi1phi2.Write("vcos2psi1phi2");
+   vsin2psi1phi2.Write("vsin2psi1phi2");
+   vcos2psi1pphi23.Write("vcos2psi1pphi23");
+   vsin2psi1pphi23.Write("vsin2psi1pphi23");
+   vcos2psi1mphi23.Write("vcos2psi1mphi23");
+   vsin2psi1mphi23.Write("vsin2psi1mphi23");
+
 
    d_outfile -> Close();
    cout << "Histfile has been written" << endl;
@@ -269,6 +261,7 @@ void hVana::Ana_event(){
    Double_t wred2[npt]={0.},wred4[npt]={0.};
    // <2> & <4>
    Double_t cor22 = 0., cor24 = 0.;
+
    for(int i=0;i<nh;i++) { // track loop
       Int_t ipt = 0;
       Float_t pT = pt[i];
@@ -285,14 +278,13 @@ void hVana::Ana_event(){
       }
 
       // calculate integrated v2 from MC toy for RFP
-      if(eta[i]<0.){
-
+      if(pT>=minptRFP && pT<maxptRFP){
          hv2 -> Fill(v2rxn);
          hv2MC -> Fill(0.5,v2rxn,1);
       }      
 
       // RFP
-      if(eta[i]<0.){
+      if(pT>=minptRFP && pT<maxptRFP){
          Qx2+=TMath::Cos(2*phi0[i]);
          Qy2+=TMath::Sin(2*phi0[i]);
          Qx4+=TMath::Cos(4*phi0[i]);
@@ -301,12 +293,21 @@ void hVana::Ana_event(){
       }
 
       // POI
-      if(eta[i]>0.){ // we can also use gap in eta, in this case I use pT region division
+      if(pT>=minptPOI && pT<maxptPOI){ // we can also use gap in eta, in this case I use pT region division
       px2[ipt]+=TMath::Cos(2*phi0[i]);
       py2[ipt]+=TMath::Sin(2*phi0[i]);
       mp[ipt]++;
       }
 
+      // POI + RFP (mq)
+      Bool_t bOverLap = kTRUE; // POI and RFP have overlap zone at bin 
+      if (bOverLap && pT>=minptPOI && pT<maxptPOI){
+      qx2[ipt]+=TMath::Cos(2*phi0[i]);
+      qy2[ipt]+=TMath::Sin(2*phi0[i]);
+      qx4[ipt]+=TMath::Cos(4*phi0[i]);
+      qy4[ipt]+=TMath::Sin(4*phi0[i]);
+      mq[ipt]++;
+      }
    } // end of track loop
    if (M >= 2.){ // <2> definition condition
       Q2 = TComplex(Qx2, Qy2);
@@ -314,10 +315,10 @@ void hVana::Ana_event(){
       cor22 = CalCor22(Q2, M, w2);     // <2>
       hv22 -> Fill(0.5,cor22,w2); // <<2>>
 
-      // // Non-uniform acceptance correction
-      // cos2phi1   += Qx2; // formula (C2)
-      // sin2phi1   += Qy2; // formula (C3)     
-      // sumM += M;
+      // Non-uniform acceptance correction
+      cos2phi1   += Qx2; // formula (C2)
+      sin2phi1   += Qy2; // formula (C3)     
+      sumM += M;
 
       for(int ipt=0; ipt<npt;ipt++){
          if (mp[ipt] == 0) continue;
@@ -330,10 +331,10 @@ void hVana::Ana_event(){
          // TProfile for covariance calculation in statistic error
          hcov22prime[ipt] -> Fill(0.5,cor22*redCor22[ipt],w2*wred2[ipt]);        // <2>*<2'>
 
-         // // Non-uniform acceptance correction
-         // cos2psi1[ipt] += px2[ipt];
-         // sin2psi1[ipt] += py2[ipt];
-         // summp[ipt] += mp[ipt];
+         // Non-uniform acceptance correction
+         cos2psi1[ipt] += px2[ipt];
+         sin2psi1[ipt] += py2[ipt];
+         summp[ipt] += mp[ipt];
       }
    } // end of <2> definition condition
 
@@ -346,16 +347,15 @@ void hVana::Ana_event(){
       // TProfile for covariance calculation in statistic error
       hcov24 -> Fill(0.5,cor22*cor24,w2*w4); // <2>*<4>
 
-      // // Non-uniform acceptance correction
-      // cos2phi12  += (Q2*Q2-Q4).Re();
-      // sin2phi12  += (Q2*Q2-Q4).Im();
-      // cos2phi123 += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Re())
-      //             - 2.*(M-1)*(Qstar(Q2).Re());
-      // sin2phi123 += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Im())
-      //             - 2.*(M-1)*(Qstar(Q2).Im());
-      // sumMMm1 += M*(M-1);
-      // sumMMm1Mm2 += M*(M-1)*(M-2);
-
+      // Non-uniform acceptance correction
+      cos2phi12  += (Q2*Q2-Q4).Re();
+      sin2phi12  += (Q2*Q2-Q4).Im();
+      cos2phi123 += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Re())
+                  - 2.*(M-1)*(Qstar(Q2).Re());
+      sin2phi123 += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Im())
+                  - 2.*(M-1)*(Qstar(Q2).Im());
+      sumMMm1 += M*(M-1);
+      sumMMm1Mm2 += M*(M-1)*(M-2);
       for(int ipt=0; ipt<npt;ipt++){
          if (mp[ipt] == 0) continue;
          q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
@@ -369,16 +369,16 @@ void hVana::Ana_event(){
          hcov44prime[ipt] -> Fill(0.5,cor24*redCor24[ipt],w4*wred4[ipt]);
          hcov2prime4prime[ipt] -> Fill(0.5,redCor22[ipt]*redCor24[ipt],wred2[ipt]*wred4[ipt]);
 
-         // // Non-uniform acceptance correction
-         // cos2psi1phi2[ipt] += (p2[ipt]*Q2-q4[ipt]).Re();
-         // sin2psi1phi2[ipt] += (p2[ipt]*Q2-q4[ipt]).Im();
-         // cos2psi1pphi23[ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Re()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Re());
-         // sin2psi1pphi23[ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Im()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Im());
-         // cos2psi1mphi23[ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Re())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Re());
-         // sin2psi1mphi23[ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Im())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Im());
+         // Non-uniform acceptance correction
+         cos2psi1phi2[ipt] += (p2[ipt]*Q2-q4[ipt]).Re();
+         sin2psi1phi2[ipt] += (p2[ipt]*Q2-q4[ipt]).Im();
+         cos2psi1pphi23[ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Re()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Re());
+         sin2psi1pphi23[ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Im()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Im());
+         cos2psi1mphi23[ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Re())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Re());
+         sin2psi1mphi23[ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Im())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Im());
 
-         // summpMmmq[ipt] += mp[ipt]*M-mq[ipt];
-         // summpMm2mqMm1[ipt] += (mp[ipt]*M-2.*mq[ipt])*(M-1);
+         summpMmmq[ipt] += mp[ipt]*M-mq[ipt];
+         summpMm2mqMm1[ipt] += (mp[ipt]*M-2.*mq[ipt])*(M-1);
       }
    } // end of <4> definition condition
 }
@@ -441,11 +441,45 @@ Double_t hVana::CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
    return coor24/wred4;
 }
 
+// void loop_a_list_of_tree(){
+//    hVana *ana = new hVana();
+//    ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/v2QC_5mil_acc.root");
+   
+//    ifstream ifile("/home/lbavinh/maindir/EventGenerator/OUT/Acceptance/runlist.list");
+//    char filename[200];
+//    int nfiles=1;
+//    while(ifile.getline(filename,200)) {
+//       cout << nfiles <<" file is processing "<<filename <<endl;
+//       ana->Loop_a_file(filename);
+//       nfiles++;
+//    }
+//    cout<< "Done. " << nfiles-1 << " files are processed." << endl;
+//    ana -> Ana_end();
+//    cout << "Histfile written. Congratz!" << endl;
+// }
+
+// void loop_a_list_of_tree(){
+//    hVana *ana = new hVana();
+//    ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/v2QC_5mil_nonflow.root");
+   
+//    ifstream ifile("/home/lbavinh/maindir/EventGenerator/OUT/Non-flow/runlist.list");
+//    char filename[200];
+//    int nfiles=1;
+//    while(ifile.getline(filename,200)) {
+//       cout << nfiles <<" file is processing "<<filename <<endl;
+//       ana->Loop_a_file(filename);
+//       nfiles++;
+//    }
+//    cout<< "Done. " << nfiles-1 << " files are processed." << endl;
+//    ana -> Ana_end();
+//    cout << "Histfile written. Congratz!" << endl;
+// }
+
 void loop_a_list_of_tree(){
    hVana *ana = new hVana();
-   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/v2QC_0.5mil_EtaBimp.root");
+   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/v2QC_5mil_nonflowQuadruplet.root");
    
-   ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/FlowPureEtaBimp/runlist.list");
+   ifstream ifile("/home/lbavinh/maindir/EventGenerator/OUT/Non-flowQuadruplet/runlist.list");
    char filename[200];
    int nfiles=1;
    while(ifile.getline(filename,200)) {
@@ -457,3 +491,20 @@ void loop_a_list_of_tree(){
    ana -> Ana_end();
    cout << "Histfile written. Congratz!" << endl;
 }
+
+// void loop_a_list_of_tree(){
+//    hVana *ana = new hVana();
+//    ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/v2QC_5mil_pureflow.root");
+   
+//    ifstream ifile("/home/lbavinh/maindir/EventGenerator/OUT/FlowPure/runlist.list");
+//    char filename[200];
+//    int nfiles=1;
+//    while(ifile.getline(filename,200)) {
+//       cout << nfiles <<" file is processing "<<filename <<endl;
+//       ana->Loop_a_file(filename);
+//       nfiles++;
+//    }
+//    cout<< "Done. " << nfiles-1 << " files are processed." << endl;
+//    ana -> Ana_end();
+//    cout << "Histfile written. Congratz!" << endl;
+// }

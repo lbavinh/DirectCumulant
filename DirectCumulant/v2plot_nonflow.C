@@ -15,8 +15,8 @@ void Cosmetics(Int_t &wtopx, Int_t &wtopy, Int_t &ww, Int_t &wh ){
   // (if wtopx < 0) the menubar is not shown)
   wtopx = 200;
   wtopy = 10;
-  ww = 1920; // is the canvas size in pixels along X 
-  wh = 1080; // is the canvas size in pixels along Y
+  ww = 800; // is the canvas size in pixels along X 
+  wh = 600; // is the canvas size in pixels along Y
 }
 
 Double_t sx(TProfile *pr){ // Unbiased estimator for the root of variance (C.3)
@@ -60,7 +60,7 @@ Double_t Sumwxwy(TProfile *prxy){
 
 void plot(TString inFile)
 {
-  static const Double_t maxptRFP = 1.0; // max pt of RFP
+  static const Double_t maxptRFP = 3.5; // max pt of RFP
   static const Double_t minptRFP = 0.2; // min pt of RFP
   const int npt = 24; // number of pT bin
 
@@ -115,24 +115,6 @@ void plot(TString inFile)
   err = rms/sqrt(nent);
   v2intE = err;
   
-  /* // Standard error on the mean
-  pr = (TProfile*) file->Get("hv22");
-  cor2 = pr->GetBinContent(1);
-  cor2E = pr->GetBinError(1);
-  c22 = cor2;
-  c22E = cor2E;
-  v22int = sqrt(c22);
-  v22intE = 0.5*pow(c22,-0.5)*c22E;
-
-  pr = (TProfile*) file->Get("hv24");
-  cor4 = pr->GetBinContent(1);
-  cor4E = pr->GetBinError(1);
-  c24 = cor4-2*cor2*cor2;
-  c24E = sqrt(cor4E*cor4E+pow(4*cor2*cor2E,2));
-  v24int = pow(-c24,0.25);
-  v24intE = 0.25*pow(-c24,-0.75)*c24E;
-  */
-
   // https://en.wikipedia.org/wiki/Weighted_arithmetic_mean // Weighted sample variance // Reliability weights
   // Bilandzic, A. (2012). Anisotropic flow measurements in ALICE at the large hadron collider. 
   // Appendix C
@@ -153,7 +135,6 @@ void plot(TString inFile)
   sumwcor2 = stats[0];
   sumw2cor2 = stats[1];
   v22intE = 0.5*pow(cor2,-0.5)*sqrt(sumw2cor2)/sumwcor2*cor2E;
-
 
   // v2{4,QC}
   pr = (TProfile*) file->Get("hv24");
@@ -193,8 +174,8 @@ void plot(TString inFile)
   v2compareE[2]=v24intE;
 
   auto c2 = new TCanvas("c2","Integrated flow result",wtopx,wtopy,ww,wh);
-  Double_t ymin2=v2int-v2intE*10;
-  Double_t ymax2=v2int+v2intE*750;
+  Double_t ymin2 = TMath::MinElement(3,v2compare)*0.95;
+  Double_t ymax2 = TMath::MaxElement(3,v2compare)*1.05;
   TH2F *hr3 = new TH2F("hr3","Integrated elliptic flow result", 3,0,3,10,ymin2,ymax2);
   hr3->SetYTitle("v_{n}");
   // Set name of methods on X axis
@@ -411,10 +392,10 @@ void plot(TString inFile)
   
   auto c1 = new TCanvas("c1","Flow analysis results",wtopx,wtopy,ww,wh);
     
-  Double_t xmin1=maxptRFP;
+  Double_t xmin1=0.2;
   Double_t xmax1=3.5;
-  Double_t ymin1=0.1;
-  Double_t ymax1=0.25;
+  Double_t ymin1=0.;
+  Double_t ymax1=0.3;
 
 
   TH2F *hr2 = new TH2F("hr2","Differential elliptic flow: non-flow suppression;p_{T}, GeV/c;v_{n}", 2,xmin1,xmax1,2,ymin1,ymax1);
@@ -430,8 +411,8 @@ void plot(TString inFile)
 
   Double_t hptv22[npt], hptv24[npt];
   for (int i=0; i<npt; i++) {
-    hptv22[i]=hpt[i]+0.007;
-    hptv24[i]=hpt[i]-0.007;
+    hptv22[i]=hpt[i]+0.01;
+    hptv24[i]=hpt[i]-0.01;
   }
 
   auto gr2 = new TGraphErrors(npt,hptv22,v22dif,hpte,v22difE);

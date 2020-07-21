@@ -194,7 +194,7 @@ void hTana::ana_end() {
 
 void hTana::book_hist(TString outfile) {
   // read input TFile
-  d_infile = new TFile("merge_hist_glaub_200gev.root", "read"); // /mnt/pool/2/lbavinh/EventGenerator/ /mnt/pool/nica/6/parfenovpeter/CentralityGlauber/
+  d_infile = new TFile("/mnt/pool/2/lbavinh/EventGenerator/merge_hist_glaub_200gev.root", "read"); // /mnt/pool/2/lbavinh/EventGenerator/ /mnt/pool/nica/6/parfenovpeter/CentralityGlauber/
   hBimp = (TH1F *)d_infile->Get("hBimp");
   hNpart = (TH1I *)d_infile->Get("hNpart");
   hNcoll = (TH1I *)d_infile->Get("hNcoll");
@@ -208,7 +208,7 @@ void hTana::book_hist(TString outfile) {
 
   htree->Branch("rp",&d_rp,"rp/F");
   htree->Branch("nh",&d_nh,"nh/I");
-  htree->Branch("b",&d_b,"b/I");
+  htree->Branch("b",&d_b,"b/F");
   htree->Branch("pt",&d_pt,"pt[nh]/F");
   htree->Branch("phi0",&d_phi0,"phi0[nh]/F");
   htree->Branch("eta",&d_eta,"eta[nh]/F");

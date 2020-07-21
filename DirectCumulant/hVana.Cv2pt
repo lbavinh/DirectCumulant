@@ -1,6 +1,5 @@
 #define hVana_cxx
 #include "hVana.h"
-#include "function.C"
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
@@ -69,8 +68,8 @@ void hVana::Booking(TString outFile){
    d_outfile = new TFile(outFile.Data(),"recreate");
    cout << outFile.Data() << " has been initialized" << endl;
 
-   hMult = new TH1I("hMult", "Multiplicity;N_{ch};dN/dN_{ch}", 1500, 0, 1500);
-   hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", 1500, 0, 1500, 200, 0., 20.);
+   hMult = new TH1I("hMult", "Multiplicity", 2500, 0, 2500);
+   hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", 2500, 0, 2500, 200, 0., 20.);
    hBimp = new TH1F("hB","Impact parameter;b (fm);dN/db",200, 0., 20.);
    hPt   = new TH1F("hPt","Pt-distribution;p_{T} (GeV/c); dN/dP_{T}",500,0.,6.);
    hRP   = new TH1F("hRP","Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}",300,0.,7.);
@@ -136,6 +135,16 @@ void hVana::Booking(TString outFile){
 
 void hVana::Loop_a_file(TString file){
    TFile *treefile = TFile::Open(file.Data());
+
+   TH1F *hRPtemp   = (TH1F*)treefile->Get("hRP");
+   TH1F *hPttemp   = (TH1F*)treefile->Get("hPt");
+   TH1F *hPhitemp  = (TH1F*)treefile->Get("hPhi");
+   TH1F *hPhiltemp = (TH1F*)treefile->Get("hPhil");
+   TH1I *hMulttemp = (TH1I*)treefile->Get("hMult");
+   TH2F *hBimpvsMulttemp = (TH2F*)treefile->Get("hBimpvsMult");
+   TH1F *hBimptemp = (TH1F*)treefile->Get("hB");
+   TH1F *hEtatemp = (TH1F*)treefile->Get("hEta");
+
    TTree *tree = (TTree*)treefile->Get("htree");
    if(tree == 0) {
       cout << "htree is not found in "<< file << endl;
@@ -145,6 +154,16 @@ void hVana::Loop_a_file(TString file){
    cout << file << " is opened" << endl;
    Init(tree);
    Loop();
+
+   hRP   -> Add(hRPtemp);
+   hPt   -> Add(hPttemp);
+   hPhi  -> Add(hPhitemp);
+   hPhil -> Add(hPhiltemp);
+   hBimp -> Add(hBimptemp);
+   hEta  -> Add(hEtatemp);
+   hMult -> Add(hMulttemp);
+   hBimpvsMult -> Add(hBimpvsMulttemp);
+
    treefile->Close();
    cout << file  <<" file processed"<<endl;
 }
@@ -226,10 +245,6 @@ void hVana::Loop()
 }
 
 void hVana::Ana_event(){
-   hMult -> Fill(nh);
-   hRP -> Fill(rp);
-   hBimp -> Fill(b);
-   hBimpvsMult -> Fill(nh,b);
    // notation as (26) in DOI:10.1103/PhysRevC.83.044913
 
    // Q-vector of RFP
@@ -255,22 +270,13 @@ void hVana::Ana_event(){
    // <2> & <4>
    Double_t cor22 = 0., cor24 = 0.;
    for(int i=0;i<nh;i++) { // track loop
-      hPhi -> Fill(phi0[i]-rp);
-      hPhil -> Fill(phi0[i]);
-      hEta -> Fill(eta[i]);
-      
       Int_t ipt = 0;
       Float_t pT = pt[i];
-      hPt -> Fill(pT);
       for(int j=0; j<npt;j++){
          if(pT>=bin_pT[j] && pT<bin_pT[j+1]) ipt = j;
       }
 
       Double_t v2rxn = TMath::Cos(2*(phi0[i] - rp));
-
-      // calculate integrated v2 from MC toy for RFP
-      hv2 -> Fill(v2rxn);
-      hv2MC -> Fill(0.5,v2rxn,1);
 
       // calculate differential v2 from MC toy
       if(pT>=minpt && pT<maxpt){
@@ -278,8 +284,15 @@ void hVana::Ana_event(){
          hv2pt[ipt]->Fill(v2rxn);
       }
 
+      // calculate integrated v2 from MC toy for RFP
+      if(eta[i]<0.){
+
+         hv2 -> Fill(v2rxn);
+         hv2MC -> Fill(0.5,v2rxn,1);
+      }      
+
       // RFP
-      if(eta[i]<0){
+      if(eta[i]<0.){
          Qx2+=TMath::Cos(2*phi0[i]);
          Qy2+=TMath::Sin(2*phi0[i]);
          Qx4+=TMath::Cos(4*phi0[i]);
@@ -288,7 +301,7 @@ void hVana::Ana_event(){
       }
 
       // POI
-      if(eta[i]>=0){
+      if(eta[i]>0.){ // we can also use gap in eta, in this case I use pT region division
       px2[ipt]+=TMath::Cos(2*phi0[i]);
       py2[ipt]+=TMath::Sin(2*phi0[i]);
       mp[ipt]++;
@@ -430,7 +443,8 @@ Double_t hVana::CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
 
 void loop_a_list_of_tree(){
    hVana *ana = new hVana();
-   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/v2QC_5mil_v2pt.root");
+   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/v2QC_5mil_EtaBimp.root");
+   
    ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/FlowPureEtaBimp/runlist.list");
    char filename[200];
    int nfiles=1;

@@ -177,10 +177,10 @@ static const Float_t minetaPOI = 0.9; // min pt of POI
   v2compare[2]=v24int;
   v2compareE[2]=v24intE;
 
-  auto c2 = new TCanvas("c2","Integrated flow result",wtopx,wtopy,ww,wh);
+  auto c2 = new TCanvas("c2","flow result",wtopx,wtopy,ww,wh);
   Double_t ymin2 = TMath::MinElement(3,v2compare)*0.98;
   Double_t ymax2 = TMath::MaxElement(3,v2compare) + TMath::MaxElement(3,v2compareE)*1.1;
-  TH2F *hr3 = new TH2F("hr3","Integrated elliptic flow", 3,0,3,10,ymin2,ymax2);
+  TH2F *hr3 = new TH2F("hr3","Reference elliptic flow", 3,0,3,10,ymin2,ymax2);
   hr3->SetYTitle("v_{n}");
   // Set name of methods on X axis
   hr3->SetCanExtend(TH1::kAllAxes);
@@ -210,7 +210,7 @@ static const Float_t minetaPOI = 0.9; // min pt of POI
 
   // TLatex shows pT range of RFP
   char text2[800];
-  sprintf(text2,"#splitline{no non-flow contribution}{#splitline{& uniform acceptance}{#splitline{MultMean=250}{#splitline{5#upoint10^{5} events}{#splitline{RFP: #eta<0}{POI: #eta>0}}}}}");
+  sprintf(text2,"#splitline{MultMean=250}{#splitline{5#upoint10^{6} events}{#splitline{RFP: #eta<0}{POI: #eta>0}}}");
   Double_t ylatex = ymax2*0.985;
   Double_t xlatex = 0.1;
   TLatex *latex = new TLatex(xlatex,ylatex,text2);
@@ -219,17 +219,17 @@ static const Float_t minetaPOI = 0.9; // min pt of POI
   latex -> SetTextAlign(13);
   latex -> Draw();
 
-  ofstream ofile2("v2int.txt");
-  ofile2 << "v2";
-  for(int i=0; i<3; i++){
-  ofile2 << "\t" << v2compare[i];
-  }
-  ofile2 << endl;
-  ofile2 << "E(v2)";
-  for(int i=0; i<3; i++){
-  ofile2 << "\t" << v2compareE[i];
-  }
-  ofile2 << endl;
+  // ofstream ofile2("v2int.txt");
+  // ofile2 << "v2";
+  // for(int i=0; i<3; i++){
+  // ofile2 << "\t" << v2compare[i];
+  // }
+  // ofile2 << endl;
+  // ofile2 << "E(v2)";
+  // for(int i=0; i<3; i++){
+  // ofile2 << "\t" << v2compareE[i];
+  // }
+  // ofile2 << endl;
 
   //==========================================================================================================================
 
@@ -417,8 +417,8 @@ static const Float_t minetaPOI = 0.9; // min pt of POI
 
   Double_t hptv22[npt], hptv24[npt];
   for (int i=0; i<npt; i++) {
-    hptv22[i]=hpt[i]+0.007;
-    hptv24[i]=hpt[i]-0.007;
+    hptv22[i]=hpt[i]+0;
+    hptv24[i]=hpt[i]-0;
   }
 
   auto gr2 = new TGraphErrors(npt,hptv22,v22dif,hpte,v22difE);
@@ -450,17 +450,18 @@ static const Float_t minetaPOI = 0.9; // min pt of POI
   //latex2 -> SetTextAlign(13);
   latex2 -> Draw();
 
-  ofstream ofile("v2pt.txt");
-  ofile.precision(5);
-  ofile << "pT" << "\t\t\tv2(MC)" << "\t\t\tE(v2(MC))" << "\t\t\tv2{2}"
-        << "\t\t\tE(v2{2})" << "\t\t\tv2{4}" << "\t\t\tE(v2{4})" << endl;
-  for(int i=0; i<npt; i++){
-    ofile << std::setprecision(5) << hpt[i] << "\t\t\t" << v2[i] << "\t\t\t" << v2e[i]
-          << "\t\t\t" << v22dif[i] << "\t\t\t" << v22difE[i]
-          << "\t\t\t" << v24dif[i] << "\t\t\t" << v24difE[i] << endl;
-  }
+  // ofstream ofile("v2pt.txt");
+  // ofile.precision(5);
+  // ofile << "pT" << "\t\t\tv2(MC)" << "\t\t\tE(v2(MC))" << "\t\t\tv2{2}"
+  //       << "\t\t\tE(v2{2})" << "\t\t\tv2{4}" << "\t\t\tE(v2{4})" << endl;
+  // for(int i=0; i<npt; i++){
+  //   ofile << std::setprecision(5) << hpt[i] << "\t\t\t" << v2[i] << "\t\t\t" << v2e[i]
+  //         << "\t\t\t" << v22dif[i] << "\t\t\t" << v22difE[i]
+  //         << "\t\t\t" << v24dif[i] << "\t\t\t" << v24difE[i] << endl;
+  // }
 }
 
-void v2plot_stat_error_EtaBimp(){
-  plot("v2QC_1mil_EtaBimp.root");
+void v2plot_v2pt(){
+  plot("v2QC_5mil_v2pt.root");
+  //plot("v2QC_5mil_v2pt_RFP_eta_-2_1.5.root");
 }

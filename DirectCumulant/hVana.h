@@ -26,10 +26,10 @@ public :
    // Declaration of leaf types
    Float_t         rp;
    Int_t           nh;
-   Int_t           b;
-   Float_t         pt[1256];   //[nh]
-   Float_t         phi0[1256];   //[nh]
-   Float_t         eta[1256];   //[nh]
+   Float_t         b;
+   Float_t         pt[1500];   //[nh]
+   Float_t         phi0[1500];   //[nh]
+   Float_t         eta[1500];   //[nh]
 
    // List of branches
    TBranch        *b_rp;   //!

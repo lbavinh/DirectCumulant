@@ -21,7 +21,7 @@ static const float maxpt = 3.5; // max pt
 static const float minpt = 0.2; // min pt
 
 static const float maxptRFP = 3.5; // max pt of RFP
-static const float minptRFP = 1.5; // min pt of RFP
+static const float minptRFP = 0.2; // min pt of RFP
 
 TFile *d_outfile;      // out file with histograms and profiles
 
@@ -212,9 +212,9 @@ void loop_a_list_of_tree(){
 */
 void loop_a_list_of_tree(){
    hVana *ana = new hVana();
-   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/v2QC_5mil_pureflow_RF_1.5-3.5.root");
+   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC_5mil_RF.root");
    
-   ifstream ifile("/home/lbavinh/maindir/EventGenerator/OUT/FlowPure/runlist.list");
+   ifstream ifile("/home/lbavinh/maindir/EventGenerator/OUT/FlowPureEtaBimp/runlist.list");
    char filename[200];
    int nfiles=1;
    while(ifile.getline(filename,200)) {

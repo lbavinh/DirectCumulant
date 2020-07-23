@@ -36,14 +36,14 @@ TH1I *hMult; // emitted multiplicity
 TH2F *hBimpvsMult; // 2-D histogram impact parameter (y) vs mult (x)
 
 
-TProfile *hv2MC[ncent];       // profile for MC integrated v2
-TProfile *hv22[ncent];        // profile <<2>> from 2nd Q-Cumulants
-TProfile *hv24[ncent];        // profile <<4>> from 4th Q-Cumulants
+TProfile *hv2MC;       // profile for MC integrated v2
+TProfile *hv22;        // profile <<2>> from 2nd Q-Cumulants
+TProfile *hv24;        // profile <<4>> from 4th Q-Cumulants
 
 // TProfile for covariance calculation according to (C.12)
 // Bilandzic, A. (2012). Anisotropic flow measurements in ALICE at the large hadron collider. 
 // Appendix C
-TProfile *hcov24[ncent];       // <2>*<4>
+TProfile *hcov24;       // <2>*<4>
 
 void hVana::Booking(TString outFile){
    char name[800];
@@ -60,24 +60,24 @@ void hVana::Booking(TString outFile){
    hPhil = new TH1F("hPhil","Azimuthal angle distribution in laboratory coordinate system; #phi; dN/d#phi",300,0.,7.);
    hEta  = new TH1F("hEta","Pseudorapidity distribution; #eta; dN/d#eta",300,-2.2,2.2);
 
-   for (int icent=0; icent<ncent; icent++){
-      sprintf(name,"hv2MC_%d",icent);
-      sprintf(title,"v_{2}(cent), cent=%d-%d %%",bin_cent[icent]-5,bin_cent[icent]+5);
-      hv2MC[icent] = new TProfile(name,title,1,0.,1.);
-      hv2MC[icent]->Sumw2();
-      sprintf(name,"hv22_%d",icent);
-      sprintf(title,"v_{2}{2}(cent), cent=%d-%d %%",bin_cent[icent]-5,bin_cent[icent]+5);
-      hv22[icent] = new TProfile(name,title,1,0.,1.);
-      hv22[icent]->Sumw2();
-      sprintf(name,"hv24_%d",icent);
-      sprintf(title,"v_{2}{4}(cent), cent=%d-%d %%",bin_cent[icent]-5,bin_cent[icent]+5);
-      hv24[icent] = new TProfile(name,title,1,0.,1.);
-      hv24[icent]->Sumw2();
-      sprintf(name,"hcov24_%d",icent);
-      sprintf(title,"<2>#upoint<4> distribution, cent=%d-%d %%",bin_cent[icent]-5,bin_cent[icent]+5);
-      hcov24[icent] = new TProfile(name,title,1,0.,1.);
-      hcov24[icent]->Sumw2();        
-   }
+   // for (int icent=0; icent<ncent; icent++){
+      sprintf(name,"hv2MC");
+      sprintf(title,"v_{2}(cent)");
+      hv2MC = new TProfile(name,title,1,0.,1.);
+      hv2MC->Sumw2();
+      sprintf(name,"hv22");
+      sprintf(title,"v_{2}{2}(cent)");
+      hv22 = new TProfile(name,title,1,0.,1.);
+      hv22->Sumw2();
+      sprintf(name,"hv24");
+      sprintf(title,"v_{2}{4}(cent)");
+      hv24 = new TProfile(name,title,1,0.,1.);
+      hv24->Sumw2();
+      sprintf(name,"hcov24");
+      sprintf(title,"<2>#upoint<4> distribution");
+      hcov24 = new TProfile(name,title,1,0.,1.);
+      hcov24->Sumw2();        
+   // }
    cout << "Histograms have been initialized" << endl;
 }
 
@@ -122,16 +122,12 @@ void hVana::Loop()
 }
 
 void hVana::Ana_event(){
+   
 
    hMult -> Fill(nh);
    hRP -> Fill(rp);
    hBimp -> Fill(b);
-   int icent=-1;
-   for (int i=0; i<ncent; i++){ // loop over centrality
-      if (CentB(b) == bin_cent[i]) {icent = i; cout << "true" << endl;}
-   }
-   
-   if (icent<0) return;
+
    // notation as (26) in DOI:10.1103/PhysRevC.83.044913
    // Q-vector of RFP
    Double_t Qx2=0, Qy2=0, Qx4=0, Qy4=0;
@@ -145,7 +141,7 @@ void hVana::Ana_event(){
       hPt -> Fill(pt[i]);
       Double_t v2 = TMath::Cos(2*(phi0[i] - rp));
 
-      hv2MC[icent] -> Fill(0.5,v2,1);
+      hv2MC -> Fill(0.5,v2,1);
 
       Qx2+=TMath::Cos(2*phi0[i]);
       Qy2+=TMath::Sin(2*phi0[i]);
@@ -159,7 +155,7 @@ void hVana::Ana_event(){
       Q2 = TComplex(Qx2, Qy2);
       w2 = M*(M-1);                             // w(<2>)
       cor22 = CalCor22(Q2, M, w2);     // <2>
-      hv22[icent] -> Fill(0.5,cor22,w2); // <<2>>
+      hv22 -> Fill(0.5,cor22,w2); // <<2>>
 
    } // end of <2> definition condition
 
@@ -167,10 +163,10 @@ void hVana::Ana_event(){
       Q4 = TComplex(Qx4, Qy4);                                   
       w4 = M*(M-1)*(M-2)*(M-3);                             // w(<4>)
       cor24 = CalCor24(Q2, Q4, M, w4); // <4>
-      hv24[icent] -> Fill(0.5,cor24,w4); // <<4>>
+      hv24 -> Fill(0.5,cor24,w4); // <<4>>
 
       // TProfile for covariance calculation in statistic error
-      hcov24[icent] -> Fill(0.5,cor22*cor24,w2*w4); // <2>*<4>
+      hcov24 -> Fill(0.5,cor22*cor24,w2*w4); // <2>*<4>
 
    } // end of <4> definition condition
 
@@ -234,19 +230,36 @@ Double_t hVana::CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
    return coor24/wred4;
 }
 
+// void loop_a_list_of_tree(){
+//    hVana *ana = new hVana();
+//    ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC_5mil_v2_cent10-60.root");
+   
+//    ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/FlowPureEtaBimp/runlist.list");
+//    char filename[200];
+//    int nfiles=1;
+//    while(ifile.getline(filename,200)) {
+//       cout << nfiles <<" file is processing "<<filename <<endl;
+//       ana->Loop_a_file(filename);
+//       nfiles++;
+//    }
+//    cout<< "Done. " << nfiles-1 << " files are processed." << endl;
+//    ana -> Ana_end();
+//    cout << "Histfile written. Congratz!" << endl;
+// }
+
 void loop_a_list_of_tree(){
    hVana *ana = new hVana();
-   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC_5mil_v2cent.root");
-   
-   ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/FlowPureEtaBimp/runlist.list");
-   char filename[200];
-   int nfiles=1;
-   while(ifile.getline(filename,200)) {
-      cout << nfiles <<" file is processing "<<filename <<endl;
-      ana->Loop_a_file(filename);
-      nfiles++;
-   }
-   cout<< "Done. " << nfiles-1 << " files are processed." << endl;
+   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC_5mil_v2_cent10-60.root");
+   ana->Loop_a_file("/mnt/pool/2/lbavinh/EventGenerator/OUT/FlowPureEtaBimp/v2hadron_1.root");
+   // ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/FlowPureEtaBimp/runlist.list");
+   // char filename[200];
+   // int nfiles=1;
+   // while(ifile.getline(filename,200)) {
+   //    cout << nfiles <<" file is processing "<<filename <<endl;
+   //    ana->Loop_a_file(filename);
+   //    nfiles++;
+   // }
+   // cout<< "Done. " << nfiles-1 << " files are processed." << endl;
    ana -> Ana_end();
    cout << "Histfile written. Congratz!" << endl;
 }

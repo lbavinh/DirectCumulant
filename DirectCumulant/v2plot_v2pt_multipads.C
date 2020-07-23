@@ -3,9 +3,10 @@
 #include "TH2.h"
 #include "TGraph.h"
 #include "TGraphErrors.h"
+#include "TMultiGraph.h"
 #include "TLegend.h"
 #include "TFrame.h"
-
+TLegend *leg;
 using namespace std;
 #include <fstream>
 void Cosmetics(Int_t &wtopx, Int_t &wtopy, Int_t &ww, Int_t &wh ){
@@ -58,9 +59,11 @@ Double_t Sumwxwy(TProfile *prxy){
   return temp;
 }
 
-void plot(TString inFile)
+TMultiGraph* MultiGraph(TString inFile)
 {
   const int npt = 24; // number of pT bin
+  Float_t markerSize = 1;
+
 
   Int_t wtopx, wtopy, ww, wh;
   Cosmetics(wtopx, wtopy, ww, wh);
@@ -168,59 +171,47 @@ void plot(TString inFile)
   v2compare[2]=v24int;
   v2compareE[2]=v24intE;
 
-  auto c2 = new TCanvas("c2","flow result",wtopx,wtopy,ww,wh);
-  Double_t ymin2 = TMath::MinElement(3,v2compare)*0.98;
-  Double_t ymax2 = TMath::MaxElement(3,v2compare) + TMath::MaxElement(3,v2compareE)*1.1;
-  TH2F *hr3 = new TH2F("hr3","Reference elliptic flow", 3,0,3,10,ymin2,ymax2);
-  hr3->SetYTitle("v_{n}");
-  // Set name of methods on X axis
-  hr3->SetCanExtend(TH1::kAllAxes);
-  const char *method[3]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}"};
-  TAxis* a = hr3 -> GetXaxis();
-  hr3 -> Fill(method[0],(ymin2+ymax2)/2,1);
-  hr3 -> Fill(method[1],(ymin2+ymax2)/2,1);
-  hr3 -> Fill(method[2],(ymin2+ymax2)/2,1);
-  hr3->GetXaxis()->SetLabelSize(0.05);
-  a->SetNdivisions(300); // 3 division, 0 sub-division
-  hr3->Draw();
+  // auto c2 = new TCanvas("c2","flow result",wtopx,wtopy,ww,wh);
+  // Double_t ymin2 = TMath::MinElement(3,v2compare)*0.98;
+  // Double_t ymax2 = TMath::MaxElement(3,v2compare) + TMath::MaxElement(3,v2compareE)*1.1;
+  // TH2F *hr3 = new TH2F("hr3","Reference elliptic flow", 3,0,3,10,ymin2,ymax2);
+  // hr3->SetYTitle("v_{n}");
+  // // Set name of methods on X axis
+  // hr3->SetCanExtend(TH1::kAllAxes);
+  // const char *method[3]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}"};
+  // TAxis* a = hr3 -> GetXaxis();
+  // hr3 -> Fill(method[0],(ymin2+ymax2)/2,1);
+  // hr3 -> Fill(method[1],(ymin2+ymax2)/2,1);
+  // hr3 -> Fill(method[2],(ymin2+ymax2)/2,1);
+  // hr3->GetXaxis()->SetLabelSize(0.05);
+  // a->SetNdivisions(300); // 3 division, 0 sub-division
+  // hr3->Draw();
 
-  // Set a shade between error of v_{2}{MC}
-  TGraph *grshade = new TGraph(8);
-  for (Int_t i=0; i<4; i++) {
-    grshade->SetPoint(i,i+0.005,v2compare[0]+v2compareE[0]);
-    grshade->SetPoint(4+i,3+0.005-i,v2compare[0]-v2compareE[0]);
-  }
-  grshade -> SetFillStyle(1001);
-  grshade -> SetFillColor(18);
-  grshade -> Draw("f");
-  auto gr4 = new TGraphErrors(3,x,v2compare,xE,v2compareE);
-  gr4->SetMarkerColor(kRed);
-  gr4->SetMarkerStyle(20);
-  gr4->SetMarkerSize(1.3);
-  gr4->Draw("P");
-
-  // TLatex shows pT range of RFP
-  char text2[800];
-  sprintf(text2,"#splitline{MultMean=250}{#splitline{5#upoint10^{6} events}{#splitline{RFP: #eta<0}{POI: #eta>0}}}");
-  Double_t ylatex = ymax2*0.985;
-  Double_t xlatex = 0.1;
-  TLatex *latex = new TLatex(xlatex,ylatex,text2);
-  latex -> SetTextFont(62);
-  latex -> SetTextSize(0.04);
-  latex -> SetTextAlign(13);
-  latex -> Draw();
-
-  // ofstream ofile2("v2int.txt");
-  // ofile2 << "v2";
-  // for(int i=0; i<3; i++){
-  // ofile2 << "\t" << v2compare[i];
+  // // Set a shade between error of v_{2}{MC}
+  // TGraph *grshade = new TGraph(8);
+  // for (Int_t i=0; i<4; i++) {
+  //   grshade->SetPoint(i,i+0.005,v2compare[0]+v2compareE[0]);
+  //   grshade->SetPoint(4+i,3+0.005-i,v2compare[0]-v2compareE[0]);
   // }
-  // ofile2 << endl;
-  // ofile2 << "E(v2)";
-  // for(int i=0; i<3; i++){
-  // ofile2 << "\t" << v2compareE[i];
-  // }
-  // ofile2 << endl;
+  // grshade -> SetFillStyle(1001);
+  // grshade -> SetFillColor(18);
+  // grshade -> Draw("f");
+  // auto gr4 = new TGraphErrors(3,x,v2compare,xE,v2compareE);
+  // gr4->SetMarkerColor(kRed);
+  // gr4->SetMarkerStyle(20);
+  // gr4->SetMarkerSize(1.3);
+  // gr4->Draw("P");
+
+  // // TLatex shows pT range of RFP
+  // char text2[800];
+  // sprintf(text2,"#splitline{MultMean=250}{#splitline{5#upoint10^{6} events}{#splitline{RFP: #eta<0}{POI: #eta>0}}}");
+  // Double_t ylatex = ymax2*0.985;
+  // Double_t xlatex = 0.1;
+  // TLatex *latex = new TLatex(xlatex,ylatex,text2);
+  // latex -> SetTextFont(62);
+  // latex -> SetTextSize(0.04);
+  // latex -> SetTextAlign(13);
+  // latex -> Draw();
 
   //==========================================================================================================================
 
@@ -236,7 +227,7 @@ void plot(TString inFile)
     sprintf(hname,"hpt_%i",i);
     TH1F *h = (TH1F*) file->Get(hname);
     hpt[i]= h->GetMean();
-    hpte[i] = 0.001;
+    hpte[i] = 0.0;
     // cout << hpt[i] << endl;
 
     sprintf(hname,"hv2pt_%i",i);
@@ -387,101 +378,123 @@ void plot(TString inFile)
     v24difE[i] = sqrt(v24difE[i]);
   } // end of loop for all pT bin
   
-  auto c1 = new TCanvas("c1","Flow analysis results",wtopx,wtopy,ww,wh);
     
-  Double_t xmin1=0.2;
-  Double_t xmax1=3.5;
-  Double_t ymin1=0.;
-  Double_t ymax1=0.35;
 
-
-  TH2F *hr2 = new TH2F("hr2","Differential elliptic flow;p_{T}, GeV/c;v_{n}", 2,xmin1,xmax1,2,ymin1,ymax1);
-  
-  hr2->Draw();
   
   auto gr1 = new TGraphErrors(npt,hpt,v2,hpte,v2e);
-  gr1->SetMarkerColor(kRed);
-  gr1->SetMarkerStyle(20);
+  gr1->SetMarkerColor(kRed+1);
+  gr1->SetMarkerStyle(25);
   gr1->SetMarkerSize(1.3);
-  //gr1->SetLineWidth(2);
-  gr1->Draw("P");
+  gr1->SetDrawOption("P");
 
   Double_t hptv22[npt], hptv24[npt];
   for (int i=0; i<npt; i++) {
-    hptv22[i]=hpt[i]+0;
-    hptv24[i]=hpt[i]-0;
+    hptv22[i]=hpt[i]+0.;
+    hptv24[i]=hpt[i]-0.;
   }
 
   auto gr2 = new TGraphErrors(npt,hptv22,v22dif,hpte,v22difE);
-  gr2->SetMarkerColor(kBlue);
-  gr2->SetMarkerStyle(21);
+  gr2->SetMarkerColor(kGreen+1);
+  gr2->SetMarkerStyle(20);
   gr2->SetMarkerSize(1.3);
-  gr2->Draw("P");
-  //gr2->SetLineWidth(2);
+  gr2->SetDrawOption("P");
 
   auto gr3 = new TGraphErrors(npt,hptv24,v24dif,hpte,v24difE);
-  gr3->SetMarkerColor(kGreen);
+  gr3->SetMarkerColor(kAzure+2);
   gr3->SetMarkerStyle(22);
   gr3->SetMarkerSize(1.3);
-  //gr3->SetLineWidth(2);
-  gr3->Draw("P");
+  gr3->SetDrawOption("P");
 
-  TLegend *leg = new TLegend(0.15,.7,0.4,.87);
-  leg -> AddEntry(gr1,"V_{2} [Gen]","lp");
-  leg -> AddEntry(gr2,"V_{2}{2,QC}","lp");
-  leg -> AddEntry(gr3,"V_{2}{4,QC}","lp");
+  leg = new TLegend(0.11,.89,0.4,.78);
+  leg -> AddEntry(gr1,"V_{2} [Gen]","p");
+  leg -> AddEntry(gr2,"V_{2}{2,QC}","p");
+  leg -> AddEntry(gr3,"V_{2}{4,QC}","p");
   leg -> SetFillColor(0);
   leg -> SetTextSize(0.04);
   leg -> SetTextFont(62);
   leg -> SetBorderSize(0);
-  leg -> Draw();
 
-  TLatex *latex2 = new TLatex(1.1,ymin1+0.03,text2);
-  latex2 -> SetTextFont(62);latex2 -> SetTextSize(0.04);
-  //latex2 -> SetTextAlign(13);
-  latex2 -> Draw();
 
-  // ofstream ofile("v2pt.txt");
-  // ofile.precision(5);
-  // ofile << "pT" << "\t\t\tv2(MC)" << "\t\t\tE(v2(MC))" << "\t\t\tv2{2}"
-  //       << "\t\t\tE(v2{2})" << "\t\t\tv2{4}" << "\t\t\tE(v2{4})" << endl;
-  // for(int i=0; i<npt; i++){
-  //   ofile << std::setprecision(5) << hpt[i] << "\t\t\t" << v2[i] << "\t\t\t" << v2e[i]
-  //         << "\t\t\t" << v22dif[i] << "\t\t\t" << v22difE[i]
-  //         << "\t\t\t" << v24dif[i] << "\t\t\t" << v24difE[i] << endl;
-  // }
+  TMultiGraph *mg = new TMultiGraph();
+  mg -> Add(gr1);
+  mg -> Add(gr2);
+  mg -> Add(gr3);
+
+
+  return mg;
 }
 
-void v2plot_v2pt(){
-  //plot("v2QC_5mil_v2pt_cent10-20.root");
-  plot("v2QC_5mil_v2pt_cent20-30.root");
-  plot("v2QC_5mil_v2pt_cent20-30.root");
-  plot("v2QC_5mil_v2pt_cent20-30.root");
-  plot("v2QC_5mil_v2pt_cent20-30.root");
-  plot("v2QC_5mil_v2pt_cent20-30.root");
-  plot("v2QC_5mil_v2pt_cent20-30.root");
-  //plot("v2QC_5mil_v2pt_cent40-50.root");
-}
+// void v2plot_v2pt(){
 
-// void zones() {
-//   TCanvas *c1 = new TCanvas("c1","multipads",900,700);
-//   gStyle->SetOptStat(0);
-//   c1->Divide(2,2,0,0);
-//   TH2F *h1 = new TH2F("h1","test1",10,0,1,20,0,20);
-//   TH2F *h2 = new TH2F("h2","test2",10,0,1,20,0,100);
-//   TH2F *h3 = new TH2F("h3","test3",10,0,1,20,-1,1);
-//   TH2F *h4 = new TH2F("h4","test4",10,0,1,20,0,1000);
-//   c1->cd(1);
-//   gPad->SetTickx(2);
-//   h1->Draw();
-//   c1->cd(2);
-//   gPad->SetTickx(2);
-//   gPad->SetTicky(2);
-//   h2->GetYaxis()->SetLabelOffset(0.01);
-//   h2->Draw();
-//   c1->cd(3);
-//   h3->Draw();
-//   c1->cd(4);
-//   gPad->SetTicky(2);
-//   h4->Draw();
+  
+//   // plot("v2QC_5mil_v2pt_cent10-20.root");
+//   // plot("v2QC_5mil_v2pt_cent20-30.root");
+//   // plot("v2QC_5mil_v2pt_cent20-30.root");
+//   // plot("v2QC_5mil_v2pt_cent20-30.root");
+//   // plot("v2QC_5mil_v2pt_cent20-30.root");
+//   // plot("v2QC_5mil_v2pt_cent20-30.root");
+//   // plot("v2QC_5mil_v2pt_cent20-30.root");
+//   // plot("v2QC_5mil_v2pt_cent40-50.root");
 // }
+
+TStyle* makeplotstyle()
+{
+	TStyle *style = new TStyle("style", "Style for Summary Plots");
+	style->SetCanvasBorderMode(0);//removes the yellow frame around the canvas
+	style->SetFrameBorderMode(0);//removes red highlighting
+	style->SetPadTickX(1);//ticks on both pad sides 
+	style->SetPadTickY(1);
+	style->SetNdivisions(508, "X");
+	style->SetNdivisions(508, "Y");
+  style->SetCanvasColor(0);
+
+  // style->SetStatBorderSize(1);
+  // style->SetFrameFillColor(0);
+  // style->SetTitleFillColor(0);
+
+	return style;
+}
+
+void v2plot_v2pt_multipads() {
+
+	// TStyle *tsty = makeplotstyle();
+	// tsty->cd();
+	//gROOT->ForceStyle();
+  gStyle->SetPadTickX(1); //ticks on both pad sides 
+  gStyle->SetPadTickY(1);
+  TCanvas *c1 = new TCanvas("c1","multipads",200,10,1920,1080);
+  // c1->SetFillColor(0);
+  gStyle->SetOptStat(0);
+  c1->Divide(3,2,0,0);
+  Double_t xmin=0.;
+  Double_t xmax=2.6;
+  Double_t ymin=0.;
+  Double_t ymax=0.25;
+  TMultiGraph *mg[8];
+  TH2F *h[8];
+  char fname[800];
+  TLatex *latex;
+  for(int i=1; i<7; i++){
+    sprintf(fname,"v2QC_5mil_v2pt_cent%i-%i.root",10*(i),10*(i+1));
+    mg[i] = new TMultiGraph();
+    mg[i] = MultiGraph(fname);
+    h[i] = new TH2F("","",5,xmin,xmax,5,ymin,ymax);
+    c1 -> cd(i);
+    h[i] -> Draw();
+    h[i] -> GetXaxis() -> SetTitle("p_{T}, GeV/c");
+    h[i] -> GetYaxis() -> SetTitle("v_{2}");
+    mg[i]->Draw("P");
+    mg[i]->SetTitle("");
+    leg -> Draw();
+
+    char text1[800];
+    sprintf(text1,"cent: %i-%i%%",10*(i),10*(i+1));
+    latex = new TLatex(xmax*0.98,ymin+0.02,text1);
+    latex -> SetTextFont(62);
+    latex -> SetTextSize(0.04);
+    latex -> SetTextAlign(31);
+    latex -> Draw();
+  }
+
+
+}

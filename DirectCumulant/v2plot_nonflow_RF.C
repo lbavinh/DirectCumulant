@@ -107,12 +107,9 @@ void plot(TString inFile)
   Double_t sumwcor24;    // sum(w<2>,w<4>)
   Double_t cov24;        // Cov(<2>,<4>)
 
-  h = (TH1F*) file->Get("hv2");
-  v2int = h->GetMean();
-  rms = h->GetRMS();
-  nent = h->GetEntries();
-  err = rms/sqrt(nent);
-  v2intE = err;
+  pr = (TProfile*) file->Get("hv2MC");
+  v2int = pr->GetBinContent(1);
+  v22intE = pr -> GetBinError(1);
 
   // https://en.wikipedia.org/wiki/Weighted_arithmetic_mean // Weighted sample variance // Reliability weights
   // Bilandzic, A. (2012). Anisotropic flow measurements in ALICE at the large hadron collider. 
@@ -230,5 +227,11 @@ void plot(TString inFile)
 }
 
 void v2plot_nonflow_RF(){
-  plot("v2QC_5mil_nonflow_RF_1.5-3.5.root");
+  //plot("./ROOTFile/v2QC_5mil_nonflow_RF_1.5-3.5.root");
+  // plot("v2QC_5mil_RF.root");
+  // plot("v2QC_5mil_v2pt_cent30-40.root");
+  // plot("v2QC_5mil_v2pt_cent10-60.root");
+  // plot("v2QC_5mil_v2_cent10-60.root");
+  plot("v2QC_5mil_v2cent.root");
+
 }

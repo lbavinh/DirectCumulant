@@ -104,21 +104,6 @@ void hTana::v2gen(int nevent,double Mmean) {
   double phirp; // azimuthal angle of reation plane
   double eta; // pseudorapidity
 
-  float nonflow = 0; /* Simulating nonflow correlations: 
-		     0: no nonflow correlations; 
-		     1: "pair wise" emission (2 particles with same azimuth);
-         2: "quadruplet" emission (4 particles with same azimuth).*/
-  float nonflowrate = 0.250;
-  /* Fraction of particles that are affected by nonflow effects. */
-
-  Bool_t bAcceptance = kTRUE;
-
-  float A = PI/3.;
-  float B = PI/2.;
-
-  float C = PI;
-  float D = 5.*PI/4.;
-
   /* Monte-Carlo simulation */
   for(int ne=0; ne<nevent; ne++) { /* Loop over events */
 
@@ -138,6 +123,9 @@ void hTana::v2gen(int nevent,double Mmean) {
     phirp=2.*PI*(GR->Rndm());
     hRP->Fill(phirp);
 
+    d_rp=phirp;
+    d_b = b;
+    
     int nh = 0;   
 
     /* Loop over particles */
@@ -146,77 +134,40 @@ void hTana::v2gen(int nevent,double Mmean) {
       pT=pTmax*(GR->Rndm());
       if (GR->Rndm()>dndpT(pT)) goto momentum;
 
-      pT=pT/1000.;
-      
+      pT=pT/1000;
+      hPt->Fill(pT);
       /* generate transverse momentum according to the distribution, 
          using the hit-or-miss method. */
-      if(pT>=0.2 && pT<=3.5){ //track's transverse momentum selection
-        eta = 4.*(GR->Rndm()-0.5); /* Random pseudorapidity eta between -2 and 2 */
 
-        v2pT = calc_v2(b,eta,pT);
-        v4pT = calc_v4(b,eta,pT);
+      eta = 4.*(GR->Rndm()-0.5); /* Random pseudorapidity eta between -2 and 2 */
 
-        flow:
-        phi=2.*PI*(GR->Rndm()); /* Random azimuth phi between 0 and 2Pi */
-        if (GR->Rndm()>dndphi(phi,v2pT,v4pT)) goto flow; 
-        /* simulate anisotropic flow, with the hit-or-miss method */
+      v2pT = calc_v2(b,eta,pT);
+      v4pT = calc_v4(b,eta,pT);
 
-        phil=phi+phirp; /* particle angle with respect to the laboratory frame */
-        while (phil>2.*PI)
-        phil-=2.*PI; /* To make sure that phil is between 0 and 2 Pi */
-        if (((phil>=0.) && (phil<=A    )) ||
-            ((phil>=B ) && (phil<=C    )) ||
-            ((phil>=D ) && (phil<=2.*PI)) ){ // 2 holes
+      flow:
+      phi=2.*PI*(GR->Rndm()); /* Random azimuth phi between 0 and 2Pi */
+      if (GR->Rndm()>dndphi(phi,v2pT,v4pT)) goto flow; 
+      /* simulate anisotropic flow, with the hit-or-miss method */
 
-          hPt->Fill(pT);
-          hPhi  -> Fill(phi);
-          hPhil -> Fill(phil);
-          hEta  -> Fill(eta);
-          d_phi0[nh] = phil;
-          d_pt[nh]   = pT;
-          d_eta[nh]  = eta;
-          nh++;
+      phil=phi+phirp; /* particle angle with respect to the laboratory frame */
+      while (phil>2.*PI)
+      phil-=2.*PI; /* To make sure that phil is between 0 and 2 Pi */
 
-          if (nonflow>0 && (nm<=(mult-2*nonflow)) && (GR->Rndm()<=nonflowrate)){ /* NONFLOW CORRELATION simulation */
-              /* Two tests: 
-              - a first, very inelegant one, to avoid having more particles in the 
-              event than the multiplicity which has been determined earlier;
-              - a second, more useful one, to have a fraction ~nonflowrate of 
-              particles affected by nonflow effects. */
-            if (nonflow==1) { // Pair-wise emission
-              // Generating a second particle with the same momentum and azimuth.
-              nm++;
-              hPt->Fill(pT);
-              hPhi -> Fill(phi);
-              hPhil -> Fill(phil);
-              hEta  -> Fill(eta);
-              d_phi0[nh] = phil;
-              d_pt[nh]   = pT;
-              d_eta[nh]  = eta;
-              nh++;
+      if(pT>=0.2 && pT<=3.5){ //track selection
 
-            } // end of Pair-wise emission
-            else if (nonflow==2) { // Quadruplet-wise emission
-              // Generating three more particles with the same momentum and azimuth.
-              nm+=3;
-              for(int i=0; i<3;i++){ // Generate 3 more particle
-                hPt->Fill(pT);
-                hPhi -> Fill(phi);
-                hPhil -> Fill(phil);
-                hEta  -> Fill(eta);
-                d_phi0[nh] = phil;
-                d_pt[nh]   = pT;
-                d_eta[nh]  = eta;
-                nh++;         
-              } // end of 3 more particle generation
-            } // End of generation Quadruplet-wise emission
-          } // End of NONFLOW CORRELATION simulation
-        } // end of acceptance simulation
-      } // end of track's transverse momentum selection
+        hPhi  -> Fill(phi);
+        hPhil -> Fill(phil);
+        hEta  -> Fill(eta);
+
+        d_phi0[nh] = phil;
+        d_pt[nh]   = pT;
+        d_eta[nh]  = eta;
+
+        nh++;
+      }// end of track selection
     }//end of the particle loop
     d_nh = nh;
-    d_rp = phirp;
-    d_b  = b;
+
     htree->Fill();
   }// end of event loop
   // Stop the timer and print how much time it took to generate Nevents
@@ -243,7 +194,7 @@ void hTana::ana_end() {
 
 void hTana::book_hist(TString outfile) {
   // read input TFile
-  d_infile = new TFile("/mnt/pool/2/lbavinh/EventGenerator/merge_hist_glaub_200gev.root", "read");
+  d_infile = new TFile("/mnt/pool/2/lbavinh/EventGenerator/merge_hist_glaub_200gev.root", "read"); // /mnt/pool/2/lbavinh/EventGenerator/ /mnt/pool/nica/6/parfenovpeter/CentralityGlauber/
   hBimp = (TH1F *)d_infile->Get("hBimp");
   hNpart = (TH1I *)d_infile->Get("hNpart");
   hNcoll = (TH1I *)d_infile->Get("hNcoll");
@@ -253,7 +204,7 @@ void hTana::book_hist(TString outfile) {
   d_outfile = new TFile(outfile.Data(),"recreate");
   cout << outfile.Data() << " was initialized." << endl;
   d_outfile -> cd();
-  htree = new TTree("htree","Simulation of acceptance");
+  htree = new TTree("htree","Simulation");
 
   htree->Branch("rp",&d_rp,"rp/F");
   htree->Branch("nh",&d_nh,"nh/I");
@@ -263,8 +214,8 @@ void hTana::book_hist(TString outfile) {
   htree->Branch("eta",&d_eta,"eta[nh]/F");
 
   // Create output histograms
-  hMult = new TH1I("hMult", "Multiplicity;N_{ch};dN/dN_{ch}", 1500, 0, 1500);
-  hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", 1500, 0, 1500, 200, 0., 20.);
+  hMult = new TH1I("hMult", "Multiplicity", 2500, 0, 2500);
+  hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", 2500, 0, 2500, 200, 0., 20.);
   hB    = new TH1F("hB","Impact parameter;b (fm);dN/db",200, 0., 20.);
   hPt   = new TH1F("hPt","Pt-distribution;p_{T} (GeV/c); dN/dP_{T}",500,0.,6.);
   hRP   = new TH1F("hRP","Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}",300,0.,7.);

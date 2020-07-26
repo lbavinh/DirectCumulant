@@ -8,9 +8,6 @@
 
 using namespace std;
 #include <fstream>
-
-
-
 void Cosmetics(Int_t &wtopx, Int_t &wtopy, Int_t &ww, Int_t &wh ){
   gStyle->SetOptStat(0);
   // Set Canvas Resolution
@@ -31,7 +28,7 @@ Double_t sx(TProfile *pr){ // Unbiased estimator for the root of variance (C.3)
   pr -> SetErrorOption("s");
   Double_t stdevw = pr -> GetBinError(1);
 
-  temp = stdevw*stdevw/(1-sumw2/sumw/sumw);
+  temp = stdevw*stdevw/(1.-sumw2/sumw/sumw);
   return sqrt(temp);
 }
 
@@ -49,7 +46,7 @@ Double_t Cov(TProfile *prxy, TProfile *prx, TProfile *pry){
   pry -> GetStats(stats);
   Double_t sumwy = stats[0];
   Double_t meany = pry -> GetBinContent(1);
-  temp = (meanxy-meanx*meany)/(1-sumwxy/sumwx/sumwy);
+  temp = (meanxy-meanx*meany)/(1.-sumwxy/(sumwx*sumwy));
   return temp;
 }
 
@@ -70,8 +67,6 @@ void plot(TString inFile)
   Int_t wtopx, wtopy, ww, wh;
   Cosmetics(wtopx, wtopy, ww, wh);
   TFile *file = new TFile(inFile.Data());
-  //==========================================================================================================================
- 
   // Temporary variables
 
   char hname[800];
@@ -80,25 +75,7 @@ void plot(TString inFile)
   Double_t err; // standard error (temporary variable)
   TH1F *h; // temporary TH1F for extracting from root file
   TProfile *pr; // temporary TProfile for TProfile extracting from root file
-  TProfile *prx, *pry, *prxy; // temporary TProfile for convariance calculation
-
-  // TVector including acceptance correction terms
-  TVectorD *vcos2phi1, *vsin2phi1, *vcos2phi12, *vsin2phi12, *vcos2phi123, *vsin2phi123;
-  TVectorD *vcos2psi1, *vsin2psi1, *vcos2psi1phi2, *vsin2psi1phi2, *vcos2psi1pphi23, *vsin2psi1pphi23, *vcos2psi1mphi23, *vsin2psi1mphi23;
-  vcos2phi1       = (TVectorD*) file->Get("vcos2phi1");
-  vsin2phi1       = (TVectorD*) file->Get("vsin2phi1");
-  vcos2phi12      = (TVectorD*) file->Get("vcos2phi12");
-  vsin2phi12      = (TVectorD*) file->Get("vsin2phi12");
-  vcos2phi123     = (TVectorD*) file->Get("vcos2phi123");
-  vsin2phi123     = (TVectorD*) file->Get("vsin2phi123");
-  vcos2psi1       = (TVectorD*) file->Get("vcos2psi1");
-  vsin2psi1       = (TVectorD*) file->Get("vsin2psi1");
-  vcos2psi1phi2   = (TVectorD*) file->Get("vcos2psi1phi2");
-  vsin2psi1phi2   = (TVectorD*) file->Get("vsin2psi1phi2");
-  vcos2psi1pphi23 = (TVectorD*) file->Get("vcos2psi1pphi23");
-  vsin2psi1pphi23 = (TVectorD*) file->Get("vsin2psi1pphi23");
-  vcos2psi1mphi23 = (TVectorD*) file->Get("vcos2psi1mphi23");
-  vsin2psi1mphi23 = (TVectorD*) file->Get("vsin2psi1mphi23");
+  TProfile *prx, *pry, *prxy;
 
   Double_t stats[6]; // stats of TProfile
 
@@ -145,11 +122,10 @@ void plot(TString inFile)
   // v2{2,QC}
   pr = (TProfile*) file->Get("hv22");
 
-  // estimate of the 2-particle reference flow
+  // estimate of the 2-particle reference flow (C.22)
 
   cor2 = pr->GetBinContent(1);  // <<2>>
-  // acceptance correction
-  c22 = cor2 - (pow(((*vcos2phi1))[0],2) + pow((*vsin2phi1)[0],2));                   // c_{2}{2,QC} = <<2>> - [<<cosnphi>>^2+<<sinnphi>>^2]
+  c22 = cor2;                   // c_{2}{2,QC} = <<2>>
   v22int = sqrt(c22);
 
   // statistical error of the 2-particle reference flow estimate (C.24)
@@ -167,18 +143,7 @@ void plot(TString inFile)
   // estimate of the 4-particle reference flow (C.27)
 
   cor4 = pr->GetBinContent(1);  // <<4>>
-  // acceptance correction
-  c24 = cor4 - 2*cor2*cor2
-      - 4. * ((*vcos2phi1))[0] * ((*vcos2phi123))[0]
-      + 4. * (*vsin2phi1)[0] * (*vsin2phi123)[0]
-      - pow((*vcos2phi12)[0],2) - pow((*vsin2phi12)[0],2)
-      + 4. * (*vcos2phi12)[0]
-      * (pow(((*vcos2phi1))[0],2) - pow((*vsin2phi1)[0],2))
-      + 8. * (*vsin2phi12)[0] * (*vsin2phi1)[0] * ((*vcos2phi1))[0]
-      + 8. * cor2
-      * (pow(((*vcos2phi1))[0],2) + pow((*vsin2phi1)[0],2))
-      - 6. * pow(pow(((*vcos2phi1))[0],2) + pow((*vsin2phi1)[0],2),2);
-  v24int = pow(-c24,0.25);
+  v24int = pow(2*cor2*cor2-cor4,0.25);
 
   // statistical error of the 4-particle reference flow estimate (C.28)
 
@@ -242,119 +207,22 @@ void plot(TString inFile)
 
   // TLatex shows pT range of RFP
   char text2[800];
-  sprintf(text2,"#splitline{Acceptance correction}{#splitline{M=250#pm50}{#splitline{5#upoint10^{6} events}{RFP: %2.1f < p_{T} < %2.1f GeV/c}}}",minptRFP,maxptRFP);
+  sprintf(text2,"#splitline{no non-flow contribution}{#splitline{& uniform acceptance}{#splitline{M=250#pm50}{#splitline{5#upoint10^{6} events}{RFP: %2.1f < p_{T} < %2.1f GeV/c}}}}",minptRFP,maxptRFP);
   Double_t ylatex = ymin2*1.002;
   TLatex *latex = new TLatex(0.2,ylatex,text2);
   latex -> SetTextFont(62);latex -> SetTextSize(0.04);
   //latex2 -> SetTextAlign(13);
   latex -> Draw();
 
-  //=========================================================================
-
-  // flow without acceptance correction (variables are marked with WO)
-  Double_t cor2WO, c22WO, v22intWO, v22intEWO, cor2EWO, sumwcor2WO, sumw2cor2WO;
-  Double_t cor4WO, c24WO, v24intWO, v24intEWO, cor4EWO, sumwcor4WO, sumw2cor4WO;
-  Double_t cov24WO, sumwcor24WO;
-  // v2{2,QC}
-  pr = (TProfile*) file->Get("hv22");
-
-  // estimate of the 2-particle reference flow (C.22)
-
-  cor2WO = pr->GetBinContent(1);  // <<2>>
-  c22WO = cor2WO;                   // c_{2}{2,QC} = <<2>>
-  v22intWO = sqrt(c22WO);
-
-  // statistical error of the 2-particle reference flow estimate (C.24)
-
-  cor2EWO = sx(pr);
-  pr -> GetStats(stats);
-  sumwcor2WO = stats[0];
-  sumw2cor2WO = stats[1];
-  v22intEWO = 0.5*pow(cor2WO,-0.5)*sqrt(sumw2cor2WO)/sumwcor2WO*cor2EWO;
-
-
-  // v2{4,QC}
-  pr = (TProfile*) file->Get("hv24");
-
-  // estimate of the 4-particle reference flow (C.27)
-
-  cor4WO = pr->GetBinContent(1);  // <<4>>
-  v24intWO = pow(2*cor2WO*cor2WO-cor4WO,0.25);
-
-  // statistical error of the 4-particle reference flow estimate (C.28)
-
-  cor4EWO = sx(pr);
-  pr -> GetStats(stats);
-  sumwcor4WO = stats[0];
-  sumw2cor4WO = stats[1];
-    // calculate covariance of <2> and <4>
-  prxy = (TProfile*) file->Get("hcov24");
-  prx = (TProfile*) file->Get("hv22");
-  pry = (TProfile*) file->Get("hv24");
-  cov24WO = Cov(prxy,prx,pry);
-  sumwcor24WO = Sumwxwy(prxy);
-  v24intEWO = pow(2*cor2WO*cor2WO-cor4WO,-1.5)*(sumw2cor2WO*pow(cor2WO*cor2EWO/sumwcor2WO,2)
-          + 1./16.*sumw2cor4WO*pow(cor4EWO/sumwcor4WO,2) - 0.5*cor2WO*sumwcor24WO*cov24WO/sumwcor2WO/sumwcor4WO);  
-  v24intEWO = sqrt(v24intEWO);
-
-  // plotting
-
-  Double_t v2WO[2], v2EWO[2];
-  Double_t xWO[2] = {1.5,2.5}; // 2 methods for comparison
-  Double_t xEWO[2] = {0};
-
-  v2WO[0]=v22intWO;
-  v2EWO[0]=v22intEWO;
-  v2WO[1]=v24intWO;
-  v2EWO[1]=v24intEWO;
-
-
-  auto c3 = new TCanvas("c3","Integrated flow result",wtopx,wtopy,ww,wh);
-  Double_t ymin3 = v2int*0.9;
-  Double_t ymax3 = v22intWO*1.1;
-  TH2F *hr4 = new TH2F("hr4","Integrated elliptic flow", 3,0,3,10,ymin3,ymax3);
-  hr4->SetYTitle("v_{n}");
-  // Set name of methods on X axis
-  hr4->SetCanExtend(TH1::kAllAxes);
-  const char *method1[3]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}"};
-  TAxis* a1 = hr4 -> GetXaxis();
-  hr4 -> Fill(method1[0],(ymin2+ymax2)/2,1);
-  hr4 -> Fill(method1[1],(ymin2+ymax2)/2,1);
-  hr4 -> Fill(method1[2],(ymin2+ymax2)/2,1);
-  hr4->GetXaxis()->SetLabelSize(0.05);
-  a->SetNdivisions(300); // 3 division, 0 sub-division
-  hr4->Draw();
-
-  gr4 -> Draw("P");
-  auto gr5 = new TGraphErrors(2,xWO,v2WO,xEWO,v2EWO);
-  gr5->SetMarkerColor(kRed);
-  gr5->SetMarkerStyle(24);
-  gr5->SetMarkerSize(1.3);
-  gr5->Draw("Psame");
-
-  TLegend *leg1 = new TLegend(0.,ymax3,0.3,ymax3-0.1);
-  leg1 -> AddEntry(gr5,"v_{2} with acc. cor.","p");
-  leg1 -> AddEntry(gr4,"V_{2} w/o acc. cor.","p");
-  leg1 -> SetFillColor(0);
-  leg1 -> SetTextSize(0.04);
-  leg1 -> SetTextFont(62);
-  leg1 -> SetBorderSize(0);
-  leg1 -> Draw();
-
-  //=========================================================================
-
-
-
-
-  ofstream ofile2("v2intAC.txt");
-  ofile2 << "v2";
+  ofstream ofile2("v2int.txt");
+  ofile2 << "v2\t";
   for(int i=0; i<3; i++){
-  ofile2 << "\t" << v2compare[i];
+  ofile2 << "\t\t" << v2compare[i];
   }
   ofile2 << endl;
   ofile2 << "E(v2)";
   for(int i=0; i<3; i++){
-  ofile2 << "\t" << v2compareE[i];
+  ofile2 << "\t\t" << v2compareE[i];
   }
   ofile2 << endl;
 
@@ -385,18 +253,17 @@ void plot(TString inFile)
   }
   Double_t cor2Red[npt];         // Differential 2nd order cumulant d_{2}{2} = <<2'>>
   Double_t cor2RedE[npt];        // Error of d_{2}{2}
-  Double_t d22[npt];             // Differential 4th order cumulant d_{2}{4} = <<4'>> - 2*<<2>>*<<2'>>
-  Double_t v22dif[npt];          // Differential elliptic flow v'_{2}{2} extracted from 2nd order cumulants
-                                 // v'_{2}{2} = d_{2}{2} / sqrt( c_{2}{2} )
-  Double_t v22difE[npt];         // Error of v'_{2}{2}
+  Double_t v22dif[npt];      // Differential elliptic flow v'_{2}{2} extracted from 2nd order cumulants
+                          // v'_{2}{2} = d_{2}{2} / sqrt( c_{2}{2} )
+  Double_t v22difE[npt];     // Error of v'_{2}{2}
   
-  Double_t cor4Red[npt];         // Reduced average all-event 4-particle correlation <<4'>>
-  Double_t cor4RedE[npt];        // Error of <<4'>>
-  Double_t d24[npt];             // Differential 4th order cumulant d_{2}{4} = <<4'>> - 2*<<2>>*<<2'>>
-  Double_t d24E[npt];            // Error of d_{2}{4}
-  Double_t v24dif[npt];          // Differential elliptic flow v'_{2}{4} extracted from 4th order cumulants
-                                 // v'_{2}{4} = -d_{2}{4} / pow( -c_{2}{4} , 3/4 )
-  Double_t v24difE[npt];         // Error of v'_{2}{4}
+  Double_t cor4Red[npt];    // Reduced average all-event 4-particle correlation <<4'>>
+  Double_t cor4RedE[npt];   // Error of <<4'>>
+  Double_t d24[npt];         // Differential 4th order cumulant d_{2}{4} = <<4'>> - 2*<<2>>*<<2'>>
+  Double_t d24E[npt];        // Error of d_{2}{4}
+  Double_t v24dif[npt];      // Differential elliptic flow v'_{2}{4} extracted from 4th order cumulants
+                          // v'_{2}{4} = -d_{2}{4} / pow( -c_{2}{4} , 3/4 )
+  Double_t v24difE[npt];     // Error of v'_{2}{4}
 
   Double_t sumwcor22prime[npt];        // sum(w(<2>)*w(<2'>))
   Double_t cov22prime[npt];            // Cov(<2>,<2'>)
@@ -422,10 +289,7 @@ void plot(TString inFile)
 
     // estimate of the 2-particle differential flow (C.41)
     cor2Red[i] = pr->GetBinContent(1);
-
-    // acceptance correction
-    d22[i] = cor2Red[i] - ((*vcos2psi1))[i] * ((*vcos2phi1))[0] - ((*vsin2psi1))[i] * (*vsin2phi1)[0];
-    v22dif[i] = d22[i] / sqrt(c22);
+    v22dif[i] = cor2Red[i] / sqrt(c22);
 
     // statistical error of the 2-particle differential flow estimate (C.42)
     cor2RedE[i] = sx(pr);
@@ -444,8 +308,8 @@ void plot(TString inFile)
     sumwcor22prime[i] = Sumwxwy(prxy);   
 
 
-    v22difE[i] = 0.25*pow(cor2,-3)*(cor2Red[i]*cor2Red[i]*sumw2cor2/sumwcor2/sumwcor2*cor2E*cor2E
-               + 4.*cor2*cor2*sumw2cor2red[i]*pow(cor2RedE[i]/sumwcor2red[i],2) - 4.*cor2*cor2Red[i]
+    v22difE[i] = 0.25*pow(cor2,-3.)*(cor2Red[i]*cor2Red[i]*sumw2cor2/sumwcor2/sumwcor2*cor2E*cor2E
+               + 4.*cor2*cor2*sumw2cor2red[i]*pow(cor2RedE[i]/sumwcor2red[i],2.) - 4.*cor2*cor2Red[i]
                * sumwcor22prime[i]/sumwcor2/sumwcor2red[i]*cov22prime[i]);
     v22difE[i] = sqrt(v22difE[i]);
 
@@ -455,34 +319,7 @@ void plot(TString inFile)
 
     // estimate of the 4-particle differential flow (C.45)
     cor4Red[i] = pr->GetBinContent(1);
-
-    // acceptance correction
-    d24[i] = cor4Red[i] - 2*cor2Red[i]*cor2
-           - ((*vcos2psi1))[i] * ((*vcos2phi123))[0]
-           + ((*vsin2psi1))[i] * (*vsin2phi123)[0]
-           - ((*vcos2phi1))[0] * (*vcos2psi1mphi23)[i]
-           + (*vsin2phi1)[0] * (*vsin2psi1mphi23)[i]
-           - 2. * ((*vcos2phi1))[0] * (*vcos2psi1pphi23)[i]
-           - 2. * (*vsin2phi1)[0] * (*vsin2psi1pphi23)[i]
-           - (*vcos2psi1phi2)[i] * (*vcos2phi12)[0]
-           - (*vsin2psi1phi2)[i] * (*vsin2phi12)[0]
-           + 2. * (*vcos2phi12)[0]
-           * (((*vcos2psi1))[i] * ((*vcos2phi1))[0] - ((*vsin2psi1))[i] * (*vsin2phi1)[0])
-           + 2. * (*vsin2phi12)[0]
-           * (((*vsin2psi1))[i] * ((*vcos2phi1))[0] + ((*vcos2psi1))[i] * (*vsin2phi1)[0])
-           + 4. * cor2
-           * (((*vcos2psi1))[i] * ((*vcos2phi1))[0] + ((*vsin2psi1))[i] * (*vsin2phi1)[0])
-           + 2. * (*vcos2psi1phi2)[i]
-           * (pow(((*vcos2phi1))[0],2) - pow((*vsin2phi1)[0],2))
-           + 4. * (*vsin2psi1phi2)[i] * ((*vcos2phi1))[0] * (*vsin2phi1)[0]
-           + 4. * cor2Red[i] * (pow(((*vcos2phi1))[0],2) + pow((*vsin2phi1)[0],2))
-           - 6. * (pow(((*vcos2phi1))[0],2) - pow((*vsin2phi1)[0],2))
-           * (((*vcos2psi1))[i] * ((*vcos2phi1))[0] - ((*vsin2psi1))[i] * (*vsin2phi1)[0])
-           - 12. * ((*vcos2phi1))[0] * (*vsin2phi1)[0]
-           * (((*vsin2psi1))[i] * ((*vcos2phi1))[0] + ((*vcos2psi1))[i] * (*vsin2phi1)[0]);
-
-
-    v24dif[i] = -d24[i]*pow(-c24,-0.75);
+    v24dif[i] = (2*cor2*cor2Red[i]-cor4Red[i])*pow(2*cor2*cor2-cor4,-0.75);
 
     // statistical error of the 4-particle differential flow estimate (C.46)
     cor4RedE[i] = sx(pr);
@@ -530,26 +367,26 @@ void plot(TString inFile)
     cov2prime4prime[i] = Cov(prxy,prx,pry);
     sumwcor2prime4prime[i] = Sumwxwy(prxy);     
 
-    v24difE[i] = pow(2*cor2*cor2-cor4,-3.5)*
-    (pow(2*cor2*cor2*cor2Red[i]-3*cor2*cor4Red[i]+2*cor4*cor2Red[i],2)
-    * sumw2cor2*pow(cor2E/sumwcor2,2)
-    + 9./16.*pow(2*cor2*cor2Red[i]-cor4Red[i],2)*sumw2cor4*pow(cor4E/sumwcor4,2)
-    + 4*cor2*cor2*pow(2*cor2*cor2-cor4,2)*sumw2cor2red[i]*pow(cor2RedE[i]/sumwcor2red[i],2)
-    + pow(2*cor2*cor2-cor4,2)*sumw2cor4red[i]*pow(cor4RedE[i]/sumwcor4red[i],2)
+    v24difE[i] = pow(2.*cor2*cor2-cor4,-3.5)*
+    (pow(2.*cor2*cor2*cor2Red[i]-3*cor2*cor4Red[i]+2.*cor4*cor2Red[i],2.)
+    * sumw2cor2*pow(cor2E/sumwcor2,2.)
+    + 9./16.*pow(2.*cor2*cor2Red[i]-cor4Red[i],2.)*sumw2cor4*pow(cor4E/sumwcor4,2.)
+    + 4.*cor2*cor2*pow(2*cor2*cor2-cor4,2.)*sumw2cor2red[i]*pow(cor2RedE[i]/sumwcor2red[i],2.)
+    + pow(2*cor2*cor2-cor4,2.)*sumw2cor4red[i]*pow(cor4RedE[i]/sumwcor4red[i],2.)
     - 1.5*(2*cor2*cor2Red[i]-cor4Red[i])
-    * (2*cor2*cor2*cor2Red[i]-3*cor2*cor4Red[i]+2*cor4*cor2Red[i])
+    * (2.*cor2*cor2*cor2Red[i]-3.*cor2*cor4Red[i]+2.*cor4*cor2Red[i])
     * sumwcor24/sumwcor2/sumwcor4*cov24
-    - 4.*cor2*(2*cor2*cor2-cor4)
-    * (2*cor2*cor2*cor2Red[i]-3*cor2*cor4Red[i]+2*cor4*cor2Red[i])
+    - 4.*cor2*(2.*cor2*cor2-cor4)
+    * (2.*cor2*cor2*cor2Red[i]-3.*cor2*cor4Red[i]+2*cor4*cor2Red[i])
     * sumwcor22prime[i]/sumwcor2/sumwcor2red[i]*cov22prime[i]
-    + 2.*(2*cor2*cor2-cor4)
-    * (2*cor2*cor2*cor2Red[i]-3*cor2*cor4Red[i]+2*cor4*cor2Red[i])
+    + 2.*(2.*cor2*cor2-cor4)
+    * (2.*cor2*cor2*cor2Red[i]-3.*cor2*cor4Red[i]+2.*cor4*cor2Red[i])
     * sumwcor24prime[i]/sumwcor2/sumwcor4red[i]*cov24prime[i]
-    + 3.*cor2*(2*cor2*cor2-cor4)*(2*cor2*cor2Red[i]-cor4Red[i])
+    + 3.*cor2*(2.*cor2*cor2-cor4)*(2.*cor2*cor2Red[i]-cor4Red[i])
     * sumwcor42prime[i]/sumwcor4/sumwcor2red[i]*cov42prime[i]
-    - 1.5*(2*cor2*cor2-cor4)*(2*cor2*cor2Red[i]-cor4Red[i])
+    - 1.5*(2*cor2*cor2-cor4)*(2.*cor2*cor2Red[i]-cor4Red[i])
     * sumwcor44prime[i]/sumwcor4/sumwcor4red[i]*cov44prime[i]
-    - 4.*cor2*pow(2*cor2*cor2-cor4,2)*sumwcor2prime4prime[i]/sumwcor2red[i]/sumwcor4red[i]*cov2prime4prime[i]
+    - 4.*cor2*pow(2.*cor2*cor2-cor4,2.)*sumwcor2prime4prime[i]/sumwcor2red[i]/sumwcor4red[i]*cov2prime4prime[i]
     );
     v24difE[i] = sqrt(v24difE[i]);
   } // end of loop for all pT bin
@@ -603,12 +440,12 @@ void plot(TString inFile)
   leg -> SetBorderSize(0);
   leg -> Draw();
 
-  TLatex *latex2 = new TLatex(1.1,ymin1+0.02,text2);
+  TLatex *latex2 = new TLatex(1.1,ymin1+0.03,text2);
   latex2 -> SetTextFont(62);latex2 -> SetTextSize(0.04);
   //latex2 -> SetTextAlign(13);
   latex2 -> Draw();
 
-  ofstream ofile("v2ptAC.txt");
+  ofstream ofile("v2pt.txt");
   ofile.precision(5);
   ofile << "pT" << "\t\t\tv2(MC)" << "\t\t\tE(v2(MC))" << "\t\t\tv2{2}"
         << "\t\t\tE(v2{2})" << "\t\t\tv2{4}" << "\t\t\tE(v2{4})" << endl;
@@ -617,10 +454,8 @@ void plot(TString inFile)
           << "\t\t\t" << v22dif[i] << "\t\t\t" << v22difE[i]
           << "\t\t\t" << v24dif[i] << "\t\t\t" << v24difE[i] << endl;
   }
-
-
 }
 
-void v2plot_AccCor(){
-  plot("~/NIRS/Event\ Generator,\ Direct\ Cumulant/DirectCumulant/ROOTFile/v2QC_5mil_acc.root");
+void v2plot(){
+  plot("~/NIRS/Event Generator, Direct Cumulant/DirectCumulant/ROOTFile/v2QC_5mil_pureflow.root");
 }

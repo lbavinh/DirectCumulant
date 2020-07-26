@@ -44,8 +44,9 @@ float   d_pt[max_nh];   // transverse momentum
 float   d_phi0[max_nh]; // particle azimuthal angle in laboratory system
 float   d_eta[max_nh];  // pseudorapidity
 
-TTree *htree; // TTree to save events
+
 TFile *d_outfile; // output ROOT file
+TTree *htree; // TTree to save events
 TFile *d_infile; // input ROOT file with neccessary histograms for impact par simulation
 
 // Read histograms from the Glauber file
@@ -104,14 +105,14 @@ void hTana::v2gen(int nevent,double Mmean) {
   double phirp; // azimuthal angle of reation plane
   double eta; // pseudorapidity
 
-  float nonflow = 0; /* Simulating nonflow correlations: 
+  float nonflow = 1.; /* Simulating nonflow correlations: 
 		     0: no nonflow correlations; 
 		     1: "pair wise" emission (2 particles with same azimuth);
          2: "quadruplet" emission (4 particles with same azimuth).*/
   float nonflowrate = 0.250;
   /* Fraction of particles that are affected by nonflow effects. */
 
-  Bool_t bAcceptance = kTRUE;
+  Bool_t bAcceptance = kFALSE;
 
   float A = PI/3.;
   float B = PI/2.;
@@ -164,9 +165,9 @@ void hTana::v2gen(int nevent,double Mmean) {
         phil=phi+phirp; /* particle angle with respect to the laboratory frame */
         while (phil>2.*PI)
         phil-=2.*PI; /* To make sure that phil is between 0 and 2 Pi */
-        if (((phil>=0.) && (phil<=A    )) ||
-            ((phil>=B ) && (phil<=C    )) ||
-            ((phil>=D ) && (phil<=2.*PI)) ){ // 2 holes
+        // if (((phil>=0.) && (phil<=A    )) ||
+        //     ((phil>=B ) && (phil<=C    )) ||
+        //     ((phil>=D ) && (phil<=2.*PI)) ){ // 2 holes
 
           hPt->Fill(pT);
           hPhi  -> Fill(phi);
@@ -211,7 +212,7 @@ void hTana::v2gen(int nevent,double Mmean) {
               } // end of 3 more particle generation
             } // End of generation Quadruplet-wise emission
           } // End of NONFLOW CORRELATION simulation
-        } // end of acceptance simulation
+        // } // end of acceptance simulation
       } // end of track's transverse momentum selection
     }//end of the particle loop
     d_nh = nh;

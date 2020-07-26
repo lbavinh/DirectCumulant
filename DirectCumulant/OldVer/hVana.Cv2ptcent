@@ -249,7 +249,7 @@ void hVana::Ana_event(){
       hv2MCpt[icent][ipt]->Fill(0.5,v2,1);
 
       // RFP
-      if(eta[i]<0){
+      if(eta[i]<-0.95){
          // calculate integrated v2 from MC toy for RFP
          hv2MC[icent] -> Fill(0.5,v2,1);
          Qx2+=TMath::Cos(2*phi0[i]);
@@ -260,7 +260,7 @@ void hVana::Ana_event(){
       }
 
       // POI
-      if(eta[i]>=0){
+      if(eta[i]>=0.05){
       px2[ipt]+=TMath::Cos(2*phi0[i]);
       py2[ipt]+=TMath::Sin(2*phi0[i]);
       mp[ipt]++;
@@ -273,11 +273,6 @@ void hVana::Ana_event(){
       cor22 = CalCor22(Q2, M, w2);     // <2>
       hv22[icent] -> Fill(0.5,cor22,w2); // <<2>>
 
-      // // Non-uniform acceptance correction
-      // cos2phi1   += Qx2; // formula (C2)
-      // sin2phi1   += Qy2; // formula (C3)     
-      // sumM += M;
-
       for(int ipt=0; ipt<npt;ipt++){
          if (mp[ipt] == 0) continue;
          p2[ipt] = TComplex(px2[ipt], py2[ipt]);
@@ -288,11 +283,6 @@ void hVana::Ana_event(){
          
          // TProfile for covariance calculation in statistic error
          hcov22prime[icent][ipt] -> Fill(0.5,cor22*redCor22[ipt],w2*wred2[ipt]);        // <2>*<2'>
-
-         // // Non-uniform acceptance correction
-         // cos2psi1[ipt] += px2[ipt];
-         // sin2psi1[ipt] += py2[ipt];
-         // summp[ipt] += mp[ipt];
       }
    } // end of <2> definition condition
 
@@ -304,16 +294,6 @@ void hVana::Ana_event(){
 
       // TProfile for covariance calculation in statistic error
       hcov24[icent] -> Fill(0.5,cor22*cor24,w2*w4); // <2>*<4>
-
-      // // Non-uniform acceptance correction
-      // cos2phi12  += (Q2*Q2-Q4).Re();
-      // sin2phi12  += (Q2*Q2-Q4).Im();
-      // cos2phi123 += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Re())
-      //             - 2.*(M-1)*(Qstar(Q2).Re());
-      // sin2phi123 += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Im())
-      //             - 2.*(M-1)*(Qstar(Q2).Im());
-      // sumMMm1 += M*(M-1);
-      // sumMMm1Mm2 += M*(M-1)*(M-2);
 
       for(int ipt=0; ipt<npt;ipt++){
          if (mp[ipt] == 0) continue;
@@ -328,23 +308,13 @@ void hVana::Ana_event(){
          hcov44prime[icent][ipt] -> Fill(0.5,cor24*redCor24[ipt],w4*wred4[ipt]);
          hcov2prime4prime[icent][ipt] -> Fill(0.5,redCor22[ipt]*redCor24[ipt],wred2[ipt]*wred4[ipt]);
 
-         // // Non-uniform acceptance correction
-         // cos2psi1phi2[ipt] += (p2[ipt]*Q2-q4[ipt]).Re();
-         // sin2psi1phi2[ipt] += (p2[ipt]*Q2-q4[ipt]).Im();
-         // cos2psi1pphi23[ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Re()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Re());
-         // sin2psi1pphi23[ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Im()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Im());
-         // cos2psi1mphi23[ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Re())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Re());
-         // sin2psi1mphi23[ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Im())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Im());
-
-         // summpMmmq[ipt] += mp[ipt]*M-mq[ipt];
-         // summpMm2mqMm1[ipt] += (mp[ipt]*M-2.*mq[ipt])*(M-1);
       }
    } // end of <4> definition condition
 
 }
 
 
-
+/*
 void loop_a_list_of_tree(){
    hVana *ana = new hVana();
    ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC.root");
@@ -361,7 +331,7 @@ void loop_a_list_of_tree(){
    ana -> Ana_end();
    cout << "Histfile written. Congratz!" << endl;
 }
-
+*/
 // void loop_a_list_of_tree(){
 //    hVana *ana = new hVana();
 //    ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC.root");
@@ -378,3 +348,20 @@ void loop_a_list_of_tree(){
 //    ana -> Ana_end();
 //    cout << "Histfile written. Congratz!" << endl;
 // }
+
+void loop_a_list_of_tree(){
+   hVana *ana = new hVana();
+   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC_nonflow_etagap0.1.root");
+   
+   ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/Non-flowPairWise/runlist.list");
+   char filename[200];
+   int nfiles=1;
+   while(ifile.getline(filename,200)) {
+      cout << nfiles <<" file is processing "<<filename <<endl;
+      ana->Loop_a_file(filename);
+      nfiles++;
+   }
+   cout<< "Done. " << nfiles-1 << " files are processed." << endl;
+   ana -> Ana_end();
+   cout << "Histfile written. Congratz!" << endl;
+}

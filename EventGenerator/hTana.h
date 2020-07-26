@@ -14,7 +14,7 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <TString.h>
-#define MAXNH 300
+#define MAXNH 1500
 class hTana {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
@@ -23,13 +23,19 @@ public :
    // Declaration of leave types
    Float_t         rp;
    Int_t           nh;
+   Float_t         b;
+   Float_t         pt[MAXNH];   //[nh]
    Float_t         phi0[MAXNH];   //[nh]
+   Float_t         eta[MAXNH];   //[nh]
 
 
    // List of branches
    TBranch        *b_rp;   //!
    TBranch        *b_nh;   //!
+   TBranch        *b_b;   //!
+   TBranch        *b_pt;   //!
    TBranch        *b_phi0;   //!
+   TBranch        *b_eta;   //!
 
 
    hTana(TTree *tree=0);
@@ -106,7 +112,10 @@ void hTana::Init(TTree *tree)
    fChain->SetMakeClass(1);
    fChain->SetBranchAddress("rp", &rp, &b_rp);
    fChain->SetBranchAddress("nh", &nh, &b_nh);
+   fChain->SetBranchAddress("b", &b, &b_b);
+   fChain->SetBranchAddress("pt", pt, &b_pt);
    fChain->SetBranchAddress("phi0", phi0, &b_phi0);
+   fChain->SetBranchAddress("eta", eta, &b_eta);
    Notify();
 }
 

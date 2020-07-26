@@ -306,9 +306,9 @@ void v2plot_v2pt_multipads(){
   gStyle->SetOptStat(0);
 
   TCanvas *c1 = new TCanvas("c1","multipads",200,10,1600,900);
-  c1->Divide(3,2,0,0);
+  c1->Divide(4,2,0,0);
   TCanvas *c2 = new TCanvas("c2","multipads",200,10,1600,900);
-  c2->Divide(3,2,0,0);
+  c2->Divide(4,2,0,0);
   Double_t xmin=0.1;
   Double_t xmax=1.63;
   Double_t ymin=0.;
@@ -316,10 +316,10 @@ void v2plot_v2pt_multipads(){
   TH2F *h[ncent], *h2[ncent];
   TLatex *latex, *latex2;
 
-  for(int icent=1; icent<7; icent++){
+  for(int icent=0; icent<8; icent++){
     // differential flow
     h[icent] = new TH2F("","",5,xmin,xmax,5,ymin,ymax);
-    c1 -> cd(icent);
+    c1 -> cd(icent+1);
     h[icent] -> Draw();
     h[icent] -> SetXTitle("p_{T}, GeV/c");
     h[icent] -> SetYTitle("v_{2}");
@@ -335,8 +335,8 @@ void v2plot_v2pt_multipads(){
     // reference flow
     Double_t ymin2 = TMath::MinElement(3,v2[icent])*0.98;
     Double_t ymax2 = TMath::MaxElement(3,v2[icent]) + TMath::MaxElement(3,ev2[icent])*1.1;
-    h2[icent] = new TH2F("","",3,0,3,10,0.03,0.08);
-    c2 -> cd(icent);
+    h2[icent] = new TH2F("","",3,0,3,10,0.0,0.15);
+    c2 -> cd(icent+1);
     h2[icent]->SetYTitle("v_{n}");
     h2[icent]->SetCanExtend(TH1::kAllAxes);
     const char *method[3]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}"};
@@ -347,7 +347,7 @@ void v2plot_v2pt_multipads(){
     h2[icent]->GetXaxis()->SetLabelSize(0.05);
     a->SetNdivisions(300); // 3 division, 0 sub-division
     h2[icent]->Draw();
-    grshade[icent] -> Draw("f");
+    //grshade[icent] -> Draw("f");
     mgRefFl[icent]-> Draw("P");
 
     latex2 = new TLatex(3*0.98,0.03*1.02,text1);

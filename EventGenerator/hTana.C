@@ -112,8 +112,6 @@ void hTana::v2gen(int nevent,double Mmean) {
   float nonflowrate = 0.250;
   /* Fraction of particles that are affected by nonflow effects. */
 
-  Bool_t bAcceptance = kFALSE;
-
   float A = PI/3.;
   float B = PI/2.;
 

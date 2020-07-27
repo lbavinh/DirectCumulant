@@ -525,9 +525,9 @@ void v2plot_AccCor_multipads(TString inputFile){
 
 
   }
-  c1 -> SaveAs("./acceptance/v2pt.png");
-  c2 -> SaveAs("./acceptance/v2compare.png");
-  c3 -> SaveAs("./acceptance/v2.png");
+  c1 -> SaveAs("./acceptance/v2pt_AC.png");
+  c2 -> SaveAs("./acceptance/v2compare_AC.png");
+  c3 -> SaveAs("./acceptance/v2_AC.png");
   //=============================================
   // Drawing reference flow separately for analysis
   TCanvas *c[ncent];
@@ -545,7 +545,7 @@ void v2plot_AccCor_multipads(TString inputFile){
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();    
-    sprintf(hname,"./acceptance/Cent%i-%i%%.png",i*10,(i+1)*10);
+    sprintf(hname,"./acceptance/Cent%i-%i%%_AC.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
 }

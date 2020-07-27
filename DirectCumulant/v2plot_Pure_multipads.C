@@ -6,11 +6,12 @@
 #include "TMultiGraph.h"
 #include "TLegend.h"
 #include "TFrame.h"
+#include "TString.h"
 #include "Func_StatErrCalc.C"
 using namespace std;
 #include <fstream>
 
-void v2plot_v2pt_multipads(){
+void v2plot_Pure_multipads(TString inputFile){
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
   static const Float_t maxpt = 3.5; // max pt
@@ -53,7 +54,10 @@ void v2plot_v2pt_multipads(){
   TProfile *prx, *pry, *prxy; // for covariance calculation
   Double_t stats[6]; // stats of TProfile
 
-  inFile = new TFile("./ROOTFile/v2QC.root","read");
+  inFile = new TFile(inputFile.Data(),"read");
+  // inFile = new TFile("./ROOTFile/v2QC.root","read");
+
+
   // Get TProfile histograms from ROOTFile
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     sprintf(hname,"hv2MC_cent%i",icent);
@@ -292,6 +296,8 @@ void v2plot_v2pt_multipads(){
 
   //==========================================================================================================================
 
+  // Drawing multipads of reference & differential flow
+
   TLegend *leg = new TLegend(0.11,.95,0.4,.78);
   leg -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
   leg -> AddEntry(grDifFl[1][0],"v_{2}{2,QC}","p");
@@ -317,7 +323,7 @@ void v2plot_v2pt_multipads(){
   TLatex *latex, *latex2;
 
   for(int icent=0; icent<8; icent++){
-    // differential flow
+    // differential flow (multipads)
     h[icent] = new TH2F("","",5,xmin,xmax,5,ymin,ymax);
     c1 -> cd(icent+1);
     h[icent] -> Draw();
@@ -332,7 +338,8 @@ void v2plot_v2pt_multipads(){
     latex -> SetTextSize(0.04);
     latex -> SetTextAlign(31);
     latex -> Draw();
-    // reference flow
+    //=============================================
+    // reference flow multipads
     Double_t ymin2 = TMath::MinElement(3,v2[icent])*0.98;
     Double_t ymax2 = TMath::MaxElement(3,v2[icent]) + TMath::MaxElement(3,ev2[icent])*1.1;
     h2[icent] = new TH2F("","",3,0,3,10,0.0,0.15);
@@ -356,8 +363,11 @@ void v2plot_v2pt_multipads(){
     latex2 -> SetTextAlign(31);
     latex2 -> Draw();
   }
-  c1 -> SaveAs("~/NIRS/Event\ Generator,\ Direct\ Cumulant/DirectCumulant/2707/pure/v2pt.png");
-  c2 -> SaveAs("~/NIRS/Event\ Generator,\ Direct\ Cumulant/DirectCumulant/2707/pure/v2.png");
+  c1 -> SaveAs("v2pt.png");
+  c2 -> SaveAs("v2.png");
+
+  //=============================================
+  // Drawing reference flow separately for analysis  
   TCanvas *c[ncent];
   TLatex *text[ncent];
   for (int i=0;i<ncent;i++){
@@ -375,8 +385,7 @@ void v2plot_v2pt_multipads(){
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();
-    sprintf(hname,"~/NIRS/Event\ Generator,\ Direct\ Cumulant/DirectCumulant/2707/pure/Cent%i-%i%%.png",i*10,(i+1)*10);
+    sprintf(hname,"Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-
 }

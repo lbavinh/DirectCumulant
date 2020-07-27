@@ -367,8 +367,8 @@ void v2plot_Nonflow_multipads(TString inputFile){
     latex2 -> SetTextAlign(31);
     latex2 -> Draw();
   }
-  c1 -> SaveAs("./nonflow/v2pt.png");
-  c2 -> SaveAs("./nonflow/v2.png");
+  c1 -> SaveAs(".v2pt_nonflow.png");
+  c2 -> SaveAs(".v2_nonflow.png");
   //=============================================
   // Drawing reference flow separately for analysis
   TCanvas *c[ncent];
@@ -388,7 +388,7 @@ void v2plot_Nonflow_multipads(TString inputFile){
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();
-    sprintf(hname,"./nonflow/Cent%i-%i%%.png",i*10,(i+1)*10);
+    sprintf(hname,".Cent%i-%i%%_nonflow.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
 }

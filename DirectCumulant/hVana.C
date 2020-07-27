@@ -428,14 +428,14 @@ void hVana::Ana_event(){
 /*
    List of trees with NON-FLOW (pairwise):
    /mnt/pool/2/lbavinh/EventGenerator/OUT/Non-flowPairWise/runlist.list
-   
+
    List of trees with NON-FLOW (quadruplet):
    /mnt/pool/2/lbavinh/EventGenerator/OUT/Non-flowQuadruplet/runlist.list
 
-   List of tress with PURE flow:
-   /mnt/pool/2/lbavinh/EventGenerator/OUT/PureEtaBimp/runlist.list
+   List of trees with PURE flow:
+   /mnt/pool/2/lbavinh/EventGenerator/OUT/FlowPureEtaBimp/runlist.list
 
-   List of tress with NON-UNIFORM ACCEPTANCE:
+   List of trees with NON-UNIFORM ACCEPTANCE:
    /mnt/pool/2/lbavinh/EventGenerator/OUT/Acceptance/runlist.list
 */
 

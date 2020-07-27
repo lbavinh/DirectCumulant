@@ -6,11 +6,12 @@
 #include "TMultiGraph.h"
 #include "TLegend.h"
 #include "TFrame.h"
+#include "TString.h"
 #include "Func_StatErrCalc.C"
 using namespace std;
 #include <fstream>
 
-void v2plot_v2pt_Nonflow_multipads(){
+void v2plot_Nonflow_multipads(TString inputFile){
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
   static const Float_t maxpt = 3.5; // max pt
@@ -53,7 +54,9 @@ void v2plot_v2pt_Nonflow_multipads(){
   TProfile *prx, *pry, *prxy; // for covariance calculation
   Double_t stats[6]; // stats of TProfile
 
-  inFile = new TFile("./ROOTFile/v2QC_nonflow.root","read");
+
+  inFile = new TFile(inputFile.Data(),"read");
+  // inFile = new TFile("./ROOTFile/v2QC_nonflow.root","read");
   // inFile = new TFile("./ROOTFile/v2QC_test_nonflow.root","read");
 
 
@@ -274,17 +277,19 @@ void v2plot_v2pt_Nonflow_multipads(){
                           cov24prime[ipt], sumwcor24prime[ipt], cov42prime[ipt], sumwcor42prime[ipt]);
 
     } // end of loop for all pT bin
+    // Monte-Carlo differential flow
     grDifFl[0][icent] = new TGraphErrors(npt,pt,v2MCpt,ept,ev2MCpt);
     grDifFl[0][icent] -> SetMarkerColor(kRed+1);
     grDifFl[0][icent] -> SetMarkerStyle(25);
-
+    // 2QC differential flow
     grDifFl[1][icent] = new TGraphErrors(npt,pt,v22dif,ept,v22difE);
     grDifFl[1][icent] -> SetMarkerColor(kGreen+1);
     grDifFl[1][icent] -> SetMarkerStyle(20);
-
+    // 4QC differential flow
     grDifFl[2][icent] = new TGraphErrors(npt,pt,v24dif,ept,v24difE);
     grDifFl[2][icent] -> SetMarkerColor(kAzure+2);
     grDifFl[2][icent] -> SetMarkerStyle(22);
+    // create multigraph
     mgDifFl[icent] = new TMultiGraph();
     for (int i=0; i<3; i++){
       grDifFl[i][icent] -> SetMarkerSize(1.3);
@@ -294,6 +299,8 @@ void v2plot_v2pt_Nonflow_multipads(){
   } // end of loop over centrality classes
 
   //==========================================================================================================================
+  
+  // Drawing multipads of reference & differential flow
 
   TLegend *leg = new TLegend(0.11,.95,0.4,.78);
   leg -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
@@ -335,6 +342,7 @@ void v2plot_v2pt_Nonflow_multipads(){
     latex -> SetTextSize(0.04);
     latex -> SetTextAlign(31);
     latex -> Draw();
+    //=============================================
     // reference flow
     Double_t ymin2 = TMath::MinElement(3,v2[icent])*0.98;
     Double_t ymax2 = TMath::MaxElement(3,v2[icent]) + TMath::MaxElement(3,ev2[icent])*1.1;
@@ -359,8 +367,10 @@ void v2plot_v2pt_Nonflow_multipads(){
     latex2 -> SetTextAlign(31);
     latex2 -> Draw();
   }
-  c1 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/DirectCumulant/2707/nonflow/v2pt.png");
-  c2 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/DirectCumulant/2707/nonflow/v2.png");
+  c1 -> SaveAs("./nonflow/v2pt.png");
+  c2 -> SaveAs("./nonflow/v2.png");
+  //=============================================
+  // Drawing reference flow separately for analysis
   TCanvas *c[ncent];
   TLatex *text[ncent];
   for (int i=0;i<ncent;i++){
@@ -378,8 +388,7 @@ void v2plot_v2pt_Nonflow_multipads(){
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();
-    sprintf(hname,"~/NIRS/Event Generator, Direct Cumulant/DirectCumulant/2707/nonflow/Cent%i-%i%%.png",i*10,(i+1)*10);
+    sprintf(hname,"./nonflow/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-
 }

@@ -1,52 +1,68 @@
-#define hVana_cxx
-#include "hVana.h"
+#define FlowANA_cxx
+#include "FlowANA.h"
 #include "function.C"
-#include <TH2.h>
-#include <TStyle.h>
-#include <TCanvas.h>
-#include "TProfile.h"
-#include "TMath.h"
 #include "TH1.h"
-#include "TString.h"
+#include "TH1I.h"
+#include "TH2.h"
+#include "TProfile.h"
+#include "TStyle.h"
+#include "TCanvas.h"
+#include "TMath.h"
+#include "TVector3.h"
 #include "TVectorD.h"
+#include "TRandom3.h"
 
 #include <iostream>
 #include <fstream>
+#include <cmath>
 using namespace std;
+//List of histograms and Ntuples....
+
+// static const int neta = 7;
+// static const int ndet = 3;
+// static const int ncent = 6;
+// static const int nth = 3;
+// static const int npid = 4;
+
+static const int npt = 12; // 0.5 - 3.6 GeV/c - number of pT bins
+// static const int npt = 24;
+// static const double bin_w[11]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8,4.0};
+static const double bin_pT[npt+1]={0.,0.1,0.2,0.3,0.4,0.5,0.6,0.8,1.0,1.2,1.4,1.7,2.0};
 
 static const int ncent = 8; // 0-80%
 static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 
 static const Float_t maxpt = 3.5; // max pt
-static const Float_t minpt = 0.2; // min pt
-static const int npt = 24; // 0.2 - 3.5 GeV/c 
-static const double bin_pT[npt+1]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,
-                                1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.0,2.2,2.4,
-                                2.6,2.8,3.0,3.2,3.5};
+static const Float_t minpt = 0.; // min pt
+
+
 
 TFile *d_outfile;      // out file with histograms and profiles
 
-TH1F *hRP; // reaction plane distr
-TH1F *hPt; // transverse momentum distr
-TH1F *hPhi; // distr of particle azimuthal angle with respect to RP 
-TH1F *hPhil; // distr of particle azimuthal angle in the laboratory coordinate system
-TH1F *hEta; // pseudorapidity
-TH1F *hBimp;// impact parameter
-TH1I *hMult; // emitted multiplicity 
+TH1F *hRP;     // reaction plane distr
+TH1F *hPt;     // transverse momentum distr
+TH1F *hPhi;    // distr of particle azimuthal angle with respect to RP 
+TH1F *hPhil;   // distr of particle azimuthal angle in the laboratory coordinate system
+TH1F *hEta;    // pseudorapidity
+TH1F *hBimp;   // impact parameter
+TH1I *hMult;   // emitted multiplicity 
 TH2F *hBimpvsMult; // 2-D histogram impact parameter (y) vs mult (x)
 
-// TProfile for reference flow (RF)
+// histograms for differential flow calculation from MC toy
+TH1F *hpt[ncent][npt];
+TH1F *hv2pt[ncent][npt];      // dif. v2 distr in each pT bin from MC toy
+// TProfile for reference flow
 TProfile *hv2MC[ncent];       // profile for MC integrated v2
 TProfile *hv22[ncent];        // profile <<2>> from 2nd Q-Cumulants
 TProfile *hv24[ncent];        // profile <<4>> from 4th Q-Cumulants
-// TProfile for differential flow (DF)
+// TProfile for differential flow
 TProfile *hPT[ncent][npt];       // profile pt 
 TProfile *hv2MCpt[ncent][npt];   // profile v2pt from MC toy   
 TProfile *hv22pt[ncent][npt];    // profile <<2'>> from 2nd Q-Cumulants
 TProfile *hv24pt[ncent][npt];    // profile <<4'>> from 4th Q-Cumulants
-
-// TProfile for covariance calculation according to (C.12), Appendix C
-// in Bilandzic, A. (2012). Anisotropic flow measurements in ALICE at the large hadron collider. 
+// TProfile for covariance calculation according to (C.12)
+// Bilandzic, A. (2012). Anisotropic flow measurements in ALICE at the large hadron collider. 
+// Appendix C
 TProfile *hcov24[ncent];       // <2>*<4>
 TProfile *hcov22prime[ncent][npt]; // <2>*<2'>
 TProfile *hcov24prime[ncent][npt]; // <2>*<4'>
@@ -54,32 +70,32 @@ TProfile *hcov42prime[ncent][npt]; // <2>*<4'>
 TProfile *hcov44prime[ncent][npt]; // <4>*<4'>
 TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 
-// Vectors for non-uniform acceptance correction
-// Reference flow acceptance correction
-Double_t cos2phi1[ncent]={0}, sin2phi1[ncent]={0}, cos2phi12[ncent]={0}, sin2phi12[ncent]={0}, cos2phi123[ncent]={0}, sin2phi123[ncent]={0};
-Double_t sumM[ncent]={0}, sumMMm1[ncent]={0}, sumMMm1Mm2[ncent]={0};
-TVectorD *vcos2phi1[ncent], *vsin2phi1[ncent], *vcos2phi12[ncent], *vsin2phi12[ncent], *vcos2phi123[ncent], *vsin2phi123[ncent]; // to be written in outFile
-// Differential flow acceptance correction
-Double_t cos2psi1[ncent][npt]={{0}}, sin2psi1[ncent][npt]={{0}}, cos2psi1phi2[ncent][npt]={{0}}, sin2psi1phi2[ncent][npt]={{0}},
-         cos2psi1pphi23[ncent][npt]={{0}}, sin2psi1pphi23[ncent][npt]={{0}}, cos2psi1mphi23[ncent][npt]={{0}}, sin2psi1mphi23[ncent][npt]={{0}};
-Double_t summp[ncent][npt]={{0}}, summpMmmq[ncent][npt]={{0}}, summpMm2mqMm1[ncent][npt]={{0}};
-TVectorD *vcos2psi1[ncent], *vsin2psi1[ncent], *vcos2psi1phi2[ncent], *vsin2psi1phi2[ncent], *vcos2psi1pphi23[ncent],
-         *vsin2psi1pphi23[ncent], *vcos2psi1mphi23[ncent], *vsin2psi1mphi23[ncent];  // to be written in outFile
 
-void hVana::Booking(TString outFile){
+// Vectors saving terms for non-uniform acceptance correction
+Double_t cos2phi1[ncent]={0}, sin2phi1[ncent]={0}, cos2phi12[ncent]={0}, sin2phi12[ncent]={0}, cos2phi123[ncent]={0}, sin2phi123[ncent]={0}; // for non-uniform acceptance RF calc
+Double_t cos2psi1[ncent][npt]={{0}}, sin2psi1[ncent][npt]={{0}}, cos2psi1phi2[ncent][npt]={{0}}, sin2psi1phi2[ncent][npt]={{0}},
+         cos2psi1pphi23[ncent][npt]={{0}}, sin2psi1pphi23[ncent][npt]={{0}}, cos2psi1mphi23[ncent][npt]={{0}}, sin2psi1mphi23[ncent][npt]={{0}}; // for non-uniform acceptance DF calc
+Double_t sumM[ncent]={0}, sumMMm1[ncent]={0}, sumMMm1Mm2[ncent]={0}; // for non-uniform acceptance RF calc
+Double_t summp[ncent][npt]={{0}}, summpMmmq[ncent][npt]={{0}}, summpMm2mqMm1[ncent][npt]={{0}}; // for non-uniform acceptance DF calc
+
+TVectorD *vcos2phi1[ncent], *vsin2phi1[ncent], *vcos2phi12[ncent], *vsin2phi12[ncent], *vcos2phi123[ncent], *vsin2phi123[ncent];
+TVectorD *vcos2psi1[ncent], *vsin2psi1[ncent], *vcos2psi1phi2[ncent], *vsin2psi1phi2[ncent], *vcos2psi1pphi23[ncent],
+         *vsin2psi1pphi23[ncent], *vcos2psi1mphi23[ncent], *vsin2psi1mphi23[ncent];
+
+void FlowANA::Booking(TString outFile){
    char name[800];
    char title[800];
    d_outfile = new TFile(outFile.Data(),"recreate");
    cout << outFile.Data() << " has been initialized" << endl;
 
    hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", 2500, 0, 2500);
-   hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", 1500, 0, 1500, 200, 0., 20.);
+   hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", 2500, 0, 2500, 200, 0., 20.);
    hBimp = new TH1F("hBimp","Impact parameter;b (fm);dN/db",200, 0., 20.);
    hPt   = new TH1F("hPt","Pt-distr;p_{T} (GeV/c); dN/dP_{T}",500,0.,6.);
    hRP   = new TH1F("hRP","Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}",300,0.,7.);
    hPhi  = new TH1F("hPhi","Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})",300,0.,7.);
    hPhil = new TH1F("hPhil","Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi",300,0.,7.);
-   hEta  = new TH1F("hEta","Pseudorapidity distr; #eta; dN/d#eta",300,-2.2,2.2);
+   hEta  = new TH1F("hEta","Pseudorapidity distr; #eta; dN/d#eta",300,-8.,8.);
 
    for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
       sprintf(name,"hv2MC_cent%i",icent);
@@ -103,6 +119,14 @@ void hVana::Booking(TString outFile){
       hcov24[icent]->Sumw2();        
 
       for(int kpt=0; kpt<npt; kpt++){ // loop over pt bin
+         sprintf(name,"hpt_cent%i_pt%i",icent,kpt);
+         sprintf(title,"p_{T} distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
+         hpt[icent][kpt]=new TH1F(name,title,300,0.1,9.2);
+
+         sprintf(name,"hv2pt_cent%i_pt%i",icent,kpt);
+         sprintf(title,"v_{2}{MC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
+         hv2pt[icent][kpt]=new TH1F(name,title,400,-1,1);
+
          sprintf(name,"hPT_cent%i_pt%i",icent,kpt);
          sprintf(title,"p_{T} distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
          hPT[icent][kpt]=new TProfile(name,title,1,0.,1.);
@@ -171,9 +195,9 @@ void hVana::Booking(TString outFile){
    cout << "Histograms have been initialized" << endl;
 }
 
-void hVana::Loop_a_file(TString file){
+void FlowANA::Loop_a_file(TString file){
    TFile *treefile = TFile::Open(file.Data());
-   TTree *tree = (TTree*)treefile->Get("htree");
+   TTree *tree = (TTree*)treefile->Get("mctree");
    if(tree == 0) {
       cout << "htree is not found in "<< file << endl;
       treefile->Close();
@@ -186,13 +210,11 @@ void hVana::Loop_a_file(TString file){
    cout << file  <<" file processed"<<endl;
 }
 
-void hVana::Ana_end(){
+void FlowANA::Ana_end(){
 
    d_outfile -> cd();
-   
-   // Calculate  terms for acceptance correction & write to outFile
    char name[800];
-   for(int icent=0; icent<ncent; icent++){ // loop over centrality classes
+   for(int icent=0; icent<ncent; icent++){
       cos2phi1[icent]    /= sumM[icent];
       sin2phi1[icent]    /= sumM[icent];
       cos2phi12[icent]   /= sumMMm1[icent];
@@ -220,7 +242,7 @@ void hVana::Ana_end(){
       sprintf(name,"vsin2phi123_cent%i",icent);
       vsin2phi123[icent] -> Write(name);
 
-      for(int i=0; i<npt; i++){ // loop over pT bin
+      for(int i=0; i<npt; i++){
          cos2psi1[icent][i]         /= summp[icent][i];
          sin2psi1[icent][i]         /= summp[icent][i];
          cos2psi1phi2[icent][i]     /= summpMmmq[icent][i];
@@ -239,6 +261,7 @@ void hVana::Ana_end(){
          (*vcos2psi1mphi23[icent])(i)   = cos2psi1mphi23[icent][i];
          (*vsin2psi1mphi23[icent])(i)   = sin2psi1mphi23[icent][i];
       }
+
       sprintf(name,"vcos2psi1_cent%i",icent);
       vcos2psi1[icent] -> Write(name);
       sprintf(name,"vsin2psi1_cent%i",icent);
@@ -255,14 +278,14 @@ void hVana::Ana_end(){
       vcos2psi1mphi23[icent] -> Write(name);
       sprintf(name,"vsin2psi1mphi23_cent%i",icent);
       vsin2psi1mphi23[icent] -> Write(name);
-   } // end of loop over centrality classes
+   }
 
    d_outfile -> Write();
    d_outfile -> Close();
    cout << "Histfile has been written" << endl;
 }
 
-void hVana::Loop()
+void FlowANA::Loop()
 {
    if (fChain == 0) return;
 
@@ -279,16 +302,15 @@ void hVana::Loop()
    }
 }
 
-void hVana::Ana_event(){
-   int icent=-1;   
-   for (int i=0; i<ncent; i++){ // loop over centrality
-      if (CentB(b) == bin_cent[i]) icent = i;
-   }
+void FlowANA::Ana_event(){
+   float rp = 0;
+   // rp = gRandom->Uniform(0, 2.*TMath::Pi());
+   int icent=CentB(bimp);
    if (icent<0) return;
    hMult -> Fill(nh);
    hRP -> Fill(rp);
-   hBimp -> Fill(b);
-   hBimpvsMult -> Fill(nh,b);
+   hBimp -> Fill(bimp);
+   hBimpvsMult -> Fill(nh,bimp);
    // notation as (26) in DOI:10.1103/PhysRevC.83.044913
 
    // Q-vector of RFP
@@ -313,40 +335,51 @@ void hVana::Ana_event(){
    // Average single-event 2- and 4- particle correlations : <2> & <4>
    Double_t cor22 = 0., cor24 = 0.;
    for(int i=0;i<nh;i++) { // track loop
-      hPhi -> Fill(phi0[i]-rp);
-      hPhil -> Fill(phi0[i]);
-      hEta -> Fill(eta[i]);
-      
-      Int_t ipt = 0;
-      Float_t pT = pt[i];
-      hPt -> Fill(pT);
-      
-      for(int j=0; j<npt;j++){
-         if(pT>=bin_pT[j] && pT<bin_pT[j+1]) ipt = j;
-      }
+      float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
+      float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
+      float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
+      if (pt >= minpt && pt <=maxpt && eta<=2.5 && eta>=-2.5){ // track selection
+         float phi = TMath::ATan2( momy[i], momx[i] );
+         if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
-      Double_t v2 = TMath::Cos(2.*(phi0[i] - rp));
-      // Calculate differential v2 from MC toy
-      hPT[icent][ipt]-> Fill(0.5,pT,1);
-      hv2MCpt[icent][ipt]->Fill(0.5,v2,1);
+         hPhi -> Fill(phi);
+         float phil = phi+rp;
+         while (phil>2.*TMath::Pi()) phil-=2.*TMath::Pi(); /* To make sure that phil is between 0 and 2 Pi */
+         hPhil -> Fill(phil);
+         hEta -> Fill(eta);
 
-      // RFP
-      if(eta[i]<0){
-         hv2MC[icent] -> Fill(0.5,v2,1); // v2 from MC toy
-         Qx2+=TMath::Cos(2*phi0[i]);
-         Qy2+=TMath::Sin(2*phi0[i]);
-         Qx4+=TMath::Cos(4*phi0[i]);
-         Qy4+=TMath::Sin(4*phi0[i]);
-         M++;
-      }
+         Int_t ipt = 0;
+         hPt -> Fill(pt);
+         
+         for(int j=0; j<npt;j++){
+            if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
+         }
 
-      // POI
-      if(eta[i]>=0){
-      px2[ipt]+=TMath::Cos(2*phi0[i]);
-      py2[ipt]+=TMath::Sin(2*phi0[i]);
-      mp[ipt]++;
-      }
+         Double_t v2 = TMath::Cos(2.*phi);
 
+         if(eta<-0.05){ // RFP selection
+         //if (pdg[i]==211){ // pion selection
+            hv2MC[icent] -> Fill(0.5,v2,1); // v2 from MC toyhv2MC[icent] -> Fill(0.5,v2,1); // v2 from MC toy
+            Qx2+=TMath::Cos(2.*phil);
+            Qy2+=TMath::Sin(2.*phil);
+            Qx4+=TMath::Cos(4.*phil);
+            Qy4+=TMath::Sin(4.*phil);
+            M++;
+         } // end of RFP selection
+
+         if(eta>0.05){ // POI selection
+         //if (pdg[i]==321){ // kaon selection   
+         // Calculate differential v2 from MC toy
+         hpt[icent][ipt]->Fill(pt);             // pt histogram
+         hPT[icent][ipt]-> Fill(0.5,pt,1);      // pt profile
+         hv2pt[icent][ipt]->Fill(v2);
+         hv2MCpt[icent][ipt]->Fill(0.5,v2,1);   // I found it better to use TProfile, than TH1
+
+         px2[ipt]+=TMath::Cos(2.*phil);
+         py2[ipt]+=TMath::Sin(2.*phil);
+         mp[ipt]++;
+         } // end of POI selection
+	   } // end of track selection
    } // end of track loop
    if (M >= 2.){ // <2> definition condition
       Q2 = TComplex(Qx2, Qy2);
@@ -422,36 +455,28 @@ void hVana::Ana_event(){
          summpMm2mqMm1[icent][ipt] += (mp[ipt]*M-2.*mq[ipt])*(M-1);
       }
    } // end of <4> definition condition
-
 }
 
-/*
-   List of trees with NON-FLOW (pairwise):
-   /mnt/pool/2/lbavinh/EventGenerator/OUT/Non-flowPairWise/runlist.list
-   
-   List of trees with NON-FLOW (quadruplet):
-   /mnt/pool/2/lbavinh/EventGenerator/OUT/Non-flowQuadruplet/runlist.list
-
-   List of tress with PURE flow:
-   /mnt/pool/2/lbavinh/EventGenerator/OUT/PureEtaBimp/runlist.list
-
-   List of tress with NON-UNIFORM ACCEPTANCE:
-   /mnt/pool/2/lbavinh/EventGenerator/OUT/Acceptance/runlist.list
-*/
-
-void loop_a_list_of_trees(){
-   hVana *ana = new hVana();
-   ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC.root");
-
-   ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/Non-flowPairWise/runlist.list"); // tree runlist
-   char filename[200];
-   int nfiles=1;
-   while(ifile.getline(filename,200)) {
-      cout << nfiles <<" file is processing "<<filename <<endl;
-      ana->Loop_a_file(filename);
-      nfiles++;
-   }
-   cout<< "Done. " << nfiles-1 << " files are processed." << endl;
+// void loop_a_list_of_tree(){
+//    hVana *ana = new hVana();
+//    ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC_test.root");
+//    //ana->Loop_a_file("/mnt/pool/2/lbavinh/EventGenerator/OUT/FlowPureEtaBimp/v2hadron_1.root");
+//    ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/FlowPureEtaBimp/runlist.list");
+//    char filename[200];
+//    int nfiles=1;
+//    while(ifile.getline(filename,200)) {
+//       cout << nfiles <<" file is processing "<<filename <<endl;
+//       ana->Loop_a_file(filename);
+//       nfiles++;
+//    }
+//    cout<< "Done. " << nfiles-1 << " files are processed." << endl;
+//    ana -> Ana_end();
+//    cout << "Histfile written. Congratz!" << endl;
+// }
+void loop_test(){
+   FlowANA *ana = new FlowANA();
+   ana->Booking("./ROOTFile/test.root");
+   ana->Loop_a_file("urqmd_1033721_1.mcpico.root");
    ana -> Ana_end();
-   cout << "Histfile written. Congratz!" << endl;
+   cout << "Histfile written. Congratz!" << endl;   
 }

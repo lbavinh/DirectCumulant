@@ -7,11 +7,12 @@
 #include "TLegend.h"
 #include "TFrame.h"
 #include "TVectorD.h"
+#include "TString.h"
 #include "Func_StatErrCalc.C"
 using namespace std;
 #include <fstream>
 
-void v2plot_v2pt_AccCor_multipads(){
+void v2plot_AccCor_multipads(TString inputFile){
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
   static const Float_t maxpt = 3.5; // max pt
@@ -56,11 +57,10 @@ void v2plot_v2pt_AccCor_multipads(){
   TProfile *prx, *pry, *prxy; // for covariance calculation
   Double_t stats[6]; // stats of TProfile
 
-  inFile = new TFile("./ROOTFile/v2QC_Acceptance.root","read");
+  inFile = new TFile(inputFile.Data(),"read");
+  // inFile = new TFile("./ROOTFile/v2QC_Acceptance.root","read");
   // inFile = new TFile("./ROOTFile/v2QC_test.root","read"); // test with uniform acceptance
   
-
-
   // Get TProfile histograms from ROOTFile
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     sprintf(hname,"hv2MC_cent%i",icent);
@@ -422,6 +422,9 @@ void v2plot_v2pt_AccCor_multipads(){
   } // end of loop over centrality classes
 
   //==========================================================================================================================
+
+  // Drawing multipads of reference & differential flow
+
   TLegend *leg[2];
   leg[0] = new TLegend(.11,.95,.42,.78); // legend for dif. flow plotting
   leg[0] -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
@@ -435,7 +438,6 @@ void v2plot_v2pt_AccCor_multipads(){
   leg[1] -> AddEntry(grRefFl[0],"v_{2} w/o acc.corr.","p");
   leg[1] -> AddEntry(grRefFlAC[0],"v_{2} with acc.corr.","p");
 
-
   for (int i=0;i<2;i++){
     leg[i] -> SetFillColor(0);
     leg[i] -> SetTextSize(0.04);
@@ -447,11 +449,11 @@ void v2plot_v2pt_AccCor_multipads(){
   gStyle->SetPadTickY(1);
   gStyle->SetOptStat(0);
 
-  TCanvas *c1 = new TCanvas("c1","multipads",200,10,1600,900);
+  TCanvas *c1 = new TCanvas("c1","Differential flow",200,10,1600,900);
   c1->Divide(4,2,0,0);
-  TCanvas *c2 = new TCanvas("c2","multipads",200,10,1600,900);
+  TCanvas *c2 = new TCanvas("c2","Reference flow with & without acceptance correction",200,10,1600,900);
   c2->Divide(4,2,0,0);
-  TCanvas *c3 = new TCanvas("c3","multipads",200,10,1600,900);
+  TCanvas *c3 = new TCanvas("c3","Reference flow with acceptance correction",200,10,1600,900);
   c3->Divide(4,2,0,0);
   Double_t xmin=0.1;
   Double_t xmax=1.63;
@@ -461,7 +463,8 @@ void v2plot_v2pt_AccCor_multipads(){
   TLatex *latex, *latex2;
 
   for(int icent=0; icent<8; icent++){
-    // differential flow
+    // Differential flow
+
     h[icent] = new TH2F("","",1,xmin,xmax,1,ymin,ymax);
     c1 -> cd(icent+1);
     h[icent] -> Draw();
@@ -478,10 +481,10 @@ void v2plot_v2pt_AccCor_multipads(){
     latex -> SetTextSize(0.04);
     latex -> SetTextAlign(31);
     latex -> Draw();
-    // reference flow
-    // Double_t ymin2 = TMath::MinElement(3,v2[icent])*0.98;
-    // Double_t ymax2 = TMath::MaxElement(3,v2[icent]) + TMath::MaxElement(3,ev2[icent])*1.1;
-    h2[icent] = new TH2F("","",3,0,3,15,0.02,0.17); // 0.02,0.17 for comparison // 0.03,0.12
+    //=============================================
+    // Reference flow with & without acceptance correction
+
+    h2[icent] = new TH2F("","",3,0,3,15,0.02,0.17);
     c2 -> cd(icent+1);
     h2[icent]->SetYTitle("v_{n}");
     h2[icent]->SetCanExtend(TH1::kAllAxes);
@@ -501,10 +504,10 @@ void v2plot_v2pt_AccCor_multipads(){
     latex2 -> SetTextSize(0.04);
     latex2 -> SetTextAlign(31);
     latex2 -> Draw();
+    //=============================================
+    // Reference flow with acceptance correction
 
-    // reference flow
-
-    h3[icent] = new TH2F("","",3,0,3,15,0.01,0.085); // 0.02,0.17 for comparison // 0.03,0.12
+    h3[icent] = new TH2F("","",3,0,3,15,0.01,0.085);
     c3 -> cd(icent+1);
     h3[icent]->SetYTitle("v_{n}");
     h3[icent]->SetCanExtend(TH1::kAllAxes);
@@ -522,9 +525,11 @@ void v2plot_v2pt_AccCor_multipads(){
 
 
   }
-  c1 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/DirectCumulant/2707/acceptance/v2pt.png");
-  c2 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/DirectCumulant/2707/acceptance/v2compare.png");
-  c3 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/DirectCumulant/2707/acceptance/v2.png");
+  c1 -> SaveAs("./acceptance/v2pt.png");
+  c2 -> SaveAs("./acceptance/v2compare.png");
+  c3 -> SaveAs("./acceptance/v2.png");
+  //=============================================
+  // Drawing reference flow separately for analysis
   TCanvas *c[ncent];
   TLatex *text[ncent];
   for (int i=0;i<ncent;i++){
@@ -540,8 +545,7 @@ void v2plot_v2pt_AccCor_multipads(){
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();    
-    sprintf(hname,"~/NIRS/Event Generator, Direct Cumulant/DirectCumulant/2707/acceptance/Cent%i-%i%%.png",i*10,(i+1)*10);
+    sprintf(hname,"./acceptance/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-  
 }

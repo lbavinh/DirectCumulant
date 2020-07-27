@@ -11,6 +11,8 @@
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
+#include <TComplex.h>
+#include <TString.h>
 
 // Header file for the classes stored in the TTree if any.
 
@@ -62,6 +64,11 @@ public :
    virtual void     Loop();
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
+   // additional function
+   void Booking(TString outFile);
+   void Loop_a_file(TString file);
+   void Ana_end();
+   void Ana_event();   
 };
 
 #endif

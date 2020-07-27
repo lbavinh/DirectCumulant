@@ -10,15 +10,13 @@
 using namespace std;
 #include <fstream>
 
-void v2plot_v2pt_Nonflow_EtaGap_multipads(){
+void v2plot(){
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
   static const Float_t maxpt = 3.5; // max pt
-  static const Float_t minpt = 0.2; // min pt
-  static const int npt = 24; // 0.2 - 3.5 GeV/c 
-  static const double bin_pT[25]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,
-                                  1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.0,2.2,2.4,
-                                  2.6,2.8,3.0,3.2,3.5};
+  static const Float_t minpt = 0.; // min pt
+  static const int npt = 12; // 0.2 - 3.5 GeV/c 
+  static const double bin_pT[13]={0.,0.1,0.2,0.3,0.4,0.5,0.6,0.8,1.0,1.2,1.4,1.7,2.0};
   // Input hist
 
   // TProfile for reference flow
@@ -53,8 +51,11 @@ void v2plot_v2pt_Nonflow_EtaGap_multipads(){
   TProfile *prx, *pry, *prxy; // for covariance calculation
   Double_t stats[6]; // stats of TProfile
 
-  //inFile = new TFile("./ROOTFile/v2QC_nonflow.root","read");
-  inFile = new TFile("./ROOTFile/v2QC_nonflow_etagap0.1.root","read");
+  // inFile = new TFile("./ROOTFile/v2QC.root","read");
+
+  // inFile = new TFile("./ROOTFile/test.root","read");
+  // inFile = new TFile("./ROOTFile/v2QC_etagap.root","read");
+  inFile = new TFile("./ROOTFile/v2QC_etagap_eta2.5.root","read");  
   // Get TProfile histograms from ROOTFile
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     sprintf(hname,"hv2MC_cent%i",icent);
@@ -293,7 +294,7 @@ void v2plot_v2pt_Nonflow_EtaGap_multipads(){
 
   //==========================================================================================================================
 
-  TLegend *leg = new TLegend(0.11,.95,0.4,.78);
+  TLegend *leg = new TLegend(0.11,.89,0.4,.78);
   leg -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
   leg -> AddEntry(grDifFl[1][0],"v_{2}{2,QC}","p");
   leg -> AddEntry(grDifFl[2][0],"v_{2}{4,QC}","p");
@@ -310,12 +311,12 @@ void v2plot_v2pt_Nonflow_EtaGap_multipads(){
   c1->Divide(4,2,0,0);
   TCanvas *c2 = new TCanvas("c2","multipads",200,10,1600,900);
   c2->Divide(4,2,0,0);
-  Double_t xmin=0.1;
-  Double_t xmax=1.63;
-  Double_t ymin=0.;
-  Double_t ymax=0.23;
+  Double_t xmin=0.;
+  Double_t xmax=2.15;
+  Double_t ymin=-0.03;
+  Double_t ymax=0.15;
   TH2F *h[ncent], *h2[ncent];
-  TLatex *latex, *latex2;
+  TLatex *latex, *latex2, *latex3;
 
   for(int icent=0; icent<8; icent++){
     // differential flow
@@ -327,8 +328,8 @@ void v2plot_v2pt_Nonflow_EtaGap_multipads(){
     mgDifFl[icent]-> Draw("P");
     leg -> Draw();
     char text1[800];
-    sprintf(text1,"cent: %i-%i%%",10*(icent),10*(icent+1));
-    latex = new TLatex(xmax*0.98,ymin+0.02,text1);
+    sprintf(text1,"#splitline{cent: %i-%i%%}{#splitline{#eta_{RFP}<-0.05}{#eta_{POI}>0.05}}",10*(icent),10*(icent+1));
+    latex = new TLatex(xmax*0.98,ymin+0.025,text1);
     latex -> SetTextFont(62);
     latex -> SetTextSize(0.04);
     latex -> SetTextAlign(31);
@@ -336,7 +337,7 @@ void v2plot_v2pt_Nonflow_EtaGap_multipads(){
     // reference flow
     Double_t ymin2 = TMath::MinElement(3,v2[icent])*0.98;
     Double_t ymax2 = TMath::MaxElement(3,v2[icent]) + TMath::MaxElement(3,ev2[icent])*1.1;
-    h2[icent] = new TH2F("","",3,0,3,10,0.0,0.15);
+    h2[icent] = new TH2F("","",3,0,3,10,ymin,0.1);
     c2 -> cd(icent+1);
     h2[icent]->SetYTitle("v_{n}");
     h2[icent]->SetCanExtend(TH1::kAllAxes);
@@ -351,14 +352,14 @@ void v2plot_v2pt_Nonflow_EtaGap_multipads(){
     //grshade[icent] -> Draw("f");
     mgRefFl[icent]-> Draw("P");
 
-    latex2 = new TLatex(3*0.98,0.03*1.02,text1);
+    latex2 = new TLatex(3*0.98,-0.01,text1);
     latex2 -> SetTextFont(62);
     latex2 -> SetTextSize(0.04);
     latex2 -> SetTextAlign(31);
     latex2 -> Draw();
   }
-  c1 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/DirectCumulant/2707/nonflowetagap/v2pt.png");
-  c2 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/DirectCumulant/2707/nonflowetagap/v2.png");
+  c1 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/urqmd/graph/v2pt.png");
+  c2 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/urqmd/graph/v2.png");
   TCanvas *c[ncent];
   TLatex *text[ncent];
   for (int i=0;i<ncent;i++){
@@ -370,14 +371,40 @@ void v2plot_v2pt_Nonflow_EtaGap_multipads(){
     grRefFl[i] -> SetTitle("Reference flow");
     grRefFl[i] -> Draw("AP");
     char text1[800];
-    sprintf(text1,"#splitline{cent: %i-%i%%}{pure}",10*(i),10*(i+1));
+    sprintf(text1,"#splitline{cent: %i-%i%%}{#splitline{#eta_{RFP}<-0.05}{#eta_{POI}>0.05}}",10*(i),10*(i+1));
     text[i] = new TLatex(1.,(TMath::MinElement(3,grRefFl[i]->GetY())),text1);
     text[i] -> SetTextFont(62);
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();
-    sprintf(hname,"~/NIRS/Event Generator, Direct Cumulant/DirectCumulant/2707/nonflowetagap/Cent%i-%i%%.png",i*10,(i+1)*10);
+    sprintf(hname,"~/NIRS/Event Generator, Direct Cumulant/urqmd/graph/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-
+  for (int i=0; i<ncent; i++){
+    cout<< 10*(i)<<"-"<<10*(i+1)<<"\t"<< v2[i][0]<<"\t"<< v2[i][1]<<"\t"<< v2[i][2] << endl;
+  }
+  TCanvas *c3 = new TCanvas("c3","v2pt",200,10,1600,900);
+  // differential flow
+  TH2F *h3 = new TH2F("h3","",5,xmin,xmax,5,ymin,ymax);
+  h3 -> Draw();
+  h3 -> SetXTitle("p_{T}, GeV/c");
+  h3 -> SetYTitle("v_{2}");
+  int mycent = 3;
+  mgDifFl[mycent]-> Draw("P");
+  leg -> Draw();
+  sprintf(hname,"#splitline{cent: %i-%i%%}{#splitline{#eta_{RFP}<-0.05}{#eta_{POI}>0.05}}",10*(mycent),10*(mycent+1));
+  latex3 = new TLatex(xmax*0.98,ymin+0.03,hname);
+  latex3 -> SetTextFont(62);
+  latex3 -> SetTextSize(0.04);
+  latex3 -> SetTextAlign(31);
+  latex3 -> Draw();
+  sprintf(hname,"~/NIRS/Event Generator, Direct Cumulant/urqmd/graph/v2pt_Cent%i-%i%%.png",mycent*10,(mycent+1)*10);
+  c3 -> SaveAs(hname);
+  TFile *outFile = new TFile("TGraph.root","recreate");
+  outFile -> cd();
+  for (int i=0; i<3; i++){
+    sprintf(hname,"gr_%i",i);
+    grDifFl[i][mycent] -> Write(hname);
+  }
+  outFile -> Close();
 }

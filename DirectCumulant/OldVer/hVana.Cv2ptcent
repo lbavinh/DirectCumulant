@@ -149,8 +149,6 @@ void hVana::Booking(TString outFile){
       } // end of loop over pt bin
    } // end of loop over centrality classes
 
-
-
    cout << "Histograms have been initialized" << endl;
 }
 
@@ -249,7 +247,7 @@ void hVana::Ana_event(){
       hv2MCpt[icent][ipt]->Fill(0.5,v2,1);
 
       // RFP
-      if(eta[i]<-0.95){
+      if(eta[i]<-0.05){
          // calculate integrated v2 from MC toy for RFP
          hv2MC[icent] -> Fill(0.5,v2,1);
          Qx2+=TMath::Cos(2*phi0[i]);
@@ -265,6 +263,10 @@ void hVana::Ana_event(){
       py2[ipt]+=TMath::Sin(2*phi0[i]);
       mp[ipt]++;
       }
+
+      // qx2[ipt]+=TMath::Cos(2*phi0[i]);
+      // qy2[ipt]+=TMath::Sin(2*phi0[i]);
+      // mq[ipt]++;      
 
    } // end of track loop
    if (M >= 2.){ // <2> definition condition
@@ -349,7 +351,7 @@ void loop_a_list_of_tree(){
 //    cout << "Histfile written. Congratz!" << endl;
 // }
 
-void loop_a_list_of_tree(){
+void loop_a_list_of_trees(){
    hVana *ana = new hVana();
    ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC_nonflow_etagap0.1.root");
    

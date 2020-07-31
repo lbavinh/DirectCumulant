@@ -6,20 +6,23 @@
 #include "TLine.h"
 #include "TMath.h"
 
-void res2(Int_t mEnergy = 6) {
-  TFile *file = new TFile("sum.root");
-  char hname1[800];
+void res2(char* inFile) {
+  static const int ncent = 8; // bins of centrality classes
   char title[800];
+  (void)sprintf(title,"./ROOTFile/%s",inFile);
+  TFile *file = new TFile(title);
+  char hname1[800];
+  
 
-  float res2tpcEW[6]; // 6 - number of cent bins
-  float res2rxnEW[6];
-  float res2bbcEW[6];
+  float res2tpcEW[ncent]; // 6 - number of cent bins
+  float res2rxnEW[ncent];
+  float res2bbcEW[ncent];
 
-  float cent[6] = {5, 15, 25, 35, 45, 55};
-  float eres[6];    // errors of resolution
-  float ecent[6];   // errors of centrality bin
+  float cent[ncent] = {5, 15, 25, 35, 45, 55, 65, 75};
+  float eres[ncent];    // errors of resolution
+  float ecent[ncent];   // errors of centrality bin
 
-  for (int ic = 0; ic < 6; ic++) {
+  for (int ic = 0; ic < ncent; ic++) {
     (void)sprintf(hname1, "HRes_%i_%i_%i", 0, 0, ic); // Res of 2nd harmonic, TPC, ic-th cent bin
     TH1F *h3 = (TH1F *)file->Get(hname1);
     res2tpcEW[ic] = sqrt(h3->GetMean());
@@ -36,8 +39,9 @@ void res2(Int_t mEnergy = 6) {
     ecent[ic] = 0.03;
 
     cout << res2bbcEW[ic] << ",";
+    
   }
-
+  cout << endl;
   TCanvas *c1;
   c1 = new TCanvas("c1", "Flow analysis results", 100, 10, 500, 500);
 
@@ -61,7 +65,7 @@ void res2(Int_t mEnergy = 6) {
 
   c1->SetFillColor(0);
   float xmin1 = 0.0;
-  float xmax1 = 60;
+  float xmax1 = 80;
   float ymin1 = 0.0;
   float ymax1 = 1.0;
 
@@ -79,7 +83,7 @@ void res2(Int_t mEnergy = 6) {
   TGraphErrors *gr3;
 
   // const int npt=12;
-  gr1 = new TGraphErrors(6, cent, res2tpcEW, ecent, eres);
+  gr1 = new TGraphErrors(ncent, cent, res2tpcEW, ecent, eres);
   gr1->SetTitle("Resolution by TPC");
   gr1->SetMarkerColor(kRed);
   gr1->SetMarkerStyle(20);
@@ -87,7 +91,7 @@ void res2(Int_t mEnergy = 6) {
   gr1->Draw("P");
 
   // const int npt=12;
-  gr2 = new TGraphErrors(6, cent, res2rxnEW, ecent, eres);
+  gr2 = new TGraphErrors(ncent, cent, res2rxnEW, ecent, eres);
   gr2->SetTitle("Resolution by RXN");
   gr2->SetMarkerColor(kRed);
   gr2->SetMarkerStyle(24);
@@ -95,7 +99,7 @@ void res2(Int_t mEnergy = 6) {
   gr2->Draw("P");
 
   // const int npt=12;
-  gr3 = new TGraphErrors(6, cent, res2bbcEW, ecent, eres);
+  gr3 = new TGraphErrors(ncent, cent, res2bbcEW, ecent, eres);
   gr3->SetTitle("Resolution by BBC");
   gr3->SetMarkerColor(kBlue);
   gr3->SetMarkerStyle(21);

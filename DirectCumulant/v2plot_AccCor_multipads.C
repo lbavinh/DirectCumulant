@@ -190,16 +190,16 @@ void v2plot_AccCor_multipads(TString inputFile){
     v24int = Vn4(cor2,cor4);
 
     v24intAC = pow( -
-        (cor4 - 2*cor2*cor2
-        - 4. * ((*vcos2phi1))[0] * ((*vcos2phi123))[0]
+        (cor4 - 2.*cor2*cor2
+        - 4. * (*vcos2phi1)[0] * (*vcos2phi123)[0]
         + 4. * (*vsin2phi1)[0] * (*vsin2phi123)[0]
         - pow((*vcos2phi12)[0],2) - pow((*vsin2phi12)[0],2)
         + 4. * (*vcos2phi12)[0]
         * (pow(((*vcos2phi1))[0],2) - pow((*vsin2phi1)[0],2))
-        + 8. * (*vsin2phi12)[0] * (*vsin2phi1)[0] * ((*vcos2phi1))[0]
+        + 8. * (*vsin2phi12)[0] * (*vsin2phi1)[0] * (*vcos2phi1)[0]
         + 8. * cor2
-        * (pow(((*vcos2phi1))[0],2) + pow((*vsin2phi1)[0],2))
-        - 6. * pow(pow(((*vcos2phi1))[0],2) + pow((*vsin2phi1)[0],2),2))
+        * (pow((*vcos2phi1)[0],2) + pow((*vsin2phi1)[0],2))
+        - 6. * pow(pow((*vcos2phi1)[0],2) + pow((*vsin2phi1)[0],2),2))
         ,0.25);
 
     // statistical error of the 4-particle reference flow estimate (C.28)
@@ -331,29 +331,29 @@ void v2plot_AccCor_multipads(TString inputFile){
       // acceptance correction
 
       v24difAC[ipt] =
-            - (cor4Red[ipt] - 2*cor2Red[ipt]*cor2
-            - ((*vcos2psi1))[ipt] * ((*vcos2phi123))[0]
-            + ((*vsin2psi1))[ipt] * (*vsin2phi123)[0]
-            - ((*vcos2phi1))[0] * (*vcos2psi1mphi23)[ipt]
+            - (cor4Red[ipt] - 2.*cor2Red[ipt]*cor2
+            - (*vcos2psi1)[ipt] * (*vcos2phi123)[0]
+            + (*vsin2psi1)[ipt] * (*vsin2phi123)[0]
+            - (*vcos2phi1)[0] * (*vcos2psi1mphi23)[ipt]
             + (*vsin2phi1)[0] * (*vsin2psi1mphi23)[ipt]
-            - 2. * ((*vcos2phi1))[0] * (*vcos2psi1pphi23)[ipt]
+            - 2. * (*vcos2phi1)[0] * (*vcos2psi1pphi23)[ipt]
             - 2. * (*vsin2phi1)[0] * (*vsin2psi1pphi23)[ipt]
             - (*vcos2psi1phi2)[ipt] * (*vcos2phi12)[0]
             - (*vsin2psi1phi2)[ipt] * (*vsin2phi12)[0]
             + 2. * (*vcos2phi12)[0]
-            * (((*vcos2psi1))[ipt] * ((*vcos2phi1))[0] - ((*vsin2psi1))[ipt] * (*vsin2phi1)[0])
+            * ((*vcos2psi1)[ipt] * (*vcos2phi1)[0] - (*vsin2psi1)[ipt] * (*vsin2phi1)[0])
             + 2. * (*vsin2phi12)[0]
-            * (((*vsin2psi1))[ipt] * ((*vcos2phi1))[0] + ((*vcos2psi1))[ipt] * (*vsin2phi1)[0])
+            * ((*vsin2psi1)[ipt] * (*vcos2phi1)[0] + (*vcos2psi1)[ipt] * (*vsin2phi1)[0])
             + 4. * cor2
-            * (((*vcos2psi1))[ipt] * ((*vcos2phi1))[0] + ((*vsin2psi1))[ipt] * (*vsin2phi1)[0])
+            * ((*vcos2psi1)[ipt] * (*vcos2phi1)[0] + (*vsin2psi1)[ipt] * (*vsin2phi1)[0])
             + 2. * (*vcos2psi1phi2)[ipt]
-            * (pow(((*vcos2phi1))[0],2) - pow((*vsin2phi1)[0],2))
-            + 4. * (*vsin2psi1phi2)[ipt] * ((*vcos2phi1))[0] * (*vsin2phi1)[0]
-            + 4. * cor2Red[ipt] * (pow(((*vcos2phi1))[0],2) + pow((*vsin2phi1)[0],2))
-            - 6. * (pow(((*vcos2phi1))[0],2) - pow((*vsin2phi1)[0],2))
-            * (((*vcos2psi1))[ipt] * ((*vcos2phi1))[0] - ((*vsin2psi1))[ipt] * (*vsin2phi1)[0])
-            - 12. * ((*vcos2phi1))[0] * (*vsin2phi1)[0]
-            * (((*vsin2psi1))[ipt] * ((*vcos2phi1))[0] + ((*vcos2psi1))[ipt] * (*vsin2phi1)[0]))
+            * (pow((*vcos2phi1)[0],2) - pow((*vsin2phi1)[0],2))
+            + 4. * (*vsin2psi1phi2)[ipt] * (*vcos2phi1)[0] * (*vsin2phi1)[0]
+            + 4. * cor2Red[ipt] * (pow((*vcos2phi1)[0],2) + pow((*vsin2phi1)[0],2))
+            - 6. * (pow((*vcos2phi1)[0],2) - pow((*vsin2phi1)[0],2))
+            * ((*vcos2psi1)[ipt] * (*vcos2phi1)[0] - (*vsin2psi1)[ipt] * (*vsin2phi1)[0])
+            - 12. * (*vcos2phi1)[0] * (*vsin2phi1)[0]
+            * ((*vsin2psi1)[ipt] * (*vcos2phi1)[0] + (*vcos2psi1)[ipt] * (*vsin2phi1)[0]))
             * pow(v24intAC,-3.);
 
       // statistical error of the 4-particle differential flow estimate (C.46)
@@ -525,9 +525,9 @@ void v2plot_AccCor_multipads(TString inputFile){
 
 
   }
-  c1 -> SaveAs("./acceptance/v2pt_AC.png");
-  c2 -> SaveAs("./acceptance/v2compare_AC.png");
-  c3 -> SaveAs("./acceptance/v2_AC.png");
+  c1 -> SaveAs("./Graphics/acceptance/v2pt_AC.png");
+  c2 -> SaveAs("./Graphics/acceptance/v2compare_AC.png");
+  c3 -> SaveAs("./Graphics/acceptance/v2_AC.png");
   //=============================================
   // Drawing reference flow separately for analysis
   TCanvas *c[ncent];
@@ -545,7 +545,7 @@ void v2plot_AccCor_multipads(TString inputFile){
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();    
-    sprintf(hname,"./acceptance/Cent%i-%i%%_AC.png",i*10,(i+1)*10);
+    sprintf(hname,"./Graphics/acceptance/Cent%i-%i%%_AC.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
 }

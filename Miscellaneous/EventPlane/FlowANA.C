@@ -18,16 +18,14 @@
 #include <string>
 #include <cmath>
 
-
-
 using namespace std;
 //List of histograms and Ntuples....
 
-static const int neta = 7;
-static const int ndet = 3;
-static const int ncent = 6;
-static const int nth = 3;
-static const int npid = 4;
+static const int neta = 7; 	// bins of pseudorapidity
+static const int ndet = 3;	// type of detector: 0-TPC, 1-RXN, 2-BBC
+static const int ncent = 6; // bins of centrality classes
+static const int nth = 3;	// harmonic order: 0 - 2nd, 1 - 3rd, 2 - 4th
+static const int npid = 4;	// types of particle: 0 - all, 1 - pion, 2 - kaon,3 - proton
 
 static const int npt = 11; // 0.5 - 3.6 GeV/c - number of pT bins
 static const double bin_w[11]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8,4.0};
@@ -35,15 +33,15 @@ static const double bin_w[11]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8,4.0};
 static const float maxpt = 4.0; // max pt
 static const float minpt = 0.2; // min pt
 
-TH1F *hpt[ncent][npt][npid];
-TH1F *hv2[ndet][ncent][npt][npid];
+TH1F *hpt[ncent][npt][npid];		// transverse momentum distr
+TH1F *hv2[ndet][ncent][npt][npid];	// elliptic flow
 TH1F *hv22[ndet][npt][npid];
 
 TH1F *H_Qw[neta];
-TH1F *H_EP[nth][neta];
+TH1F *H_EP[nth][neta];				// reaction plane
 TH1F *H_Qv[nth][neta];
 
-TH1F *HRes[nth][ndet][ncent];
+TH1F *HRes[nth][ndet][ncent];		// resolution
 
 // for centrality determination
 TH1F *href1; // PHENIX BBC
@@ -52,24 +50,23 @@ TH1F *href3; // STAR TPC
 TH1F *href4; // STAR ntracks>2
 TH1F *href5; // STAR ntracks>4
 
-TH1F *hbimp; // impact parameter
+TH1F *hbimp;  // impact parameter
 TH1F *hbimp2; // impact parameter
 TH1F *hbimp3; // impact parameter
 TH1F *hbimp4; // impact parameter
 TH1F *hbimp5; // impact parameter
 
-TH1F *h2pt;
-TH1F *h2eta;
-TH1F *h2phi;
-TH1F *h2phis;
-TH1F *h2phirp;
+TH1F *h2pt;		// pt distribution
+TH1F *h2eta;	// eta distribution
+TH1F *h2phi;	// azim. angle
+TH1F *h2phis; 	// azim. angle (|eta| <0.5)
+TH1F *h2phirp;	// reaction plane
 
 static const double MYPI=3.141592654;
 
 TFile *d_outfile;
 
-void FlowANA::Loop()
-{
+void FlowANA::Loop() {
 
    if (fChain == 0) return;
 
@@ -86,7 +83,7 @@ void FlowANA::Loop()
 
 void FlowANA::ana_init(char *outfile) {
 
-book_hist(outfile);
+	book_hist(outfile);
  	gRandom->SetSeed( (unsigned int)time(NULL) ); 
 }
 
@@ -113,23 +110,22 @@ void FlowANA::ana_end() {
 		H_Qw[ieta]->Write();
 	}
 
-	for( int ith=0; ith<3; ith++ ){
+	for( int ith=0; ith<nth; ith++ ){
 		for( int ieta=0; ieta<neta; ieta++ ){
 			H_EP[ith][ieta]->Write();
 			H_Qv[ith][ieta]->Write();
 		}
 	}
 
-		for( int ith=0; ith<3; ith++ ){
-			for( int idet=0; idet<ndet; idet++ ){
-				for( int icent=0; icent<ncent; icent++ ){
-			
-					HRes[ith][idet][icent]->Write();
-				}
+	for( int ith=0; ith<nth; ith++ ){
+		for( int idet=0; idet<ndet; idet++ ){
+			for( int icent=0; icent<ncent; icent++ ){
+		
+				HRes[ith][idet][icent]->Write();
 			}
 		}
+	}
 	
-
 	for( int icent=0; icent<ncent; icent++ ){
 		for( int ipt=0; ipt<npt-1; ipt++ ){
 			for( int id=0; id<npid; id++ ){
@@ -138,7 +134,6 @@ void FlowANA::ana_end() {
 		}
 
 	}
-
 
 	for( int idet=0; idet<ndet; idet++ ){
 		for( int icent=0; icent<ncent; icent++ ){
@@ -253,14 +248,12 @@ void FlowANA::book_hist(char *outfile) {
 
 void FlowANA::ana_event(int jentry, int ientry) { 
 
-
-  	float phiRP = gRandom->Uniform(0, 2.*TMath::Pi());
-
+  float phiRP = gRandom->Uniform(0, 2.*TMath::Pi());
   // float phiRP = gRandom->Uniform(-1.0*TMath::Pi(),TMath::Pi());
  	h2phirp->Fill(phiRP);
 
-  // centrality cut and vertex +/- 30 cm cut
-  /*
+    // centrality cut and vertex +/- 30 cm cut
+    /*
  	if(cent>0&&cent<=80){
 		if(centrality<=5)        mycent=0;
 		else if(centrality<=10)  mycent=1;
@@ -275,9 +268,9 @@ void FlowANA::ana_event(int jentry, int ientry) {
 		else if(centrality<=55)  mycent=10;
 		else   mycent=11;
 	}	
-  */
+    */
 
- 	if(ientry%100000==0) cout << ientry<<endl;// event counter
+ 	if(ientry%100000==0) cout <<ientry<<endl;	// event counter
 
 	float sumQxy[3][7][2] = {{{0}}}; //[ith][eta][x,y]
 	float multQv[7] = {0}; //[eta]
@@ -295,9 +288,9 @@ void FlowANA::ana_event(int jentry, int ientry) {
 	
 	for(int itrk=0;itrk<nh;itrk++) {  //track loop
 
-		float pt  = sqrt( TMath::Power(momx[itrk], 2.0 ) + TMath::Power(momy[itrk], 2.0 ) );
+		float pt = sqrt( TMath::Power(momx[itrk],2.) + TMath::Power(momy[itrk],2.) );
 		
-		float oldphi = atan2( momx[itrk], momy[itrk] );
+		float oldphi = atan2( momy[itrk], momx[itrk] );
 		float phi=oldphi;
 		
 		float the = atan2( pt, momz[itrk] );//atan2(pt/pz)
@@ -313,7 +306,6 @@ void FlowANA::ana_event(int jentry, int ientry) {
 		h2phi->Fill(oldphi);
 		h2phis->Fill(phi);
 
-			
 		if( pt>0.1 && fabs(eta)<0.5 ) refMult1++;
 		if( pt>0.0 && fabs(eta)<0.5 ) refMult2++;
 		if(eta >=  3.1 && eta <=  4.0) Nch_R++;
@@ -340,7 +332,7 @@ void FlowANA::ana_event(int jentry, int ientry) {
 		// if( fabs(eta)>3.0 && fabs(eta)<5.0 )     fEta = 8; // BBC combined
 		
 		if( fEta>-1 ){
-			for( int ith=0; ith<3; ith++ ){
+			for( int ith=0; ith<nth; ith++ ){
 				sumQxy[ith][fEta][0] += pt * cos( (ith+2.0) * phi );
 				sumQxy[ith][fEta][1] += pt * sin( (ith+2.0) * phi );
 			}
@@ -354,27 +346,27 @@ void FlowANA::ana_event(int jentry, int ientry) {
 
 	if(Nch_L >= 2 && Nch_R >= 2){
 		href2 -> Fill(Nch_L + Nch_R);
-	hbimp2->Fill(bimp);
+		hbimp2->Fill(bimp);
 	}
 	if(refMult1>0){
 		href3 -> Fill(refMult1);
-	hbimp3->Fill(bimp);
+		hbimp3->Fill(bimp);
 	}
 		
 	if(refMult2>0){
 		href4 -> Fill(refMult1);
-	hbimp4->Fill(bimp);
+		hbimp4->Fill(bimp);
 	}
 
 	if(refMult1>2){
 		href5 -> Fill(refMult1);
-	hbimp5->Fill(bimp);
+		hbimp5->Fill(bimp);
 	}
 
-	float sumLR=Nch_L + Nch_R;
+	// float sumLR=Nch_L + Nch_R;
 
 	// int fCent   = GetCentrality10_RefMult( refMult1 );// STAR def
-	//if( fCent<0 ) cout << fCent << endl;
+	// if( fCent<0 ) cout << fCent << endl;
 
 	// int fCent   =  GetCentrality10_RefMultPHENIX(sumLR);
 
@@ -383,11 +375,11 @@ void FlowANA::ana_event(int jentry, int ientry) {
 	
 	float fEP[3][7]; //[ith][eta]
 	float fQv[3][7]; //[ith][eta]
-	for( int ith=0; ith<3; ith++ ){ // flow harmonic loop
+	for( int ith=0; ith<3; ith++ ){ // flow harmonic loop (2,3,4)
 		for( int ieta=0; ieta<7; ieta++ ){ // ep detector gap 
 			if( multQv[ieta]>5 ){ // multiplicity > 5
 				fEP[ith][ieta] = atan2( sumQxy[ith][ieta][1], sumQxy[ith][ieta][0] ) / ( ith + 2.0 );
-				fEP[ith][ieta] = atan2( sin( (ith+2.0)*fEP[ith][ieta] ), cos( (ith+2.0)*fEP[ith][ieta] ) );
+				fEP[ith][ieta] = atan2( sin( (ith+2.0)*fEP[ith][ieta] ), cos( (ith+2.0)*fEP[ith][ieta] ) ); // what for?
 				fEP[ith][ieta] /= ( ith + 2.0 );
 
 				fQv[ith][ieta] = sqrt( TMath::Power( sumQxy[ith][ieta][0],2.0)+TMath::Power( sumQxy[ith][ieta][1], 2.0))/sqrt( multQv[ieta]);
@@ -408,9 +400,9 @@ void FlowANA::ana_event(int jentry, int ientry) {
 		}// end of eta loop
 	}// end of harm loop
 
-	//Resolution
+	// Resolution
 	for( int ith=0; ith<3; ith++ ){
-		for( int icb=0; icb<3; icb++ ){
+		for( int icb=0; icb<3; icb++ ){ // icb - detector
 			double psi1, psi2, fq1, fq2;
 		
 			if ( icb==0 ){ psi1 = fEP[ith][0]; psi2 = fEP[ith][1]; fq1 = fQv[ith][0]; fq2 = fQv[ith][1]; } // TPC.E-TPC.W
@@ -423,21 +415,21 @@ void FlowANA::ana_event(int jentry, int ientry) {
 			double dPsi = ( ith + 2. ) * ( psi1 - psi2 );
 			dPsi = atan2( sin(dPsi), cos(dPsi) );
 			if(fCent>-1&&fCent<6){
-				HRes[ith][icb][fCent]->Fill(cos(dPsi) );
+				HRes[ith][icb][fCent]->Fill( cos(dPsi) );
 			}
 		}
 	}
 
 	// refmult star
-	//float res2tpc[6]={0.503463,0.71591,0.749962,0.708934,0.61689,0.475386};
-	//float res2rxn[6]={0.547883,0.791309,0.824213,0.793991,0.709638,0.561604};
-	//float res2bbc[6]={0.252904,0.377894,0.401809,0.366931,0.300508,0.223784};
+	// float res2tpc[6]={0.503463,0.71591,0.749962,0.708934,0.61689,0.475386};
+	// float res2rxn[6]={0.547883,0.791309,0.824213,0.793991,0.709638,0.561604};
+	// float res2bbc[6]={0.252904,0.377894,0.401809,0.366931,0.300508,0.223784};
 
 	// phenix ala cent
 
 	// float res2tpc[6]={0.482228,0.704061,0.749667,0.7259,0.655706,0.541163};
-	//float res2rxn[6]={ 0.526791,0.780304,0.824815,0.806745,0.746894,0.634004};
-	//float res2bbc[6]={0.241286,0.375359,0.40532,0.384438,0.326188,0.250811};
+	// float res2rxn[6]={ 0.526791,0.780304,0.824815,0.806745,0.746894,0.634004};
+	// float res2bbc[6]={0.241286,0.375359,0.40532,0.384438,0.326188,0.250811};
 
 	float res2tpc[6]={0.493507,0.716751,0.748541,0.709883,0.623788,0.491104};
 
@@ -469,13 +461,13 @@ void FlowANA::ana_event(int jentry, int ientry) {
 		float v2rxn=-999.0;
 		float v2bbc=-999.0;
 
-		if(eta>0&&eta<1.0){
-			v2tpc = cos(2.0 * (phi-fEP[0][0]) )/res2tpc[fCent];
-			v2rxn = cos(2.0 * (phi-fEP[0][3]) )/res2rxn[fCent];
-			v2bbc = cos(2.0 * (phi-fEP[0][5]) )/res2bbc[fCent];
+		if(eta>0&&eta<1.0){ // East
+			v2tpc = cos(2.0 * (phi-fEP[0][0]) )/res2tpc[fCent]; // TPC
+			v2rxn = cos(2.0 * (phi-fEP[0][3]) )/res2rxn[fCent]; // RXN
+			v2bbc = cos(2.0 * (phi-fEP[0][5]) )/res2bbc[fCent]; // BBC
 		}
 
-		if(eta<0&&eta>-1.0){
+		if(eta<0&&eta>-1.0){ // West
 			v2tpc = cos(2.0 * (phi-fEP[0][1]) )/res2tpc[fCent];
 			v2rxn = cos(2.0 * (phi-fEP[0][4]) )/res2rxn[fCent];
 			v2bbc = cos(2.0 * (phi-fEP[0][6]) )/res2bbc[fCent];
@@ -486,7 +478,7 @@ void FlowANA::ana_event(int jentry, int ientry) {
 			hv2[2][fCent][ipt][0]->Fill(v2bbc);
 			hpt[fCent][ipt][0]->Fill(pt);
 
-			if(fCent>0&&fCent<4){
+			if(fCent>0&&fCent<4){ // centrality cut 0-50
 			hv22[0][ipt][0]->Fill(v2tpc);
 			hv22[1][ipt][0]->Fill(v2rxn);
 			hv22[2][ipt][0]->Fill(v2bbc);
@@ -498,7 +490,7 @@ void FlowANA::ana_event(int jentry, int ientry) {
 				hpt[fCent][ipt][1]->Fill(pt);
 
 
-				if(fCent>0&&fCent<4){
+				if(fCent>0&&fCent<4){ // centrality cut 0-50
 				hv22[0][ipt][1]->Fill(v2tpc);
 				hv22[1][ipt][1]->Fill(v2rxn);
 				hv22[2][ipt][1]->Fill(v2bbc);
@@ -512,7 +504,7 @@ void FlowANA::ana_event(int jentry, int ientry) {
 				hv2[2][fCent][ipt][2]->Fill(v2bbc);
 				hpt[fCent][ipt][2]->Fill(pt);
 
-				if(fCent>0&&fCent<4){
+				if(fCent>0&&fCent<4){ // centrality cut 0-50
 				hv22[0][ipt][2]->Fill(v2tpc);
 				hv22[1][ipt][2]->Fill(v2rxn);
 				hv22[2][ipt][2]->Fill(v2bbc);
@@ -525,14 +517,14 @@ void FlowANA::ana_event(int jentry, int ientry) {
 				hv2[2][fCent][ipt][3]->Fill(v2bbc);
 				hpt[fCent][ipt][3]->Fill(pt);
 
-				if(fCent>0&&fCent<4){
+				if(fCent>0&&fCent<4){ // centrality cut 0-50
 				hv22[0][ipt][3]->Fill(v2tpc);
 				hv22[1][ipt][3]->Fill(v2rxn);
 				hv22[2][ipt][3]->Fill(v2bbc);
 				}
 			}// end of proton selection
 		} // end of |eta| < 1.0
-  		}// end of the track loop
+	}// end of the track loop
  	}// end of centrality selection 
 } // end of ana_event
 
@@ -600,3 +592,4 @@ int FlowANA::GetCentrality10_BimpExp( float bimp ){
 	else                fcent =-1;
 
 	return fcent;
+}

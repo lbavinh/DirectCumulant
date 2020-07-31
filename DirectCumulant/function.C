@@ -54,8 +54,8 @@ Double_t CalCor24(TComplex Q2, TComplex Q4, Double_t M, Double_t w4){
    Double_t Q4Square = Q4.Rho2();
    Double_t ReQQQ    = (Q4 * Q2Star * Q2Star).Re();
 
-   Double_t coor24   = (Q2Square*Q2Square + Q4Square - 2*ReQQQ
-                        - 4*(M-2)*Q2Square + 2*M*(M-3));
+   Double_t coor24   = (Q2Square*Q2Square + Q4Square - 2.*ReQQQ
+                        - 4.*(M-2.)*Q2Square + 2.*M*(M-3.));
 
    return coor24/w4;
 }
@@ -65,7 +65,8 @@ Double_t CalRedCor22(TComplex Q2, TComplex p2, Double_t M, Double_t mp,
 
    // Calculate the average reduced single-event 2-particle correlations                      
    TComplex Q2Star = TComplex::Conjugate(Q2);
-   Double_t coor22 = (p2*Q2Star-mq).Re();
+  //  Double_t coor22 = (p2*Q2Star-mq).Re();
+   Double_t coor22 = (p2*Q2Star).Re();
 
    return coor22/wred2;
 }
@@ -78,10 +79,13 @@ Double_t CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
    TComplex Q4Star = TComplex::Conjugate(Q4);
    TComplex q2Star = TComplex::Conjugate(q2);
    Double_t Q2Square = Q2.Rho2();
-   TComplex coorc = p2*Q2*Q2Star*Q2Star-q4*Q2Star*Q2Star-p2*Q2*Q4Star
-                  - 2.0*M*p2*Q2Star-2.0*mq*Q2Square+7.0*q2*Q2Star
-                  - Q2*q2Star+q4*Q4Star+2.0*p2*Q2Star
-                  + 2.0*mq*M-6.0*mq;
+  //  TComplex coorc = p2*Q2*Q2Star*Q2Star-q4*Q2Star*Q2Star-p2*Q2*Q4Star
+  //                 - 2.0*M*p2*Q2Star-2.0*mq*Q2Square+7.0*q2*Q2Star
+  //                 - Q2*q2Star+q4*Q4Star+2.0*p2*Q2Star
+  //                 + 2.0*mq*M-6.0*mq;
+   TComplex coorc = p2*Q2*Q2Star*Q2Star-p2*Q2*Q4Star
+                  - 2.0*M*p2*Q2Star
+                  + 2.0*p2*Q2Star;               
    Double_t coor24 = coorc.Re(); 
    return coor24/wred4;
 }

@@ -19,44 +19,23 @@ double dndpT(double pT)
 }
 
 
-double dndphi(double phi, double V2, double V3,double V4) 
+double dndphi(double phi, double v2, double b) 
 {
   double temp;
 
-  temp=(1.+2.*(V2*cos(2.*phi)+V3*cos(3.*phi)+V4*cos(4.*phi)))/
-    (1.+2.*(fabs(V2)+fabs(V4)+fabs(V3)));
-  return temp;
-}
+  float fb = 0.97 + 1.06 * exp(-0.5 * b * b / 3.2 / 3.2);
+  float v3 = pow(fb * sqrt(v2), 3);
 
-double v2(double pT)
-{
-  double temp=0., v2pT0bis;
+  float gb = 1.096 + 1.36 * exp(-0.5 * b * b / 3.0 / 3.0);
+  gb = gb * sqrt(v2);
+  float v4 = pow(gb, 4);
+  float v5 = pow(gb, 5);
+  float v6 = pow(gb, 6);
+  float v1 = 0;
 
-  double pT0bis=0.100;
-  double pTsat=1.500;
-  double v2sat=0.2;
 
-  v2pT0bis = 0.5*v2sat*pT0bis/(pTsat-pT0bis);
-  /* v2pT0bis = v2(pT0bis) is chosen so that the slopes of v2(pT) are
-     continuous at pT = pT0bis and pT=pTsat-pT0bis */
-  if (pT < pT0bis)
-    temp = (pT/pT0bis)*(pT/pT0bis)*v2pT0bis;
-  else if (pT < (pTsat-pT0bis))
-    temp = (v2sat-2.*v2pT0bis)*(pT-pT0bis)/(pTsat-2.*pT0bis)+v2pT0bis;
-  else if (pT < pTsat)
-    temp = v2sat-((pT-pTsat)/pT0bis)*((pT-pTsat)/pT0bis)*v2pT0bis;
-  else 
-    temp = v2sat;
-
-  return temp;
-}
-
-/* v4(pT): directly linked to v2(pT)! v4(pT)=v2(pT)^2 */
-double v4(double pT)
-{
-  double temp;
-
-  temp=v2(pT)*v2(pT);
+  temp = (1.+2.*(v1*cos(phi)+v2*cos(2.*phi)+v3*cos(3.*phi)+v4*cos(4.*phi)+v5*cos(5.*phi)+v6*cos(6.*phi) ))/
+    (1.+2.*(fabs(v1)+fabs(v2)+fabs(v3)+fabs(v4)+fabs(v5)+fabs(v4) ));
   return temp;
 }
 
@@ -92,6 +71,36 @@ double calc_v2(double b, double eta, double pt)
   return v2;
 }
 
+/*
+double v2(double pT)
+{
+  double temp=0., v2pT0bis;
+  double pT0bis=0.100;
+  double pTsat=1.500;
+  double v2sat=0.2;
+  v2pT0bis = 0.5*v2sat*pT0bis/(pTsat-pT0bis);
+  // v2pT0bis = v2(pT0bis) is chosen so that the slopes of v2(pT) are
+  // continuous at pT = pT0bis and pT=pTsat-pT0bis
+  if (pT < pT0bis)
+    temp = (pT/pT0bis)*(pT/pT0bis)*v2pT0bis;
+  else if (pT < (pTsat-pT0bis))
+    temp = (v2sat-2.*v2pT0bis)*(pT-pT0bis)/(pTsat-2.*pT0bis)+v2pT0bis;
+  else if (pT < pTsat)
+    temp = v2sat-((pT-pTsat)/pT0bis)*((pT-pTsat)/pT0bis)*v2pT0bis;
+  else 
+    temp = v2sat;
+
+  return temp;
+}
+
+// v4(pT): directly linked to v2(pT)! v4(pT)=v2(pT)^2
+double v4(double pT)
+{
+  double temp;
+  temp=v2(pT)*v2(pT);
+  return temp;
+}
+
 double calc_v3(double b, double v2)
 {
   double v3;
@@ -99,11 +108,8 @@ double calc_v3(double b, double v2)
   v3 = pow(fb * sqrt(v2), 3);
 }
 
-double calc_v4(double b, double eta, double pt)
-{
-  double temp;
+*/
 
-  temp=calc_v2(b,eta,pt)*calc_v2(b,eta,pt);
-  return temp;
-}
+
+
 

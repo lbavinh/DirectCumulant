@@ -72,7 +72,6 @@ void jjia_minbias_new(double b, double eta, double pt)
   v5 = pow(gb, 5);
   v6 = pow(gb, 6);
   v1 = 0;
-  v4 = pow(v2, 2);
 }
 
 double F(double a, double pt)

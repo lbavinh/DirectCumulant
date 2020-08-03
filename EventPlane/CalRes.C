@@ -241,12 +241,21 @@ void CalRes::Ana_event()
 
 
 }
-
+/*
 void loop_a_list_of_trees()
 {
   CalRes *ana = new CalRes();
-  ana->Booking("/weekly/nikolaev/lbavinh/EventPlane/OUT/sum.root");
+  ana->Booking("/weekly/nikolaev/lbavinh/EventPlane/OUT/res2.root");
   ana->Loop_a_file("/weekly/nikolaev/lbavinh/Generator/v2hadron.root");
+  ana->Ana_end();
+  cout << "Histfile written. Congratz!" << endl;
+}
+*/
+void loop_a_list_of_trees()
+{
+  CalRes *ana = new CalRes();
+  ana->Booking("/weekly/nikolaev/lbavinh/EventPlane/OUT/res2_nonflow.root");
+  ana->Loop_a_file("/weekly/nikolaev/lbavinh/Generator/v2hadron_nonflow.root");
   ana->Ana_end();
   cout << "Histfile written. Congratz!" << endl;
 }

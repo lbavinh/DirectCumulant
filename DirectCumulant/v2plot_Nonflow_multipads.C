@@ -324,7 +324,7 @@ void v2plot_Nonflow_multipads(TString inputFile){
   Double_t xmax=1.63;
   Double_t ymin=0.;
   Double_t ymax=0.16;
-  TH2F *h[ncent], *h2[ncent];
+  TH2F *h[ncent], *h2[ncent], *h3[ncent];
   TLatex *latex, *latex2;
 
   for(int icent=0; icent<6; icent++){
@@ -375,13 +375,25 @@ void v2plot_Nonflow_multipads(TString inputFile){
   TCanvas *c[ncent];
   TLatex *text[ncent];
   for (int i=0;i<ncent;i++){
+    Double_t ymin = TMath::MinElement(3,v2[i])*0.98;
+    Double_t ymax = TMath::MaxElement(3,v2[i])*1.02;
     sprintf(hname,"Cent%i-%i%%",i*10,(i+1)*10);
     c[i] = new TCanvas(hname,hname,200,10,800,600);
+    h3[i] = new TH2F("","",3,0,3,10,ymin,ymax);
+    h3[i]->SetYTitle("v_{n}");
+    h3[i]->SetCanExtend(TH1::kAllAxes);
+    const char *ch[3]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}"};
+    TAxis* a = h3[i] -> GetXaxis();
+    for (int j=0; j<3; j++) h3[i]->Fill(ch[j],(ymin+ymax)/2.,1);
+    h3[i]->GetXaxis()->SetLabelSize(0.05);
+    a->SetNdivisions(300); // 3 division, 0 sub-division
+    h3[i]->Draw();
+
     grshade[i] -> SetFillStyle(1001);
     grshade[i] -> SetFillColor(18);
     grshade[i] -> Draw("f");
     grRefFl[i] -> SetTitle("Reference flow");
-    grRefFl[i] -> Draw("AP");
+    grRefFl[i] -> Draw("P");
     char text1[800];
     sprintf(text1,"#splitline{cent: %i-%i%%}{#splitline{nonflow}{}}",10*(i),10*(i+1));
     text[i] = new TLatex(1.,(TMath::MinElement(3,grRefFl[i]->GetY())),text1);

@@ -556,7 +556,9 @@ void hVana::Ana_event()
   dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
   HRes[icent] -> Fill( cos(dPsi) );
   
-	float res2[ncent]={0.378124,0.520314,0.572019,0.565094,0.521878,0.445882,0.355622,0.258525};
+	// float res2[ncent]={0.377939,0.517293,0.570174,0.566116,0.520478,0.449174,0.355887,0.263176}; // pure flow
+  float res2[ncent]={0.333508,0.455988,0.501837,0.506404,0.454911,0.39287,0.304219,0.231337}; // my nonflow 10 mil
+  // float res2[ncent]={0.325551,0.448961,0.497295,0.496583,0.45449,0.388443,0.305845,0.22544}; // with non-flow contribution
 
   // The \eta sub-event method
 	if(icent>=0&&icent<=7){ // centrality selection 0-80%
@@ -591,12 +593,22 @@ void hVana::Ana_event()
  	}// end of centrality selection 
 
 } // end of hVana::Ana_event()
-
+/*
 void loop_a_list_of_trees()
 {
   hVana *ana = new hVana();
   ana->Booking("/weekly/nikolaev/lbavinh/EventPlane/OUT/sum.root");
   ana->Loop_a_file("/weekly/nikolaev/lbavinh/Generator/v2hadron.root");
+  ana->Ana_end();
+  cout << "Histfile written. Congratz!" << endl;
+}
+*/
+
+void loop_a_list_of_trees()
+{
+  hVana *ana = new hVana();
+  ana->Booking("/weekly/nikolaev/lbavinh/EventPlane/OUT/sum_nonflow.root");
+  ana->Loop_a_file("/weekly/nikolaev/lbavinh/Generator/v2hadron_nonflow.root");
   ana->Ana_end();
   cout << "Histfile written. Congratz!" << endl;
 }

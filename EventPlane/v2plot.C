@@ -33,8 +33,8 @@ void v2plot(){
   TH1F *hv22EP[npt];        // elliptic flow cent: 10-40% from EP method
 
   TFile *inFile, *outFile;
-  inFile = new TFile("./ROOTFile/sum.root","read");
-
+  // inFile = new TFile("./ROOTFile/sum.root","read");
+  inFile = new TFile("./ROOTFile/sum_nonflow_10mil.root","read"); 
   // OUTPUT
   TGraphErrors *grDifFl[4][ncent], *grRefFl[ncent];     // 4 = {MC, 2QC, 4QC, EP}
 
@@ -406,8 +406,8 @@ void v2plot(){
     latex2 -> SetTextAlign(31);
     latex2 -> Draw();
   }
-  c1 -> SaveAs("./Graphics/pure/v2pt.png");
-  c2 -> SaveAs("./Graphics/pure/v2.png");
+  c1 -> SaveAs("./Graphics/nonflow_10mil/v2pt.png");
+  c2 -> SaveAs("./Graphics/nonflow_10mil/v2.png");
   //=============================================
   // Drawing reference flow separately for analysis
   TCanvas *c[ncent];
@@ -435,16 +435,16 @@ void v2plot(){
     grRefFl[i] -> SetTitle("Reference flow");
     grRefFl[i] -> Draw("P");
     char text1[800];
-    sprintf(text1,"#splitline{cent: %i-%i%%}{#splitline{pure}{}}",10*(i),10*(i+1));
+    sprintf(text1,"#splitline{Ref. flow}{#splitline{-2<#eta<-0.05}{cent: %i-%i%%}}",10*(i),10*(i+1));
     text[i] = new TLatex(1.,(TMath::MinElement(3,grRefFl[i]->GetY())),text1);
     text[i] -> SetTextFont(62);
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();
-    sprintf(hname,"./Graphics/pure/Cent%i-%i%%.png",i*10,(i+1)*10);
+    sprintf(hname,"./Graphics/nonflow_10mil/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-  outFile = new TFile("./ROOTFile/PureFlowGraph.root","recreate");
+  outFile = new TFile("./ROOTFile/NonFlow30_40_Vinh_10mil.root","recreate");
   outFile -> cd();
   int mycent = 3;
   grDifFl[0][mycent] -> SetTitle("Dif.flow v2_MC");

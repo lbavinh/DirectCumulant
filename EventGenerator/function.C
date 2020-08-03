@@ -19,12 +19,12 @@ double dndpT(double pT)
 }
 
 
-double dndphi(double phi, double V2, double V4) 
+double dndphi(double phi, double V2, double V3,double V4) 
 {
   double temp;
 
-  temp=(1.+2.*(V2*cos(2.*phi)+V4*cos(4.*phi)))/
-    (1.+2.*(fabs(V2)+fabs(V4)));
+  temp=(1.+2.*(V2*cos(2.*phi)+V3*cos(3.*phi)+V4*cos(4.*phi)))/
+    (1.+2.*(fabs(V2)+fabs(V4)+fabs(V3)));
   return temp;
 }
 
@@ -90,6 +90,13 @@ double calc_v2(double b, double eta, double pt)
   double v2 = (a4 * (temp1 + temp2) + temp3) * exp(-0.5 * eta * eta / 2.0 / 2.0);
 
   return v2;
+}
+
+double calc_v3(double b, double v2)
+{
+  double v3;
+  double fb = 0.97 + 1.06 * exp(-0.5 * b * b / 3.2 / 3.2);
+  v3 = pow(fb * sqrt(v2), 3);
 }
 
 double calc_v4(double b, double eta, double pt)

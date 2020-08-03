@@ -23,6 +23,7 @@ static const int npt = 24;        // 0.2 - 3.5 GeV/c
 static const double bin_pT[npt + 1] = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1,
                                        1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0, 2.2, 2.4,
                                        2.6, 2.8, 3.0, 3.2, 3.5};
+static const int neta = 2; // [eta-,eta+]
 
 TFile *d_outfile; // out file with histograms and profiles
 
@@ -66,6 +67,14 @@ Double_t summp[ncent][npt] = {{0}}, summpMmmq[ncent][npt] = {{0}}, summpMm2mqMm1
 TVectorD *vcos2psi1[ncent], *vsin2psi1[ncent], *vcos2psi1phi2[ncent], *vsin2psi1phi2[ncent], *vcos2psi1pphi23[ncent],
     *vsin2psi1pphi23[ncent], *vcos2psi1mphi23[ncent], *vsin2psi1mphi23[ncent]; // to be written in outFile
 
+TH1F *hv2EP[ncent][npt];	// elliptic flow from EP method
+TH1F *hv22EP[ncent];      // integrated elliptic flow from EP method
+
+TH1F *H_Qw[neta];     // sub-event multiplicity
+TH1F *H_EP[neta];		  // reaction plane
+TH1F *H_Qv[neta];     // sub-event <Q> - probably
+TH1F *HRes[ncent];		// resolution
+
 void hVana::Booking(TString outFile)
 {
   char name[800];
@@ -82,12 +91,28 @@ void hVana::Booking(TString outFile)
   hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -2.2, 2.2);
 
+  for( int ieta=0; ieta<neta; ieta++ ){
+    (void)sprintf(name,"H_Qw_%d",ieta);
+    H_Qw[ieta] = new TH1F(name,name, 100, 0, 1000 );    
+    (void)sprintf(name,"H_EP_%d",ieta);
+    H_EP[ieta] = new TH1F(name,name, 100, -TMath::Pi()/2.-0.1, TMath::Pi()/2.+0.1 );
+    (void)sprintf(name,"H_Qv_%d",ieta);
+    H_Qv[ieta] = new TH1F(name,name, 100, 0, 10 );
+  }
+  
   for (int icent = 0; icent < ncent; icent++)
   { // loop over centrality classes
+
+    (void)sprintf(name,"HRes_cent%i",icent);
+    HRes[icent] = new TH1F(name,name, 100, -10, 10 );
+
     sprintf(name, "hv2MC_cent%i", icent);
     sprintf(title, "v_{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
     hv2MC[icent] = new TProfile(name, title, 1, 0., 1.);
     hv2MC[icent]->Sumw2();
+
+    (void)sprintf(name,"hv22EP_cent%i",icent);
+    hv22EP[icent] = new TH1F(name,name, 400, -10, 10 );
 
     sprintf(name, "hv22_cent%i", icent);
     sprintf(title, "v_{2}{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
@@ -111,6 +136,9 @@ void hVana::Booking(TString outFile)
       hPT[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       hPT[icent][kpt]->Sumw2();
 
+      (void)sprintf(name,"hv2EP_cent%i_pt%i",icent,kpt);
+      hv2EP[icent][kpt] = new TH1F(name,name, 400, -10, 10 );
+      
       sprintf(name, "hv2MCpt_cent%i_pt%i", icent, kpt);
       sprintf(title, "v_{2}{MC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
       hv2MCpt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
@@ -353,32 +381,38 @@ void hVana::Ana_event()
   Double_t wred2[npt] = {0.}, wred4[npt] = {0.};
   // Average single-event 2- and 4- particle correlations : <2> & <4>
   Double_t cor22 = 0., cor24 = 0.;
+
+  Double_t sumQxy[neta][2]={{0}};  // [eta-,eta+][x,y]
+  Double_t multQv[neta]={0};       // [eta+,eta-]
   for (int i = 0; i < nh; i++)
   { // track loop
+    Float_t pT = pt[i];
+    if( pT<minpt  || pT>maxpt ) continue;
+    hPt->Fill(pT);
     hPhi->Fill(phi0[i] - rp);
     hPhil->Fill(phi0[i]);
     hEta->Fill(eta[i]);
 
     Int_t ipt = 0;
-    Float_t pT = pt[i];
-    hPt->Fill(pT);
-
     for (int j = 0; j < npt; j++)
     {
       if (pT >= bin_pT[j] && pT < bin_pT[j + 1])
         ipt = j;
     }
 
-    Double_t v2 = TMath::Cos(2. * (phi0[i] - rp));
-    // Calculate differential v2 from MC toy
-    hPT[icent][ipt]->Fill(0.5, pT, 1);
-    hv2MCpt[icent][ipt]->Fill(0.5, v2, 1);
+    if (bFlow[i]){
+      Double_t v2 = TMath::Cos(2 * (phi0[i] - rp));
+      // calculate reference v2 from MC toy
+      if (eta[i] < -0.05) hv2MC[icent]->Fill(0.5, v2, 1);
+      // Calculate differential v2 from MC toy
+      hPT[icent][ipt]->Fill(0.5, pT, 1);
+      hv2MCpt[icent][ipt]->Fill(0.5, v2, 1);
+    }
+
 
     // RFP
-    if (eta[i] < 0)
-    // if (TMath::Abs(eta[i]) > 1.)
+    if (eta[i] < -0.05)
     {
-      hv2MC[icent]->Fill(0.5, v2, 1); // v2 from MC toy
       Qx2 += TMath::Cos(2. * phi0[i]);
       Qy2 += TMath::Sin(2. * phi0[i]);
       Qx4 += TMath::Cos(4. * phi0[i]);
@@ -387,13 +421,23 @@ void hVana::Ana_event()
     }
 
     // POI
-    if (eta[i] >= 0)
-    // if (TMath::Abs(eta[i]) < 1.)
+    if (eta[i] > 0.05)
     {
       px2[ipt] += TMath::Cos(2. * phi0[i]);
       py2[ipt] += TMath::Sin(2. * phi0[i]); 
       mp[ipt]++;
     }
+
+    // Sub eta event method
+    int fEta = -1;
+    if (eta[i] <-0.05 && eta[i] >-2.0) fEta = 0;
+    if (eta[i] > 0.05 && eta[i] < 2.0) fEta = 1;
+
+		if ( fEta>-1 ){
+      sumQxy[fEta][0] += pT * cos( (2.0) * phi0[i] );
+      sumQxy[fEta][1] += pT * sin( (2.0) * phi0[i] );
+			multQv[fEta]++;
+		} // end of eta selection
 
   } // end of track loop
   if (M >= 2.)
@@ -415,10 +459,8 @@ void hVana::Ana_event()
 
     p2[ipt] = TComplex(px2[ipt], py2[ipt]);
     q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
-    // wred2[ipt] = mp[ipt] * M - mq[ipt];                                        // w(<2'>)
-    wred2[ipt] = mp[ipt] * M;                                        // w(<2'>)
-    // redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], mq[ipt], wred2[ipt]); // <2'>
-    redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], 0, wred2[ipt]); // <2'>
+    wred2[ipt] = mp[ipt] * M - mq[ipt];                                        // w(<2'>)
+    redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], mq[ipt], wred2[ipt]); // <2'>
     hv22pt[icent][ipt]->Fill(0.5, redCor22[ipt], wred2[ipt]);                  // <<2'>>
 
     // TProfile for covariance calculation in statistic error
@@ -428,9 +470,7 @@ void hVana::Ana_event()
     cos2psi1[icent][ipt] += px2[ipt];
     sin2psi1[icent][ipt] += py2[ipt];
     summp[icent][ipt] += mp[ipt];
-    if (mq[ipt]!=0) cout << "mq!=0" << endl;
   }
-  
 
   if (M >= 4.)
   { // <4> definition condition
@@ -455,10 +495,9 @@ void hVana::Ana_event()
     if (mp[ipt] == 0 || M<3)
       continue;
     q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
-    // wred4[ipt] = (mp[ipt] * M - 3. * mq[ipt]) * (M - 1.) * (M - 2.);                                 // w(<4'>)
-    wred4[ipt] = (mp[ipt] * M) * (M - 1.) * (M - 2.);                                 // w(<4'>)
-    // redCor24[ipt] = CalRedCor24(Q2, Q4, p2[ipt], q2[ipt], q4[ipt], M, mp[ipt], mq[ipt], wred4[ipt]); // <4'>
-    redCor24[ipt] = CalRedCor24(Q2, Q4, p2[ipt], 0, q4[ipt], M, mp[ipt], 0, wred4[ipt]); // <4'>
+    wred4[ipt] = (mp[ipt] * M - 3. * mq[ipt]) * (M - 1.) * (M - 2.);                                 // w(<4'>)
+
+    redCor24[ipt] = CalRedCor24(Q2, Q4, p2[ipt], q2[ipt], q4[ipt], M, mp[ipt], mq[ipt], wred4[ipt]); // <4'>
     hv24pt[icent][ipt]->Fill(0.5, redCor24[ipt], wred4[ipt]);                                        // <<4'>>
 
     // TProfile for covariance calculation in statistic error
@@ -468,60 +507,96 @@ void hVana::Ana_event()
     hcov2prime4prime[icent][ipt]->Fill(0.5, redCor22[ipt] * redCor24[ipt], wred2[ipt] * wred4[ipt]);
 
     // Non-uniform acceptance correction
-    // cos2psi1phi2[icent][ipt] += (p2[ipt] * Q2 - q4[ipt]).Re();
-    // sin2psi1phi2[icent][ipt] += (p2[ipt] * Q2 - q4[ipt]).Im();
-    // cos2psi1pphi23[icent][ipt] += ((p2[ipt] * (Q2.Rho2() - M)).Re()) - ((q4[ipt] * Qstar(Q2) + mq[ipt] * Q2 - 2. * q2[ipt]).Re());
-    // sin2psi1pphi23[icent][ipt] += ((p2[ipt] * (Q2.Rho2() - M)).Im()) - ((q4[ipt] * Qstar(Q2) + mq[ipt] * Q2 - 2. * q2[ipt]).Im());
-    // cos2psi1mphi23[icent][ipt] += ((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Re()) - ((2. * mq[ipt] * Qstar(Q2) - 2. * Qstar(q2[ipt])).Re());
-    // sin2psi1mphi23[icent][ipt] += ((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Im()) - ((2. * mq[ipt] * Qstar(Q2) - 2. * Qstar(q2[ipt])).Im());
+    cos2psi1phi2[icent][ipt] += (p2[ipt] * Q2 - q4[ipt]).Re();
+    sin2psi1phi2[icent][ipt] += (p2[ipt] * Q2 - q4[ipt]).Im();
+    cos2psi1pphi23[icent][ipt] += ((p2[ipt] * (Q2.Rho2() - M)).Re()) - ((q4[ipt] * Qstar(Q2) + mq[ipt] * Q2 - 2. * q2[ipt]).Re());
+    sin2psi1pphi23[icent][ipt] += ((p2[ipt] * (Q2.Rho2() - M)).Im()) - ((q4[ipt] * Qstar(Q2) + mq[ipt] * Q2 - 2. * q2[ipt]).Im());
+    cos2psi1mphi23[icent][ipt] += ((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Re()) - ((2. * mq[ipt] * Qstar(Q2) - 2. * Qstar(q2[ipt])).Re());
+    sin2psi1mphi23[icent][ipt] += ((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Im()) - ((2. * mq[ipt] * Qstar(Q2) - 2. * Qstar(q2[ipt])).Im());
 
-    // summpMmmq[icent][ipt] += mp[ipt] * M - mq[ipt];
-    // summpMm2mqMm1[icent][ipt] += (mp[ipt] * M - 2. * mq[ipt]) * (M - 1.);
+    summpMmmq[icent][ipt] += mp[ipt] * M - mq[ipt];
+    summpMm2mqMm1[icent][ipt] += (mp[ipt] * M - 2. * mq[ipt]) * (M - 1.);
 
-    cos2psi1phi2[icent][ipt] += (p2[ipt] * Q2).Re();
-    sin2psi1phi2[icent][ipt] += (p2[ipt] * Q2).Im();
-    cos2psi1pphi23[icent][ipt] += ((p2[ipt] * (Q2.Rho2() - M)).Re());
-    sin2psi1pphi23[icent][ipt] += ((p2[ipt] * (Q2.Rho2() - M)).Im());
-    cos2psi1mphi23[icent][ipt] += ((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Re());
-    sin2psi1mphi23[icent][ipt] += ((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Im());
-
-    summpMmmq[icent][ipt] += mp[ipt] * M;
-    summpMm2mqMm1[icent][ipt] += (mp[ipt] * M) * (M - 1.);
-
-    if (mq[ipt]!=0) cout << "mq!=0" << endl;
   }
+  // Eta sub-event method
+
+  Double_t fEP[2]; // [eta-,eta+]
+  Double_t fQv[2];
+  for (int ieta=0; ieta<neta; ieta++){
+    if( multQv[ieta]>5 ){ // multiplicity > 5
+      fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
+      fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
+      fEP[ieta] /= 2.0;
+      fQv[ieta] = TMath::Sqrt(TMath::Power( sumQxy[ieta][0],2.0)+TMath::Power( sumQxy[ieta][1],2.0))/TMath::Sqrt(multQv[ieta]);
+      H_Qw[ieta]->Fill( multQv[ieta] );
+
+    }else{
+      fEP[ieta] = -9999;
+      fQv[ieta] = -9999;
+    }
+  }
+
+  for( int ieta=0; ieta<neta; ieta++ ){// eta EP detector loop
+    if( fEP[ieta]>-9000 ){ // EP reconstructed 
+      H_EP[ieta]->Fill( fEP[ieta] );
+      H_Qv[ieta]->Fill( fQv[ieta] );
+    }// end of EP reconstructed
+  }// end of eta loop
+
+  // Estimate the event plane resolution of 2nd harmonic by the correlation between the azimuthal
+  // angles of two subset groups of tracks, called sub-events \eta- and \eta+
+  Double_t psi1, psi2, fq1, fq2;
+  psi1 = fEP[0];  // eta-
+  psi2 = fEP[1];  // eta+
+  fq1 = fQv[0];
+  fq2 = fQv[1];
+  if (psi1<-9000 || psi2<-9000) return;
+  if (fq1<0 || fq2<0) return;
+  Double_t dPsi = 2. *(psi1 - psi2);
+  dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
+  HRes[icent] -> Fill( cos(dPsi) );
   
-}
+	float res2[ncent]={0.378124,0.520314,0.572019,0.565094,0.521878,0.445882,0.355622,0.258525};
 
-/*
-   List of trees with NON-FLOW (pairwise):
-   /mnt/pool/2/lbavinh/EventGenerator/OUT/Non-flowPairWise/runlist.list
+  // The \eta sub-event method
+	if(icent>=0&&icent<=7){ // centrality selection 0-80%
+    for(int itrk=0;itrk<nh;itrk++) {  //track loop
+      Double_t pT = pt[itrk];
+      if( pT<minpt || pT>maxpt ) continue;
 
-   List of trees with NON-FLOW (quadruplet):
-   /mnt/pool/2/lbavinh/EventGenerator/OUT/Non-flowQuadruplet/runlist.list
+      Int_t ipt = 0;
+      for (int j = 0; j < npt; j++)
+      {
+        if (pT >= bin_pT[j] && pT < bin_pT[j + 1])
+          ipt = j;
+      }
 
-   List of trees with PURE flow:
-   /mnt/pool/2/lbavinh/EventGenerator/OUT/FlowPureEtaBimp/runlist.list
+      float v2=-999.0;
+      
+      if(eta[itrk]>0){ // eta+
+        v2 = cos(2.0 * (phi0[itrk]-psi1) )/res2[icent];
+      }
 
-   List of trees with NON-UNIFORM ACCEPTANCE:
-   /mnt/pool/2/lbavinh/EventGenerator/OUT/Acceptance/runlist.list
-*/
+      if(eta[itrk]<0){ // eta-
+        v2 = cos(2.0 * (phi0[itrk]-psi2) )/res2[icent];
+      }
+      // if(fabs(eta[itrk])<1.0){ // eliminate spectators
+      hv2EP[icent][ipt]->Fill(v2);
+      if (eta[itrk] < -0.05) { // Reference flow
+        hv22EP[icent]->Fill(v2);
+      }
+      
+      // } // end of |eta| < 1.0
+    }// end of the track loop
+ 	}// end of centrality selection 
+
+} // end of hVana::Ana_event()
 
 void loop_a_list_of_trees()
 {
   hVana *ana = new hVana();
-  ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC_Acceptance_test.root");
-
-  ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/Acceptance/runlist.list"); // tree runlist
-  char filename[200];
-  int nfiles = 1;
-  while (ifile.getline(filename, 200))
-  {
-    cout << nfiles << " file is processing " << filename << endl;
-    ana->Loop_a_file(filename);
-    nfiles++;
-  }
-  cout << "Done. " << nfiles - 1 << " files are processed." << endl;
+  ana->Booking("/weekly/nikolaev/lbavinh/EventPlane/OUT/sum.root");
+  ana->Loop_a_file("/weekly/nikolaev/lbavinh/Generator/v2hadron.root");
   ana->Ana_end();
   cout << "Histfile written. Congratz!" << endl;
 }

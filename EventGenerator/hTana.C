@@ -30,8 +30,8 @@ static const float PI = TMath::Pi();
 static const float pTmax=4900.;
 
 
-static const int npt = 25; // 0.3 - 6.0 GeV/c 
-static const double bin_pT[25]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.0,2.2,2.4,2.6,2.8,3.0,3.2,3.5};
+static const int npt = 24; // 0.3 - 6.0 GeV/c 
+static const double bin_pT[npt+1]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.0,2.2,2.4,2.6,2.8,3.0,3.2,3.5};
 static const float maxpt = 3.5; // max pt
 static const float minpt = 0.2; // min pt
 
@@ -153,11 +153,12 @@ void hTana::v2gen(int nevent,double Mmean) {
         eta = 4.*(GR->Rndm()-0.5); /* Random pseudorapidity eta between -2 and 2 */
 
         v2pT = calc_v2(b,eta,pT);
+        v2pT = calc_v3(b,v2pT);
         v4pT = calc_v4(b,eta,pT);
 
         flow:
         phi=2.*PI*(GR->Rndm()); /* Random azimuth phi between 0 and 2Pi */
-        if (GR->Rndm()>dndphi(phi,v2pT,v4pT)) goto flow; 
+        if (GR->Rndm()>dndphi(phi,v2pT,v3pT,v4pT)) goto flow; 
         /* simulate anisotropic flow, with the hit-or-miss method */
 
         phil=phi+phirp; /* particle angle with respect to the laboratory frame */
@@ -260,6 +261,7 @@ void hTana::book_hist(TString outfile) {
   htree->Branch("pt",&d_pt,"pt[nh]/F");
   htree->Branch("phi0",&d_phi0,"phi0[nh]/F");
   htree->Branch("eta",&d_eta,"eta[nh]/F");
+  htree->Branch("bFlow");
 
   // Create output histograms
   hMult = new TH1I("hMult", "Multiplicity;N_{ch};dN/dN_{ch}", 1500, 0, 1500);

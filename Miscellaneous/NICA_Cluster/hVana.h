@@ -30,7 +30,7 @@ public :
    Float_t         pt[1500];   //[nh]
    Float_t         phi0[1500];   //[nh]
    Float_t         eta[1500];   //[nh]
-
+   Bool_t          bFlow[1500];
    // List of branches
    TBranch        *b_rp;   //!
    TBranch        *b_nh;   //!
@@ -38,7 +38,7 @@ public :
    TBranch        *b_pt;   //!
    TBranch        *b_phi0;   //!
    TBranch        *b_eta;   //!
-
+   TBranch        *b_bFlow;   	
    hVana(TTree *tree=0);
    virtual ~hVana();
    virtual Int_t    Cut(Long64_t entry);
@@ -123,6 +123,7 @@ void hVana::Init(TTree *tree)
    fChain->SetBranchAddress("pt", pt, &b_pt);
    fChain->SetBranchAddress("phi0", phi0, &b_phi0);
    fChain->SetBranchAddress("eta", eta, &b_eta);
+   fChain->SetBranchAddress("bFlow",bFlow,&b_bFlow);
    Notify();
 }
 

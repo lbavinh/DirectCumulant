@@ -358,8 +358,8 @@ void v2plot(){
     latex2 -> SetTextAlign(31);
     latex2 -> Draw();
   }
-  c1 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/urqmd/graph/v2pt.png");
-  c2 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/urqmd/graph/v2.png");
+  c1 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/UrQMD/graph/v2pt.png");
+  c2 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/UrQMD/graph/v2.png");
   TCanvas *c[ncent];
   TLatex *text[ncent];
   for (int i=0;i<ncent;i++){
@@ -377,7 +377,7 @@ void v2plot(){
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();
-    sprintf(hname,"~/NIRS/Event Generator, Direct Cumulant/urqmd/graph/Cent%i-%i%%.png",i*10,(i+1)*10);
+    sprintf(hname,"~/NIRS/Event Generator, Direct Cumulant/UrQMD/graph/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
   for (int i=0; i<ncent; i++){
@@ -398,10 +398,16 @@ void v2plot(){
   latex3 -> SetTextSize(0.04);
   latex3 -> SetTextAlign(31);
   latex3 -> Draw();
-  sprintf(hname,"~/NIRS/Event Generator, Direct Cumulant/urqmd/graph/v2pt_Cent%i-%i%%.png",mycent*10,(mycent+1)*10);
+  sprintf(hname,"~/NIRS/Event Generator, Direct Cumulant/UrQMD/graph/v2pt_Cent%i-%i%%.png",mycent*10,(mycent+1)*10);
   c3 -> SaveAs(hname);
   TFile *outFile = new TFile("TGraph.root","recreate");
   outFile -> cd();
+
+  grDifFl[0][mycent] -> SetTitle("Dif.flow v2MC");
+  grDifFl[1][mycent] -> SetTitle("Dif.flow v22");
+  grDifFl[2][mycent] -> SetTitle("Dif.flow v24");
+  grRefFl[mycent] -> SetTitle("Ref.flow: MC: x=0.5; v22: x=1.5; v24: x=2.5");
+  grRefFl[mycent] -> Write("gr");
   for (int i=0; i<3; i++){
     sprintf(hname,"gr_%i",i);
     grDifFl[i][mycent] -> Write(hname);

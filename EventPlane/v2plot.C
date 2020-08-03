@@ -1,17 +1,5 @@
-#include "TFile.h"
-#include "TH1.h"
-#include "TH2.h"
-#include "TGraph.h"
-#include "TGraphErrors.h"
-#include "TMultiGraph.h"
-#include "TLegend.h"
-#include "TFrame.h"
-#include "TString.h"
 #include "Func_StatErrCalc.C"
-using namespace std;
-#include <fstream>
-
-void v2plot_Nonflow_multipads(TString inputFile){
+void v2plot(){
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
   static const Float_t maxpt = 3.5; // max pt
@@ -41,10 +29,15 @@ void v2plot_Nonflow_multipads(TString inputFile){
   TProfile *hcov44prime[ncent][npt]; // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 
-  TFile *inFile;
-  TFile *outFile;
+  TH1F *hv2EP[ncent][npt];	// elliptic flow from EP method
+  TH1F *hv22EP[npt];        // elliptic flow cent: 10-40% from EP method
+
+  TFile *inFile, *outFile;
+  inFile = new TFile("./ROOTFile/sum.root","read");
+
   // OUTPUT
-  TGraphErrors *grDifFl[3][ncent], *grRefFl[ncent];     // 3 = {MC, 2QC, 4QC}
+  TGraphErrors *grDifFl[4][ncent], *grRefFl[ncent];     // 4 = {MC, 2QC, 4QC, EP}
+
   TGraph *grshade[ncent];
   TMultiGraph *mgRefFl[ncent], *mgDifFl[ncent];
 
@@ -54,11 +47,10 @@ void v2plot_Nonflow_multipads(TString inputFile){
   TProfile *pr; // temporary TProfile for TProfile extracting from root file
   TProfile *prx, *pry, *prxy; // for covariance calculation
   Double_t stats[6]; // stats of TProfile
+  Double_t rms; // root of mean squared = standard deviation (temporary variable)
+  int nent; // number of entries (temporary variable)
+  Double_t err; // standard error (temporary variable)
 
-
-  inFile = new TFile(inputFile.Data(),"read");
-  // inFile = new TFile("./ROOTFile/v2QC_nonflow.root","read");
-  // inFile = new TFile("./ROOTFile/v2QC_test_nonflow.root","read");
 
 
   // Get TProfile histograms from ROOTFile
@@ -71,6 +63,8 @@ void v2plot_Nonflow_multipads(TString inputFile){
     hv24[icent] = (TProfile*)inFile->Get(hname);
     sprintf(hname,"hcov24_cent%i",icent);
     hcov24[icent] = (TProfile*)inFile->Get(hname);
+    sprintf(hname,"hv22EP_cent%i",icent);
+    hv22EP[icent] = (TH1F*)inFile->Get(hname);
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
         sprintf(hname,"hPT_cent%i_pt%i",icent,ipt);
         hPT[icent][ipt]=(TProfile*)inFile->Get(hname);
@@ -90,15 +84,28 @@ void v2plot_Nonflow_multipads(TString inputFile){
         hcov44prime[icent][ipt]=(TProfile*)inFile->Get(hname);
         sprintf(hname,"hcov2prime4prime_cent%i_pt%i",icent,ipt);
         hcov2prime4prime[icent][ipt]=(TProfile*)inFile->Get(hname);
+        sprintf(hname,"hv2EP_cent%i_pt%i",icent,ipt);
+        hv2EP[icent][ipt]=(TH1F*)inFile->Get(hname);
     } // end of loop over pt bin
   } // end of loop over centrality classes
 
   //==========================================================================================================================
+  // Filling pT bin
+  Double_t pt[ncent][npt];
+  Double_t ept[ncent][npt]={{0}}; // error bin pT = 0.0
+  for (int icent=0; icent<ncent; icent++){
+    for (int ipt=0; ipt<npt; ipt++){
+      // pt[icent][ipt] = hPT[icent][ipt] -> GetBinContent(1);
+      pt[icent][ipt] = ( bin_pT[ipt] + bin_pT[ipt+1] ) / 2.;
+    }
+  }
+  //==========================================================================================================================
+  
   // reference flow comparison
-  Double_t v2[ncent][3];
-  Double_t ev2[ncent][3];
-  Double_t x[3]={0.5,1.5,2.5};
-  Double_t ex[3]={0};
+  Double_t v2[ncent][4];
+  Double_t ev2[ncent][4];
+  Double_t x[4]={0.5,1.5,2.5,3.5};
+  Double_t ex[4]={0};
 
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // Reference flow calculation
@@ -123,6 +130,9 @@ void v2plot_Nonflow_multipads(TString inputFile){
 
     Double_t sumwcor24;    // sum(w<2>,w<4>)
     Double_t cov24;        // Cov(<2>,<4>)
+
+    Double_t v2EPint;
+    Double_t v2EPintE;
     //=============================================
     //v2{MC}
     v2MCint  = hv2MC[icent] -> GetBinContent(1);
@@ -155,24 +165,33 @@ void v2plot_Nonflow_multipads(TString inputFile){
                   cor4,cor4E,sumwcor4,sumw2cor4,
                   cov24,sumwcor24);
     //=============================================
-    // reference flow comparison
+    // v2{#eta sub-event}
+    v2EPint = hv22EP[icent]->GetMean();
+    rms = hv22EP[icent]->GetRMS();
+    nent = hv22EP[icent]->GetEntries();
+    err = rms/sqrt(nent);
+    v2EPintE = err;
+    //=============================================
+    // Reference flow comparison: MC, 2QC, 4QC, eta sub-event
     v2[icent][0] = v2MCint;
     v2[icent][1] = v22int;
     v2[icent][2] = v24int;
+    v2[icent][3] = v2EPint;
     ev2[icent][0] = v2MCintE;
     ev2[icent][1] = v22intE;
     ev2[icent][2] = v24intE;
+    ev2[icent][3] = v2EPintE;
 
-    grRefFl[icent] = new TGraphErrors(3,x,v2[icent],ex,ev2[icent]);
+    grRefFl[icent] = new TGraphErrors(4,x,v2[icent],ex,ev2[icent]);
     grRefFl[icent]->SetMarkerColor(kRed);
     grRefFl[icent]->SetMarkerStyle(20);
     grRefFl[icent]->SetMarkerSize(1.3);
     grRefFl[icent]->SetDrawOption("P");
     // Set a shade between error of v2MC
-    grshade[icent] = new TGraph(8);
-    for (Int_t i=0; i<4; i++) {
+    grshade[icent] = new TGraph(10);
+    for (Int_t i=0; i<5; i++) {
       grshade[icent]->SetPoint(i,i+0.005,v2[icent][0]+ev2[icent][0]);
-      grshade[icent]->SetPoint(4+i,3+0.005-i,v2[icent][0]-ev2[icent][0]);
+      grshade[icent]->SetPoint(5+i,4+0.005-i,v2[icent][0]-ev2[icent][0]);
     }
     grshade[icent] -> SetFillStyle(1001);
     grshade[icent] -> SetFillColor(18);
@@ -185,8 +204,7 @@ void v2plot_Nonflow_multipads(TString inputFile){
 
     // Differential flow calculation
 
-    Double_t pt[npt];
-    Double_t ept[npt]; // error bin pT = 0.0
+
     Double_t v2MCpt[npt]; // v2 in given pT bin
     Double_t ev2MCpt[npt]; // standard error of v2 in given pT bin
   
@@ -221,8 +239,7 @@ void v2plot_Nonflow_multipads(TString inputFile){
     for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
       
       // Differential flow v2MC
-      pt[ipt] = hPT[icent][ipt] -> GetBinContent(1);
-      ept[ipt] = 0;
+
       v2MCpt[ipt]  = hv2MCpt[icent][ipt] -> GetBinContent(1);
       ev2MCpt[ipt] = hv2MCpt[icent][ipt] -> GetBinError(1);
 
@@ -278,16 +295,17 @@ void v2plot_Nonflow_multipads(TString inputFile){
                           cov24prime[ipt], sumwcor24prime[ipt], cov42prime[ipt], sumwcor42prime[ipt]);
 
     } // end of loop for all pT bin
+
     // Monte-Carlo differential flow
-    grDifFl[0][icent] = new TGraphErrors(npt,pt,v2MCpt,ept,ev2MCpt);
+    grDifFl[0][icent] = new TGraphErrors(npt,pt[icent],v2MCpt,ept[icent],ev2MCpt);
     grDifFl[0][icent] -> SetMarkerColor(kRed+1);
     grDifFl[0][icent] -> SetMarkerStyle(25);
     // 2QC differential flow
-    grDifFl[1][icent] = new TGraphErrors(npt,pt,v22dif,ept,v22difE);
+    grDifFl[1][icent] = new TGraphErrors(npt,pt[icent],v22dif,ept[icent],v22difE);
     grDifFl[1][icent] -> SetMarkerColor(kGreen+1);
     grDifFl[1][icent] -> SetMarkerStyle(20);
     // 4QC differential flow
-    grDifFl[2][icent] = new TGraphErrors(npt,pt,v24dif,ept,v24difE);
+    grDifFl[2][icent] = new TGraphErrors(npt,pt[icent],v24dif,ept[icent],v24difE);
     grDifFl[2][icent] -> SetMarkerColor(kAzure+2);
     grDifFl[2][icent] -> SetMarkerStyle(22);
     // create multigraph
@@ -300,13 +318,32 @@ void v2plot_Nonflow_multipads(TString inputFile){
   } // end of loop over centrality classes
 
   //==========================================================================================================================
-  
+  // Elliptic flow from eta sub-event method
+  for (int icent=0; icent<ncent; icent++){
+    Double_t v2EP[npt]={0}, ev2EP[npt]={0};
+    for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
+      v2EP[ipt] = hv2EP[icent][ipt]->GetMean();
+      rms = hv2EP[icent][ipt]->GetRMS();
+      nent = hv2EP[icent][ipt]->GetEntries();
+      err = rms/sqrt(nent);
+      ev2EP[ipt] = err;
+    }
+    // Event plane differential flow
+    grDifFl[3][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
+    grDifFl[3][icent] -> SetMarkerColor(kBlack);
+    grDifFl[3][icent] -> SetMarkerStyle(23);
+    grDifFl[3][icent] -> SetMarkerSize(1.3);
+    grDifFl[3][icent] -> SetDrawOption("P");
+    mgDifFl[icent] -> Add(grDifFl[3][icent]);
+  }
+  //==========================================================================================================================
   // Drawing multipads of reference & differential flow
 
   TLegend *leg = new TLegend(0.11,.95,0.4,.78);
   leg -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
   leg -> AddEntry(grDifFl[1][0],"v_{2}{2,QC}","p");
   leg -> AddEntry(grDifFl[2][0],"v_{2}{4,QC}","p");
+  leg -> AddEntry(grDifFl[3][0],"v_{2}{#eta sub-event}","p");
   leg -> SetFillColor(0);
   leg -> SetTextSize(0.04);
   leg -> SetTextFont(62);
@@ -323,8 +360,8 @@ void v2plot_Nonflow_multipads(TString inputFile){
   Double_t xmin=0.1;
   Double_t xmax=1.63;
   Double_t ymin=0.;
-  Double_t ymax=0.16;
-  TH2F *h[ncent], *h2[ncent];
+  Double_t ymax=0.23;
+  TH2F *h[ncent], *h2[ncent], *h3[ncent];
   TLatex *latex, *latex2;
 
   for(int icent=0; icent<6; icent++){
@@ -345,17 +382,18 @@ void v2plot_Nonflow_multipads(TString inputFile){
     latex -> Draw();
     //=============================================
     // reference flow
-    Double_t ymin2 = TMath::MinElement(3,v2[icent])*0.98;
-    Double_t ymax2 = TMath::MaxElement(3,v2[icent]) + TMath::MaxElement(3,ev2[icent])*1.1;
-    h2[icent] = new TH2F("","",3,0,3,10,0.01,0.12);
+    Double_t ymin2 = TMath::MinElement(4,v2[icent])*0.98;
+    Double_t ymax2 = TMath::MaxElement(4,v2[icent]) + TMath::MaxElement(4,ev2[icent])*1.1;
+    h2[icent] = new TH2F("","",4,0,4,10,0.015,0.075);
     c2 -> cd(icent+1);
     h2[icent]->SetYTitle("v_{n}");
     h2[icent]->SetCanExtend(TH1::kAllAxes);
-    const char *method[3]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}"};
+    const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
     TAxis* a = h2[icent] -> GetXaxis();
-    h2[icent] -> Fill(method[0],(ymin2+ymax2)/2.,1);
-    h2[icent] -> Fill(method[1],(ymin2+ymax2)/2.,1);
-    h2[icent] -> Fill(method[2],(ymin2+ymax2)/2.,1);
+    h2[icent] -> Fill(ch[0],(ymin2+ymax2)/2.,1);
+    h2[icent] -> Fill(ch[1],(ymin2+ymax2)/2.,1);
+    h2[icent] -> Fill(ch[2],(ymin2+ymax2)/2.,1);
+    h2[icent] -> Fill(ch[3],(ymin2+ymax2)/2.,1);
     h2[icent]->GetXaxis()->SetLabelSize(0.05);
     a->SetNdivisions(300); // 3 division, 0 sub-division
     h2[icent]->Draw();
@@ -368,43 +406,57 @@ void v2plot_Nonflow_multipads(TString inputFile){
     latex2 -> SetTextAlign(31);
     latex2 -> Draw();
   }
-  c1 -> SaveAs("./Graphics/nonflow/v2pt_nonflow.png");
-  c2 -> SaveAs("./Graphics/nonflow/v2_nonflow.png");
+  c1 -> SaveAs("./Graphics/pure/v2pt.png");
+  c2 -> SaveAs("./Graphics/pure/v2.png");
   //=============================================
   // Drawing reference flow separately for analysis
   TCanvas *c[ncent];
   TLatex *text[ncent];
   for (int i=0;i<ncent;i++){
+    Double_t ymin = TMath::MinElement(4,v2[i])*0.98;
+    Double_t ymax = TMath::MaxElement(4,v2[i])*1.02;
+    // double ymin = 0.01*(i+1);
+    // double ymax = 0.03*(i+1);
     sprintf(hname,"Cent%i-%i%%",i*10,(i+1)*10);
     c[i] = new TCanvas(hname,hname,200,10,800,600);
+
+    h3[i] = new TH2F("","",4,0,4,10,ymin,ymax);
+    h3[i]->SetYTitle("v_{n}");
+    h3[i]->SetCanExtend(TH1::kAllAxes);
+    const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
+    TAxis* a = h3[i] -> GetXaxis();
+    for (int j=0; j<4; j++) h3[i]->Fill(ch[j],(ymin+ymax)/2.,1);
+    h3[i]->GetXaxis()->SetLabelSize(0.05);
+    a->SetNdivisions(300); // 3 division, 0 sub-division
+    h3[i]->Draw();
     grshade[i] -> SetFillStyle(1001);
     grshade[i] -> SetFillColor(18);
     grshade[i] -> Draw("f");
     grRefFl[i] -> SetTitle("Reference flow");
-    grRefFl[i] -> Draw("AP");
+    grRefFl[i] -> Draw("P");
     char text1[800];
-    sprintf(text1,"#splitline{cent: %i-%i%%}{#splitline{nonflow}{}}",10*(i),10*(i+1));
+    sprintf(text1,"#splitline{cent: %i-%i%%}{#splitline{pure}{}}",10*(i),10*(i+1));
     text[i] = new TLatex(1.,(TMath::MinElement(3,grRefFl[i]->GetY())),text1);
     text[i] -> SetTextFont(62);
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();
-    sprintf(hname,"./Graphics/nonflow/Cent%i-%i%%_nonflow.png",i*10,(i+1)*10);
+    sprintf(hname,"./Graphics/pure/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
-    
   }
-
-  outFile = new TFile("./ROOTFile/NonFlowGraph.root","recreate");
+  outFile = new TFile("./ROOTFile/PureFlowGraph.root","recreate");
   outFile -> cd();
   int mycent = 3;
   grDifFl[0][mycent] -> SetTitle("Dif.flow v2_MC");
   grDifFl[1][mycent] -> SetTitle("Dif.flow v2_2");
   grDifFl[2][mycent] -> SetTitle("Dif.flow v2_4");
-  grRefFl[mycent] -> SetTitle("Ref.flow: MC:x=0.5,v22:x=1.5,v24:x=2.5");
+  grDifFl[3][mycent] -> SetTitle("Dif.flow v2_EP");
+  grRefFl[mycent] -> SetTitle("Ref.flow: MC:x=0.5, v22:x=1.5, v24:x=2.5, v2EP:x=3.5");
   grRefFl[mycent] -> Write("grRF");
-  for (int i=0; i<3; i++){
+  for (int i=0; i<4; i++){
     sprintf(hname,"grDF_%i",i);
     grDifFl[i][mycent] -> Write(hname);
   }
-  outFile -> Close();  
+  outFile -> Close();
+
 }

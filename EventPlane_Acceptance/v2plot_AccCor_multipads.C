@@ -481,8 +481,8 @@ void v2plot_AccCor_multipads(){
   leg[0] -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
   leg[0] -> AddEntry(grDifFl[1][0],"v_{2}{2,QC} w/o AC","p");
   leg[0] -> AddEntry(grDifFl[2][0],"v_{2}{4,QC} w/o AC","p");
-  leg[0] -> AddEntry(grDifFlAC[1][0],"v_{2}{2,QC} AC","p");
-  leg[0] -> AddEntry(grDifFlAC[2][0],"v_{2}{4,QC} AC","p");
+  leg[0] -> AddEntry(grDifFlAC[0][0],"v_{2}{2,QC} AC","p");
+  leg[0] -> AddEntry(grDifFlAC[1][0],"v_{2}{4,QC} AC","p");
   leg[0] -> AddEntry(grDifFl[3][0],"v_{2}{#eta sub-event}","p");
   
 

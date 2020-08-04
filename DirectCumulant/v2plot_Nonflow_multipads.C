@@ -11,7 +11,7 @@
 using namespace std;
 #include <fstream>
 
-void v2plot_Nonflow_multipads(TString inputFile){
+void v2plot_Nonflow_multipads(){
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
   static const Float_t maxpt = 3.5; // max pt
@@ -56,7 +56,7 @@ void v2plot_Nonflow_multipads(TString inputFile){
   Double_t stats[6]; // stats of TProfile
 
 
-  inFile = new TFile(inputFile.Data(),"read");
+  inFile = new TFile("~/ROOTFile/sum_nonflow_10mil_0.1rate.root","read");
   // inFile = new TFile("./ROOTFile/v2QC_nonflow.root","read");
   // inFile = new TFile("./ROOTFile/v2QC_test_nonflow.root","read");
 

@@ -30,15 +30,15 @@ source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
 export TMP_DIR=${MAIN_DIR}/TMP
-export OUT=${OUT_DIR}/acceptance
+export OUT=${OUT_DIR}/nonflow_0.1rate
 export OUT_LOG=${OUT}/log
 export OUT_FILE=${OUT}/v2hadron_${JOB_ID}.root
 export TMP=${TMP_DIR}/TMP_${JOB_ID}
 export LOG=${OUT_LOG}/JOB_${JOB_ID}.log
-touch $LOG
 
 mkdir -p $OUT_LOG
 mkdir -p $TMP
+touch $LOG
 
 cp $MAIN_DIR/GenerateV2.C $TMP
 

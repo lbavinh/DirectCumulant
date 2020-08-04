@@ -105,7 +105,7 @@ void hTana::v2gen(int nevent,double Mmean) {
   double phirp; // azimuthal angle of reation plane
   double eta; // pseudorapidity
 
-  float nonflow = 1.; /* Simulating nonflow correlations: 
+  float nonflow = 0.; /* Simulating nonflow correlations: 
 		     0: no nonflow correlations; 
 		     1: "pair wise" emission (2 particles with same azimuth);
          2: "quadruplet" emission (4 particles with same azimuth).*/
@@ -162,9 +162,9 @@ void hTana::v2gen(int nevent,double Mmean) {
         phil=phi+phirp; /* particle angle with respect to the laboratory frame */
         while (phil>2.*PI)
         phil-=2.*PI; /* To make sure that phil is between 0 and 2 Pi */
-        // if (((phil>=0.) && (phil<=A    )) ||
-        //     ((phil>=B ) && (phil<=C    )) ||
-        //     ((phil>=D ) && (phil<=2.*PI)) ){ // 2 holes
+        if (((phil>=0.) && (phil<=A    )) ||
+            ((phil>=B ) && (phil<=C    )) ||
+            ((phil>=D ) && (phil<=2.*PI)) ){ // 2 holes
 
           hPt->Fill(pT);
           hPhi  -> Fill(phi);
@@ -209,7 +209,7 @@ void hTana::v2gen(int nevent,double Mmean) {
               } // end of 3 more particle generation
             } // End of generation Quadruplet-wise emission
           } // End of NONFLOW CORRELATION simulation
-        // } // end of acceptance simulation
+        } // end of acceptance simulation
       } // end of track's transverse momentum selection
     }//end of the particle loop
     d_nh = nh;
@@ -241,8 +241,8 @@ void hTana::ana_end() {
 
 void hTana::book_hist(TString outfile) {
   // read input TFile
-  // d_infile = new TFile("/mnt/pool/2/lbavinh/EventGenerator/merge_hist_glaub_200gev.root", "read");
-  d_infile = new TFile("/weekly/nikolaev/lbavinh/Generator/merge_hist_glaub_200gev.root", "read");
+  d_infile = new TFile("/mnt/pool/2/lbavinh/EventGenerator/merge_hist_glaub_200gev.root", "read");
+  // d_infile = new TFile("/weekly/nikolaev/lbavinh/Generator/merge_hist_glaub_200gev.root", "read");
   hBimp = (TH1F *)d_infile->Get("hBimp");
   hNpart = (TH1I *)d_infile->Get("hNpart");
   hNcoll = (TH1I *)d_infile->Get("hNcoll");

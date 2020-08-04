@@ -34,7 +34,7 @@ void v2plot(){
 
   TFile *inFile, *outFile;
   // inFile = new TFile("./ROOTFile/sum.root","read");
-  inFile = new TFile("./ROOTFile/sum_nonflow_10mil.root","read"); 
+  inFile = new TFile("./ROOTFile/sum_nonflow_10mil_0.1rate.root","read"); 
   // OUTPUT
   TGraphErrors *grDifFl[4][ncent], *grRefFl[ncent];     // 4 = {MC, 2QC, 4QC, EP}
 
@@ -359,8 +359,8 @@ void v2plot(){
   c2->Divide(3,2,0,0);
   Double_t xmin=0.1;
   Double_t xmax=1.63;
-  Double_t ymin=0.;
-  Double_t ymax=0.23;
+  Double_t ymin=0.00;
+  Double_t ymax=0.18;
   TH2F *h[ncent], *h2[ncent], *h3[ncent];
   TLatex *latex, *latex2;
 
@@ -406,8 +406,8 @@ void v2plot(){
     latex2 -> SetTextAlign(31);
     latex2 -> Draw();
   }
-  c1 -> SaveAs("./Graphics/nonflow_10mil/v2pt.png");
-  c2 -> SaveAs("./Graphics/nonflow_10mil/v2.png");
+  c1 -> SaveAs("./Graphics/nonflow/v2pt.png");
+  c2 -> SaveAs("./Graphics/nonflow/v2.png");
   //=============================================
   // Drawing reference flow separately for analysis
   TCanvas *c[ncent];
@@ -441,10 +441,10 @@ void v2plot(){
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();
-    sprintf(hname,"./Graphics/nonflow_10mil/Cent%i-%i%%.png",i*10,(i+1)*10);
+    sprintf(hname,"./Graphics/nonflow/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-  outFile = new TFile("./ROOTFile/NonFlow30_40_Vinh_10mil.root","recreate");
+  outFile = new TFile("./ROOTFile/NonFlow30_40_Vinh_10mil_0.1rate.root","recreate");
   outFile -> cd();
   int mycent = 3;
   grDifFl[0][mycent] -> SetTitle("Dif.flow v2_MC");

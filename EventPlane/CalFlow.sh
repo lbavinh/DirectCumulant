@@ -27,21 +27,20 @@
 
 #Main directory
 export MAIN_DIR=/weekly/nikolaev/lbavinh/EventPlane
-export FILELIST=${MAIN_DIR}/../Generator/OUT/nonflow/runlist.list
+export FILELIST=${MAIN_DIR}/../Generator/OUT/nonflow_0.1rate/runlist.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
 export TMP_DIR=${MAIN_DIR}/TMP
-export OUT=${OUT_DIR}/nonflow
+export OUT=${OUT_DIR}/nonflow_0.1rate
 export OUT_LOG=${OUT}/log
 export TMP=${TMP_DIR}/TMP_${JOB_ID}_${SGE_TASK_ID}
 export OUT_FILE=${OUT}/sum_${JOB_ID}_${SGE_TASK_ID}.root
 export LOG=${OUT_LOG}/JOB_${JOB_ID}_${SGE_TASK_ID}.log
 
-touch $LOG
-
 mkdir -p $OUT_LOG
 mkdir -p $TMP
+touch $LOG
 
 cp $MAIN_DIR/calculateFlow.C $TMP
 

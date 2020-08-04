@@ -22,20 +22,18 @@ double dndpT(double pT)
 double dndphi(double phi, double v2, double b) 
 {
   double temp;
-
+  double v1=0, v3=0, v4=0, v5=0, v6=0;
+  // v4 = pow(v2,2);
   float fb = 0.97 + 1.06 * exp(-0.5 * b * b / 3.2 / 3.2);
-  float v3 = pow(fb * sqrt(v2), 3);
-
+  v3 = pow(fb * sqrt(v2), 3);
   float gb = 1.096 + 1.36 * exp(-0.5 * b * b / 3.0 / 3.0);
   gb = gb * sqrt(v2);
-  float v4 = pow(gb, 4);
-  float v5 = pow(gb, 5);
-  float v6 = pow(gb, 6);
-  float v1 = 0;
-
+  v4 = pow(gb, 4);
+  v5 = pow(gb, 5);
+  v6 = pow(gb, 6);
 
   temp = (1.+2.*(v1*cos(phi)+v2*cos(2.*phi)+v3*cos(3.*phi)+v4*cos(4.*phi)+v5*cos(5.*phi)+v6*cos(6.*phi) ))/
-    (1.+2.*(fabs(v1)+fabs(v2)+fabs(v3)+fabs(v4)+fabs(v5)+fabs(v4) ));
+    (1.+2.*(fabs(v1)+fabs(v2)+fabs(v3)+fabs(v4)+fabs(v5)+fabs(v6) ));
   return temp;
 }
 

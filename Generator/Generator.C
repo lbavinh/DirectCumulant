@@ -5,7 +5,6 @@
 #include "TStyle.h"
 #include "TCanvas.h"
 #include "TMath.h"
-#include "TRandom2.h"
 #include "TRandom3.h"
 #include "TFile.h"
 #include "TStopwatch.h"
@@ -69,13 +68,12 @@ void V2gen(int nevent,double Mmean) {
   int seed2 = (int) clock() * 2;
   cout << "seed1="<<seed1<<"   "<<"seed2="<<seed2<<endl;
 
-  TRandom2 *GR = new TRandom2();
-  GR -> SetSeed(seed1);
+  TRandom3 *GR = new TRandom3();
+  GR -> SetSeed(0);
 
   //Set random seed so your random numbers don't repeat each time you run this macro
   TRandom3 rnd;
-  gRandom->SetSeed(rnd.Uniform(0., 1000000.));
-
+  gRandom->SetSeed(0);
   // Start the timer: that way we can see how much time Nevents will be generated
   TStopwatch timer;
   timer.Start();
@@ -98,13 +96,13 @@ void V2gen(int nevent,double Mmean) {
   double eta; // pseudorapidity
   bool bFlow;
 
-  float nonflow = 0.; /* Simulating nonflow correlations: 
+  float nonflow = 1.; /* Simulating nonflow correlations: 
 		     0: no nonflow correlations; 
 		     1: "pair wise" emission (2 particles with same azimuth);
          2: "quadruplet" emission (4 particles with same azimuth).*/
-  float nonflowrate = 0.250;
+  float nonflowrate = 0.1;
   /* Fraction of particles that are affected by nonflow effects. */
-  bool bAcceptance = 1;
+  bool bAcceptance = 0;
   float A = PI/3.;
   float B = PI/2.;
 
@@ -131,7 +129,7 @@ void V2gen(int nevent,double Mmean) {
     phirp=2.*PI*(GR->Rndm());
     hRP->Fill(phirp);
 
-    int nh = 0;   
+    int nh = 0;
 
     /* Loop over particles */
     for(int nm=0; nm<mult; nm++) {

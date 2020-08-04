@@ -12,7 +12,7 @@
 using namespace std;
 #include <fstream>
 
-void v2plot_AccCor_multipads(TString inputFile){
+void v2plot_AccCor_multipads(){
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
   static const Float_t maxpt = 3.5; // max pt
@@ -57,9 +57,8 @@ void v2plot_AccCor_multipads(TString inputFile){
   TProfile *prx, *pry, *prxy; // for covariance calculation
   Double_t stats[6]; // stats of TProfile
 
-  inFile = new TFile(inputFile.Data(),"read");
-  // inFile = new TFile("./ROOTFile/v2QC_Acceptance.root","read");
-  // inFile = new TFile("./ROOTFile/v2QC_test.root","read"); // test with uniform acceptance
+  // inFile = new TFile("./ROOTFile/v2QC_acc_10mil_v2v4.root","read");
+  inFile = new TFile("./ROOTFile/v2QC_acc_20mil_v2v4.root","read");
   
   // Get TProfile histograms from ROOTFile
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
@@ -430,8 +429,8 @@ void v2plot_AccCor_multipads(TString inputFile){
   leg[0] -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
   leg[0] -> AddEntry(grDifFl[1][0],"v_{2}{2,QC} w/o AC","p");
   leg[0] -> AddEntry(grDifFl[2][0],"v_{2}{4,QC} w/o AC","p");
-  leg[0] -> AddEntry(grDifFlAC[1][0],"v_{2}{2,QC} AC","p");
-  leg[0] -> AddEntry(grDifFlAC[2][0],"v_{2}{4,QC} AC","p");
+  leg[0] -> AddEntry(grDifFlAC[0][0],"v_{2}{2,QC} AC","p");
+  leg[0] -> AddEntry(grDifFlAC[1][0],"v_{2}{4,QC} AC","p");
   
 
   leg[1] = new TLegend(0.11,.95,0.4,.78); // legend for ref. flow plotting

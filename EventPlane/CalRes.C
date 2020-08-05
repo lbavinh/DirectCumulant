@@ -18,10 +18,12 @@ static const int bin_cent[ncent] = {5, 15, 25, 35, 45, 55, 65, 75};
 
 static const Float_t maxpt = 3.5; // max pt
 static const Float_t minpt = 0.2; // min pt
-static const int npt = 24;        // 0.2 - 3.5 GeV/c
-static const double bin_pT[npt + 1] = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1,
-                                       1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0, 2.2, 2.4,
-                                       2.6, 2.8, 3.0, 3.2, 3.5};
+// static const int npt = 24;        // 0.2 - 3.5 GeV/c
+// static const double bin_pT[npt + 1] = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1,
+//                                        1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0, 2.2, 2.4,
+//                                        2.6, 2.8, 3.0, 3.2, 3.5};
+static const int npt = 12;        // 0.2 - 3.5 GeV/c
+static const double bin_pT[npt + 1] ={0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
 static const int neta = 2; // [eta-,eta+]
 TFile *d_outfile; // out file with histograms and profiles
 

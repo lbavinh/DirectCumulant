@@ -4,10 +4,14 @@ void v2plot(){
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
   static const Float_t maxpt = 3.5; // max pt
   static const Float_t minpt = 0.2; // min pt
-  static const int npt = 24; // 0.2 - 3.5 GeV/c 
-  static const double bin_pT[25]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,
-                                  1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.0,2.2,2.4,
-                                  2.6,2.8,3.0,3.2,3.5};
+  // static const int npt = 24; // 0.2 - 3.5 GeV/c 
+  // static const double bin_pT[25]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,
+  //                                 1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.0,2.2,2.4,
+  //                                 2.6,2.8,3.0,3.2,3.5};
+
+  static const int npt = 12;        // 0.2 - 3.5 GeV/c
+  static const double bin_pT[npt + 1] ={0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
+
   // Input hist
 
   // TProfile for reference flow
@@ -33,8 +37,10 @@ void v2plot(){
   TH1F *hv22EP[npt];        // elliptic flow cent: 10-40% from EP method
 
   TFile *inFile, *outFile;
-  // inFile = new TFile("./ROOTFile/sum.root","read");
-  inFile = new TFile("./ROOTFile/sum_nonflow_10mil_0.1rate.root","read"); 
+  // inFile = new TFile("./ROOTFile/sum_pure_10mil_DIM.root","read");
+  // inFile = new TFile("./ROOTFile/sum_nonflow_10mil_0.1rate_DIM.root","read");
+  // inFile = new TFile("./ROOTFile/sum_nonflow_10mil_0.1rate.root","read");
+  inFile = new TFile("./ROOTFile/nonflow_50mil_0.2rate.root","read");
   // OUTPUT
   TGraphErrors *grDifFl[4][ncent], *grRefFl[ncent];     // 4 = {MC, 2QC, 4QC, EP}
 
@@ -357,13 +363,13 @@ void v2plot(){
   c1->Divide(3,2,0,0);
   TCanvas *c2 = new TCanvas("c2","multipads",200,10,1600,900);
   c2->Divide(3,2,0,0);
-  Double_t xmin=0.1;
-  Double_t xmax=1.63;
-  Double_t ymin=0.00;
-  Double_t ymax=0.18;
+  double xmin=0.15;
+  double xmax=3.45;
+  double ymin=-0.005;
+  double ymax=0.255;
   TH2F *h[ncent], *h2[ncent], *h3[ncent];
   TLatex *latex, *latex2;
-
+  const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
   for(int icent=0; icent<6; icent++){
     // differential flow
     h[icent] = new TH2F("","",5,xmin,xmax,5,ymin,ymax);
@@ -423,7 +429,7 @@ void v2plot(){
     h3[i] = new TH2F("","",4,0,4,10,ymin,ymax);
     h3[i]->SetYTitle("v_{n}");
     h3[i]->SetCanExtend(TH1::kAllAxes);
-    const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
+    
     TAxis* a = h3[i] -> GetXaxis();
     for (int j=0; j<4; j++) h3[i]->Fill(ch[j],(ymin+ymax)/2.,1);
     h3[i]->GetXaxis()->SetLabelSize(0.05);
@@ -444,19 +450,15 @@ void v2plot(){
     sprintf(hname,"./Graphics/nonflow/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-  outFile = new TFile("./ROOTFile/NonFlow30_40_Vinh_10mil_0.1rate.root","recreate");
+  outFile = new TFile("./ROOTFile/TGraphError_nonflow.root","recreate");
   outFile -> cd();
-  int mycent = 3;
-  grDifFl[0][mycent] -> SetTitle("Dif.flow v2_MC");
-  grDifFl[1][mycent] -> SetTitle("Dif.flow v2_2");
-  grDifFl[2][mycent] -> SetTitle("Dif.flow v2_4");
-  grDifFl[3][mycent] -> SetTitle("Dif.flow v2_EP");
-  grRefFl[mycent] -> SetTitle("Ref.flow: MC:x=0.5, v22:x=1.5, v24:x=2.5, v2EP:x=3.5");
-  grRefFl[mycent] -> Write("grRF");
-  for (int i=0; i<4; i++){
-    sprintf(hname,"grDF_%i",i);
-    grDifFl[i][mycent] -> Write(hname);
+  // int mycent = 3;
+  for (int icent=0; icent < ncent; icent++){
+    for (int i=0; i<4; i++){
+      sprintf(hname,"gr_cent%i_%i",icent,i);
+      grDifFl[i][icent] -> SetTitle(ch[i]);
+      grDifFl[i][icent] -> Write(hname);
+    }
   }
   outFile -> Close();
-
 }

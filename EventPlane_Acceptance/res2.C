@@ -11,7 +11,8 @@ void res2() {
   
   // TFile *file = new TFile("./ROOTFile/res2_nonflow.root","read");
   // TFile *file = new TFile("./ROOTFile/res2.root","read");
-  TFile *file = new TFile("/weekly/nikolaev/lbavinh/Acceptance/OUT/acceptance/res2.root","read");
+  //TFile *file = new TFile("/weekly/nikolaev/lbavinh/Acceptance/OUT/acceptance/res2.root","read");
+  TFile *file = new TFile("test.root","read");
   float res2EW[ncent]; // 8 - number of cent bins
 
 

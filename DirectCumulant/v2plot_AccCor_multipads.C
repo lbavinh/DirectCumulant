@@ -58,7 +58,7 @@ void v2plot_AccCor_multipads(){
   Double_t stats[6]; // stats of TProfile
 
   // inFile = new TFile("./ROOTFile/v2QC_acc_10mil_v2v4.root","read");
-  inFile = new TFile("./ROOTFile/v2QC_acc_20mil_v2v4.root","read");
+  inFile = new TFile("./ROOTFile/sum_acceptance_20mil.root","read");
   
   // Get TProfile histograms from ROOTFile
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
@@ -449,19 +449,19 @@ void v2plot_AccCor_multipads(){
   gStyle->SetOptStat(0);
 
   TCanvas *c1 = new TCanvas("c1","Differential flow",200,10,1600,900);
-  c1->Divide(4,2,0,0);
+  c1->Divide(3,2,0,0);
   TCanvas *c2 = new TCanvas("c2","Reference flow with & without acceptance correction",200,10,1600,900);
-  c2->Divide(4,2,0,0);
+  c2->Divide(3,2,0,0);
   TCanvas *c3 = new TCanvas("c3","Reference flow with acceptance correction",200,10,1600,900);
-  c3->Divide(4,2,0,0);
+  c3->Divide(3,2,0,0);
   Double_t xmin=0.1;
-  Double_t xmax=1.63;
-  Double_t ymin=0.;
-  Double_t ymax=0.23;
+  Double_t xmax=2.63;
+  Double_t ymin=-0.005;
+  Double_t ymax=0.275;
   TH2F *h[ncent], *h2[ncent], *h3[ncent];
   TLatex *latex, *latex2;
 
-  for(int icent=0; icent<8; icent++){
+  for(int icent=0; icent<6; icent++){
     // Differential flow
 
     h[icent] = new TH2F("","",1,xmin,xmax,1,ymin,ymax);

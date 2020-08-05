@@ -58,12 +58,12 @@ TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 // Reference flow acceptance correction
 Double_t cos2phi1[ncent] = {0}, sin2phi1[ncent] = {0}, cos2phi12[ncent] = {0}, sin2phi12[ncent] = {0}, cos2phi123[ncent] = {0}, sin2phi123[ncent] = {0};
 Double_t sumM[ncent] = {0}, sumMMm1[ncent] = {0}, sumMMm1Mm2[ncent] = {0};
-TVectorD *vcos2phi1[ncent], *vsin2phi1[ncent], *vcos2phi12[ncent], *vsin2phi12[ncent], *vcos2phi123[ncent], *vsin2phi123[ncent]; // to be written in outFile
+TProfile *vcos2phi1[ncent], *vsin2phi1[ncent], *vcos2phi12[ncent], *vsin2phi12[ncent], *vcos2phi123[ncent], *vsin2phi123[ncent]; // to be written in outFile
 // Differential flow acceptance correction
 Double_t cos2psi1[ncent][npt] = {{0}}, sin2psi1[ncent][npt] = {{0}}, cos2psi1phi2[ncent][npt] = {{0}}, sin2psi1phi2[ncent][npt] = {{0}},
          cos2psi1pphi23[ncent][npt] = {{0}}, sin2psi1pphi23[ncent][npt] = {{0}}, cos2psi1mphi23[ncent][npt] = {{0}}, sin2psi1mphi23[ncent][npt] = {{0}};
 Double_t summp[ncent][npt] = {{0}}, summpMmmq[ncent][npt] = {{0}}, summpMm2mqMm1[ncent][npt] = {{0}};
-TVectorD *vcos2psi1[ncent], *vsin2psi1[ncent], *vcos2psi1phi2[ncent], *vsin2psi1phi2[ncent], *vcos2psi1pphi23[ncent],
+TProfile *vcos2psi1[ncent], *vsin2psi1[ncent], *vcos2psi1phi2[ncent], *vsin2psi1phi2[ncent], *vcos2psi1pphi23[ncent],
     *vsin2psi1pphi23[ncent], *vcos2psi1mphi23[ncent], *vsin2psi1mphi23[ncent]; // to be written in outFile
 
 void hVana::Booking(TString outFile)

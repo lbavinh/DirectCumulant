@@ -18,35 +18,31 @@
 #$ -e /weekly/nikolaev/lbavinh/Generator/OUT/log/
 #
 
-# ${JOB_ID} - Id of the job array (one for all jobs)
-# ${SGE_TASK_ID} - id of the element of the job array
-# SGE option "-t 1-N" tells array range. It will create an array
-#     of N jobs with ${JOB_ID}_1, ${JOB_ID}_2, ..., ${JOB_ID}_N
-
 #Main directory
 export MAIN_DIR=/weekly/nikolaev/lbavinh/Generator
 
-source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh
+
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
-export TMP_DIR=${MAIN_DIR}/TMP
-export OUT=${OUT_DIR}/nonflow_0.1rate
-export OUT_LOG=${OUT}/log
+export OUT=${OUT_DIR}/nonflow
 export OUT_FILE=${OUT}/v2hadron_${JOB_ID}.root
-export TMP=${TMP_DIR}/TMP_${JOB_ID}
+export OUT_LOG=${OUT}/log
 export LOG=${OUT_LOG}/JOB_${JOB_ID}.log
+export TMP_DIR=${MAIN_DIR}/TMP
+export TMP=${TMP_DIR}/TMP_${JOB_ID}
 
 mkdir -p $OUT_LOG
 mkdir -p $TMP
 touch $LOG
 
 cp $MAIN_DIR/GenerateV2.C $TMP
-
+source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh
 echo "Input arguments (Job Id = ${JOB_ID}):" &>> $LOG
-echo "Main directory:           ${MAIN_DIR}" &>> $LOG
+echo "Output: ${OUT_FILE}" &>> $LOG
 
 echo "---------------" &>> $LOG
 echo "Run EP resolution calculation..." &>> $LOG
+
 root -l -b -q $TMP/GenerateV2.C+'("'${OUT_FILE}'")' &>> $LOG
 
 echo "---------------" &>> $LOG

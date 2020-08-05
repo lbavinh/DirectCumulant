@@ -14,7 +14,7 @@
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=00:10:00
 # Specify job array range (how many jobs will be created
-#$ -t 1-100
+#$ -t 1-500
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /weekly/nikolaev/lbavinh/Acceptance/OUT/log/
 #$ -e /weekly/nikolaev/lbavinh/Acceptance/OUT/log/

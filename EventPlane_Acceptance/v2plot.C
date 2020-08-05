@@ -12,42 +12,54 @@
 using namespace std;
 #include <fstream>
 
-void v2plot_AccCor_multipads(){
+void v2plot(){
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
-  static const Float_t maxpt = 3.5; // max pt
-  static const Float_t minpt = 0.2; // min pt
-  static const int npt = 24; // 0.2 - 3.5 GeV/c 
-  static const double bin_pT[25]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,
-                                  1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.0,2.2,2.4,
-                                  2.6,2.8,3.0,3.2,3.5};
+  static const double maxpt = 3.5; // max pt
+  static const double minpt = 0.2; // min pt
+  static const int npt = 12;        // 0.2 - 3.5 GeV/c
+  static const double bin_pT[npt + 1] ={0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
   // Input hist
 
-  // TProfile for reference flow
-  TProfile *hv2MC[ncent];       // profile for MC integrated v2
-  TProfile *hv22[ncent];        // profile <<2>> from 2nd Q-Cumulants
-  TProfile *hv24[ncent];        // profile <<4>> from 4th Q-Cumulants
-  // TProfile for differential flow
-  TProfile *hPT[ncent][npt];       // profile pt 
-  TProfile *hv2MCpt[ncent][npt];   // profile v2pt from MC toy   
-  TProfile *hv22pt[ncent][npt];    // profile <<2'>> from 2nd Q-Cumulants
-  TProfile *hv24pt[ncent][npt];    // profile <<4'>> from 4th Q-Cumulants
-  // TProfile for covariance calculation according to (C.12)
-  // Bilandzic, A. (2012). Anisotropic flow measurements in ALICE at the large hadron collider. 
-  // Appendix C
-  TProfile *hcov24[ncent];       // <2>*<4>
-  TProfile *hcov22prime[ncent][npt]; // <2>*<2'>
-  TProfile *hcov24prime[ncent][npt]; // <2>*<4'>
-  TProfile *hcov42prime[ncent][npt]; // <2>*<4'>
-  TProfile *hcov44prime[ncent][npt]; // <4>*<4'>
+  // TProfile for reference flow (RF)
+  TProfile *hv2MC[ncent]; // profile for MC integrated v2
+  TProfile *hv22[ncent];  // profile <<2>> from 2nd Q-Cumulants
+  TProfile *hv24[ncent];  // profile <<4>> from 4th Q-Cumulants
+  // TProfile for differential flow (DF)
+  TProfile *hPT[npt];     // profile pt
+  TProfile *hv2MCpt[ncent][npt]; // profile v2pt from MC toy
+  TProfile *hv22pt[ncent][npt];  // profile <<2'>> from 2nd Q-Cumulants
+  TProfile *hv24pt[ncent][npt];  // profile <<4'>> from 4th Q-Cumulants
+
+  // TProfile for covariance calculation according to (C.12), Appendix C
+  // in Bilandzic, A. (2012). Anisotropic flow measurements in ALICE at the large hadron collider.
+  TProfile *hcov24[ncent];                // <2>*<4>
+  TProfile *hcov22prime[ncent][npt];      // <2>*<2'>
+  TProfile *hcov24prime[ncent][npt];      // <2>*<4'>
+  TProfile *hcov42prime[ncent][npt];      // <2>*<4'>
+  TProfile *hcov44prime[ncent][npt];      // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 
-  TH1F *hv2EP[ncent][npt];	// elliptic flow from EP method
-  TH1F *hv22EP[npt];        // elliptic flow cent: 10-40% from EP method
+  // non-uniform acceptance correction
+  // Reference flow acceptance correction
+  TProfile *hcos2phi1, *hsin2phi1, *hcos2phi12, *hsin2phi12, *hcos2phi123, *hsin2phi123; // 6
+
+  // Differential flow acceptance correction
+  TProfile *hcos2psi1[npt], *hsin2psi1[npt], *hcos2psi1phi2[npt], *hsin2psi1phi2[npt],
+           *hcos2psi1pphi23[npt], *hsin2psi1pphi23[npt], *hcos2psi1mphi23[npt], *hsin2psi1mphi23[npt]; // 8
+
+  TProfile *hv2EP[npt];	// elliptic flow from EP method
+  TProfile *hv22EP;      // integrated elliptic flow from EP method
 
   TFile *inFile;
   // OUTPUT
-  TGraphErrors *grDifFl[4][ncent], *grRefFl[ncent];     // 4 = {MC, 2QC, 4QC}
+  // Acceptance correction terms
+  double  cos2phi1[ncent], sin2phi1[ncent], cos2phi12[ncent], sin2phi12[ncent],
+          cos2phi123[ncent], sin2phi123[ncent];
+  double  cos2psi1[ncent][npt], sin2psi1[ncent][npt], cos2psi1phi2[ncent][npt], sin2psi1phi2[ncent][npt],
+          cos2psi1pphi23[ncent][npt], sin2psi1pphi23[ncent][npt], cos2psi1mphi23[ncent][npt], sin2psi1mphi23[ncent][npt];
+
+  TGraphErrors *grDifFl[4][ncent], *grRefFl[ncent];     // 4 = {MC, 2QC, 4QC, EP}
   TGraph *grshade[ncent];
   TMultiGraph *mgRefFl[ncent], *mgDifFl[ncent];
 
@@ -58,55 +70,97 @@ void v2plot_AccCor_multipads(){
   char hname[800]; // histogram hname
   TProfile *pr; // temporary TProfile for TProfile extracting from root file
   TProfile *prx, *pry, *prxy; // for covariance calculation
-  Double_t stats[6]; // stats of TProfile
-  Double_t rms; // root of mean squared = standard deviation (temporary variable)
-  int nent; // number of entries (temporary variable)
-  Double_t err; // standard error (temporary variable)
+  double stats[6]; // stats of TProfile
 
-
-  inFile = new TFile("./ROOTFile/sum_acceptance_20mil.root","read");
+  inFile = new TFile("./ROOTFile/acceptance_50mil.root","read");
   // inFile = new TFile("./ROOTFile/sum.root","read");
 
   // Get TProfile histograms from ROOTFile
+
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    sprintf(hname,"hv2MC_cent%i",icent);
+    sprintf(hname,"hv2MC_%i",icent);
     hv2MC[icent] = (TProfile*)inFile->Get(hname);
-    sprintf(hname,"hv22_cent%i",icent);
+    sprintf(hname,"hv22_%i",icent);
     hv22[icent] = (TProfile*)inFile->Get(hname);
-    sprintf(hname,"hv24_cent%i",icent);
+    sprintf(hname,"hv24_%i",icent);
     hv24[icent] = (TProfile*)inFile->Get(hname);
-    sprintf(hname,"hcov24_cent%i",icent);
+    sprintf(hname,"hcov24_%i",icent);
     hcov24[icent] = (TProfile*)inFile->Get(hname);
-    sprintf(hname,"hv22EP_cent%i",icent);
-    hv22EP[icent] = (TH1F*)inFile->Get(hname);
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-        sprintf(hname,"hPT_cent%i_pt%i",icent,ipt);
-        hPT[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hv2MCpt_cent%i_pt%i",icent,ipt);
-        hv2MCpt[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hv22pt_cent%i_pt%i",icent,ipt);
-        hv22pt[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hv24pt_cent%i_pt%i",icent,ipt);
-        hv24pt[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov22prime_cent%i_pt%i",icent,ipt);
-        hcov22prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov24prime_cent%i_pt%i",icent,ipt);
-        hcov24prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov42prime_cent%i_pt%i",icent,ipt);
-        hcov42prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov44prime_cent%i_pt%i",icent,ipt);
-        hcov44prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov2prime4prime_cent%i_pt%i",icent,ipt);
-        hcov2prime4prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hv2EP_cent%i_pt%i",icent,ipt);
-        hv2EP[icent][ipt]=(TH1F*)inFile->Get(hname);
+      sprintf(hname,"hv2MCpt_%i_%i",icent,ipt);
+      hv2MCpt[icent][ipt]=(TProfile*)inFile->Get(hname);
+      sprintf(hname,"hv22pt_%i_%i",icent,ipt);
+      hv22pt[icent][ipt]=(TProfile*)inFile->Get(hname);
+      sprintf(hname,"hv24pt_%i_%i",icent,ipt);
+      hv24pt[icent][ipt]=(TProfile*)inFile->Get(hname);
+      sprintf(hname,"hcov22prime_%i_%i",icent,ipt);
+      hcov22prime[icent][ipt]=(TProfile*)inFile->Get(hname);
+      sprintf(hname,"hcov24prime_%i_%i",icent,ipt);
+      hcov24prime[icent][ipt]=(TProfile*)inFile->Get(hname);
+      sprintf(hname,"hcov42prime_%i_%i",icent,ipt);
+      hcov42prime[icent][ipt]=(TProfile*)inFile->Get(hname);
+      sprintf(hname,"hcov44prime_%i_%i",icent,ipt);
+      hcov44prime[icent][ipt]=(TProfile*)inFile->Get(hname);
+      sprintf(hname,"hcov2prime4prime_%i_%i",icent,ipt);
+      hcov2prime4prime[icent][ipt]=(TProfile*)inFile->Get(hname);
+
     } // end of loop over pt bin
   } // end of loop over centrality classes
+  hcos2phi1 = (TProfile*)inFile->Get("hcos2phi1");
+  hsin2phi1 = (TProfile*)inFile->Get("hsin2phi1");
+  hcos2phi12 = (TProfile*)inFile->Get("hcos2phi12");
+  hsin2phi12 = (TProfile*)inFile->Get("hsin2phi12");
+  hcos2phi123 = (TProfile*)inFile->Get("hcos2phi123");
+  hsin2phi123 = (TProfile*)inFile->Get("hsin2phi123");
+  hv22EP = (TProfile*)inFile->Get("hv22EP");
+  for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+    sprintf(hname,"hPT_%i",ipt);
+    hPT[ipt]=(TProfile*)inFile->Get(hname);
+    sprintf(hname,"hv2EP_%i",ipt);
+    hv2EP[ipt]=(TProfile*)inFile->Get(hname);
+    sprintf(hname,"hcos2psi1_%i",ipt);
+    hcos2psi1[ipt]=(TProfile*)inFile->Get(hname);
+    sprintf(hname,"hsin2psi1_%i",ipt);
+    hsin2psi1[ipt]=(TProfile*)inFile->Get(hname);
+    sprintf(hname,"hcos2psi1phi2_%i",ipt);
+    hcos2psi1phi2[ipt]=(TProfile*)inFile->Get(hname);
+    sprintf(hname,"hsin2psi1phi2_%i",ipt);
+    hsin2psi1phi2[ipt]=(TProfile*)inFile->Get(hname);
+    sprintf(hname,"hcos2psi1pphi23_%i",ipt);
+    hcos2psi1pphi23[ipt]=(TProfile*)inFile->Get(hname);
+    sprintf(hname,"hsin2psi1pphi23_%i",ipt);
+    hsin2psi1pphi23[ipt]=(TProfile*)inFile->Get(hname);
+    sprintf(hname,"hcos2psi1mphi23_%i",ipt);
+    hcos2psi1mphi23[ipt]=(TProfile*)inFile->Get(hname);
+    sprintf(hname,"hsin2psi1mphi23_%i",ipt);
+    hsin2psi1mphi23[ipt]=(TProfile*)inFile->Get(hname);
+  } // end of loop over pt bin
+  //==========================================================================================================================
+
+  // Extract the acceptance correction terms
+  for (int icent=0; icent<ncent; icent++){
+    cos2phi1[icent] = hcos2phi1 -> GetBinContent(1+icent);
+    sin2phi1[icent] = hsin2phi1 -> GetBinContent(1+icent);
+    cos2phi12[icent] = hcos2phi12 -> GetBinContent(1+icent);
+    sin2phi12[icent] = hsin2phi12 -> GetBinContent(1+icent);
+    cos2phi123[icent] = hcos2phi123 -> GetBinContent(1+icent);
+    sin2phi123[icent] = hsin2phi123 -> GetBinContent(1+icent);
+    for (int ipt=0; ipt<npt; ipt++){
+      cos2psi1[icent][ipt] = hcos2psi1[ipt] -> GetBinContent(1+icent);
+      sin2psi1[icent][ipt] = hsin2psi1[ipt] -> GetBinContent(1+icent);
+      cos2psi1phi2[icent][ipt] = hcos2psi1phi2[ipt] -> GetBinContent(1+icent);
+      sin2psi1phi2[icent][ipt] = hsin2psi1phi2[ipt] -> GetBinContent(1+icent);
+      cos2psi1pphi23[icent][ipt] = hcos2psi1pphi23[ipt] -> GetBinContent(1+icent);
+      sin2psi1pphi23[icent][ipt] = hsin2psi1pphi23[ipt] -> GetBinContent(1+icent);
+      cos2psi1mphi23[icent][ipt] = hcos2psi1mphi23[ipt] -> GetBinContent(1+icent);
+      sin2psi1mphi23[icent][ipt] = hsin2psi1mphi23[ipt] -> GetBinContent(1+icent);
+    }
+  }
 
   //==========================================================================================================================
   // Filling pT bin
-  Double_t pt[ncent][npt];
-  Double_t ept[ncent][npt]={{0}}; // error bin pT = 0.0
+  double pt[ncent][npt];
+  double ept[ncent][npt]={{0}}; // error bin pT = 0.0
   for (int icent=0; icent<ncent; icent++){
     for (int ipt=0; ipt<npt; ipt++){
       // pt[icent][ipt] = hPT[icent][ipt] -> GetBinContent(1);
@@ -116,79 +170,45 @@ void v2plot_AccCor_multipads(){
 
   //==========================================================================================================================
   // reference flow comparison
-  Double_t v2[ncent][4];
-  Double_t ev2[ncent][4];
-  Double_t x[4]={0.5,1.5,2.5,3.5};
-  Double_t ex[4]={0};
+  double v2[ncent][4];
+  double ev2[ncent][4];
+  double x[4]={0.5,1.5,2.5,3.5};
+  double ex[4]={0};
 
-  Double_t v2AC[ncent][4];
+  double v2AC[ncent][4];
 
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // Reference flow calculation
 
-    Double_t v2MCint;  // The Monte Carlo estimate for integrated v2 obtained using the known reaction plane event-by-event, v_{2}{MC}
-    Double_t v2MCintE; // Standard error of integrated v_{2}{MC}
+    double v2MCint;  // The Monte Carlo estimate for integrated v2 obtained using the known reaction plane event-by-event, v_{2}{MC}
+    double v2MCintE; // Standard error of integrated v_{2}{MC}
 
-    Double_t v22int;  // Integrated elliptic flow obtained with direct cumulants of 2nd order, v_{2}{2,QC}
-    Double_t v22intE; // Standard error of integrated v_{2}{2,QC}
-    Double_t cor2;    // The average all-event 2-particle correlation of RFP, <<2>>
-    Double_t cor2E;   // stat. err. of 2-particle correlations, s(<<2>>)
+    double v22int;  // Integrated elliptic flow obtained with direct cumulants of 2nd order, v_{2}{2,QC}
+    double v22intE; // Standard error of integrated v_{2}{2,QC}
+    double cor2;    // The average all-event 2-particle correlation of RFP, <<2>>
+    double cor2E;   // stat. err. of 2-particle correlations, s(<<2>>)
 
-    Double_t v24int;  // Integrated elliptic flow obtained with direct cumulants of 4th order, v_{2}{4,QC}
-    Double_t v24intE; // Standard error of integrated v_{2}{4,QC}
-    Double_t cor4;    // The average all-event 4-particle correlation of RFP, <<4>>
-    Double_t cor4E;   // error of <<4>>
+    double v24int;  // Integrated elliptic flow obtained with direct cumulants of 4th order, v_{2}{4,QC}
+    double v24intE; // Standard error of integrated v_{2}{4,QC}
+    double cor4;    // The average all-event 4-particle correlation of RFP, <<4>>
+    double cor4E;   // error of <<4>>
 
-    Double_t sumw2cor2;    // sumw2 of <2>
-    Double_t sumwcor2;     // sumw of <2>
-    Double_t sumw2cor4;    // sumw2 of <4>
-    Double_t sumwcor4;     // sumw of <4>
+    double sumw2cor2;    // sumw2 of <2>
+    double sumwcor2;     // sumw of <2>
+    double sumw2cor4;    // sumw2 of <4>
+    double sumwcor4;     // sumw of <4>
 
-    Double_t sumwcor24;    // sum(w<2>,w<4>)
-    Double_t cov24;        // Cov(<2>,<4>)
+    double sumwcor24;    // sum(w<2>,w<4>)
+    double cov24;        // Cov(<2>,<4>)
 
-    Double_t v22intAC;
-    Double_t v24intAC;
+    double v22intAC;
+    double v24intAC;
 
-    Double_t v2EPint;
-    Double_t v2EPintE;
+    double v2EPint;
+    double v2EPintE;
+   
     //=============================================
 
-    // TVector including acceptance correction terms
-    TVectorD *vcos2phi1, *vsin2phi1, *vcos2phi12, *vsin2phi12, *vcos2phi123, *vsin2phi123;
-    TVectorD *vcos2psi1, *vsin2psi1, *vcos2psi1phi2, *vsin2psi1phi2, *vcos2psi1pphi23, *vsin2psi1pphi23, *vcos2psi1mphi23, *vsin2psi1mphi23;
-
-    sprintf(hname,"vcos2phi1_cent%i",icent);
-    vcos2phi1       = (TVectorD*) inFile->Get(hname);
-    sprintf(hname,"vsin2phi1_cent%i",icent);
-    vsin2phi1       = (TVectorD*) inFile->Get(hname);
-    sprintf(hname,"vcos2phi12_cent%i",icent);
-    vcos2phi12      = (TVectorD*) inFile->Get(hname);
-    sprintf(hname,"vsin2phi12_cent%i",icent);
-    vsin2phi12      = (TVectorD*) inFile->Get(hname);
-    sprintf(hname,"vcos2phi123_cent%i",icent);
-    vcos2phi123     = (TVectorD*) inFile->Get(hname);
-    sprintf(hname,"vsin2phi123_cent%i",icent);
-    vsin2phi123     = (TVectorD*) inFile->Get(hname);
-
-    sprintf(hname,"vcos2psi1_cent%i",icent);
-    vcos2psi1       = (TVectorD*) inFile->Get(hname);
-    sprintf(hname,"vsin2psi1_cent%i",icent);
-    vsin2psi1       = (TVectorD*) inFile->Get(hname);
-    sprintf(hname,"vcos2psi1phi2_cent%i",icent);
-    vcos2psi1phi2   = (TVectorD*) inFile->Get(hname);
-    sprintf(hname,"vsin2psi1phi2_cent%i",icent);
-    vsin2psi1phi2   = (TVectorD*) inFile->Get(hname);
-    sprintf(hname,"vcos2psi1pphi23_cent%i",icent);
-    vcos2psi1pphi23 = (TVectorD*) inFile->Get(hname);
-    sprintf(hname,"vsin2psi1pphi23_cent%i",icent);
-    vsin2psi1pphi23 = (TVectorD*) inFile->Get(hname);
-    sprintf(hname,"vcos2psi1mphi23_cent%i",icent);
-    vcos2psi1mphi23 = (TVectorD*) inFile->Get(hname);
-    sprintf(hname,"vsin2psi1mphi23_cent%i",icent);
-    vsin2psi1mphi23 = (TVectorD*) inFile->Get(hname);
-    
-    //=============================================
     //v2{MC}
     v2MCint  = hv2MC[icent] -> GetBinContent(1);
     v2MCintE = hv2MC[icent] -> GetBinError(1);
@@ -198,7 +218,7 @@ void v2plot_AccCor_multipads(){
     cor2 = hv22[icent] -> GetBinContent(1);  // <<2>>
     v22int = Vn2(cor2);
     // acceptance correction
-    v22intAC = sqrt(cor2 - (pow(((*vcos2phi1))[0],2) + pow((*vsin2phi1)[0],2)));
+    v22intAC = sqrt(cor2 - (pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2)));
 
     // statistical error of the 2-particle reference flow estimate (C.24)
     cor2E = sx(hv22[icent]);
@@ -214,15 +234,15 @@ void v2plot_AccCor_multipads(){
 
     v24intAC = pow( -
         (cor4 - 2.*cor2*cor2
-        - 4. * (*vcos2phi1)[0] * (*vcos2phi123)[0]
-        + 4. * (*vsin2phi1)[0] * (*vsin2phi123)[0]
-        - pow((*vcos2phi12)[0],2) - pow((*vsin2phi12)[0],2)
-        + 4. * (*vcos2phi12)[0]
-        * (pow(((*vcos2phi1))[0],2) - pow((*vsin2phi1)[0],2))
-        + 8. * (*vsin2phi12)[0] * (*vsin2phi1)[0] * (*vcos2phi1)[0]
+        - 4. * cos2phi1[icent] * cos2phi123[icent]
+        + 4. * sin2phi1[icent] * sin2phi123[icent]
+        - pow(cos2phi12[icent],2) - pow(sin2phi12[icent],2)
+        + 4. * cos2phi12[icent]
+        * (pow(cos2phi1[icent],2) - pow(sin2phi1[icent],2))
+        + 8. * sin2phi12[icent] * sin2phi1[icent] * cos2phi1[icent]
         + 8. * cor2
-        * (pow((*vcos2phi1)[0],2) + pow((*vsin2phi1)[0],2))
-        - 6. * pow(pow((*vcos2phi1)[0],2) + pow((*vsin2phi1)[0],2),2))
+        * (pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2))
+        - 6. * pow(pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2),2))
         ,0.25);
 
     // statistical error of the 4-particle reference flow estimate (C.28)
@@ -239,11 +259,8 @@ void v2plot_AccCor_multipads(){
     //=============================================
 
     // v2{#eta sub-event}
-    v2EPint = hv22EP[icent]->GetMean();
-    rms = hv22EP[icent]->GetRMS();
-    nent = hv22EP[icent]->GetEntries();
-    err = rms/sqrt(nent);
-    v2EPintE = err;
+    v2EPint = hv22EP->GetBinContent(icent+1);
+    v2EPintE = hv22EP->GetBinError(icent+1);
     //=============================================
     // Reference flow comparison: MC, 2QC, 4QC, eta sub-event
     v2[icent][0] = v2MCint;
@@ -294,38 +311,38 @@ void v2plot_AccCor_multipads(){
 
     // Differential flow calculation
 
-    Double_t v2MCpt[npt]; // v2 in given pT bin
-    Double_t ev2MCpt[npt]; // standard error of v2 in given pT bin
+    double v2MCpt[npt]; // v2 in given pT bin
+    double ev2MCpt[npt]; // standard error of v2 in given pT bin
   
-    Double_t cor2Red[npt];         // Differential 2nd order cumulant d_{2}{2} = <<2'>>
-    Double_t cor2RedE[npt];        // Error of <<2'>>
-    Double_t v22dif[npt];      // Differential elliptic flow v'_{2}{2} extracted from 2nd order cumulants
+    double cor2Red[npt];         // Differential 2nd order cumulant d_{2}{2} = <<2'>>
+    double cor2RedE[npt];        // Error of <<2'>>
+    double v22dif[npt];      // Differential elliptic flow v'_{2}{2} extracted from 2nd order cumulants
                             // v'_{2}{2} = d_{2}{2} / sqrt( c_{2}{2} )
-    Double_t v22difE[npt];     // Error of v'_{2}{2}
+    double v22difE[npt];     // Error of v'_{2}{2}
     
-    Double_t cor4Red[npt];    // Reduced average all-event 4-particle correlation <<4'>>
-    Double_t cor4RedE[npt];   // Error of <<4'>>
-    Double_t v24dif[npt];      // Differential elliptic flow v'_{2}{4} extracted from 4th order cumulants
+    double cor4Red[npt];    // Reduced average all-event 4-particle correlation <<4'>>
+    double cor4RedE[npt];   // Error of <<4'>>
+    double v24dif[npt];      // Differential elliptic flow v'_{2}{4} extracted from 4th order cumulants
                             // v'_{2}{4} = -d_{2}{4} / pow( -c_{2}{4} , 3/4 )
-    Double_t v24difE[npt];     // Error of v'_{2}{4}
+    double v24difE[npt];     // Error of v'_{2}{4}
 
-    Double_t sumwcor22prime[npt];        // sum(w(<2>)*w(<2'>))
-    Double_t cov22prime[npt];            // Cov(<2>,<2'>)
-    Double_t sumwcor24prime[npt];        // sum(w(<2>)*w(<4'>))
-    Double_t cov24prime[npt];            // Cov(<2>,<4'>)
-    Double_t sumwcor42prime[npt];        // sum(w(<4>)*w(<2'>))
-    Double_t cov42prime[npt];            // Cov(<4>,<2'>)
-    Double_t sumwcor44prime[npt];        // sum(w(<4>)*w(<4'>))
-    Double_t cov44prime[npt];            // Cov(<4>,<4'>)
-    Double_t sumwcor2prime4prime[npt];   // sum(w(<2'>)*w(<4'>))
-    Double_t cov2prime4prime[npt];       // Cov(<2'>,<4'>)
+    double sumwcor22prime[npt];        // sum(w(<2>)*w(<2'>))
+    double cov22prime[npt];            // Cov(<2>,<2'>)
+    double sumwcor24prime[npt];        // sum(w(<2>)*w(<4'>))
+    double cov24prime[npt];            // Cov(<2>,<4'>)
+    double sumwcor42prime[npt];        // sum(w(<4>)*w(<2'>))
+    double cov42prime[npt];            // Cov(<4>,<2'>)
+    double sumwcor44prime[npt];        // sum(w(<4>)*w(<4'>))
+    double cov44prime[npt];            // Cov(<4>,<4'>)
+    double sumwcor2prime4prime[npt];   // sum(w(<2'>)*w(<4'>))
+    double cov2prime4prime[npt];       // Cov(<2'>,<4'>)
 
-    Double_t sumw2cor2red[npt]; // sumw2 of <2'>
-    Double_t sumwcor2red[npt];  // sumw of <2'>    
-    Double_t sumw2cor4red[npt]; // sumw2 of <4'>
-    Double_t sumwcor4red[npt];  // sumw of <4'>
+    double sumw2cor2red[npt]; // sumw2 of <2'>
+    double sumwcor2red[npt];  // sumw of <2'>    
+    double sumw2cor4red[npt]; // sumw2 of <4'>
+    double sumwcor4red[npt];  // sumw of <4'>
 
-    Double_t v22difAC[npt], v24difAC[npt];
+    double v22difAC[npt], v24difAC[npt];
 
     for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
       
@@ -338,7 +355,7 @@ void v2plot_AccCor_multipads(){
       cor2Red[ipt] = hv22pt[icent][ipt]->GetBinContent(1);
       v22dif[ipt] = Vn2Dif(cor2Red[ipt],cor2);
       // acceptance correction
-      v22difAC[ipt] = (cor2Red[ipt] - ((*vcos2psi1))[ipt] * ((*vcos2phi1))[0] - ((*vsin2psi1))[ipt] * (*vsin2phi1)[0]) / v22intAC;
+      v22difAC[ipt] = (cor2Red[ipt] - cos2psi1[icent][ipt] * cos2phi1[icent] - sin2psi1[icent][ipt] * sin2phi1[icent]) / v22intAC;
 
 
       // statistical error of the 2-particle differential flow estimate (C.42)
@@ -363,28 +380,28 @@ void v2plot_AccCor_multipads(){
 
       v24difAC[ipt] =
             - (cor4Red[ipt] - 2.*cor2Red[ipt]*cor2
-            - (*vcos2psi1)[ipt] * (*vcos2phi123)[0]
-            + (*vsin2psi1)[ipt] * (*vsin2phi123)[0]
-            - (*vcos2phi1)[0] * (*vcos2psi1mphi23)[ipt]
-            + (*vsin2phi1)[0] * (*vsin2psi1mphi23)[ipt]
-            - 2. * (*vcos2phi1)[0] * (*vcos2psi1pphi23)[ipt]
-            - 2. * (*vsin2phi1)[0] * (*vsin2psi1pphi23)[ipt]
-            - (*vcos2psi1phi2)[ipt] * (*vcos2phi12)[0]
-            - (*vsin2psi1phi2)[ipt] * (*vsin2phi12)[0]
-            + 2. * (*vcos2phi12)[0]
-            * ((*vcos2psi1)[ipt] * (*vcos2phi1)[0] - (*vsin2psi1)[ipt] * (*vsin2phi1)[0])
-            + 2. * (*vsin2phi12)[0]
-            * ((*vsin2psi1)[ipt] * (*vcos2phi1)[0] + (*vcos2psi1)[ipt] * (*vsin2phi1)[0])
+            - cos2psi1[icent][ipt] * cos2phi123[icent]
+            + sin2psi1[icent][ipt] * sin2phi123[icent]
+            - cos2phi1[icent] * cos2psi1mphi23[icent][ipt]
+            + sin2phi1[icent] * sin2psi1mphi23[icent][ipt]
+            - 2. * cos2phi1[icent] * cos2psi1pphi23[icent][ipt]
+            - 2. * sin2phi1[icent] * sin2psi1pphi23[icent][ipt]
+            - cos2psi1phi2[icent][ipt] * cos2phi12[icent]
+            - sin2psi1phi2[icent][ipt] * sin2phi12[icent]
+            + 2. * cos2phi12[icent]
+            * (cos2psi1[icent][ipt] * cos2phi1[icent] - sin2psi1[icent][ipt] * sin2phi1[icent])
+            + 2. * sin2phi12[icent]
+            * (cos2psi1[icent][ipt] * sin2phi1[icent] + sin2psi1[icent][ipt] * cos2phi1[icent])
             + 4. * cor2
-            * ((*vcos2psi1)[ipt] * (*vcos2phi1)[0] + (*vsin2psi1)[ipt] * (*vsin2phi1)[0])
-            + 2. * (*vcos2psi1phi2)[ipt]
-            * (pow((*vcos2phi1)[0],2) - pow((*vsin2phi1)[0],2))
-            + 4. * (*vsin2psi1phi2)[ipt] * (*vcos2phi1)[0] * (*vsin2phi1)[0]
-            + 4. * cor2Red[ipt] * (pow((*vcos2phi1)[0],2) + pow((*vsin2phi1)[0],2))
-            - 6. * (pow((*vcos2phi1)[0],2) - pow((*vsin2phi1)[0],2))
-            * ((*vcos2psi1)[ipt] * (*vcos2phi1)[0] - (*vsin2psi1)[ipt] * (*vsin2phi1)[0])
-            - 12. * (*vcos2phi1)[0] * (*vsin2phi1)[0]
-            * ((*vsin2psi1)[ipt] * (*vcos2phi1)[0] + (*vcos2psi1)[ipt] * (*vsin2phi1)[0]))
+            * (cos2psi1[icent][ipt] * cos2phi1[icent] + sin2psi1[icent][ipt] * sin2phi1[icent])
+            + 2. * cos2psi1phi2[icent][ipt]
+            * (pow(cos2phi1[icent],2) - pow(sin2phi1[icent],2))
+            + 4. * sin2psi1phi2[icent][ipt] * cos2phi1[icent] * sin2phi1[icent]
+            + 4. * cor2Red[ipt] * (pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2))
+            - 6. * (pow(cos2phi1[icent],2) - pow(sin2phi1[icent],2))
+            * (cos2psi1[icent][ipt] * cos2phi1[icent] - sin2psi1[icent][ipt] * sin2phi1[icent])
+            - 12. * cos2phi1[icent] * sin2phi1[icent]
+            * (sin2psi1[icent][ipt] * cos2phi1[icent] + cos2psi1[icent][ipt] * sin2phi1[icent]))
             * pow(v24intAC,-3.);
 
       // statistical error of the 4-particle differential flow estimate (C.46)
@@ -455,13 +472,10 @@ void v2plot_AccCor_multipads(){
   //==========================================================================================================================
   // Elliptic flow from eta sub-event method
   for (int icent=0; icent<ncent; icent++){
-    Double_t v2EP[npt]={0}, ev2EP[npt]={0};
+    double v2EP[npt]={0}, ev2EP[npt]={0};
     for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
-      v2EP[ipt] = hv2EP[icent][ipt]->GetMean();
-      rms = hv2EP[icent][ipt]->GetRMS();
-      nent = hv2EP[icent][ipt]->GetEntries();
-      err = rms/sqrt(nent);
-      ev2EP[ipt] = err;
+      v2EP[ipt] = hv2EP[ipt]->GetBinContent(icent+1);
+      ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
     }
     // Event plane differential flow
     grDifFl[3][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
@@ -507,13 +521,13 @@ void v2plot_AccCor_multipads(){
   c2->Divide(3,2,0,0);
   TCanvas *c3 = new TCanvas("c3","Reference flow with acceptance correction",200,10,1600,900);
   c3->Divide(3,2,0,0);
-  Double_t xmin=0.1;
-  Double_t xmax=1.63;
-  Double_t ymin=0.;
-  Double_t ymax=0.23;
+  double xmin=0.15;
+  double xmax=3.45;
+  double ymin=-0.005;
+  double ymax=0.255;
   TH2F *h[ncent], *h2[ncent], *h3[ncent], *h4[ncent];
-  TLatex *latex, *latex2;
-
+  TLatex *latex, *latex2, *latex3;
+  const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
   for(int icent=0; icent<6; icent++){
     // Differential flow
 
@@ -535,15 +549,14 @@ void v2plot_AccCor_multipads(){
     latex -> Draw();
     //=============================================
     // Reference flow with & without acceptance correction
-    Double_t ymin1 = TMath::MinElement(4,v2[icent])*0.98;
-    Double_t ymax1 = TMath::MaxElement(4,v2[icent])*1.02;
+    double ymin1 = TMath::MinElement(4,v2[icent])*0.98;
+    double ymax1 = TMath::MaxElement(4,v2[icent])*1.02;
     h2[icent] = new TH2F("","",4,0,4,15,0.02,0.17);
     c2 -> cd(icent+1);
     h2[icent]->SetYTitle("v_{n}");
     h2[icent]->SetCanExtend(TH1::kAllAxes);
-    const char *method[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
     TAxis* a = h2[icent] -> GetXaxis();
-    for (int j=0; j<4; j++) h2[icent]->Fill(method[j],(ymin1+ymax1)/2.,1);
+    for (int j=0; j<4; j++) h2[icent]->Fill(ch[j],(ymin1+ymax1)/2.,1);
     h2[icent]->GetXaxis()->SetLabelSize(0.05);
     a->SetNdivisions(300); // 3 division, 0 sub-division
     h2[icent]->Draw();
@@ -556,25 +569,23 @@ void v2plot_AccCor_multipads(){
     latex2 -> SetTextAlign(31);
     latex2 -> Draw();
     //=============================================
-    // Reference flow with acceptance correction
-
-    h3[icent] = new TH2F("","",3,0,3,15,0.01,0.085);
+    // Only Reference flow with acceptance correction
+    h3[icent] = new TH2F("","",3,0,3,15,0.01,0.15);
     c3 -> cd(icent+1);
     h3[icent]->SetYTitle("v_{n}");
     h3[icent]->SetCanExtend(TH1::kAllAxes);
     TAxis* a2 = h3[icent] -> GetXaxis();
-    h3[icent] -> Fill(method[0],0.02,1);
-    h3[icent] -> Fill(method[1],0.02,1);
-    h3[icent] -> Fill(method[2],0.02,1);
+    for (int j=0; j<4; j++) h3[icent]->Fill(ch[j],0.02,1);
     h3[icent]->GetXaxis()->SetLabelSize(0.05);
     a2->SetNdivisions(300); // 3 division, 0 sub-division
     h3[icent]->Draw();
     grshade[icent] -> Draw("f");
     grRefFlAC[icent]-> Draw("P");
-    leg[1] -> Draw();
-    latex2 -> Draw();
-
-
+    latex3 = new TLatex(3*0.98,0.03*1.02,text1);
+    latex3 -> SetTextFont(62);
+    latex3 -> SetTextSize(0.04);
+    latex3 -> SetTextAlign(31);
+    latex3 -> Draw();
   }
   c1 -> SaveAs("./Graphics/v2pt_AC.png");
   c2 -> SaveAs("./Graphics/v2compare_AC.png");
@@ -584,8 +595,8 @@ void v2plot_AccCor_multipads(){
   TCanvas *c[ncent];
   TLatex *text[ncent];
   for (int i=0;i<ncent;i++){
-    Double_t ymin2 = TMath::MinElement(4,v2[i])*0.98;
-    Double_t ymax2 = TMath::MaxElement(4,v2[i])*1.02;
+    double ymin2 = TMath::MinElement(3,v2AC[i])*0.98;
+    double ymax2 = TMath::MaxElement(3,v2AC[i])*1.02;
     // double ymin = 0.01*(i+1);
     // double ymax = 0.03*(i+1);
     sprintf(hname,"Cent%i-%i%%",i*10,(i+1)*10);
@@ -594,7 +605,7 @@ void v2plot_AccCor_multipads(){
     h4[i] = new TH2F("","",4,0,4,10,ymin2,ymax2);
     h4[i]->SetYTitle("v_{n}");
     h4[i]->SetCanExtend(TH1::kAllAxes);
-    const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
+    
     TAxis* a = h4[i] -> GetXaxis();
     for (int j=0; j<4; j++) h4[i]->Fill(ch[j],(ymin2+ymax2)/2.,1);
     h4[i]->GetXaxis()->SetLabelSize(0.05);
@@ -603,8 +614,9 @@ void v2plot_AccCor_multipads(){
     grshade[i] -> SetFillStyle(1001);
     grshade[i] -> SetFillColor(18);
     grshade[i] -> Draw("f");
-    grRefFl[i] -> SetTitle("Reference flow");
+    grRefFlAC[i] -> SetTitle("Reference flow");
     grRefFl[i] -> Draw("P");
+    grRefFlAC[i] -> Draw("P");
     char text1[800];
     sprintf(text1,"#splitline{Ref. flow}{#splitline{-2<#eta<-0.05}{cent: %i-%i%%}}",10*(i),10*(i+1));
     text[i] = new TLatex(1.,(TMath::MinElement(3,grRefFl[i]->GetY())),text1);
@@ -615,4 +627,19 @@ void v2plot_AccCor_multipads(){
     sprintf(hname,"./Graphics/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
+  TFile *outFile = new TFile("./ROOTFile/TGraphError.root","recreate");
+  outFile -> cd();
+  // int mycent = 3;
+  for (int icent=0; icent < ncent; icent++){
+    sprintf(hname,"gr_cent%i_%i",icent,0);
+    grDifFl[0][icent] -> SetTitle(ch[0]);
+    grDifFl[0][icent] -> Write(hname);
+    for (int i=1; i<3; i++){
+      sprintf(hname,"gr_cent%i_%i",icent,i);
+      grDifFlAC[i-1][icent] -> SetTitle(ch[i]);
+      grDifFlAC[i-1][icent] -> Write(hname);
+    }
+  }
+  outFile -> Close();
+
 }

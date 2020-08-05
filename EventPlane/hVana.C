@@ -19,10 +19,12 @@ static const int bin_cent[ncent] = {5, 15, 25, 35, 45, 55, 65, 75};
 
 static const Float_t maxpt = 3.5; // max pt
 static const Float_t minpt = 0.2; // min pt
-static const int npt = 24;        // 0.2 - 3.5 GeV/c
-static const double bin_pT[npt + 1] = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1,
-                                       1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0, 2.2, 2.4,
-                                       2.6, 2.8, 3.0, 3.2, 3.5};
+// static const int npt = 24;        // 0.2 - 3.5 GeV/c
+// static const double bin_pT[npt + 1] = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1,
+//                                        1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0, 2.2, 2.4,
+//                                        2.6, 2.8, 3.0, 3.2, 3.5};
+static const int npt = 12;        // 0.2 - 3.5 GeV/c
+static const double bin_pT[npt + 1] ={0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
 static const int neta = 2; // [eta-,eta+]
 
 TFile *d_outfile; // out file with histograms and profiles
@@ -279,6 +281,7 @@ void hVana::Ana_event()
       Double_t v2 = TMath::Cos(2 * (phi0[i] - rp));
       // calculate reference v2 from MC toy
       if (eta[i] < -0.05) hv2MC[icent]->Fill(0.5, v2, 1);
+      // hv2MC[icent]->Fill(0.5, v2, 1);
       // Calculate differential v2 from MC toy
       hPT[icent][ipt]->Fill(0.5, pT, 1);
       hv2MCpt[icent][ipt]->Fill(0.5, v2, 1);
@@ -302,6 +305,11 @@ void hVana::Ana_event()
       py2[ipt] += TMath::Sin(2. * phi0[i]); 
       mp[ipt]++;
     }
+    // if (eta[i] > 0.05) {
+    //   qx2[ipt] += TMath::Cos(2. * phi0[i]);
+    //   qy2[ipt] += TMath::Sin(2. * phi0[i]);
+    //   mq[ipt]++;
+    // }
 
     // Sub eta event method
     int fEta = -1;
@@ -403,8 +411,12 @@ void hVana::Ana_event()
   HRes[icent] -> Fill( cos(dPsi) );
   
 	// float res2[ncent]={0.377939,0.517293,0.570174,0.566116,0.520478,0.449174,0.355887,0.263176}; // pure flow
-  float res2[ncent]={0.352588,0.485021,0.535006,0.532774,0.491326,0.417507,0.330525,0.249045}; // my nonflow - 10 mil - pairwise rate 0.1
-  // float res2[ncent]={0.325551,0.448961,0.497295,0.496583,0.45449,0.388443,0.305845,0.22544}; // with non-flow contribution
+  // float res2[ncent]={0.35357,0.485845,0.53658,0.534252,0.491246,0.41962,0.3311,0.244816}; // my nonflow - 10 mil - pairwise rate 0.1
+  // float res2[ncent]={0.34635,0.48455,0.531808,0.530472,0.4856,0.414767,0.325375,0.236863}; // with non-flow contribution 0.1 rate, Dim's gen
+  // float res2[ncent]={0.468592,0.5669,0.606606,0.603025,0.570605,0.516959,0.456494,0.411107}; // mynonflow 0.2rate
+  float res2[ncent]={0.4696,0.567058,0.606359,0.603459,0.57031,0.517341,0.45721,0.4091}; // my non flow 0.2 rate 50 mil
+  // 0.468592,0.5669,0.606606,0.603025,0.570605,0.516959,0.456494,0.411107 đây là giá trị nhận được khi bỏ hai hàng ko hiểu kia 
+
 
   // The \eta sub-event method
 	if(icent>=0&&icent<=7){ // centrality selection 0-80%

@@ -64,9 +64,9 @@ static TH1F *hEta; // pseudorapidity
 void V2gen(int nevent,double Mmean) {
   cout << "number of events to generate:" << nevent << endl;
 
-  int seed1 = (int) clock();
-  int seed2 = (int) clock() * 2;
-  cout << "seed1="<<seed1<<"   "<<"seed2="<<seed2<<endl;
+  // int seed1 = (int) clock();
+  // int seed2 = (int) clock() * 2;
+  // cout << "seed1="<<seed1<<"   "<<"seed2="<<seed2<<endl;
 
   TRandom3 *GR = new TRandom3();
   GR -> SetSeed(0);
@@ -100,7 +100,7 @@ void V2gen(int nevent,double Mmean) {
 		     0: no nonflow correlations; 
 		     1: "pair wise" emission (2 particles with same azimuth);
          2: "quadruplet" emission (4 particles with same azimuth).*/
-  float nonflowrate = 0.1;
+  float nonflowrate = 0.2;
   /* Fraction of particles that are affected by nonflow effects. */
   bool bAcceptance = 0;
   float A = PI/3.;
@@ -182,7 +182,7 @@ void V2gen(int nevent,double Mmean) {
             hEta  -> Fill(eta);
             d_phi0[nh] = phil;
             d_pt[nh]   = pT;
-            d_eta[nh]  = eta;
+            d_eta[nh]  = 4.*(GR->Rndm()-0.5);
             d_bflow[nh] = bFlow;
             nh++;
 
@@ -197,7 +197,7 @@ void V2gen(int nevent,double Mmean) {
               hEta  -> Fill(eta);
               d_phi0[nh] = phil;
               d_pt[nh]   = pT;
-              d_eta[nh]  = eta;
+              d_eta[nh]  = 4.*(GR->Rndm()-0.5);
               d_bflow[nh] = bFlow;
               nh++;         
             } // end of 3 more particle generation

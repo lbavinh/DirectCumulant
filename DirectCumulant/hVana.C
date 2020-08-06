@@ -40,7 +40,7 @@ TProfile *hv2MC[ncent]; // profile for MC integrated v2
 TProfile *hv22[ncent];  // profile <<2>> from 2nd Q-Cumulants
 TProfile *hv24[ncent];  // profile <<4>> from 4th Q-Cumulants
 // TProfile for differential flow (DF)
-TProfile *hPT[ncent][npt];     // profile pt
+TProfile *hPT[npt];            // profile pt
 TProfile *hv2MCpt[ncent][npt]; // profile v2pt from MC toy
 TProfile *hv22pt[ncent][npt];  // profile <<2'>> from 2nd Q-Cumulants
 TProfile *hv24pt[ncent][npt];  // profile <<4'>> from 4th Q-Cumulants
@@ -54,17 +54,13 @@ TProfile *hcov42prime[ncent][npt];      // <2>*<4'>
 TProfile *hcov44prime[ncent][npt];      // <4>*<4'>
 TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 
-// Vectors for non-uniform acceptance correction
+// non-uniform acceptance correction
 // Reference flow acceptance correction
-Double_t cos2phi1[ncent] = {0}, sin2phi1[ncent] = {0}, cos2phi12[ncent] = {0}, sin2phi12[ncent] = {0}, cos2phi123[ncent] = {0}, sin2phi123[ncent] = {0};
-Double_t sumM[ncent] = {0}, sumMMm1[ncent] = {0}, sumMMm1Mm2[ncent] = {0};
-TProfile *vcos2phi1[ncent], *vsin2phi1[ncent], *vcos2phi12[ncent], *vsin2phi12[ncent], *vcos2phi123[ncent], *vsin2phi123[ncent]; // to be written in outFile
+TProfile *hcos2phi1, *hsin2phi1, *hcos2phi12, *hsin2phi12, *hcos2phi123, *hsin2phi123; // 6
+
 // Differential flow acceptance correction
-Double_t cos2psi1[ncent][npt] = {{0}}, sin2psi1[ncent][npt] = {{0}}, cos2psi1phi2[ncent][npt] = {{0}}, sin2psi1phi2[ncent][npt] = {{0}},
-         cos2psi1pphi23[ncent][npt] = {{0}}, sin2psi1pphi23[ncent][npt] = {{0}}, cos2psi1mphi23[ncent][npt] = {{0}}, sin2psi1mphi23[ncent][npt] = {{0}};
-Double_t summp[ncent][npt] = {{0}}, summpMmmq[ncent][npt] = {{0}}, summpMm2mqMm1[ncent][npt] = {{0}};
-TProfile *vcos2psi1[ncent], *vsin2psi1[ncent], *vcos2psi1phi2[ncent], *vsin2psi1phi2[ncent], *vcos2psi1pphi23[ncent],
-    *vsin2psi1pphi23[ncent], *vcos2psi1mphi23[ncent], *vsin2psi1mphi23[ncent]; // to be written in outFile
+TProfile *hcos2psi1[npt], *hsin2psi1[npt], *hcos2psi1phi2[npt], *hsin2psi1phi2[npt],
+         *hcos2psi1pphi23[npt], *hsin2psi1pphi23[npt], *hcos2psi1mphi23[npt], *hsin2psi1mphi23[npt]; // 8
 
 void hVana::Booking(TString outFile)
 {
@@ -81,6 +77,24 @@ void hVana::Booking(TString outFile)
   hPhi = new TH1F("hPhi", "Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})", 300, 0., 7.);
   hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -2.2, 2.2);
+  
+  // Acceptance correction
+  hcos2phi1 = new TProfile("hcos2phi1","hcos2phi1",ncent,0.,ncent);
+  hcos2phi1 ->Sumw2();
+  hsin2phi1 = new TProfile("hsin2phi1","hsin2phi1",ncent,0.,ncent);
+  hsin2phi1 ->Sumw2();
+  hcos2phi12 = new TProfile("hcos2phi12","hcos2phi12",ncent,0.,ncent);
+  hcos2phi12 ->Sumw2();
+  hsin2phi12 = new TProfile("hsin2phi12","hsin2phi12",ncent,0.,ncent);
+  hsin2phi12 ->Sumw2();
+  hcos2phi123 = new TProfile("hcos2phi123","hcos2phi123",ncent,0.,ncent);
+  hcos2phi123 ->Sumw2();
+  hsin2phi123 = new TProfile("hsin2phi123","hsin2phi123",ncent,0.,ncent);
+  hsin2phi123 ->Sumw2();
+  hv22EP = new TProfile("hv22EP","Ref. v_{2}{EP}", ncent,0.,ncent);
+  hv22EP->Sumw2();
+  HRes = new TProfile("HRes","EP resolution", ncent,0.,ncent);
+  HRes->Sumw2();
 
   for (int icent = 0; icent < ncent; icent++)
   { // loop over centrality classes
@@ -99,6 +113,7 @@ void hVana::Booking(TString outFile)
     hv24[icent] = new TProfile(name, title, 1, 0., 1.);
     hv24[icent]->Sumw2();
 
+    // Statistical error
     sprintf(name, "hcov24_cent%i", icent);
     sprintf(title, "<2>#upoint<4> distr, cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
     hcov24[icent] = new TProfile(name, title, 1, 0., 1.);
@@ -126,6 +141,7 @@ void hVana::Booking(TString outFile)
       hv24pt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       hv24pt[icent][kpt]->Sumw2();
 
+      // Statistical error
       sprintf(name, "hcov22prime_cent%i_pt%i", icent, kpt);
       sprintf(title, "<2>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
       hcov22prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
@@ -151,26 +167,45 @@ void hVana::Booking(TString outFile)
       hcov2prime4prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       hcov2prime4prime[icent][kpt]->Sumw2();
     } // end of loop over pt bin
-
-    // Vectors for non-uniform acceptance correction
-    vcos2phi1[icent] = new TVectorD(1);
-    vsin2phi1[icent] = new TVectorD(1);
-    vcos2phi12[icent] = new TVectorD(1);
-    vsin2phi12[icent] = new TVectorD(1);
-    vcos2phi123[icent] = new TVectorD(1);
-    vsin2phi123[icent] = new TVectorD(1);
-
-    vcos2psi1[icent] = new TVectorD(npt);
-    vsin2psi1[icent] = new TVectorD(npt);
-    vcos2psi1phi2[icent] = new TVectorD(npt);
-    vsin2psi1phi2[icent] = new TVectorD(npt);
-    vcos2psi1pphi23[icent] = new TVectorD(npt);
-    vsin2psi1pphi23[icent] = new TVectorD(npt);
-    vcos2psi1mphi23[icent] = new TVectorD(npt);
-    vsin2psi1mphi23[icent] = new TVectorD(npt);
-
   } // end of loop over centrality classes
 
+  
+  for (int ipt=0;ipt<npt;ipt++){
+    // Acceptance correction
+    sprintf(name, "hcos2psi1_%i", ipt);
+    hcos2psi1[ipt] = new TProfile(name,name,ncent,0.,ncent);
+    hcos2psi1[ipt] -> Sumw2();
+    sprintf(name, "hsin2psi1_%i", ipt);
+    hsin2psi1[ipt] = new TProfile(name,name,ncent,0.,ncent);
+    hsin2psi1[ipt] -> Sumw2();
+    sprintf(name, "hcos2psi1phi2_%i", ipt);
+    hcos2psi1phi2[ipt] = new TProfile(name,name,ncent,0.,ncent);
+    hcos2psi1phi2[ipt] -> Sumw2();
+    sprintf(name, "hsin2psi1phi2_%i", ipt);
+    hsin2psi1phi2[ipt] = new TProfile(name,name,ncent,0.,ncent);
+    hsin2psi1phi2[ipt] -> Sumw2();
+    sprintf(name, "hcos2psi1pphi23_%i", ipt);
+    hcos2psi1pphi23[ipt] = new TProfile(name,name,ncent,0.,ncent);
+    hcos2psi1pphi23[ipt] -> Sumw2();
+    sprintf(name, "hsin2psi1pphi23_%i", ipt);
+    hsin2psi1pphi23[ipt] = new TProfile(name,name,ncent,0.,ncent);
+    hsin2psi1pphi23[ipt] -> Sumw2();
+    sprintf(name, "hcos2psi1mphi23_%i", ipt);
+    hcos2psi1mphi23[ipt] = new TProfile(name,name,ncent,0.,ncent);
+    hcos2psi1mphi23[ipt] -> Sumw2();
+    sprintf(name, "hsin2psi1mphi23_%i", ipt);
+    hsin2psi1mphi23[ipt] = new TProfile(name,name,ncent,0.,ncent);
+    hsin2psi1mphi23[ipt] -> Sumw2();
+
+    sprintf(name,"hv2EP_%i",ipt);
+    hv2EP[ipt] = new TProfile(name,name, ncent,0.,ncent);
+    hv2EP[ipt]->Sumw2();
+    // pT distr
+    sprintf(name, "hPT_%i", ipt);
+    hPT[ipt] = new TProfile(name, name, ncent,0.,ncent);
+    hPT[ipt]->Sumw2();
+
+  }
   cout << "Histograms have been initialized" << endl;
 }
 
@@ -193,102 +228,7 @@ void hVana::Loop_a_file(TString file)
 
 void hVana::Ana_end()
 {
-
   d_outfile->cd();
-
-  // Calculate  terms for acceptance correction & write to outFile
-  char name[800];
-  for (int icent = 0; icent < ncent; icent++)
-  { // loop over centrality classes
-    if (sumM[icent] == 0) {
-      cout << "Divide to sumM=0 at cent=" <<icent*10<<"-"<<(icent+1)*10<<"%"<< endl;
-      sumM[icent] = 9e99;
-    }  
-    if (sumMMm1[icent]==0) {
-      cout << "Divide to sumMMm1=0 at cent=" <<icent*10<<"-"<<(icent+1)*10<<"%"<< endl;
-      sumMMm1[icent] = 9e99;
-    }
-    if (sumMMm1Mm2[icent]==0) {
-      cout << "Divide to sumMMm1Mm2=0 at cent=" <<icent*10<<"-"<<(icent+1)*10<<"%"<< endl;
-      sumMMm1Mm2[icent] = 9e99;
-    }  
-    cos2phi1[icent] /= sumM[icent];
-    sin2phi1[icent] /= sumM[icent];
-    cos2phi12[icent] /= sumMMm1[icent];
-    sin2phi12[icent] /= sumMMm1[icent];
-    cos2phi123[icent] /= sumMMm1Mm2[icent];
-    sin2phi123[icent] /= sumMMm1Mm2[icent];
-
-    (*vcos2phi1[icent])(0) = cos2phi1[icent];
-    (*vsin2phi1[icent])(0) = sin2phi1[icent];
-    (*vcos2phi12[icent])(0) = cos2phi12[icent];
-    (*vsin2phi12[icent])(0) = sin2phi12[icent];
-    (*vcos2phi123[icent])(0) = cos2phi123[icent];
-    (*vsin2phi123[icent])(0) = sin2phi123[icent];
-
-    sprintf(name, "vcos2phi1_cent%i", icent);
-    vcos2phi1[icent]->Write(name);
-    sprintf(name, "vsin2phi1_cent%i", icent);
-    vsin2phi1[icent]->Write(name);
-    sprintf(name, "vcos2phi12_cent%i", icent);
-    vcos2phi12[icent]->Write(name);
-    sprintf(name, "vsin2phi12_cent%i", icent);
-    vsin2phi12[icent]->Write(name);
-    sprintf(name, "vcos2phi123_cent%i", icent);
-    vcos2phi123[icent]->Write(name);
-    sprintf(name, "vsin2phi123_cent%i", icent);
-    vsin2phi123[icent]->Write(name);
-
-    for (int i = 0; i < npt; i++)
-    { // loop over pT bin
-      if (summp[icent][i]==0) {
-        cout << "Divide to summp=0 at cent=" <<icent*10<<"-"<<(icent+1)*10<<"% & pt bin="<<bin_pT[i]<<"-"<<bin_pT[i+1]<< endl;
-        summp[icent][i] = 9e99;
-      }  
-      if (summpMmmq[icent][i]==0) {
-        cout << "Divide to summpMmmq=0 at cent=" <<icent*10<<"-"<<(icent+1)*10<<"% & pt bin="<<bin_pT[i]<<"-"<<bin_pT[i+1]<< endl;
-        summpMmmq[icent][i] = 9e99;
-      }
-      if (summpMm2mqMm1[icent][i]==0) {
-        cout << "Divide to summpMm2mqMm1=0 at cent=" <<icent*10<<"-"<<(icent+1)*10<<"% & pt bin="<<bin_pT[i]<<"-"<<bin_pT[i+1]<< endl;
-        summpMm2mqMm1[icent][i] = 9e99;
-      }      
-      cos2psi1[icent][i] /= summp[icent][i];
-      sin2psi1[icent][i] /= summp[icent][i];
-      cos2psi1phi2[icent][i] /= summpMmmq[icent][i];
-      sin2psi1phi2[icent][i] /= summpMmmq[icent][i];
-      cos2psi1pphi23[icent][i] /= summpMm2mqMm1[icent][i];
-      sin2psi1pphi23[icent][i] /= summpMm2mqMm1[icent][i];
-      cos2psi1mphi23[icent][i] /= summpMm2mqMm1[icent][i];
-      sin2psi1mphi23[icent][i] /= summpMm2mqMm1[icent][i];
-
-      (*vcos2psi1[icent])(i) = cos2psi1[icent][i];
-      (*vsin2psi1[icent])(i) = sin2psi1[icent][i];
-      (*vcos2psi1phi2[icent])(i) = cos2psi1phi2[icent][i];
-      (*vsin2psi1phi2[icent])(i) = sin2psi1phi2[icent][i];
-      (*vcos2psi1pphi23[icent])(i) = cos2psi1pphi23[icent][i];
-      (*vsin2psi1pphi23[icent])(i) = sin2psi1pphi23[icent][i];
-      (*vcos2psi1mphi23[icent])(i) = cos2psi1mphi23[icent][i];
-      (*vsin2psi1mphi23[icent])(i) = sin2psi1mphi23[icent][i];
-    }
-    sprintf(name, "vcos2psi1_cent%i", icent);
-    vcos2psi1[icent]->Write(name);
-    sprintf(name, "vsin2psi1_cent%i", icent);
-    vsin2psi1[icent]->Write(name);
-    sprintf(name, "vcos2psi1phi2_cent%i", icent);
-    vcos2psi1phi2[icent]->Write(name);
-    sprintf(name, "vsin2psi1phi2_cent%i", icent);
-    vsin2psi1phi2[icent]->Write(name);
-    sprintf(name, "vcos2psi1pphi23_cent%i", icent);
-    vcos2psi1pphi23[icent]->Write(name);
-    sprintf(name, "vsin2psi1pphi23_cent%i", icent);
-    vsin2psi1pphi23[icent]->Write(name);
-    sprintf(name, "vcos2psi1mphi23_cent%i", icent);
-    vcos2psi1mphi23[icent]->Write(name);
-    sprintf(name, "vsin2psi1mphi23_cent%i", icent);
-    vsin2psi1mphi23[icent]->Write(name);
-  } // end of loop over centrality classes
-
   d_outfile->Write();
   d_outfile->Close();
   cout << "Histfile has been written" << endl;
@@ -371,7 +311,7 @@ void hVana::Ana_event()
 
     Double_t v2 = TMath::Cos(2. * (phi0[i] - rp));
     // Calculate differential v2 from MC toy
-    hPT[icent][ipt]->Fill(0.5, pT, 1);
+    hPT[ipt]->Fill(0.5+icent, pT, 1);
     hv2MCpt[icent][ipt]->Fill(0.5, v2, 1);
 
     // RFP
@@ -404,62 +344,58 @@ void hVana::Ana_event()
     hv22[icent]->Fill(0.5, cor22, w2); // <<2>>
 
     // Non-uniform acceptance correction
-    cos2phi1[icent] += Qx2; // formula (C2)
-    sin2phi1[icent] += Qy2; // formula (C3)
-    sumM[icent] += M;
+    hcos2phi1 -> Fill(0.5+icent,Qx2/M,M);
+    hsin2phi1 -> Fill(0.5+icent,Qy2/M,M);
   } // end of <2> definition condition
   for (int ipt = 0; ipt < npt; ipt++)
   {
-    if (mp[ipt] == 0 || M<1)
+    if (mp[ipt] == 0 || M < 1)
       continue;
 
     p2[ipt] = TComplex(px2[ipt], py2[ipt]);
     q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
-    // wred2[ipt] = mp[ipt] * M - mq[ipt];                                        // w(<2'>)
-    wred2[ipt] = mp[ipt] * M;                                        // w(<2'>)
-    // redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], mq[ipt], wred2[ipt]); // <2'>
-    redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], 0, wred2[ipt]); // <2'>
+    wred2[ipt] = mp[ipt] * M - mq[ipt];                                        // w(<2'>)
+    redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], mq[ipt], wred2[ipt]); // <2'>
     hv22pt[icent][ipt]->Fill(0.5, redCor22[ipt], wred2[ipt]);                  // <<2'>>
 
     // TProfile for covariance calculation in statistic error
     hcov22prime[icent][ipt]->Fill(0.5, cor22 * redCor22[ipt], w2 * wred2[ipt]); // <2>*<2'>
 
     // Non-uniform acceptance correction
-    cos2psi1[icent][ipt] += px2[ipt];
-    sin2psi1[icent][ipt] += py2[ipt];
-    summp[icent][ipt] += mp[ipt];
-    if (mq[ipt]!=0) cout << "mq!=0" << endl;
+    hcos2psi1[ipt] -> Fill(0.5+icent,px2[ipt]/mp[ipt],mp[ipt]);
+    hsin2psi1[ipt] -> Fill(0.5+icent,py2[ipt]/mp[ipt],mp[ipt]);
   }
   
-
   if (M >= 4.)
   { // <4> definition condition
     Q4 = TComplex(Qx4, Qy4);
-    w4 = M * (M - 1.) * (M - 2.) * (M - 3.); // w(<4>)
-    cor24 = CalCor24(Q2, Q4, M, w4);      // <4>
-    hv24[icent]->Fill(0.5, cor24, w4);    // <<4>>
+    w4 = M * (M - 1.) * (M - 2.) * (M - 3.);  // w(<4>)
+    cor24 = CalCor24(Q2, Q4, M, w4);          // <4>
+    hv24[icent]->Fill(0.5, cor24, w4);        // <<4>>
 
     // TProfile for covariance calculation in statistic error
     hcov24[icent]->Fill(0.5, cor22 * cor24, w2 * w4); // <2>*<4>
 
     // Non-uniform acceptance correction
-    cos2phi12[icent] += (Q2 * Q2 - Q4).Re();
-    sin2phi12[icent] += (Q2 * Q2 - Q4).Im();
-    cos2phi123[icent] += ((Q2 * Qstar(Q2) * Qstar(Q2) - Q2 * Qstar(Q4)).Re()) - 2. * (M - 1.) * (Qstar(Q2).Re());
-    sin2phi123[icent] += ((Q2 * Qstar(Q2) * Qstar(Q2) - Q2 * Qstar(Q4)).Im()) - 2. * (M - 1.) * (Qstar(Q2).Im());
-    sumMMm1[icent] += M * (M - 1);
-    sumMMm1Mm2[icent] += M * (M - 1) * (M - 2);
+    Double_t cos2phi12=(Q2 * Q2 - Q4).Re();
+    Double_t sin2phi12=(Q2 * Q2 - Q4).Im();
+    Double_t cos2phi123=((Q2 * Qstar(Q2) * Qstar(Q2) - Q2 * Qstar(Q4)).Re()) - 2. * (M - 1.) * (Qstar(Q2).Re());
+    Double_t sin2phi123=((Q2 * Qstar(Q2) * Qstar(Q2) - Q2 * Qstar(Q4)).Im()) - 2. * (M - 1.) * (Qstar(Q2).Im());
+    Double_t sumMMm1=M*(M-1);
+    Double_t sumMMm1Mm2=M*(M-1)*(M-2);
+    hcos2phi12  -> Fill( 0.5+icent, cos2phi12/sumMMm1, sumMMm1);
+    hsin2phi12  -> Fill( 0.5+icent, sin2phi12/sumMMm1, sumMMm1);
+    hcos2phi123 -> Fill( 0.5+icent, cos2phi123/sumMMm1Mm2, sumMMm1Mm2);
+    hsin2phi123 -> Fill( 0.5+icent, sin2phi123/sumMMm1Mm2, sumMMm1Mm2);
   } // end of <4> definition condition
   for (int ipt = 0; ipt < npt; ipt++)
   {
-    if (mp[ipt] == 0 || M<3)
+    if (mp[ipt] == 0 || M < 3)
       continue;
     q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
-    // wred4[ipt] = (mp[ipt] * M - 3. * mq[ipt]) * (M - 1.) * (M - 2.);                                 // w(<4'>)
-    wred4[ipt] = (mp[ipt] * M) * (M - 1.) * (M - 2.);                                 // w(<4'>)
-    // redCor24[ipt] = CalRedCor24(Q2, Q4, p2[ipt], q2[ipt], q4[ipt], M, mp[ipt], mq[ipt], wred4[ipt]); // <4'>
-    redCor24[ipt] = CalRedCor24(Q2, Q4, p2[ipt], 0, q4[ipt], M, mp[ipt], 0, wred4[ipt]); // <4'>
-    hv24pt[icent][ipt]->Fill(0.5, redCor24[ipt], wred4[ipt]);                                        // <<4'>>
+    wred4[ipt] = (mp[ipt]*M-3*mq[ipt])*(M-1)*(M-2);                                 // w(<4'>)
+    redCor24[ipt] = CalRedCor24(Q2, Q4, p2[ipt], q2[ipt], q4[ipt], M, mp[ipt], mq[ipt], wred4[ipt]);  // <4'>
+    hv24pt[icent][ipt]->Fill(0.5, redCor24[ipt], wred4[ipt]);                                          // <<4'>>
 
     // TProfile for covariance calculation in statistic error
     hcov24prime[icent][ipt]->Fill(0.5, cor22 * redCor24[ipt], w2 * wred4[ipt]);
@@ -468,27 +404,18 @@ void hVana::Ana_event()
     hcov2prime4prime[icent][ipt]->Fill(0.5, redCor22[ipt] * redCor24[ipt], wred2[ipt] * wred4[ipt]);
 
     // Non-uniform acceptance correction
-    // cos2psi1phi2[icent][ipt] += (p2[ipt] * Q2 - q4[ipt]).Re();
-    // sin2psi1phi2[icent][ipt] += (p2[ipt] * Q2 - q4[ipt]).Im();
-    // cos2psi1pphi23[icent][ipt] += ((p2[ipt] * (Q2.Rho2() - M)).Re()) - ((q4[ipt] * Qstar(Q2) + mq[ipt] * Q2 - 2. * q2[ipt]).Re());
-    // sin2psi1pphi23[icent][ipt] += ((p2[ipt] * (Q2.Rho2() - M)).Im()) - ((q4[ipt] * Qstar(Q2) + mq[ipt] * Q2 - 2. * q2[ipt]).Im());
-    // cos2psi1mphi23[icent][ipt] += ((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Re()) - ((2. * mq[ipt] * Qstar(Q2) - 2. * Qstar(q2[ipt])).Re());
-    // sin2psi1mphi23[icent][ipt] += ((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Im()) - ((2. * mq[ipt] * Qstar(Q2) - 2. * Qstar(q2[ipt])).Im());
-
-    // summpMmmq[icent][ipt] += mp[ipt] * M - mq[ipt];
-    // summpMm2mqMm1[icent][ipt] += (mp[ipt] * M - 2. * mq[ipt]) * (M - 1.);
-
+    hcos2psi1phi2[ipt] -> Fill(0.5+icent,(p2[ipt] * Q2 - q4[ipt]).Re()/(mp[ipt]*M-mq[ipt]),(mp[ipt]*M-mq[ipt]));
+    hsin2psi1phi2[ipt] -> Fill(0.5+icent,(p2[ipt] * Q2 - q4[ipt]).Im()/(mp[ipt]*M-mq[ipt]),(mp[ipt]*M-mq[ipt]));
+    hcos2psi1pphi23[ipt] -> Fill(0.5+icent,(((p2[ipt]*(Q2.Rho2()-M)).Re())-((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Re()))/((mp[ipt]*M-2*mq[ipt])*(M-1)),(mp[ipt]*M-2*mq[ipt])*(M-1));
+    hsin2psi1pphi23[ipt] -> Fill(0.5+icent,(((p2[ipt]*(Q2.Rho2()-M)).Im())-((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Im()))/((mp[ipt]*M-2*mq[ipt])*(M-1)),(mp[ipt]*M-2*mq[ipt])*(M-1));
+    hcos2psi1mphi23[ipt] -> Fill(0.5+icent,(((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Re()) - ((2. * mq[ipt] * Qstar(Q2) - 2. * Qstar(q2[ipt])).Re()))/((mp[ipt]*M-2*mq[ipt])*(M-1)),((mp[ipt]*M-2*mq[ipt])*(M-1)));
+    hsin2psi1mphi23[ipt] -> Fill(0.5+icent,(((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Im()) - ((2. * mq[ipt] * Qstar(Q2) - 2. * Qstar(q2[ipt])).Im()))/((mp[ipt]*M-2*mq[ipt])*(M-1)),((mp[ipt]*M-2*mq[ipt])*(M-1)));
     cos2psi1phi2[icent][ipt] += (p2[ipt] * Q2).Re();
     sin2psi1phi2[icent][ipt] += (p2[ipt] * Q2).Im();
     cos2psi1pphi23[icent][ipt] += ((p2[ipt] * (Q2.Rho2() - M)).Re());
     sin2psi1pphi23[icent][ipt] += ((p2[ipt] * (Q2.Rho2() - M)).Im());
     cos2psi1mphi23[icent][ipt] += ((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Re());
     sin2psi1mphi23[icent][ipt] += ((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Im());
-
-    summpMmmq[icent][ipt] += mp[ipt] * M;
-    summpMm2mqMm1[icent][ipt] += (mp[ipt] * M) * (M - 1.);
-
-    if (mq[ipt]!=0) cout << "mq!=0" << endl;
   }
   
 }

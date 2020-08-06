@@ -369,20 +369,17 @@ void hVana::Ana_event()
     // Non-uniform acceptance correction
     hcos2phi1 -> Fill(0.5+icent,Qx2/M,M);
     hsin2phi1 -> Fill(0.5+icent,Qy2/M,M);
-    // cos2phi1[icent] += Qx2; // formula (C2)
-    // sin2phi1[icent] += Qy2; // formula (C3)
-    // sumM[icent] += M;
   } // end of <2> definition condition
   for (int ipt = 0; ipt < npt; ipt++)
   {
-    if (mp[ipt] == 0 || M<1)
+    if (mp[ipt] == 0 || M < 1)
       continue;
 
     p2[ipt] = TComplex(px2[ipt], py2[ipt]);
     q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
-    wred2[ipt] = mp[ipt] * M - mq[ipt];                                         // w(<2'>)
-    redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], mq[ipt], wred2[ipt]);  // <2'>
-    hv22pt[icent][ipt]->Fill(0.5, redCor22[ipt], wred2[ipt]);                    // <<2'>>
+    wred2[ipt] = mp[ipt] * M - mq[ipt];                                        // w(<2'>)
+    redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], mq[ipt], wred2[ipt]); // <2'>
+    hv22pt[icent][ipt]->Fill(0.5, redCor22[ipt], wred2[ipt]);                  // <<2'>>
 
     // TProfile for covariance calculation in statistic error
     hcov22prime[icent][ipt]->Fill(0.5, cor22 * redCor22[ipt], w2 * wred2[ipt]); // <2>*<2'>
@@ -397,7 +394,7 @@ void hVana::Ana_event()
     Q4 = TComplex(Qx4, Qy4);
     w4 = M * (M - 1.) * (M - 2.) * (M - 3.);  // w(<4>)
     cor24 = CalCor24(Q2, Q4, M, w4);          // <4>
-    hv24[icent]->Fill(0.5, cor24, w4);         // <<4>>
+    hv24[icent]->Fill(0.5, cor24, w4);        // <<4>>
 
     // TProfile for covariance calculation in statistic error
     hcov24[icent]->Fill(0.5, cor22 * cor24, w2 * w4); // <2>*<4>
@@ -419,8 +416,7 @@ void hVana::Ana_event()
     if (mp[ipt] == 0 || M < 3)
       continue;
     q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
-    wred4[ipt] = (mp[ipt]*M-3*mq[ipt])*(M-1)*(M-2);                                  // w(<4'>)
-
+    wred4[ipt] = (mp[ipt]*M-3*mq[ipt])*(M-1)*(M-2);                                 // w(<4'>)
     redCor24[ipt] = CalRedCor24(Q2, Q4, p2[ipt], q2[ipt], q4[ipt], M, mp[ipt], mq[ipt], wred4[ipt]);  // <4'>
     hv24pt[icent][ipt]->Fill(0.5, redCor24[ipt], wred4[ipt]);                                          // <<4'>>
 

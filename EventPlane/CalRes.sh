@@ -27,13 +27,13 @@
 
 #Main directory
 export MAIN_DIR=/weekly/nikolaev/lbavinh/EventPlane
-export FILELIST=${MAIN_DIR}/../Generator/OUT/nonflow/runlist.list
+export FILELIST=${MAIN_DIR}/../Generator/OUT/pure/runlist.list
 #export FILELIST=/weekly/nikolaev/idrisov/Generator/OUT/flow/runlist.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
 export TMP_DIR=${MAIN_DIR}/TMP
-export OUT=${OUT_DIR}/nonflow_0.2rate
+export OUT=${OUT_DIR}/pure
 export OUT_LOG=${OUT}/log
 export TMP=${TMP_DIR}/TMP_${JOB_ID}_${SGE_TASK_ID}
 export OUT_FILE=${OUT}/res2_${JOB_ID}_${SGE_TASK_ID}.root

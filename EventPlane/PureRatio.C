@@ -487,50 +487,54 @@ void Test()
   SaveTGraph("outfile.root",grPHENIX[0],grPHENIX[1]);
 }
 
-void Compare(){
-  TGraphErrors *gr1, *gr2;
-  TCanvas *canv[4];
-  TFile *f1 = new TFile("PureFlow30_40_Dim.root","read");
-  // TFile *f1 = new TFile("NonFlow30_40_Dim.root","read");
-  gr1 = (TGraphErrors*)f1->Get("grMc");
-  gr1 -> SetTitle("v_{2}{MC,D}");
-  // TFile *f2 = new TFile("NonFlow30_40_Vinh.root","read");
-  //TFile *f2 = new TFile("Nonflow30_40_Vinh_10mil_mygen.root","read");
-  TFile *f2 = new TFile("PureFlow30_40_Vinh.root","read");
-  gr2 = (TGraphErrors*)f2->Get("grDF_0"); // MC
-  gr2 -> SetTitle("v_{2}{MC,V}");
-  canv[0] = (TCanvas*) DrawTGraph(gr1,gr2);
-  canv[0]->SetName("canv0");
+/*
+TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str, 
+                    Double_t yRatio_low=0.89, Double_t yRatio_high=1.11,
+                    Double_t x_low=0.0, Double_t x_high=1.0,
+                    Double_t y_low=0.0, Double_t y_high=1.0,
+                    Double_t leg_x_low=0.22, Double_t leg_y_low=0.55,
+                    Double_t leg_x_high=0.55, Double_t leg_y_high=0.89)
+*/
 
-  f1->cd();
-  gr1 = (TGraphErrors*)f1->Get("grV2");
-  gr1 -> SetTitle("v_{2}{2QC,D}");
-  f2->cd();
-  gr2 = (TGraphErrors*)f2->Get("grDF_1");
-  gr2 -> SetTitle("v_{2}{2QC,V}");
-  canv[1] = (TCanvas*) DrawTGraph(gr1,gr2);
-  canv[1]->SetName("canv1");
-
-  f1->cd();
-  gr2 = (TGraphErrors*)f1->Get("grV4");
-  gr2 -> SetTitle("v_{2}{4QC,D}");
-  f2->cd();
-  gr1 = (TGraphErrors*)f2->Get("grDF_2");
-  gr1 -> SetTitle("v_{2}{4QC,V}");
-  canv[2] = (TCanvas*) DrawTGraph(gr1,gr2);
-  canv[2]->SetName("canv2");
-
-  f1->cd();
-  gr1 = (TGraphErrors*)f1->Get("grEP");
-  gr1 -> SetTitle("v_{2}{#eta sub-evt,D}");
-  f2->cd();
-  gr2 = (TGraphErrors*)f2->Get("grDF_3");
-  gr2 -> SetTitle("v_{2}{#eta sub-evt,V}");
-  canv[3] = (TCanvas*) DrawTGraph(gr1,gr2);
-  canv[3]->SetName("canv3");
-  char name[300];
-  for (int i=0; i<4; i++){
-    sprintf(name,"../Graphics/compare_%i.png",i);
-    canv[i] -> SaveAs(name);
+void PureRatio(){
+  TFile *inputFile = new TFile("./ROOTFile/TGraphError_pure.root","read");
+  TGraphErrors *gr[4][8];
+  char name[400];
+  for (int icent=0; icent<8; icent++){
+    for (int i=0; i<4; i++){
+      sprintf(name,"gr_cent%i_%i",icent,i);
+      gr[i][icent] = (TGraphErrors*)inputFile->Get(name);
+    }
+  }
+  std::vector<TGraphErrors*> vgr[8];
+  for (int icent=0; icent<8; icent++){
+    for (int i=0; i<4; i++){
+      vgr[icent].push_back(gr[i][icent]);
+    }  
+  }
+  TCanvas *can[8];
+  TLatex l[8];
+  for (int icent=0; icent<8; icent++){
+    //                                                    yRatio_low    x_low     y_low    leg_x_low  leg_x_high
+    can[icent] = (TCanvas*) DrawTGraph(vgr[icent],"v2 ratio",0.89, 1.11, 0.0, 3.5, 0., 0.25, 0.65, 0.09, 0.89, 0.32);
+    //                                                          yRatio_high  x_high   y_high     leg_y_low   leg_y_high
+    
+    sprintf(name,"Cent%i-%i%%",icent*10,(icent+1)*10);
+    can[icent] -> SetName(name);
+    l[icent].SetNDC();
+    l[icent].SetTextSize(0.15);
+    l[icent].SetTextAlign(21);  
+    l[icent].DrawLatex(0.5,0.1,name);
+    sprintf(name,"./Graphics/ratio/pure/Cent%i-%i%%.png",icent*10,(icent+1)*10);
+    can[icent] -> SaveAs(name);
   }
 }
+
+/*
+
+t->SetTextAlign(13); //align at top left
+t->SetTextAlign(12); // left, vertically centered
+t->SetTextAlign(22); // centered horizontally and vertically
+t->SetTextAlign(11); //default bottom alignment
+
+*/

@@ -410,12 +410,11 @@ void hVana::Ana_event()
   dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
   HRes[icent] -> Fill( cos(dPsi) );
   
-	// float res2[ncent]={0.377939,0.517293,0.570174,0.566116,0.520478,0.449174,0.355887,0.263176}; // pure flow
   // float res2[ncent]={0.35357,0.485845,0.53658,0.534252,0.491246,0.41962,0.3311,0.244816}; // my nonflow - 10 mil - pairwise rate 0.1
-  // float res2[ncent]={0.34635,0.48455,0.531808,0.530472,0.4856,0.414767,0.325375,0.236863}; // with non-flow contribution 0.1 rate, Dim's gen
-  // float res2[ncent]={0.468592,0.5669,0.606606,0.603025,0.570605,0.516959,0.456494,0.411107}; // mynonflow 0.2rate
-  float res2[ncent]={0.4696,0.567058,0.606359,0.603459,0.57031,0.517341,0.45721,0.4091}; // my non flow 0.2 rate 50 mil
-  // 0.468592,0.5669,0.606606,0.603025,0.570605,0.516959,0.456494,0.411107 đây là giá trị nhận được khi bỏ hai hàng ko hiểu kia 
+  // float res2[ncent]={0.4696,0.567058,0.606359,0.603459,0.57031,0.517341,0.45721,0.4091}; // my non flow 0.2 rate 50 mil
+  // float res2[ncent]={0.376974,0.517724,0.569528,0.566287,0.520572,0.446901,0.353883,0.264216}; // my pure flow 10 mil
+  float res2[ncent]={0.376778,0.517607,0.569559,0.565791,0.521672,0.445922,0.353448,0.26404}; // my pure flow 50 mil
+  // khi bỏ 2 hàng không hiểu kia thì ResPsi2 không đổi
 
 
   // The \eta sub-event method

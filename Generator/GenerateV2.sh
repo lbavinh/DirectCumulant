@@ -24,7 +24,7 @@ export MAIN_DIR=/weekly/nikolaev/lbavinh/Generator
 
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
-export OUT=${OUT_DIR}/nonflow
+export OUT=${OUT_DIR}/pure
 export OUT_FILE=${OUT}/v2hadron_${JOB_ID}.root
 export OUT_LOG=${OUT}/log
 export LOG=${OUT_LOG}/JOB_${JOB_ID}.log

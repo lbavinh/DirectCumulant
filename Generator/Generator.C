@@ -96,7 +96,7 @@ void V2gen(int nevent,double Mmean) {
   double eta; // pseudorapidity
   bool bFlow;
 
-  float nonflow = 1.; /* Simulating nonflow correlations: 
+  float nonflow = 0.; /* Simulating nonflow correlations: 
 		     0: no nonflow correlations; 
 		     1: "pair wise" emission (2 particles with same azimuth);
          2: "quadruplet" emission (4 particles with same azimuth).*/

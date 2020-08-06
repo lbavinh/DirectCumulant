@@ -1,2 +1,2 @@
 #!/bin/bash
-hadd -f /weekly/nikolaev/lbavinh/EventPlane/OUT/nonflow_0.2rate/sum.root /weekly/nikolaev/lbavinh/EventPlane/OUT/nonflow_0.2rate/sum_*_*.root
+hadd -f /weekly/nikolaev/lbavinh/EventPlane/OUT/pure/sum_pure50mil.root /weekly/nikolaev/lbavinh/EventPlane/OUT/pure/sum_*_*.root

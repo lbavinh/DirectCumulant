@@ -497,7 +497,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
 */
 
 void AcceptanceRatio(){
-  TFile *inputFile = new TFile("./ROOTFile/TGraphError.root","read");
+  TFile *inputFile = new TFile("TGraphError.root","read");
   TGraphErrors *gr[4][8];
   char name[400];
   for (int icent=0; icent<8; icent++){
@@ -524,7 +524,7 @@ void AcceptanceRatio(){
     l[icent].SetTextSize(0.15);
     l[icent].SetTextAlign(21);  
     l[icent].DrawLatex(0.5,0.1,name);
-    sprintf(name,"./Graphics/ratio/acceptance/Cent%i-%i%%.png",icent*10,(icent+1)*10);
+    sprintf(name,"./Graphics/ratio/Cent%i-%i%%.png",icent*10,(icent+1)*10);
     can[icent] -> SaveAs(name);
   }
 }

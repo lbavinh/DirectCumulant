@@ -1,7 +1,7 @@
+#include "/weekly/povarov/lbavinh/Generator/Generator.C"
 // #include "Generator.C"
-#include "/weekly/nikolaev/lbavinh/Generator/Generator.C"
 void GenerateV2(TString outFile){
   Ana_init(outFile.Data());
-  V2gen(100000,250.); // (events to generate,MultMean)
+  V2gen(1000000,1000.); // (events to generate,MultMean)
   Ana_end();
 }

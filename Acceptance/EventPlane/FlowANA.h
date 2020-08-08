@@ -5,8 +5,8 @@
 // found on file: v2hadron_nonflow_test.root
 //////////////////////////////////////////////////////////
 
-#ifndef CalibRes_h
-#define CalibRes_h
+#ifndef FlowANA_h
+#define FlowANA_h
 
 #include <TROOT.h>
 #include <TChain.h>
@@ -16,7 +16,7 @@
 
 // Header file for the classes stored in the TTree if any.
 
-class CalibRes
+class FlowANA
 {
 public:
   TTree *fChain;  //!pointer to the analyzed TTree or TChain
@@ -42,13 +42,12 @@ public:
   TBranch *b_eta;   //!
   TBranch *b_pt;    //!
 
-  CalibRes(TTree *tree = 0);
-  virtual ~CalibRes();
+  FlowANA(TTree *tree = 0);
+  virtual ~FlowANA();
   virtual Int_t Cut(Long64_t entry);
   virtual Int_t GetEntry(Long64_t entry);
   virtual Long64_t LoadTree(Long64_t entry);
   virtual void Init(TTree *tree);
-  virtual void Loop();
   virtual Bool_t Notify();
   virtual void Show(Long64_t entry = -1);
 
@@ -61,31 +60,34 @@ public:
   void FinishRecentering();
   void Flattening();
   void FinishFlattening();
+  void Resolution();
+  void FinishResolution();
+  void CalFlow();
 
 };
 
 #endif
 
-#ifdef CalibRes_cxx
-CalibRes::CalibRes(TTree *tree) : fChain(0)
+#ifdef FlowANA_cxx
+FlowANA::FlowANA(TTree *tree) : fChain(0)
 {
 }
 
-CalibRes::~CalibRes()
+FlowANA::~FlowANA()
 {
   if (!fChain)
     return;
   delete fChain->GetCurrentFile();
 }
 
-Int_t CalibRes::GetEntry(Long64_t entry)
+Int_t FlowANA::GetEntry(Long64_t entry)
 {
   // Read contents of entry.
   if (!fChain)
     return 0;
   return fChain->GetEntry(entry);
 }
-Long64_t CalibRes::LoadTree(Long64_t entry)
+Long64_t FlowANA::LoadTree(Long64_t entry)
 {
   // Set the environment to read one entry
   if (!fChain)
@@ -101,7 +103,7 @@ Long64_t CalibRes::LoadTree(Long64_t entry)
   return centry;
 }
 
-void CalibRes::Init(TTree *tree)
+void FlowANA::Init(TTree *tree)
 {
   // Set branch addresses and branch pointers
   if (!tree)
@@ -120,7 +122,7 @@ void CalibRes::Init(TTree *tree)
   Notify();
 }
 
-Bool_t CalibRes::Notify()
+Bool_t FlowANA::Notify()
 {
   // The Notify() function is called when a new file is opened. This
   // can be either for a new TTree in a TChain or when when a new TTree
@@ -131,7 +133,7 @@ Bool_t CalibRes::Notify()
   return kTRUE;
 }
 
-void CalibRes::Show(Long64_t entry)
+void FlowANA::Show(Long64_t entry)
 {
   // Print contents of entry.
   // If entry is not specified, print current entry
@@ -139,11 +141,11 @@ void CalibRes::Show(Long64_t entry)
     return;
   fChain->Show(entry);
 }
-Int_t CalibRes::Cut(Long64_t entry)
+Int_t FlowANA::Cut(Long64_t entry)
 {
   // This function may be called from Loop.
   // returns  1 if entry is accepted.
   // returns -1 otherwise.
   return 1;
 }
-#endif // #ifdef CalibRes_cxx
+#endif // #ifdef FlowANA_cxx

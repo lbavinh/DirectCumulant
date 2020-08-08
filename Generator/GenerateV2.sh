@@ -2,7 +2,7 @@
 
 #
 # Specify working directory
-#$ -wd /weekly/nikolaev/lbavinh/Generator/
+#$ -wd /weekly/$USER/lbavinh/Generator/
 # Tell SGE that we will work in the working directory
 #$ -cwd
 # Specify job name
@@ -14,17 +14,17 @@
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=1:00:00
 # Specify directory where output and error logs from SGE will be stored
-#$ -o /weekly/nikolaev/lbavinh/Generator/OUT/log/
-#$ -e /weekly/nikolaev/lbavinh/Generator/OUT/log/
+#$ -o /weekly/$USER/lbavinh/Generator/OUT/log/
+#$ -e /weekly/$USER/lbavinh/Generator/OUT/log/
 #
 
 #Main directory
-export MAIN_DIR=/weekly/nikolaev/lbavinh/Generator
+export MAIN_DIR=/weekly/$USER/lbavinh/Generator
 
 
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
-export OUT=${OUT_DIR}/pure
+export OUT=${OUT_DIR}/nonflow
 export OUT_FILE=${OUT}/v2hadron_${JOB_ID}.root
 export OUT_LOG=${OUT}/log
 export LOG=${OUT_LOG}/JOB_${JOB_ID}.log

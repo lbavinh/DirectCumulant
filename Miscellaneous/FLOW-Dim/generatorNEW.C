@@ -148,7 +148,7 @@ double dndpT(double pT)
   return temp;
 }
 
-void generator(TString glauberFileName = "./merge_hist_glaub_200gev.root", int run0 = 3000000, const char *file_name = "./v2hadron.root")
+void generator(const char *file_name = "./v2hadron.root", int run0 = 3000000, TString glauberFileName = "./merge_hist_glaub_200gev.root")
 {
   Book();
   fi = new TFile(glauberFileName.Data(), "read");

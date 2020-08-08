@@ -12,9 +12,9 @@
 using namespace std;
 #include <fstream>
 
-void v2plot(){
-  TFile* inFile = new TFile("./ROOTFile/acceptance_test.root","read");
-
+void v2plot_test(){
+  TFile* inFile = new TFile("./ROOTFile/acceptance_50mil.root","read");
+  TFile *outFile = new TFile("./ROOTFile/TGraphError_acceptance_test.root","recreate");
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
   static const double maxpt = 3.5; // max pt
@@ -59,7 +59,12 @@ void v2plot(){
           cos2phi123[ncent], sin2phi123[ncent];
   double  cos2psi1[ncent][npt], sin2psi1[ncent][npt], cos2psi1phi2[ncent][npt], sin2psi1phi2[ncent][npt],
           cos2psi1pphi23[ncent][npt], sin2psi1pphi23[ncent][npt], cos2psi1mphi23[ncent][npt], sin2psi1mphi23[ncent][npt];
-
+  // test with statistic error
+  double  cos2phi1E[ncent], sin2phi1E[ncent], cos2phi12E[ncent], sin2phi12E[ncent],
+          cos2phi123E[ncent], sin2phi123E[ncent];
+  double  cos2psi1E[ncent][npt], sin2psi1E[ncent][npt], cos2psi1phi2E[ncent][npt], sin2psi1phi2E[ncent][npt],
+          cos2psi1pphi23E[ncent][npt], sin2psi1pphi23E[ncent][npt], cos2psi1mphi23E[ncent][npt], sin2psi1mphi23E[ncent][npt];        
+  
   TGraphErrors *grDifFl[4][ncent], *grRefFl[ncent];     // 4 = {MC, 2QC, 4QC, EP}
   TGraph *grshade[ncent];
   TMultiGraph *mgDifFl[ncent];
@@ -155,6 +160,26 @@ void v2plot(){
     }
   }
 
+  // Extract the acceptance correction terms root mean square
+  for (int icent=0; icent<ncent; icent++){
+    cos2phi1E[icent] = hcos2phi1 -> GetBinError(1+icent);
+    sin2phi1E[icent] = hsin2phi1 -> GetBinError(1+icent);
+    cos2phi12E[icent] = hcos2phi12 -> GetBinError(1+icent);
+    sin2phi12E[icent] = hsin2phi12 -> GetBinError(1+icent);
+    cos2phi123E[icent] = hcos2phi123 -> GetBinError(1+icent);
+    sin2phi123E[icent] = hsin2phi123 -> GetBinError(1+icent);
+    for (int ipt=0; ipt<npt; ipt++){
+      cos2psi1E[icent][ipt] = hcos2psi1[ipt] -> GetBinError(1+icent);
+      sin2psi1E[icent][ipt] = hsin2psi1[ipt] -> GetBinError(1+icent);
+      cos2psi1phi2E[icent][ipt] = hcos2psi1phi2[ipt] -> GetBinError(1+icent);
+      sin2psi1phi2E[icent][ipt] = hsin2psi1phi2[ipt] -> GetBinError(1+icent);
+      cos2psi1pphi23E[icent][ipt] = hcos2psi1pphi23[ipt] -> GetBinError(1+icent);
+      sin2psi1pphi23E[icent][ipt] = hsin2psi1pphi23[ipt] -> GetBinError(1+icent);
+      cos2psi1mphi23E[icent][ipt] = hcos2psi1mphi23[ipt] -> GetBinError(1+icent);
+      sin2psi1mphi23E[icent][ipt] = hsin2psi1mphi23[ipt] -> GetBinError(1+icent);
+    }
+  }
+
   //==========================================================================================================================
   // Filling pT bin
   double pt[ncent][npt];
@@ -201,6 +226,8 @@ void v2plot(){
 
     double v22intAC;     // integrated v2 WITH acceptance correction from 2QC
     double v24intAC;     // integrated v2 WITH acceptance correction from 4QC
+    double v22intEAC;
+    double v24intEAC;
 
     double v2EPint;      // integrated v2 WITH acceptance correction from eta sub-event method
     double v2EPintE;     // error of integrated v2 WITH acceptance correction from eta sub-event method
@@ -224,6 +251,14 @@ void v2plot(){
     sumwcor2 = stats[0];
     sumw2cor2 = stats[1];
     v22intE = Evn2(cor2,cor2E,sumwcor2,sumw2cor2);
+    
+    // test with statistic error
+     
+    v22intEAC = TMath::Sqrt(0.5*pow(cor2-pow(cos2phi1[icent],2)-pow(sin2phi1[icent],2),-0.5)
+                           *(cor2E*cor2E
+                           +4.*(pow(cos2phi1[icent]*cos2phi1E[icent],2)
+                           +pow(cos2phi1[icent]*cos2phi1E[icent],2))));
+    // cout << icent <<" "<< v22intE <<" "<<v22intEAC<<endl;
     //=============================================
     // v2{4,QC}
     // estimate of the 4-particle reference flow (C.27)
@@ -266,7 +301,7 @@ void v2plot(){
     v2[icent][2] = v24int;
     v2[icent][3] = v2EPint;
     ev2[icent][0] = v2MCintE;
-    ev2[icent][1] = v22intE;
+    ev2[icent][1] = v22intEAC;
     ev2[icent][2] = v24intE;
     ev2[icent][3] = v2EPintE;
 
@@ -335,6 +370,7 @@ void v2plot(){
     double sumwcor4red[npt];  // sumw of <4'>
 
     double v22difAC[npt], v24difAC[npt];
+    double v22difEAC[npt], v24difEAC[npt];
 
     for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
       
@@ -362,6 +398,16 @@ void v2plot(){
       v22difE[ipt] = Evn2dif(cor2, cor2E, sumwcor2, sumw2cor2,
                              cor2Red[ipt], cor2RedE[ipt], sumwcor2red[ipt],sumw2cor2red[ipt],
                              cov22prime[ipt], sumwcor22prime[ipt]);
+      // test error
+      double d22  = (cor2Red[ipt] - cos2psi1[icent][ipt] * cos2phi1[icent] - sin2psi1[icent][ipt] * sin2phi1[icent]);
+      double d22E = sqrt(pow(cor2RedE[ipt],2)
+                        +pow(cos2phi1[icent]*cos2psi1E[icent][ipt],2)
+                        +pow(cos2phi1E[icent]*cos2psi1[icent][ipt],2)
+                        +pow(sin2phi1[icent]*cos2psi1E[icent][ipt],2)
+                        +pow(sin2phi1E[icent]*cos2psi1[icent][ipt],2));
+      v22difEAC[ipt] = TMath::Sqrt(pow(d22E/v22intAC,2)+pow(d22*v22intEAC/(v22intAC*v22intAC),2));
+      cout << icent <<" "<< ipt <<" "<< v22difE[ipt] <<" "<<v22difEAC[ipt]<<endl;
+
 
       // 4-particle correlations
       // estimate of the 4-particle differential flow (C.45)
@@ -430,7 +476,7 @@ void v2plot(){
     grDifFl[0][icent] -> SetMarkerColor(kRed+1);
     grDifFl[0][icent] -> SetMarkerStyle(25);
 
-    grDifFl[1][icent] = new TGraphErrors(npt,pt[icent],v22difAC,ept[icent],v22difE);
+    grDifFl[1][icent] = new TGraphErrors(npt,pt[icent],v22difAC,ept[icent],v22difEAC);
     grDifFl[1][icent] -> SetMarkerColor(kGreen+1);
     grDifFl[1][icent] -> SetMarkerStyle(20);
 
@@ -619,7 +665,7 @@ void v2plot(){
     sprintf(hname,"./Graphics/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-  TFile *outFile = new TFile("./ROOTFile/TGraphError.root","recreate");
+  
   outFile -> cd();
   // int mycent = 3;
   for (int icent=0; icent < ncent; icent++){

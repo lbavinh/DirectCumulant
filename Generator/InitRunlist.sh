@@ -1,2 +1,2 @@
 #!/bin/bash
-ls /weekly/nikolaev/lbavinh/Generator/OUT/pure/v2hadron_*.root > /weekly/nikolaev/lbavinh/Generator/OUT/pure/runlist.list
+ls /weekly/$USER/lbavinh/Generator/OUT/nonflow/v2hadron_*.root > /weekly/$USER/lbavinh/Generator/OUT/nonflow/runlist.list

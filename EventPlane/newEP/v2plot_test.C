@@ -1,8 +1,8 @@
 #include "Func_StatErrCalc.C"
-void v2plot(){
+void v2plot_test(){
   TFile *inFile, *outFile;
-  inFile = new TFile("./ROOTFile/pure_50mil.root","read");
-  outFile = new TFile("./ROOTFile/TGraphError_pure.root","recreate");
+  inFile = new TFile("./pure_50miltest.root","read");
+  outFile = new TFile("./ROOTFile/TGraphError_pure_test.root","recreate");
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
   static const Float_t maxpt = 3.5; // max pt
@@ -36,8 +36,8 @@ void v2plot(){
   TProfile *hcov44prime[ncent][npt]; // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 
-  TH1F *hv2EP[ncent][npt];	// elliptic flow from EP method
-  TH1F *hv22EP[npt];        // elliptic flow cent: 10-40% from EP method
+  TProfile *hv2EP[npt];	// elliptic flow from EP method
+  TProfile *hv22EP;        // elliptic flow cent: 10-40% from EP method
 
 
   // OUTPUT
@@ -59,38 +59,40 @@ void v2plot(){
 
 
   // Get TProfile histograms from ROOTFile
+  hv22EP = (TProfile*)inFile->Get("hv22EP");
+  for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+    sprintf(hname,"hv2EP_%i",ipt);
+    hv2EP[ipt]=(TProfile*)inFile->Get(hname);
+  }
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    sprintf(hname,"hv2MC_cent%i",icent);
+    sprintf(hname,"hv2MC_%i",icent);
     hv2MC[icent] = (TProfile*)inFile->Get(hname);
-    sprintf(hname,"hv22_cent%i",icent);
+    sprintf(hname,"hv22_%i",icent);
     hv22[icent] = (TProfile*)inFile->Get(hname);
-    sprintf(hname,"hv24_cent%i",icent);
+    sprintf(hname,"hv24_%i",icent);
     hv24[icent] = (TProfile*)inFile->Get(hname);
-    sprintf(hname,"hcov24_cent%i",icent);
+    sprintf(hname,"hcov24_%i",icent);
     hcov24[icent] = (TProfile*)inFile->Get(hname);
-    sprintf(hname,"hv22EP_cent%i",icent);
-    hv22EP[icent] = (TH1F*)inFile->Get(hname);
+
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-        sprintf(hname,"hPT_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hPT_%i_%i",icent,ipt);
         hPT[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hv2MCpt_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hv2MCpt_%i_%i",icent,ipt);
         hv2MCpt[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hv22pt_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hv22pt_%i_%i",icent,ipt);
         hv22pt[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hv24pt_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hv24pt_%i_%i",icent,ipt);
         hv24pt[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov22prime_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hcov22prime_%i_%i",icent,ipt);
         hcov22prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov24prime_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hcov24prime_%i_%i",icent,ipt);
         hcov24prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov42prime_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hcov42prime_%i_%i",icent,ipt);
         hcov42prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov44prime_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hcov44prime_%i_%i",icent,ipt);
         hcov44prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov2prime4prime_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hcov2prime4prime_%i_%i",icent,ipt);
         hcov2prime4prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hv2EP_cent%i_pt%i",icent,ipt);
-        hv2EP[icent][ipt]=(TH1F*)inFile->Get(hname);
     } // end of loop over pt bin
   } // end of loop over centrality classes
 
@@ -171,11 +173,8 @@ void v2plot(){
                   cov24,sumwcor24);
     //=============================================
     // v2{#eta sub-event}
-    v2EPint = hv22EP[icent]->GetMean();
-    rms = hv22EP[icent]->GetRMS();
-    nent = hv22EP[icent]->GetEntries();
-    err = rms/sqrt(nent);
-    v2EPintE = err;
+    v2EPint = hv22EP->GetBinContent(icent+1);
+    v2EPintE = hv22EP->GetBinError(icent+1);
     //=============================================
     // Reference flow comparison: MC, 2QC, 4QC, eta sub-event
     v2[icent][0] = v2MCint;
@@ -327,11 +326,8 @@ void v2plot(){
   for (int icent=0; icent<ncent; icent++){
     Double_t v2EP[npt]={0}, ev2EP[npt]={0};
     for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
-      v2EP[ipt] = hv2EP[icent][ipt]->GetMean();
-      rms = hv2EP[icent][ipt]->GetRMS();
-      nent = hv2EP[icent][ipt]->GetEntries();
-      err = rms/sqrt(nent);
-      ev2EP[ipt] = err;
+      v2EP[ipt] = hv2EP[ipt]->GetBinContent(icent+1);
+      ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
     }
     // Event plane differential flow
     grDifFl[3][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
@@ -454,7 +450,7 @@ void v2plot(){
   // int mycent = 3;
   for (int icent=0; icent < ncent; icent++){
     for (int i=0; i<4; i++){
-      sprintf(hname,"gr_cent%i_%i",icent,i);
+      sprintf(hname,"gr_%i_%i",icent,i);
       grDifFl[i][icent] -> SetTitle(ch[i]);
       grDifFl[i][icent] -> Write(hname);
     }

@@ -13,8 +13,9 @@ using namespace std;
 #include <fstream>
 
 void v2plot(){
-  TFile* inFile = new TFile("./ROOTFile/acceptance_test.root","read");
-
+  TFile* inFile = new TFile("sum.root","read");
+  TFile *outFile = new TFile("TGraphError.root","recreate");
+  
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
   static const double maxpt = 3.5; // max pt
@@ -619,7 +620,7 @@ void v2plot(){
     sprintf(hname,"./Graphics/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-  TFile *outFile = new TFile("./ROOTFile/TGraphError.root","recreate");
+
   outFile -> cd();
   // int mycent = 3;
   for (int icent=0; icent < ncent; icent++){

@@ -31,7 +31,7 @@ static const double bin_pT[npt+1]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1
 static const float maxpt = 3.5; // max pt
 static const float minpt = 0.2; // min pt
 
-static const int max_nh = 1500;
+static const int max_nh = 5000;
 
 float   d_rp;           // reaction plane azimuthal angle
 float   d_b;            // impact parameter
@@ -52,7 +52,8 @@ TH1I *hNpart, *hNcoll; // number of participant, number of binary collision
 TH2F *hBimpvsNpart, *hBimpvsNcoll;
 
 // Histograms to be written to ROOT file
-static TH1I *hMult; // emitted multiplicity 
+static TH1I *hMult; // emitted multiplicity
+static TH1I *hMultAccEff; // emitted multiplicity with non-uniform acceptance
 static TH1F *hB; // impact parameter
 static TH2F *hBimpvsMult; // 2-D histogram impact parameter (y) vs mult (x)
 static TH1F *hRP; // reaction plane
@@ -60,6 +61,45 @@ static TH1F *hPt; // transverse momentum
 static TH1F *hPhi; // azimuthal angle
 static TH1F *hPhil; // azimuthal angle in laboratory frame
 static TH1F *hEta; // pseudorapidity
+
+void Book_hist(TString outfile) {
+  // read input TFile
+
+  d_infile = new TFile("merge_hist_glaub_200gev.root","read");
+  // d_infile = new TFile("/weekly/povarov/lbavinh/Generator/merge_hist_glaub_200gev.root", "read");
+  hBimp = (TH1F *)d_infile->Get("hBimp");
+  hNpart = (TH1I *)d_infile->Get("hNpart");
+  hNcoll = (TH1I *)d_infile->Get("hNcoll");
+  hBimpvsNpart = (TH2F *)d_infile->Get("hBimpvsNpart");
+  hBimpvsNcoll = (TH2F *)d_infile->Get("hBimpvsNcoll");
+
+  d_outfile = new TFile(outfile.Data(),"recreate");
+  cout << outfile.Data() << " was initialized." << endl;
+  d_outfile -> cd();
+  htree = new TTree("htree","Simulation of acceptance");
+
+  htree->Branch("rp",&d_rp,"rp/F");
+  htree->Branch("nh",&d_nh,"nh/I");
+  htree->Branch("b",&d_b,"b/F");
+  htree->Branch("pt",&d_pt,"pt[nh]/F");
+  htree->Branch("phi0",&d_phi0,"phi0[nh]/F");
+  htree->Branch("eta",&d_eta,"eta[nh]/F");
+  htree->Branch("bFlow",&d_bflow,"bFlow[nh]/O");
+
+  // Create output histograms
+  hMult = new TH1I("hMult", "Multiplicity;N_{ch};dN/dN_{ch}", max_nh, 0, max_nh);
+  hMultAccEff = new TH1I("hMultAccEff","Multiplicity (with acceptance effect);N_{ch};dN/dN_{ch}",max_nh, 0, max_nh);
+  hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", max_nh, 0, max_nh, 200, 0., 20.);
+  hB    = new TH1F("hB","Impact parameter;b (fm);dN/db",200, 0., 20.);
+  hPt   = new TH1F("hPt","Pt-distribution;p_{T} (GeV/c); dN/dP_{T}",500,0.,6.);
+  hRP   = new TH1F("hRP","Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}",300,0.,7.);
+  hPhi  = new TH1F("hPhi","Particle azimuthal angle distribution with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})",300,0.,7.);
+  hPhil = new TH1F("hPhil","Azimuthal angle distribution in laboratory coordinate system; #phi; dN/d#phi",300,0.,7.);
+  hEta  = new TH1F("hEta","Pseudorapidity distribution; #eta; dN/d#eta",300,-2.2,2.2);
+}
+void Ana_init(TString outfile) {
+  Book_hist(outfile.Data());
+}
 
 void V2gen(int nevent,double Mmean) {
   cout << "number of events to generate:" << nevent << endl;
@@ -96,7 +136,7 @@ void V2gen(int nevent,double Mmean) {
   double eta; // pseudorapidity
   bool bFlow;
 
-  float nonflow = 0.; /* Simulating nonflow correlations: 
+  float nonflow = 1.; /* Simulating nonflow correlations: 
 		     0: no nonflow correlations; 
 		     1: "pair wise" emission (2 particles with same azimuth);
          2: "quadruplet" emission (4 particles with same azimuth).*/
@@ -166,7 +206,7 @@ void V2gen(int nevent,double Mmean) {
         d_bflow[nh]= bFlow;
         nh++;
 
-        if (nonflow>0 && (nm<=(mult-2*nonflow)) && (GR->Rndm()<=nonflowrate)){ /* NONFLOW CORRELATION simulation */
+        if (nonflow>0 && (nm<=(mult-2*nonflow)) && (GR->Rndm()<=nonflowrate) && (TMath::Abs(eta)<=0.5)){ /* NONFLOW CORRELATION simulation */
             /* Two tests: 
             - a first, very inelegant one, to avoid having more particles in the 
             event than the multiplicity which has been determined earlier;
@@ -176,16 +216,15 @@ void V2gen(int nevent,double Mmean) {
           if (nonflow==1) { // Pair-wise emission
             // Generating a second particle with the same momentum and azimuth.
             nm++;
-            hPt->Fill(pT);
-            hPhi -> Fill(phi);
-            hPhil -> Fill(phil);
-            hEta  -> Fill(eta);
             d_phi0[nh] = phil;
             d_pt[nh]   = pT;
-            d_eta[nh]  = 4.*(GR->Rndm()-0.5);
+            d_eta[nh] = eta;
             d_bflow[nh] = bFlow;
+            hEta  -> Fill(eta);
+            hPt->Fill(pT);
+            hPhi -> Fill(phi);
+            hPhil -> Fill(phil);            
             nh++;
-
           } // end of Pair-wise emission
           else if (nonflow==2) { // Quadruplet-wise emission
             // Generating three more particles with the same momentum and azimuth.
@@ -197,7 +236,7 @@ void V2gen(int nevent,double Mmean) {
               hEta  -> Fill(eta);
               d_phi0[nh] = phil;
               d_pt[nh]   = pT;
-              d_eta[nh]  = 4.*(GR->Rndm()-0.5);
+              d_eta[nh]  = eta;
               d_bflow[nh] = bFlow;
               nh++;         
             } // end of 3 more particle generation
@@ -221,6 +260,7 @@ void Ana_end() {
   htree -> Write();
 
   hMult -> Write();
+  hMultAccEff -> Write();
   hBimpvsMult -> Write();
   hB    -> Write();
   hRP   -> Write();
@@ -232,39 +272,3 @@ void Ana_end() {
   d_outfile->Close();
 }
 
-void Book_hist(TString outfile) {
-  // read input TFile
-  // d_infile = new TFile("merge_hist_glaub_200gev.root", "read");
-  d_infile = new TFile("/weekly/nikolaev/lbavinh/Generator/merge_hist_glaub_200gev.root", "read");
-  hBimp = (TH1F *)d_infile->Get("hBimp");
-  hNpart = (TH1I *)d_infile->Get("hNpart");
-  hNcoll = (TH1I *)d_infile->Get("hNcoll");
-  hBimpvsNpart = (TH2F *)d_infile->Get("hBimpvsNpart");
-  hBimpvsNcoll = (TH2F *)d_infile->Get("hBimpvsNcoll");
-
-  d_outfile = new TFile(outfile.Data(),"recreate");
-  cout << outfile.Data() << " was initialized." << endl;
-  d_outfile -> cd();
-  htree = new TTree("htree","Simulation of acceptance");
-
-  htree->Branch("rp",&d_rp,"rp/F");
-  htree->Branch("nh",&d_nh,"nh/I");
-  htree->Branch("b",&d_b,"b/F");
-  htree->Branch("pt",&d_pt,"pt[nh]/F");
-  htree->Branch("phi0",&d_phi0,"phi0[nh]/F");
-  htree->Branch("eta",&d_eta,"eta[nh]/F");
-  htree->Branch("bFlow",&d_bflow,"bFlow[nh]/O");
-
-  // Create output histograms
-  hMult = new TH1I("hMult", "Multiplicity;N_{ch};dN/dN_{ch}", 1500, 0, 1500);
-  hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", 1500, 0, 1500, 200, 0., 20.);
-  hB    = new TH1F("hB","Impact parameter;b (fm);dN/db",200, 0., 20.);
-  hPt   = new TH1F("hPt","Pt-distribution;p_{T} (GeV/c); dN/dP_{T}",500,0.,6.);
-  hRP   = new TH1F("hRP","Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}",300,0.,7.);
-  hPhi  = new TH1F("hPhi","Particle azimuthal angle distribution with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})",300,0.,7.);
-  hPhil = new TH1F("hPhil","Azimuthal angle distribution in laboratory coordinate system; #phi; dN/d#phi",300,0.,7.);
-  hEta  = new TH1F("hEta","Pseudorapidity distribution; #eta; dN/d#eta",300,-2.2,2.2);
-}
-void Ana_init(TString outfile) {
-  Book_hist(outfile.Data());
-}

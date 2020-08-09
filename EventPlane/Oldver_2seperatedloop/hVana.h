@@ -27,10 +27,10 @@ public :
   Int_t nh;
   Float_t b;
   Float_t rp;
-  Float_t phi0[5000]; //[nh]
-  Bool_t bFlow[5000]; //[nh]
-  Float_t eta[5000];  //[nh]
-  Float_t pt[5000];   //[nh]
+  Float_t phi0[1500]; //[nh]
+  Bool_t bFlow[1500]; //[nh]
+  Float_t eta[1500];  //[nh]
+  Float_t pt[1500];   //[nh]
 
   // List of branches
   TBranch *b_nh;    //!
@@ -54,9 +54,7 @@ public :
   void Booking(TString outFile);
   void Loop_a_file(TString file);
   void Ana_end();
-  void Ana_event();
-  void CalRes();
-  void FinishCalRes();        
+  void Ana_event();    
 };
 
 #endif

@@ -12,7 +12,7 @@
 using namespace std;
 #include <fstream>
 
-void v2plot_test(){
+void testv2plot(){
   TFile* inFile = new TFile("./ROOTFile/acceptance_50mil.root","read");
   TFile *outFile = new TFile("./ROOTFile/TGraphError_acceptance_test.root","recreate");
   static const int ncent = 8; // 0-80%

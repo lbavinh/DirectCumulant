@@ -1,26 +1,47 @@
-#include "TFile.h"
-#include "TH1.h"
-#include "TH2.h"
-#include "TGraph.h"
-#include "TGraphErrors.h"
-#include "TMultiGraph.h"
-#include "TLegend.h"
-#include "TFrame.h"
-#include "TVectorD.h"
-#include "TString.h"
 #include "Func_StatErrCalc.C"
-using namespace std;
-#include <fstream>
+#include "DrawTGraph.C"
+
+char tGraphErrors[400]={"./ROOTFile/TGraphError.root"};
 
 void v2plot(){
-  TFile* inFile = new TFile("./ROOTFile/acceptance_test.root","read");
-
+  // Temporary variables
+  char hname[800]; // histogram hname
+  double stats[6]; // stats of TProfile
+  char analysis[20]={"acceptance"};
+  TFile* inFile = new TFile("./ROOTFile/acceptance_10mil.root","read");
+  TFile *outFile = new TFile(tGraphErrors,"recreate");
+  
   static const int ncent = 8; // 0-80%
-  static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
+  static const double bin_cent[ncent] = {5,15,25,35,45,55,65,75};
+  static const double bin_centE[ncent] = {0};
   static const double maxpt = 3.5; // max pt
   static const double minpt = 0.2; // min pt
   static const int npt = 12;        // 0.2 - 3.5 GeV/c
   static const double bin_pT[npt + 1] ={0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
+  
+  TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
+
+  TH1I *hMult = (TH1I*)inFile->Get("hMult");
+  hMult -> Draw();
+  sprintf(hname,"./Graphics/%s/mult.png",analysis);
+  cTemp -> Draw();
+  cTemp -> SaveAs(hname);
+
+  TH1F *hEta = (TH1F*)inFile->Get("hEta");
+  hEta -> Draw();
+  sprintf(hname,"./Graphics/%s/eta.png",analysis);
+  cTemp -> SaveAs(hname);  
+
+  TH1F *hPhi = (TH1F*)inFile->Get("hPhi");
+  hPhi -> Draw();
+  sprintf(hname,"./Graphics/%s/phi.png",analysis);
+  cTemp -> SaveAs(hname);
+
+  TH1F *hPt = (TH1F*)inFile->Get("hPt");
+  hPt -> Draw();
+  sprintf(hname,"./Graphics/%s/pt.png",analysis);
+  cTemp -> SaveAs(hname);  
+  
   // Input hist
 
   // TProfile for reference flow (RF)
@@ -61,17 +82,14 @@ void v2plot(){
           cos2psi1pphi23[ncent][npt], sin2psi1pphi23[ncent][npt], cos2psi1mphi23[ncent][npt], sin2psi1mphi23[ncent][npt];
 
   TGraphErrors *grDifFl[4][ncent], *grRefFl[ncent];     // 4 = {MC, 2QC, 4QC, EP}
+  TGraphErrors *grRefFlCent[4];                         // v2(cent)
   TGraph *grshade[ncent];
   TMultiGraph *mgDifFl[ncent];
 
   TGraphErrors *grDifFlWOAC[2][ncent], *grRefFlWOAC[ncent]; // WOAC - without acceptance correction - 2QC & 4QC
   TMultiGraph *mgDifFlWOAC[ncent];
 
-  // Temporary variables
-  char hname[800]; // histogram hname
-  TProfile *pr; // temporary TProfile for TProfile extracting from root file
-  TProfile *prx, *pry, *prxy; // for covariance calculation
-  double stats[6]; // stats of TProfile
+
 
   // Get TProfile histograms from ROOTFile
 
@@ -175,6 +193,9 @@ void v2plot(){
 
   double v2AC[ncent][4];
 
+  double v2centAC[4][ncent];
+  double v2centEAC[4][ncent];
+
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // Reference flow calculation
 
@@ -265,6 +286,7 @@ void v2plot(){
     v2[icent][1] = v22int;
     v2[icent][2] = v24int;
     v2[icent][3] = v2EPint;
+
     ev2[icent][0] = v2MCintE;
     ev2[icent][1] = v22intE;
     ev2[icent][2] = v24intE;
@@ -275,7 +297,17 @@ void v2plot(){
     v2AC[icent][2] = v24intAC;
     v2AC[icent][3] = v2EPint;
 
+    v2centAC[0][icent] = v2MCint;
+    v2centAC[1][icent] = v22intAC;
+    v2centAC[2][icent] = v24intAC;
+    v2centAC[3][icent] = v2EPint;  
 
+    v2centEAC[0][icent] = v2MCintE;
+    v2centEAC[1][icent] = v22intE;
+    v2centEAC[2][icent] = v24intE;
+    v2centEAC[3][icent] = v2EPintE;  
+
+    // TGraphErrors for compare 4 method
     grRefFl[icent] = new TGraphErrors(4,x,v2AC[icent],ex,ev2[icent]);
     grRefFl[icent]->SetMarkerColor(kRed);
     grRefFl[icent]->SetMarkerStyle(20);
@@ -287,6 +319,10 @@ void v2plot(){
     grRefFlWOAC[icent]->SetMarkerStyle(24);
     grRefFlWOAC[icent]->SetMarkerSize(1.3);
     grRefFlWOAC[icent]->SetDrawOption("P");
+
+
+
+
 
 
     // Set a shade between error of v2MC
@@ -478,12 +514,32 @@ void v2plot(){
     grDifFl[3][icent] -> SetDrawOption("P");
     mgDifFl[icent] -> Add(grDifFl[3][icent]);
   }
+  //==========================================================================================================================
+  // TGraphErrors of reference flow with respect to centrality
+  grRefFlCent[0] = new TGraphErrors(ncent,bin_cent,v2centAC[0],bin_centE,v2centEAC[0]);
+  grRefFlCent[0]->SetMarkerColor(kRed+1);
+  grRefFlCent[0]->SetMarkerStyle(25);
+
+  grRefFlCent[1] = new TGraphErrors(ncent,bin_cent,v2centAC[1],bin_centE,v2centEAC[1]);
+  grRefFlCent[1]->SetMarkerColor(kGreen+1);
+  grRefFlCent[1]->SetMarkerStyle(20);
+
+  grRefFlCent[2] = new TGraphErrors(ncent,bin_cent,v2centAC[2],bin_centE,v2centEAC[2]);
+  grRefFlCent[2] -> SetMarkerColor(kAzure+2);
+  grRefFlCent[2] -> SetMarkerStyle(22);
+
+  grRefFlCent[3] = new TGraphErrors(ncent,bin_cent,v2centAC[3],bin_centE,v2centEAC[3]);
+  grRefFlCent[3] -> SetMarkerColor(kBlack);
+  grRefFlCent[3] -> SetMarkerStyle(23);
+
+  for (int i=0;i<4;i++){
+    grRefFl[i]->SetMarkerSize(1.6);
+    grRefFl[i]->SetDrawOption("P");
+  }
 
   //==========================================================================================================================
-
-  // Drawing multipads of reference & differential flow
-
-  TLegend *leg[2];
+  
+  TLegend *leg[3];
   leg[0] = new TLegend(.11,.95,.42,.78); // legend for dif. flow plotting
   leg[0] -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
   leg[0] -> AddEntry(grDifFl[1][0],"v_{2}{2,QC}","p");
@@ -491,23 +547,43 @@ void v2plot(){
   leg[0] -> AddEntry(grDifFl[3][0],"v_{2}{#eta sub-event}","p");
   leg[0] -> AddEntry(grDifFlWOAC[0][0],"v_{2}{2,QC} w/o AC","p");
   leg[0] -> AddEntry(grDifFlWOAC[1][0],"v_{2}{4,QC} w/o AC","p");
-  
-  
 
   leg[1] = new TLegend(0.11,.89,0.4,.7); // legend for ref. flow plotting
   leg[1] -> AddEntry(grRefFl[0],"v_{2} with AC","p");
   leg[1] -> AddEntry(grRefFlWOAC[0],"v_{2} w/o AC","p");
 
-  for (int i=0;i<2;i++){
+  leg[2] = new TLegend(.11,.89,.42,.68);
+  leg[2] -> AddEntry(grRefFlCent[0],"v_{2}{MC}","p");
+  leg[2] -> AddEntry(grRefFlCent[1],"v_{2}{2,QC}","p");
+  leg[2] -> AddEntry(grRefFlCent[2],"v_{2}{4,QC}","p");
+  leg[2] -> AddEntry(grRefFlCent[3],"v_{2}{#eta sub-event}","p");
+  for (int i=0;i<3;i++){
     leg[i] -> SetFillColor(0);
     leg[i] -> SetTextSize(0.04);
     leg[i] -> SetTextFont(62);
     leg[i] -> SetBorderSize(0);
   }  
-
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
-  gStyle->SetOptStat(0);
+  gStyle->SetOptStat(0);  
+  /*
+  // v2 vs cent
+  TCanvas *c4 = new TCanvas("c4","Reference flow vs cent",200,10,800,450);
+  TH2F *h5 = new TH2F("","",8,0,80,15,0.0,0.08);
+  h5 -> Draw();
+  h5 -> SetXTitle("cent, %");
+  h5 -> SetYTitle("v_{2}");
+  for (int i=0;i<4;i++){
+    grRefFlCent[i] -> Draw("P");
+  }
+  leg[2] -> Draw();
+  c4 -> SaveAs("./Graphics/v2cent_AC.png");
+  */
+  const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
+  //==========================================================================================================================
+
+  // Drawing multipads of reference & differential flow
+/*
 
   TCanvas *c1 = new TCanvas("c1","Differential flow",200,10,1600,900);
   c1->Divide(3,2,0,0);
@@ -521,7 +597,7 @@ void v2plot(){
   double ymax=0.255;
   TH2F *h[ncent], *h2[ncent], *h3[ncent], *h4[ncent];
   TLatex *latex, *latex2, *latex3;
-  const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
+  
   for(int icent=0; icent<6; icent++){
     // Differential flow
 
@@ -616,19 +692,66 @@ void v2plot(){
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();
-    sprintf(hname,"./Graphics/Cent%i-%i%%.png",i*10,(i+1)*10);
+    sprintf(hname,"./Graphics/RFCent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-  TFile *outFile = new TFile("./ROOTFile/TGraphError.root","recreate");
+  */
+  //==========================================================================================================================
+
   outFile -> cd();
-  // int mycent = 3;
-  for (int icent=0; icent < ncent; icent++){
-    for (int i=0; i<4; i++){
-      sprintf(hname,"gr_cent%i_%i",icent,i);
+  for (int i=0; i<4; i++){
+    sprintf(hname,"grRF_%i",i);
+    grRefFlCent[i] -> SetTitle(ch[i]);
+    grRefFlCent[i] -> Write(hname);
+    for (int icent=0;icent<ncent;icent++){
+      sprintf(hname,"gr_%i_%i",icent,i);
       grDifFl[i][icent] -> SetTitle(ch[i]);
       grDifFl[i][icent] -> Write(hname);
     }
   }
   outFile -> Close();
+
+  std::vector<TGraphErrors*> vgr;
+  for (int i=0; i<4; i++){
+    vgr.push_back(grRefFlCent[i]);
+  }
+  
+  TCanvas *can;
+  TLatex l;
+  //                                                    yRatio_low    x_low     y_low    leg_x_low  leg_x_high
+  can = (TCanvas*) DrawTGraph(vgr,"v2 ratio",0.89, 1.11,    0    , 80, 0., 0.1 , 0.65, 0.11, 0.89, 0.35);
+  //                                                          yRatio_high  x_high   y_high     leg_y_low   leg_y_high
+  sprintf(hname,"v2 vs cent");
+  can -> SetName(hname);
+  l.SetNDC();
+  l.SetTextSize(0.12);
+  l.SetTextAlign(21);  
+  l.DrawLatex(0.5,0.1,hname);
+  sprintf(hname,"./Graphics/%s/v2centratio.png",analysis);
+  can -> SaveAs(hname);
+
+  //=============================================
+  std::vector<TGraphErrors*> vgrv2pt[8];
+  for (int icent=0; icent<8; icent++){
+    for (int i=0; i<4; i++){
+      vgrv2pt[icent].push_back(grDifFl[i][icent]);
+    }  
+  }
+  TCanvas *cV2PT[8];
+  TLatex lV2PT[8];
+  for (int icent=0; icent<8; icent++){
+    //                                                           yRatio_low   x_low     y_low    leg_x_low  leg_x_high
+    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"v2 ratio",0.89, 1.11, 0.0, 3.5, 0., 0.25, 0.65, 0.11, 0.89, 0.35);
+    //                                                                yRatio_high  x_high   y_high     leg_y_low   leg_y_high
+    sprintf(hname,"Cent %i-%i%%",icent*10,(icent+1)*10);
+    cV2PT[icent] -> SetName(hname);
+    lV2PT[icent].SetNDC();
+    lV2PT[icent].SetTextSize(0.12);
+    lV2PT[icent].SetTextAlign(21);  
+    lV2PT[icent].DrawLatex(0.5,0.1,hname);
+    sprintf(hname,"./Graphics/%s/DFCent%i-%i%%.png",analysis,icent*10,(icent+1)*10);
+    cV2PT[icent] -> SaveAs(hname);
+  }
+
 
 }

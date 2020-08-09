@@ -496,32 +496,47 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
                     Double_t leg_x_high=0.55, Double_t leg_y_high=0.89)
 */
 
-void refflowratio(){
-  TFile *inputFile = new TFile("./ROOTFile/TGraphError_refflow_AC.root","read");
-  TGraphErrors *gr[4];
-  char name[400];
-
-  for (int i=0; i<4; i++){
-    sprintf(name,"gr_%i",i);
-    gr[i] = (TGraphErrors*)inputFile->Get(name);
-  }
-
-  std::vector<TGraphErrors*> vgr;
-  for (int i=0; i<4; i++){
-    vgr.push_back(gr[i]);
-  }  
+void NonflowRatio(){
   
-  TCanvas *can;
-  TLatex l;
-  //                                                    yRatio_low    x_low     y_low    leg_x_low  leg_x_high
-  can = (TCanvas*) DrawTGraph(vgr,"v2 ratio",0.89, 1.11,    0    , 90, 0., 0.1 , 0.65, 0.11, 0.89, 0.35);
-  //                                                          yRatio_high  x_high   y_high     leg_y_low   leg_y_high
-  sprintf(name,"Acceptance correction");
-  can -> SetName(name);
-  l.SetNDC();
-  l.SetTextSize(0.15);
-  l.SetTextAlign(21);  
-  l.DrawLatex(0.5,0.1,name);
-  sprintf(name,"./Graphics/ratio/refflow.png");
-  can -> SaveAs(name);
+  TFile *inputFile = new TFile("./ROOTFile/TGraphError_nonflow.root","read");
+  char analysis[50]={"nonflow"};
+  TGraphErrors *gr[4][8];
+  char name[400];
+  for (int icent=0; icent<8; icent++){
+    for (int i=0; i<4; i++){
+      sprintf(name,"gr_%i_%i",icent,i);
+      gr[i][icent] = (TGraphErrors*)inputFile->Get(name);
+    }
+  }
+  std::vector<TGraphErrors*> vgr[8];
+  for (int icent=0; icent<8; icent++){
+    for (int i=0; i<4; i++){
+      vgr[icent].push_back(gr[i][icent]);
+    }  
+  }
+  TCanvas *can[8];
+  TLatex l[8];
+  for (int icent=0; icent<8; icent++){
+    //                                                    yRatio_low    x_low     y_low    leg_x_low  leg_x_high
+    can[icent] = (TCanvas*) DrawTGraph(vgr[icent],"v2 ratio",0.89, 1.11, 0.0, 3.5, 0., 0.25, 0.65, 0.09, 0.89, 0.32);
+    //                                                          yRatio_high  x_high   y_high     leg_y_low   leg_y_high
+    
+    sprintf(name,"Cent%i-%i%%",icent*10,(icent+1)*10);
+    can[icent] -> SetName(name);
+    l[icent].SetNDC();
+    l[icent].SetTextSize(0.15);
+    l[icent].SetTextAlign(21);  
+    l[icent].DrawLatex(0.5,0.1,name);
+    sprintf(name,"./Graphics/ratio/%s/Cent%i-%i%%.png",analysis,icent*10,(icent+1)*10);
+    can[icent] -> SaveAs(name);
+  }
 }
+
+/*
+
+t->SetTextAlign(13); //align at top left
+t->SetTextAlign(12); // left, vertically centered
+t->SetTextAlign(22); // centered horizontally and vertically
+t->SetTextAlign(11); //default bottom alignment
+
+*/

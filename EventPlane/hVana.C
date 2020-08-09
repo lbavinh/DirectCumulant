@@ -17,16 +17,12 @@ using namespace std;
 static const int ncent = 8; // 0-80%
 static const int bin_cent[ncent] = {5, 15, 25, 35, 45, 55, 65, 75};
 
-static const Float_t maxpt = 3.5; // max pt
-static const Float_t minpt = 0.2; // min pt
-// static const int npt = 24;        // 0.2 - 3.5 GeV/c
-// static const double bin_pT[npt + 1] = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1,
-//                                        1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0, 2.2, 2.4,
-//                                        2.6, 2.8, 3.0, 3.2, 3.5};
+static const double maxpt = 3.5; // max pt
+static const double minpt = 0.2; // min pt
 static const int npt = 12;        // 0.2 - 3.5 GeV/c
 static const double bin_pT[npt + 1] ={0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
 static const int neta = 2; // [eta-,eta+]
-static const int max_nh = 5000;
+static const int max_nh = 5100;
 TFile *d_outfile; // out file with histograms and profiles
 
 TH1F *hRP;         // reaction plane distr
@@ -43,7 +39,7 @@ TProfile *hv2MC[ncent]; // profile for MC integrated v2
 TProfile *hv22[ncent];  // profile <<2>> from 2nd Q-Cumulants
 TProfile *hv24[ncent];  // profile <<4>> from 4th Q-Cumulants
 // TProfile for differential flow (DF)
-TProfile *hPT[ncent][npt];     // profile pt
+TProfile *hPT[npt];     // profile pt
 TProfile *hv2MCpt[ncent][npt]; // profile v2pt from MC toy
 TProfile *hv22pt[ncent][npt];  // profile <<2'>> from 2nd Q-Cumulants
 TProfile *hv24pt[ncent][npt];  // profile <<4'>> from 4th Q-Cumulants
@@ -57,13 +53,13 @@ TProfile *hcov42prime[ncent][npt];      // <2>*<4'>
 TProfile *hcov44prime[ncent][npt];      // <4>*<4'>
 TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 
-TH1F *hv2EP[ncent][npt];	// elliptic flow from EP method
-TH1F *hv22EP[ncent];      // integrated elliptic flow from EP method
+TProfile *hv2EP[npt];	// elliptic flow from EP method
+TProfile *hv22EP;      // integrated elliptic flow from EP method
 
 TH1F *H_Qw[neta];     // sub-event multiplicity
 TH1F *H_EP[neta];		  // reaction plane
 TH1F *H_Qv[neta];     // sub-event <Q> - probably
-TH1F *HRes[ncent];		// resolution
+TProfile *HRes;		// resolution
 float res2[ncent];
 void hVana::Booking(TString outFile)
 {
@@ -80,7 +76,10 @@ void hVana::Booking(TString outFile)
   hPhi = new TH1F("hPhi", "Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})", 300, 0., 7.);
   hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -2.2, 2.2);
-
+  hv22EP = new TProfile("hv22EP","Ref. v_{2}{EP}", ncent,0.,ncent);
+  hv22EP->Sumw2();
+  HRes = new TProfile("HRes","EP resolution", ncent,0.,ncent);
+  HRes->Sumw2();
   for( int ieta=0; ieta<neta; ieta++ ){
     (void)sprintf(name,"H_Qw_%d",ieta);
     H_Qw[ieta] = new TH1F(name,name, 100, 0, 1000 );    
@@ -89,82 +88,75 @@ void hVana::Booking(TString outFile)
     (void)sprintf(name,"H_Qv_%d",ieta);
     H_Qv[ieta] = new TH1F(name,name, 100, 0, 10 );
   }
-  
+  for (int ipt=0;ipt<npt;ipt++){
+    sprintf(name,"hv2EP_%i",ipt);
+    hv2EP[ipt] = new TProfile(name,name, ncent,0.,ncent);
+    hv2EP[ipt]->Sumw2();
+    sprintf(name, "hPT_%i", ipt);
+    hPT[ipt] = new TProfile(name, name, ncent,0.,ncent);
+    hPT[ipt]->Sumw2();
+  }
   for (int icent = 0; icent < ncent; icent++)
   { // loop over centrality classes
-
-    (void)sprintf(name,"HRes_cent%i",icent);
-    HRes[icent] = new TH1F(name,name, 100, -10, 10 );
-
-    sprintf(name, "hv2MC_cent%i", icent);
+    sprintf(name, "hv2MC_%i", icent);
     sprintf(title, "v_{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
     hv2MC[icent] = new TProfile(name, title, 1, 0., 1.);
     hv2MC[icent]->Sumw2();
 
-    (void)sprintf(name,"hv22EP_cent%i",icent);
-    hv22EP[icent] = new TH1F(name,name, 400, -10, 10 );
-
-    sprintf(name, "hv22_cent%i", icent);
+    sprintf(name, "hv22_%i", icent);
     sprintf(title, "v_{2}{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
     hv22[icent] = new TProfile(name, title, 1, 0., 1.);
     hv22[icent]->Sumw2();
 
-    sprintf(name, "hv24_cent%i", icent);
+    sprintf(name, "hv24_%i", icent);
     sprintf(title, "v_{2}{4}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
     hv24[icent] = new TProfile(name, title, 1, 0., 1.);
     hv24[icent]->Sumw2();
 
-    sprintf(name, "hcov24_cent%i", icent);
+    sprintf(name, "hcov24_%i", icent);
     sprintf(title, "<2>#upoint<4> distr, cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
     hcov24[icent] = new TProfile(name, title, 1, 0., 1.);
     hcov24[icent]->Sumw2();
 
     for (int kpt = 0; kpt < npt; kpt++)
     { // loop over pt bin
-      sprintf(name, "hPT_cent%i_pt%i", icent, kpt);
-      sprintf(title, "p_{T} distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hPT[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
-      hPT[icent][kpt]->Sumw2();
-
-      (void)sprintf(name,"hv2EP_cent%i_pt%i",icent,kpt);
-      hv2EP[icent][kpt] = new TH1F(name,name, 400, -10, 10 );
-      
-      sprintf(name, "hv2MCpt_cent%i_pt%i", icent, kpt);
+    
+      sprintf(name, "hv2MCpt_%i_%i", icent, kpt);
       sprintf(title, "v_{2}{MC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
       hv2MCpt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       hv2MCpt[icent][kpt]->Sumw2();
 
-      sprintf(name, "hv22pt_cent%i_pt%i", icent, kpt);
+      sprintf(name, "hv22pt_%i_%i", icent, kpt);
       sprintf(title, "v_{2}{2,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
       hv22pt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       hv22pt[icent][kpt]->Sumw2();
 
-      sprintf(name, "hv24pt_cent%i_pt%i", icent, kpt);
+      sprintf(name, "hv24pt_%i_%i", icent, kpt);
       sprintf(title, "v_{2}{4,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
       hv24pt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       hv24pt[icent][kpt]->Sumw2();
 
-      sprintf(name, "hcov22prime_cent%i_pt%i", icent, kpt);
+      sprintf(name, "hcov22prime_%i_%i", icent, kpt);
       sprintf(title, "<2>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
       hcov22prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       hcov22prime[icent][kpt]->Sumw2();
 
-      sprintf(name, "hcov24prime_cent%i_pt%i", icent, kpt);
+      sprintf(name, "hcov24prime_%i_%i", icent, kpt);
       sprintf(title, "<2>#upoint<4'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
       hcov24prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       hcov24prime[icent][kpt]->Sumw2();
 
-      sprintf(name, "hcov42prime_cent%i_pt%i", icent, kpt);
+      sprintf(name, "hcov42prime_%i_%i", icent, kpt);
       sprintf(title, "<4>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
       hcov42prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       hcov42prime[icent][kpt]->Sumw2();
 
-      sprintf(name, "hcov44prime_cent%i_pt%i", icent, kpt);
+      sprintf(name, "hcov44prime_%i_%i", icent, kpt);
       sprintf(title, "<4>#upoint<4'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
       hcov44prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       hcov44prime[icent][kpt]->Sumw2();
 
-      sprintf(name, "hcov2prime4prime_cent%i_pt%i", icent, kpt);
+      sprintf(name, "hcov2prime4prime_%i_%i", icent, kpt);
       sprintf(title, "<4'>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
       hcov2prime4prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       hcov2prime4prime[icent][kpt]->Sumw2();
@@ -266,10 +258,12 @@ void hVana::Ana_event()
   Double_t multQv[neta]={0};       // [eta+,eta-]
   for (int i = 0; i < nh; i++)
   { // track loop
-    Float_t pT = pt[i];
+    double pT = pt[i];
     if( pT<minpt  || pT>maxpt ) continue;
     hPt->Fill(pT);
-    hPhi->Fill(phi0[i] - rp);
+    double phi = phi0[i] - rp;
+    if (phi<0) phi += 2.*TMath::Pi();
+    hPhi->Fill(phi);
     hPhil->Fill(phi0[i]);
     hEta->Fill(eta[i]);
 
@@ -286,7 +280,7 @@ void hVana::Ana_event()
       if (eta[i] < -0.05) hv2MC[icent]->Fill(0.5, v2, 1);
       // hv2MC[icent]->Fill(0.5, v2, 1);
       // Calculate differential v2 from MC toy
-      hPT[icent][ipt]->Fill(0.5, pT, 1);
+      hPT[ipt]->Fill(0.5+icent, pT, 1);
       hv2MCpt[icent][ipt]->Fill(0.5, v2, 1);
     }
 
@@ -423,9 +417,9 @@ void hVana::Ana_event()
         v2 = cos(2.0 * (phi0[itrk]-psi2) )/res2[icent];
       }
       // if(fabs(eta[itrk])<1.0){ // eliminate spectators
-      hv2EP[icent][ipt]->Fill(v2);
+      hv2EP[ipt]->Fill(0.5+icent,v2);
       if (eta[itrk] < -0.05) { // Reference flow
-        hv22EP[icent]->Fill(v2);
+        hv22EP->Fill(0.5+icent,v2);
       }
       
       // } // end of |eta| < 1.0
@@ -462,7 +456,7 @@ void hVana::CalRes()
     if (icent < 0) continue;
     for (int i = 0; i < nh; i++)
     { // track loop
-      Float_t pT = pt[i];
+      double pT = pt[i];
       if (pT < minpt || pT > maxpt) continue; // pt cut
       int fEta = -1;
       if (eta[i] <-0.05 && eta[i] >-2.0) fEta = 0;
@@ -508,13 +502,13 @@ void hVana::CalRes()
     if (fq1<0 || fq2<0) continue;
     Double_t dPsi = 2. *(psi1 - psi2);
     dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
-    HRes[icent] -> Fill( cos(dPsi) );
+    HRes -> Fill(0.5+icent,cos(dPsi));
   }
 }
 void hVana::FinishCalRes(){
   cout << "Resolution psi2 = {";
   for (int icent=0; icent<ncent; icent++){
-    res2[icent] = TMath::Sqrt(HRes[icent]->GetMean());
+    res2[icent] = TMath::Sqrt(HRes->GetBinContent(1+icent));
     cout << res2[icent] <<", ";
   }
   cout << "}" <<endl;

@@ -15,9 +15,9 @@ using namespace std;
 
 static const int ncent = 8; // 0-80%
 static const int bin_cent[ncent] = {5, 15, 25, 35, 45, 55, 65, 75};
-
-static const Float_t maxpt = 3.5; // max pt
-static const Float_t minpt = 0.2; // min pt
+static const int max_nh = 5100;
+static const double maxpt = 3.5; // max pt
+static const double minpt = 0.2; // min pt
 static const int npt = 12;        // 0.2 - 3.5 GeV/c
 static const double bin_pT[npt + 1] ={0.2, 0.4, 0.6, 0.8, 1.0, 1.2,
                                       1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
@@ -93,8 +93,8 @@ void FlowANA::Booking(TString outFile)
   d_outfile = new TFile(outFile.Data(), "recreate");
   cout << "Output file \"" << outFile.Data() << "\" has been initialized" << endl;
 
-  hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", 2500, 0, 2500);
-  hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", 1500, 0, 1500, 200, 0., 20.);
+  hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
+  hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", max_nh, 0, max_nh, 200, 0., 20.);
   hBimp = new TH1F("hBimp", "Impact parameter;b (fm);dN/db", 200, 0., 20.);
   hPt = new TH1F("hPt", "Pt-distr;p_{T} (GeV/c); dN/dP_{T}", 500, 0., 6.);
   hRP = new TH1F("hRP", "Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}", 300, 0., 7.);
@@ -321,6 +321,7 @@ void FlowANA::Recentering(){
     if (icent < 0) continue;
     for (int i = 0; i < nh; i++)
     { // track loop
+      if( pt[i]<minpt  || pt[i]>maxpt ) continue;
       int fEta = -1;
       if (eta[i] <-0.05 && eta[i] >-2.0) fEta = 0;
       if (eta[i] > 0.05 && eta[i] < 2.0) fEta = 1;
@@ -379,6 +380,7 @@ void FlowANA::Flattening(){
     if (icent < 0) continue;
     for (int i = 0; i < nh; i++)
     { // track loop
+      if( pt[i]<minpt  || pt[i]>maxpt ) continue;
       int fEta = -1;
       if (eta[i] <-0.05 && eta[i] >-2.0) fEta = 0;
       if (eta[i] > 0.05 && eta[i] < 2.0) fEta = 1;
@@ -391,7 +393,7 @@ void FlowANA::Flattening(){
 
     } // end of track loop
 
-    Float_t qxRec, qyRec, psi2;
+    double qxRec, qyRec, psi2;
     for( int ieta=0; ieta<neta; ieta++ ){
       if (sumQxy[ieta][0]==0 && sumQxy[ieta][1]==0) continue;
       qxRec = sumQxy[ieta][0] - qxMean[icent][ieta];
@@ -441,7 +443,7 @@ void FlowANA::Resolution()
     if (icent < 0) continue;
     for (int i = 0; i < nh; i++)
     { // track loop
-      Float_t pT = pt[i];
+      double pT = pt[i];
       if (pT < minpt || pT > maxpt) continue; // pt cut
       int fEta = -1;
       if (eta[i] <-0.05 && eta[i] >-2.0) fEta = 0;
@@ -580,10 +582,12 @@ void FlowANA::CalFlow(){
 
     for (int i = 0; i < nh; i++)
     { // track loop
-      Float_t pT = pt[i];
+      double pT = pt[i];
       if (pT < minpt || pT > maxpt) continue; // pt cut
       hPt->Fill(pT);
-      hPhi->Fill(phi0[i] - rp);
+      double phi = phi0[i] - rp;
+      if (phi<0) phi += 2.*TMath::Pi();
+      hPhi->Fill(phi);
       hPhil->Fill(phi0[i]);
       hEta->Fill(eta[i]);
       Int_t ipt = 0;

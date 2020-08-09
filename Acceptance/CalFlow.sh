@@ -2,7 +2,7 @@
 
 #
 # Specify working directory
-#$ -wd /weekly/nikolaev/lbavinh/Acceptance
+#$ -wd /weekly/$USER/lbavinh/Acceptance
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
@@ -14,10 +14,10 @@
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=00:10:00
 # Specify job array range (how many jobs will be created
-#$ -t 1-500
+#$ -t 1-100
 # Specify directory where output and error logs from SGE will be stored
-#$ -o /weekly/nikolaev/lbavinh/Acceptance/OUT/log/
-#$ -e /weekly/nikolaev/lbavinh/Acceptance/OUT/log/
+#$ -o /weekly/$USER/lbavinh/Acceptance/OUT/log/
+#$ -e /weekly/$USER/lbavinh/Acceptance/OUT/log/
 #
 
 # ${JOB_ID} - Id of the job array (one for all jobs)
@@ -26,8 +26,8 @@
 #     of N jobs with ${JOB_ID}_1, ${JOB_ID}_2, ..., ${JOB_ID}_N
 
 #Main directory
-export MAIN_DIR=/weekly/nikolaev/lbavinh/Acceptance
-export FILELIST=${MAIN_DIR}/../Generator/OUT/acceptance/runlist.list
+export MAIN_DIR=/weekly/$USER/lbavinh/Acceptance
+export FILELIST=/weekly/$USER/lbavinh/Generator/OUT/acceptance/runlist.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT

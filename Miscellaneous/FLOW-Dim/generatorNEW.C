@@ -14,7 +14,7 @@
 TH1F *hBimp;
 TH1I *hNpart, *hNcoll;
 TH2F *hBimpvsNpart, *hBimpvsNcoll;
-
+static TH1F *hPhi; // azimuthal angle
 TRandom3 *ar;
 TRandom2 *br;
 TRandom3 *TRpsi;
@@ -180,6 +180,7 @@ void generator(const char *file_name = "./v2hadron.root", int run0 = 3000000, TS
   tree->Branch("bFlow", &d_bflow, "d_bflow[nh]/O");
   tree->Branch("eta", &meta, "meta[nh]/F");
   tree->Branch("pt", &mpt, "mpt[nh]/F");
+  hPhi  = new TH1F("hPhi","Particle azimuthal angle distribution with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})",300,0.,7.);
 
   float A = PI / 3.;
   float B = PI / 2.;
@@ -234,7 +235,7 @@ void generator(const char *file_name = "./v2hadron.root", int run0 = 3000000, TS
       {
         phi0[d] = phi0[d] - 2 * Cp;
       }
-
+      hPhi -> Fill(phi0[d]-rp);
       //while((phi0[d]>=A && phi0[d]<=B) || (phi0[d]>=C && phi0[d]<=D)){dPHI[d]=FGen(ar->Rndm(),br->Rndm(),mpt[d]);phi0[d]=dPHI[d]+rp;if(phi0[d]>2*Cp){phi0[d]=phi0[d]-2*Cp;} }
 
       if ( nonflow > 0 && (d + nonflow - 1) < nh && TRpt->Rndm() < nonflowrate )
@@ -254,6 +255,7 @@ void generator(const char *file_name = "./v2hadron.root", int run0 = 3000000, TS
     tree->Fill();
   }
   tree->Write();
+  hPhi -> Write();
   f0->Close();
   cout << "DONE generator" << endl;
 }

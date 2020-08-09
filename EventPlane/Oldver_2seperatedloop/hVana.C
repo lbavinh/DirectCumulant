@@ -26,7 +26,7 @@ static const Float_t minpt = 0.2; // min pt
 static const int npt = 12;        // 0.2 - 3.5 GeV/c
 static const double bin_pT[npt + 1] ={0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
 static const int neta = 2; // [eta-,eta+]
-static const int max_nh = 5000;
+
 TFile *d_outfile; // out file with histograms and profiles
 
 TH1F *hRP;         // reaction plane distr
@@ -64,7 +64,7 @@ TH1F *H_Qw[neta];     // sub-event multiplicity
 TH1F *H_EP[neta];		  // reaction plane
 TH1F *H_Qv[neta];     // sub-event <Q> - probably
 TH1F *HRes[ncent];		// resolution
-float res2[ncent];
+
 void hVana::Booking(TString outFile)
 {
   char name[800];
@@ -72,8 +72,8 @@ void hVana::Booking(TString outFile)
   d_outfile = new TFile(outFile.Data(), "recreate");
   cout << outFile.Data() << " has been initialized" << endl;
 
-  hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
-  hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", max_nh, 0, max_nh, 200, 0., 20.);
+  hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", 2500, 0, 2500);
+  hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", 1500, 0, 1500, 200, 0., 20.);
   hBimp = new TH1F("hBimp", "Impact parameter;b (fm);dN/db", 200, 0., 20.);
   hPt = new TH1F("hPt", "Pt-distr;p_{T} (GeV/c); dN/dP_{T}", 500, 0., 6.);
   hRP = new TH1F("hRP", "Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}", 300, 0., 7.);
@@ -186,8 +186,6 @@ void hVana::Loop_a_file(TString file)
   }
   cout << file << " is opened" << endl;
   Init(tree);
-  CalRes();
-  FinishCalRes();
   Loop();
   treefile->Close();
   cout << file << " file processed" << endl;
@@ -209,7 +207,6 @@ void hVana::Loop()
   Long64_t nentries = fChain->GetEntriesFast();
 
   Long64_t nbytes = 0, nb = 0;
-  cout << "Calculating flow..." << endl;
   for (Long64_t jentry = 0; jentry < nentries; jentry++)
   {
     Long64_t ientry = LoadTree(jentry);
@@ -385,11 +382,20 @@ void hVana::Ana_event()
       fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
       fEP[ieta] /= 2.0;
       fQv[ieta] = TMath::Sqrt(TMath::Power( sumQxy[ieta][0],2.0)+TMath::Power( sumQxy[ieta][1],2.0))/TMath::Sqrt(multQv[ieta]);
+      H_Qw[ieta]->Fill( multQv[ieta] );
+
     }else{
       fEP[ieta] = -9999;
       fQv[ieta] = -9999;
     }
   }
+
+  for( int ieta=0; ieta<neta; ieta++ ){// eta EP detector loop
+    if( fEP[ieta]>-9000 ){ // EP reconstructed 
+      H_EP[ieta]->Fill( fEP[ieta] );
+      H_Qv[ieta]->Fill( fQv[ieta] );
+    }// end of EP reconstructed
+  }// end of eta loop
 
   // Estimate the event plane resolution of 2nd harmonic by the correlation between the azimuthal
   // angles of two subset groups of tracks, called sub-events \eta- and \eta+
@@ -400,7 +406,18 @@ void hVana::Ana_event()
   fq2 = fQv[1];
   if (psi1<-9000 || psi2<-9000) return;
   if (fq1<0 || fq2<0) return;
+  Double_t dPsi = 2. *(psi1 - psi2);
+  dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
+  HRes[icent] -> Fill( cos(dPsi) );
+  
+  // float res2[ncent]={0.35357,0.485845,0.53658,0.534252,0.491246,0.41962,0.3311,0.244816}; // my nonflow - 10 mil - pairwise rate 0.1
+  // float res2[ncent]={0.4696,0.567058,0.606359,0.603459,0.57031,0.517341,0.45721,0.4091}; // my non flow 0.2 rate 50 mil
+  // float res2[ncent]={0.376974,0.517724,0.569528,0.566287,0.520572,0.446901,0.353883,0.264216}; // my pure flow 10 mil
+  float res2[ncent]={0.376778,0.517607,0.569559,0.565791,0.521672,0.445922,0.353448,0.26404}; // my pure flow 50 mil
+  // khi bỏ 2 hàng không hiểu kia thì ResPsi2 không đổi
 
+
+  // The \eta sub-event method
 	if(icent>=0&&icent<=7){ // centrality selection 0-80%
     for(int itrk=0;itrk<nh;itrk++) {  //track loop
       Double_t pT = pt[itrk];
@@ -434,88 +451,11 @@ void hVana::Ana_event()
 
 } // end of hVana::Ana_event()
 
-void hVana::CalRes()
+void loop_a_list_of_trees()
 {
-  cout << "Calculate resolution..." << endl;
-  if (fChain == 0) return;
-  Long64_t nentries = fChain->GetEntriesFast();
-  Long64_t nbytes = 0, nb = 0;
-  for (Long64_t jentry = 0; jentry < nentries; jentry++)
-  { // loop over all entries (nentries) of chain
-    Long64_t ientry = LoadTree(jentry);
-    if (ientry < 0) break;
-    nb = fChain->GetEntry(jentry);
-    nbytes += nb;
-    // if (Cut(ientry) < 0) continue;
-    if (ientry % 100000 == 0)
-      cout << ientry << endl; // event counter
-    // Analysis
-    Double_t sumQxy[neta][2]={{0}};    // [eta-,eta+][x,y]
-    Double_t multQv[neta]={0};         // [eta+,eta-]    
-
-    int icent = -1;
-    for (int i = 0; i < ncent; i++)
-    { // loop over centrality
-      if (CentB(b) == bin_cent[i])
-        icent = i;
-    }
-    if (icent < 0) continue;
-    for (int i = 0; i < nh; i++)
-    { // track loop
-      Float_t pT = pt[i];
-      if (pT < minpt || pT > maxpt) continue; // pt cut
-      int fEta = -1;
-      if (eta[i] <-0.05 && eta[i] >-2.0) fEta = 0;
-      if (eta[i] > 0.05 && eta[i] < 2.0) fEta = 1;
-
-      if ( fEta>-1 ){
-        sumQxy[fEta][0] += pT * cos( 2.0 * phi0[i] );
-        sumQxy[fEta][1] += pT * sin( 2.0 * phi0[i] );
-        multQv[fEta]++;
-      } // end of eta selection
-
-    } // end of track loop
-
-    Double_t fEP[2]; // [eta-,eta+]
-    Double_t fQv[2];
-    for (int ieta=0; ieta<neta; ieta++){
-      if( multQv[ieta]>5 ){ // multiplicity > 5
-        fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
-        fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
-        fEP[ieta] /= 2.0;
-        fQv[ieta] = TMath::Sqrt(TMath::Power( sumQxy[ieta][0],2.0)+TMath::Power( sumQxy[ieta][1],2.0))/TMath::Sqrt(multQv[ieta]);
-        H_Qw[ieta]->Fill( multQv[ieta] );
-      }else{
-        fEP[ieta] = -9999;
-        fQv[ieta] = -9999;
-      }
-    }
-
-    for( int ieta=0; ieta<neta; ieta++ ){// eta EP detector loop
-      if( fEP[ieta]>-9000 ){ // EP reconstructed 
-        H_EP[ieta]->Fill( fEP[ieta] );
-        H_Qv[ieta]->Fill( fQv[ieta] );
-      }// end of EP reconstructed
-    }// end of eta loop
-
-    // Resolution
-    Double_t psi1, psi2, fq1, fq2;
-    psi1 = fEP[0];
-    psi2 = fEP[1];
-    fq1 = fQv[0];
-    fq2 = fQv[1];
-    if (psi1<-9000 || psi2<-9000) continue;
-    if (fq1<0 || fq2<0) continue;
-    Double_t dPsi = 2. *(psi1 - psi2);
-    dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
-    HRes[icent] -> Fill( cos(dPsi) );
-  }
-}
-void hVana::FinishCalRes(){
-  cout << "Resolution psi2 = {";
-  for (int icent=0; icent<ncent; icent++){
-    res2[icent] = TMath::Sqrt(HRes[icent]->GetMean());
-    cout << res2[icent] <<", ";
-  }
-  cout << "}" <<endl;
+  hVana *ana = new hVana();
+  ana->Booking("/weekly/nikolaev/lbavinh/EventPlane/OUT/sum_nonflow.root");
+  ana->Loop_a_file("/weekly/nikolaev/lbavinh/Generator/v2hadron_nonflow.root");
+  ana->Ana_end();
+  cout << "Histfile written. Congratz!" << endl;
 }

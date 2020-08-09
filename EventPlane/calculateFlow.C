@@ -1,8 +1,4 @@
-#include "/weekly/nikolaev/lbavinh/EventPlane/hVana.C"
-// void calculateFlow() {
-//   loop_a_list_of_trees();
-// }
-
+#include "/weekly/povarov/lbavinh/EventPlane/hVana.C"
 void calculateFlow(TString inFile, TString outFile) {
   hVana *ana = new hVana();
   ana->Booking(outFile.Data());
@@ -10,3 +6,11 @@ void calculateFlow(TString inFile, TString outFile) {
   ana->Ana_end();
   cout << "Histfile written. Congratz!" << endl;
 }
+// #include "hVana.C"
+// void calculateFlow() {
+//   hVana *ana = new hVana();
+//   ana->Booking("./test.root");
+//   ana->Loop_a_file("../Generator/test.root");
+//   ana->Ana_end();
+//   cout << "Histfile written. Congratz!" << endl;
+// }

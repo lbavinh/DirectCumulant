@@ -27,10 +27,10 @@ public :
   Int_t nh;
   Float_t b;
   Float_t rp;
-  Float_t phi0[5000]; //[nh]
-  Bool_t bFlow[5000]; //[nh]
-  Float_t eta[5000];  //[nh]
-  Float_t pt[5000];   //[nh]
+  Float_t phi0[6000]; //[nh]
+  Bool_t bFlow[6000]; //[nh]
+  Float_t eta[6000];  //[nh]
+  Float_t pt[6000];   //[nh]
 
   // List of branches
   TBranch *b_nh;    //!

@@ -1,10 +1,6 @@
-#include "/weekly/nikolaev/lbavinh/Acceptance/hVana.C"
-// void calculateFlow() {
-//   loop_a_list_of_trees();
-// }
-
+#include "/weekly/povarov/lbavinh/Acceptance/FlowANA.C"
 void calculateFlow(TString inFile, TString outFile) {
-  hVana *ana = new hVana();
+  FlowANA *ana = new FlowANA();
   ana->Booking(outFile.Data());
   ana->Loop_a_file(inFile.Data());
   ana->Ana_end();

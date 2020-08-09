@@ -31,7 +31,7 @@ static const double bin_pT[npt+1]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1
 static const float maxpt = 3.5; // max pt
 static const float minpt = 0.2; // min pt
 
-static const int max_nh = 5000;
+static const int max_nh = 6000;
 
 float   d_rp;           // reaction plane azimuthal angle
 float   d_b;            // impact parameter
@@ -65,8 +65,8 @@ static TH1F *hEta; // pseudorapidity
 void Book_hist(TString outfile) {
   // read input TFile
 
-  d_infile = new TFile("merge_hist_glaub_200gev.root","read");
-  // d_infile = new TFile("/weekly/povarov/lbavinh/Generator/merge_hist_glaub_200gev.root", "read");
+  // d_infile = new TFile("merge_hist_glaub_200gev.root","read");
+  d_infile = new TFile("/weekly/povarov/lbavinh/Generator/merge_hist_glaub_200gev.root", "read");
   hBimp = (TH1F *)d_infile->Get("hBimp");
   hNpart = (TH1I *)d_infile->Get("hNpart");
   hNcoll = (TH1I *)d_infile->Get("hNcoll");
@@ -181,7 +181,7 @@ void V2gen(int nevent,double Mmean) {
       
       /* generate transverse momentum according to the distribution, 
          using the hit-or-miss method. */
-      if(pT>=0.2 && pT<=3.5){ //track's transverse momentum selection
+      // if(pT>=0.2 && pT<=3.5){ //track's transverse momentum selection
         eta = 4.*(GR->Rndm()-0.5); /* Random pseudorapidity eta between -2 and 2 */
 
         v2pT = calc_v2(b,eta,pT);
@@ -192,8 +192,7 @@ void V2gen(int nevent,double Mmean) {
         /* simulate anisotropic flow, with the hit-or-miss method */
 
         phil=phi+phirp; /* particle angle with respect to the laboratory frame */
-        while (phil>2.*PI)
-        phil-=2.*PI; /* To make sure that phil is between 0 and 2 Pi */
+        if (phil>2.*PI) phil-=2.*PI; /* To make sure that phil is between 0 and 2 Pi */
         // Non-uniform acceptance
         if ( bAcceptance && ((phil>A && phil<B) || (phil>C && phil<D)) ) continue;
         hPt->Fill(pT);
@@ -242,7 +241,7 @@ void V2gen(int nevent,double Mmean) {
             } // end of 3 more particle generation
           } // End of generation Quadruplet-wise emission
         } // End of NONFLOW CORRELATION simulation
-      } // end of track's transverse momentum selection
+      // } // end of track's transverse momentum selection
     }//end of the particle loop
     d_nh = nh;
     d_rp = phirp;

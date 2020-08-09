@@ -1,3 +1,3 @@
 #!/bin/bash
-rm -f /weekly/nikolaev/lbavinh/Acceptance/OUT/log/*
-rm -f /weekly/nikolaev/lbavinh/Acceptance/OUT/acceptance/log/*
+rm -f /weekly/$USER/lbavinh/Acceptance/OUT/log/*
+rm -f /weekly/$USER/lbavinh/Acceptance/OUT/acceptance/log/*

@@ -23,7 +23,6 @@ double dndphi(double phi, double v2, double b)
 {
   double temp;
   double v1=0, v3=0, v4=0, v5=0, v6=0;
-  // v4 = pow(v2,2);
   float fb = 0.97 + 1.06 * exp(-0.5 * b * b / 3.2 / 3.2);
   v3 = pow(fb * sqrt(v2), 3);
   float gb = 1.096 + 1.36 * exp(-0.5 * b * b / 3.0 / 3.0);

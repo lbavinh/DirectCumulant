@@ -1,5 +1,5 @@
 #include "Func_StatErrCalc.C"
-void refflowv2plot(){
+void RefFlowV2Plot(){
   // TFile *inFile = new TFile("./ROOTFile/nonflow_50mil_0.2rate.root","read");
   // TFile *outFile = new TFile("./ROOTFile/TGraphError_refflow_nonflow.root","recreate");
 

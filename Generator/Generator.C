@@ -65,8 +65,8 @@ static TH1F *hEta; // pseudorapidity
 void Book_hist(TString outfile) {
   // read input TFile
 
-  // d_infile = new TFile("merge_hist_glaub_200gev.root","read");
-  d_infile = new TFile("/weekly/povarov/lbavinh/Generator/merge_hist_glaub_200gev.root", "read");
+  d_infile = new TFile("merge_hist_glaub_200gev.root","read");
+  // d_infile = new TFile("/weekly/povarov/lbavinh/Generator/merge_hist_glaub_200gev.root", "read");
   hBimp = (TH1F *)d_infile->Get("hBimp");
   hNpart = (TH1I *)d_infile->Get("hNpart");
   hNcoll = (TH1I *)d_infile->Get("hNcoll");
@@ -205,7 +205,7 @@ void V2gen(int nevent,double Mmean) {
         d_bflow[nh]= bFlow;
         nh++;
 
-        if (nonflow>0 && (nm<=(mult-2*nonflow)) && (GR->Rndm()<=nonflowrate) && (TMath::Abs(eta)<=0.5)){ /* NONFLOW CORRELATION simulation */
+        if (nonflow>0 && (nm<=(mult-2*nonflow)) && (GR->Rndm()<=nonflowrate) ){ /* NONFLOW CORRELATION simulation */
             /* Two tests: 
             - a first, very inelegant one, to avoid having more particles in the 
             event than the multiplicity which has been determined earlier;
@@ -217,12 +217,17 @@ void V2gen(int nevent,double Mmean) {
             nm++;
             d_phi0[nh] = phil;
             d_pt[nh]   = pT;
-            d_eta[nh] = eta;
+            
             d_bflow[nh] = bFlow;
-            hEta  -> Fill(eta);
+            
             hPt->Fill(pT);
             hPhi -> Fill(phi);
-            hPhil -> Fill(phil);            
+            hPhil -> Fill(phil);      
+
+            if (TMath::Abs(eta)<0.5){
+              d_eta[nh] = d_eta[nh-1];
+              hEta  -> Fill(d_eta[nh-1]);
+            }
             nh++;
           } // end of Pair-wise emission
           else if (nonflow==2) { // Quadruplet-wise emission
@@ -232,10 +237,13 @@ void V2gen(int nevent,double Mmean) {
               hPt->Fill(pT);
               hPhi -> Fill(phi);
               hPhil -> Fill(phil);
-              hEta  -> Fill(eta);
+              
               d_phi0[nh] = phil;
               d_pt[nh]   = pT;
-              d_eta[nh]  = eta;
+              if (TMath::Abs(eta)<0.5){
+                d_eta[nh] = eta;
+                hEta  -> Fill(eta);
+              }
               d_bflow[nh] = bFlow;
               nh++;         
             } // end of 3 more particle generation

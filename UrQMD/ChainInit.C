@@ -25,10 +25,10 @@ void MakeChain(const char* fileList, const char *outFile, const int line1, const
 
 void ChainInit(){
   char list[500], chain[500];
-  sprintf(list,"/mnt/pool/2/lbavinh/urqmd/runlist_urqmd_AuAu_7.7GeV.list");
-  for (int i=0; i<10; i++){
-    sprintf(chain,"/mnt/pool/2/lbavinh/urqmd/chain/chain%i.root",i);
-    MakeChain(list,chain,(i*354)+1,(i+1)*354);
+  sprintf(list,"/weekly/povarov/lbavinh/UrQMD/runlist.list");
+  for (int i=0; i<100; i++){
+    sprintf(chain,"/weekly/povarov/lbavinh/UrQMD/chain/chain%i.root",i);
+    MakeChain(list,chain,(i*35)+1,(i+1)*35);
   }
   cout << "Tree chains were created successfully!" << endl;
 }

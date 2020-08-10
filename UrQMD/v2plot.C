@@ -1,30 +1,61 @@
-#include "TFile.h"
-#include "TH1.h"
-#include "TH2.h"
-#include "TGraph.h"
-#include "TGraphErrors.h"
-#include "TMultiGraph.h"
-#include "TLegend.h"
-#include "TFrame.h"
 #include "Func_StatErrCalc.C"
-using namespace std;
-#include <fstream>
-
+#include "DrawTGraph.C"
+static const int ncent = 8; // 0-80%
+TGraphErrors *grDifFl[4][ncent];    // v2(pt); 4 = {MC, 2QC, 4QC, EP}
+TGraphErrors *grRefFl[ncent];     
+TGraphErrors *grRefFlCent[4];       // v2(cent); 4 = {MC, 2QC, 4QC, EP}
 void v2plot(){
-  static const int ncent = 8; // 0-80%
-  static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
-  static const Float_t maxpt = 3.5; // max pt
-  static const Float_t minpt = 0.; // min pt
-  static const int npt = 12; // 0.2 - 3.5 GeV/c 
-  static const double bin_pT[13]={0.,0.1,0.2,0.3,0.4,0.5,0.6,0.8,1.0,1.2,1.4,1.7,2.0};
-  // Input hist
+  // Temporary variables
+  char hname[800]; // histogram hname
+  double stats[6]; // stats of TProfile
+  // char analysis[20]={"pure"};
 
+  TFile *inFile, *outFile;
+  sprintf(hname,"sum.root");
+  inFile = new TFile(hname,"read");
+  sprintf(hname,"./ROOTFile/TGraphError.root");
+  outFile = new TFile(hname,"recreate");
+  
+  
+  static const double bin_cent[ncent] = {5,15,25,35,45,55,65,75};
+  static const double bin_centE[ncent] = {0};
+  static const double maxpt = 2.8; // max pt
+  static const double minpt = 0.2; // min pt
+  static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
+  static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8};
+
+
+
+  // TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
+
+  // TH1I *hMult = (TH1I*)inFile->Get("hMult");
+  // hMult -> Draw();
+  // sprintf(hname,"./Graphics/%s/mult.png",analysis);
+  // cTemp -> Draw();
+  // cTemp -> SaveAs(hname);
+
+  // TH1F *hEta = (TH1F*)inFile->Get("hEta");
+  // hEta -> Draw();
+  // sprintf(hname,"./Graphics/%s/eta.png",analysis);
+  // cTemp -> SaveAs(hname);  
+
+  // TH1F *hPhi = (TH1F*)inFile->Get("hPhi");
+  // hPhi -> Draw();
+  // sprintf(hname,"./Graphics/%s/phi.png",analysis);
+  // cTemp -> SaveAs(hname);
+
+  // TH1F *hPt = (TH1F*)inFile->Get("hPt");
+  // hPt -> Draw();
+  // sprintf(hname,"./Graphics/%s/pt.png",analysis);
+  // cTemp -> SaveAs(hname);
+
+  // Input hist
   // TProfile for reference flow
   TProfile *hv2MC[ncent];       // profile for MC integrated v2
   TProfile *hv22[ncent];        // profile <<2>> from 2nd Q-Cumulants
   TProfile *hv24[ncent];        // profile <<4>> from 4th Q-Cumulants
   // TProfile for differential flow
-  TProfile *hPT[ncent][npt];       // profile pt 
+  TProfile *hPT[npt];       // profile pt 
   TProfile *hv2MCpt[ncent][npt];   // profile v2pt from MC toy   
   TProfile *hv22pt[ncent][npt];    // profile <<2'>> from 2nd Q-Cumulants
   TProfile *hv24pt[ncent][npt];    // profile <<4'>> from 4th Q-Cumulants
@@ -38,86 +69,100 @@ void v2plot(){
   TProfile *hcov44prime[ncent][npt]; // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 
-  TFile *inFile;
+  TProfile *hv2EP[npt];	// elliptic flow from EP method
+  TProfile *hv22EP;        // elliptic flow cent: 10-40% from EP method
+
+
   // OUTPUT
-  TGraphErrors *grDifFl[3][ncent], *grRefFl[ncent];     // 3 = {MC, 2QC, 4QC}
+
   TGraph *grshade[ncent];
   TMultiGraph *mgRefFl[ncent], *mgDifFl[ncent];
 
-
-  // Temporary variables
-  char hname[800]; // histogram hname
-  TProfile *pr; // temporary TProfile for TProfile extracting from root file
-  TProfile *prx, *pry, *prxy; // for covariance calculation
-  Double_t stats[6]; // stats of TProfile
-
-  // inFile = new TFile("./ROOTFile/v2QC.root","read");
-
-  // inFile = new TFile("./ROOTFile/test.root","read");
-  // inFile = new TFile("./ROOTFile/v2QC_etagap.root","read");
-  inFile = new TFile("./ROOTFile/v2QC_etagap_eta2.5.root","read");  
   // Get TProfile histograms from ROOTFile
+  hv22EP = (TProfile*)inFile->Get("hv22EP");
+  for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+    sprintf(hname,"hv2EP_%i",ipt);
+    hv2EP[ipt]=(TProfile*)inFile->Get(hname);
+    sprintf(hname,"hPT_%i",ipt);
+    hPT[ipt]=(TProfile*)inFile->Get(hname);
+  }
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    sprintf(hname,"hv2MC_cent%i",icent);
+    sprintf(hname,"hv2MC_%i",icent);
     hv2MC[icent] = (TProfile*)inFile->Get(hname);
-    sprintf(hname,"hv22_cent%i",icent);
+    sprintf(hname,"hv22_%i",icent);
     hv22[icent] = (TProfile*)inFile->Get(hname);
-    sprintf(hname,"hv24_cent%i",icent);
+    sprintf(hname,"hv24_%i",icent);
     hv24[icent] = (TProfile*)inFile->Get(hname);
-    sprintf(hname,"hcov24_cent%i",icent);
+    sprintf(hname,"hcov24_%i",icent);
     hcov24[icent] = (TProfile*)inFile->Get(hname);
+
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-        sprintf(hname,"hPT_cent%i_pt%i",icent,ipt);
-        hPT[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hv2MCpt_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hv2MCpt_%i_%i",icent,ipt);
         hv2MCpt[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hv22pt_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hv22pt_%i_%i",icent,ipt);
         hv22pt[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hv24pt_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hv24pt_%i_%i",icent,ipt);
         hv24pt[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov22prime_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hcov22prime_%i_%i",icent,ipt);
         hcov22prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov24prime_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hcov24prime_%i_%i",icent,ipt);
         hcov24prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov42prime_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hcov42prime_%i_%i",icent,ipt);
         hcov42prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov44prime_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hcov44prime_%i_%i",icent,ipt);
         hcov44prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-        sprintf(hname,"hcov2prime4prime_cent%i_pt%i",icent,ipt);
+        sprintf(hname,"hcov2prime4prime_%i_%i",icent,ipt);
         hcov2prime4prime[icent][ipt]=(TProfile*)inFile->Get(hname);
     } // end of loop over pt bin
   } // end of loop over centrality classes
 
   //==========================================================================================================================
+  // Filling pT bin
+  double pt[ncent][npt];
+  double ept[ncent][npt]={{0}}; // error bin pT = 0.0
+  for (int icent=0; icent<ncent; icent++){
+    for (int ipt=0; ipt<npt; ipt++){
+      // pt[icent][ipt] = hPT[icent][ipt] -> GetBinContent(1);
+      pt[icent][ipt] = ( bin_pT[ipt] + bin_pT[ipt+1] ) / 2.;
+    }
+  }
+  //==========================================================================================================================
+  
   // reference flow comparison
-  Double_t v2[ncent][3];
-  Double_t ev2[ncent][3];
-  Double_t x[3]={0.5,1.5,2.5};
-  Double_t ex[3]={0};
+  double v2[ncent][4];
+  double ev2[ncent][4];
+  double x[4]={0.5,1.5,2.5,3.5};
+  double ex[4]={0};
+
+  double v2cent[4][ncent];
+  double v2centE[4][ncent];
 
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // Reference flow calculation
 
-    Double_t v2MCint;  // The Monte Carlo estimate for integrated v2 obtained using the known reaction plane event-by-event, v_{2}{MC}
-    Double_t v2MCintE; // Standard error of integrated v_{2}{MC}
+    double v2MCint;  // The Monte Carlo estimate for integrated v2 obtained using the known reaction plane event-by-event, v_{2}{MC}
+    double v2MCintE; // Standard error of integrated v_{2}{MC}
 
-    Double_t v22int;  // Integrated elliptic flow obtained with direct cumulants of 2nd order, v_{2}{2,QC}
-    Double_t v22intE; // Standard error of integrated v_{2}{2,QC}
-    Double_t cor2;    // The average all-event 2-particle correlation of RFP, <<2>>
-    Double_t cor2E;   // stat. err. of 2-particle correlations, s(<<2>>)
+    double v22int;  // Integrated elliptic flow obtained with direct cumulants of 2nd order, v_{2}{2,QC}
+    double v22intE; // Standard error of integrated v_{2}{2,QC}
+    double cor2;    // The average all-event 2-particle correlation of RFP, <<2>>
+    double cor2E;   // stat. err. of 2-particle correlations, s(<<2>>)
 
-    Double_t v24int;  // Integrated elliptic flow obtained with direct cumulants of 4th order, v_{2}{4,QC}
-    Double_t v24intE; // Standard error of integrated v_{2}{4,QC}
-    Double_t cor4;    // The average all-event 4-particle correlation of RFP, <<4>>
-    Double_t cor4E;   // error of <<4>>
+    double v24int;  // Integrated elliptic flow obtained with direct cumulants of 4th order, v_{2}{4,QC}
+    double v24intE; // Standard error of integrated v_{2}{4,QC}
+    double cor4;    // The average all-event 4-particle correlation of RFP, <<4>>
+    double cor4E;   // error of <<4>>
 
-    Double_t sumw2cor2;    // sumw2 of <2>
-    Double_t sumwcor2;     // sumw of <2>
-    Double_t sumw2cor4;    // sumw2 of <4>
-    Double_t sumwcor4;     // sumw of <4>
+    double sumw2cor2;    // sumw2 of <2>
+    double sumwcor2;     // sumw of <2>
+    double sumw2cor4;    // sumw2 of <4>
+    double sumwcor4;     // sumw of <4>
 
-    Double_t sumwcor24;    // sum(w<2>,w<4>)
-    Double_t cov24;        // Cov(<2>,<4>)
+    double sumwcor24;    // sum(w<2>,w<4>)
+    double cov24;        // Cov(<2>,<4>)
+
+    double v2EPint;
+    double v2EPintE;
     //=============================================
     //v2{MC}
     v2MCint  = hv2MC[icent] -> GetBinContent(1);
@@ -150,24 +195,40 @@ void v2plot(){
                   cor4,cor4E,sumwcor4,sumw2cor4,
                   cov24,sumwcor24);
     //=============================================
-    // reference flow comparison
+    // v2{#eta sub-event}
+    v2EPint = hv22EP->GetBinContent(icent+1);
+    v2EPintE = hv22EP->GetBinError(icent+1);
+    //=============================================
+    // Reference flow comparison: MC, 2QC, 4QC, eta sub-event
     v2[icent][0] = v2MCint;
     v2[icent][1] = v22int;
     v2[icent][2] = v24int;
+    v2[icent][3] = v2EPint;
     ev2[icent][0] = v2MCintE;
     ev2[icent][1] = v22intE;
     ev2[icent][2] = v24intE;
+    ev2[icent][3] = v2EPintE;
 
-    grRefFl[icent] = new TGraphErrors(3,x,v2[icent],ex,ev2[icent]);
+    v2cent[0][icent] = v2MCint;
+    v2cent[1][icent] = v22int;
+    v2cent[2][icent] = v24int;
+    v2cent[3][icent] = v2EPint;  
+
+    v2centE[0][icent] = v2MCintE;
+    v2centE[1][icent] = v22intE;
+    v2centE[2][icent] = v24intE;
+    v2centE[3][icent] = v2EPintE; 
+
+    grRefFl[icent] = new TGraphErrors(4,x,v2[icent],ex,ev2[icent]);
     grRefFl[icent]->SetMarkerColor(kRed);
     grRefFl[icent]->SetMarkerStyle(20);
     grRefFl[icent]->SetMarkerSize(1.3);
     grRefFl[icent]->SetDrawOption("P");
     // Set a shade between error of v2MC
-    grshade[icent] = new TGraph(8);
-    for (Int_t i=0; i<4; i++) {
+    grshade[icent] = new TGraph(10);
+    for (Int_t i=0; i<5; i++) {
       grshade[icent]->SetPoint(i,i+0.005,v2[icent][0]+ev2[icent][0]);
-      grshade[icent]->SetPoint(4+i,3+0.005-i,v2[icent][0]-ev2[icent][0]);
+      grshade[icent]->SetPoint(5+i,4+0.005-i,v2[icent][0]-ev2[icent][0]);
     }
     grshade[icent] -> SetFillStyle(1001);
     grshade[icent] -> SetFillColor(18);
@@ -180,44 +241,42 @@ void v2plot(){
 
     // Differential flow calculation
 
-    Double_t pt[npt];
-    Double_t ept[npt]; // error bin pT = 0.0
-    Double_t v2MCpt[npt]; // v2 in given pT bin
-    Double_t ev2MCpt[npt]; // standard error of v2 in given pT bin
+
+    double v2MCpt[npt]; // v2 in given pT bin
+    double ev2MCpt[npt]; // standard error of v2 in given pT bin
   
-    Double_t cor2Red[npt];         // Differential 2nd order cumulant d_{2}{2} = <<2'>>
-    Double_t cor2RedE[npt];        // Error of <<2'>>
-    Double_t v22dif[npt];      // Differential elliptic flow v'_{2}{2} extracted from 2nd order cumulants
+    double cor2Red[npt];         // Differential 2nd order cumulant d_{2}{2} = <<2'>>
+    double cor2RedE[npt];        // Error of <<2'>>
+    double v22dif[npt];      // Differential elliptic flow v'_{2}{2} extracted from 2nd order cumulants
                             // v'_{2}{2} = d_{2}{2} / sqrt( c_{2}{2} )
-    Double_t v22difE[npt];     // Error of v'_{2}{2}
+    double v22difE[npt];     // Error of v'_{2}{2}
     
-    Double_t cor4Red[npt];    // Reduced average all-event 4-particle correlation <<4'>>
-    Double_t cor4RedE[npt];   // Error of <<4'>>
-    Double_t v24dif[npt];      // Differential elliptic flow v'_{2}{4} extracted from 4th order cumulants
+    double cor4Red[npt];    // Reduced average all-event 4-particle correlation <<4'>>
+    double cor4RedE[npt];   // Error of <<4'>>
+    double v24dif[npt];      // Differential elliptic flow v'_{2}{4} extracted from 4th order cumulants
                             // v'_{2}{4} = -d_{2}{4} / pow( -c_{2}{4} , 3/4 )
-    Double_t v24difE[npt];     // Error of v'_{2}{4}
+    double v24difE[npt];     // Error of v'_{2}{4}
 
-    Double_t sumwcor22prime[npt];        // sum(w(<2>)*w(<2'>))
-    Double_t cov22prime[npt];            // Cov(<2>,<2'>)
-    Double_t sumwcor24prime[npt];        // sum(w(<2>)*w(<4'>))
-    Double_t cov24prime[npt];            // Cov(<2>,<4'>)
-    Double_t sumwcor42prime[npt];        // sum(w(<4>)*w(<2'>))
-    Double_t cov42prime[npt];            // Cov(<4>,<2'>)
-    Double_t sumwcor44prime[npt];        // sum(w(<4>)*w(<4'>))
-    Double_t cov44prime[npt];            // Cov(<4>,<4'>)
-    Double_t sumwcor2prime4prime[npt];   // sum(w(<2'>)*w(<4'>))
-    Double_t cov2prime4prime[npt];       // Cov(<2'>,<4'>)
+    double sumwcor22prime[npt];        // sum(w(<2>)*w(<2'>))
+    double cov22prime[npt];            // Cov(<2>,<2'>)
+    double sumwcor24prime[npt];        // sum(w(<2>)*w(<4'>))
+    double cov24prime[npt];            // Cov(<2>,<4'>)
+    double sumwcor42prime[npt];        // sum(w(<4>)*w(<2'>))
+    double cov42prime[npt];            // Cov(<4>,<2'>)
+    double sumwcor44prime[npt];        // sum(w(<4>)*w(<4'>))
+    double cov44prime[npt];            // Cov(<4>,<4'>)
+    double sumwcor2prime4prime[npt];   // sum(w(<2'>)*w(<4'>))
+    double cov2prime4prime[npt];       // Cov(<2'>,<4'>)
 
-    Double_t sumw2cor2red[npt]; // sumw2 of <2'>
-    Double_t sumwcor2red[npt];  // sumw of <2'>    
-    Double_t sumw2cor4red[npt]; // sumw2 of <4'>
-    Double_t sumwcor4red[npt];  // sumw of <4'>
+    double sumw2cor2red[npt]; // sumw2 of <2'>
+    double sumwcor2red[npt];  // sumw of <2'>    
+    double sumw2cor4red[npt]; // sumw2 of <4'>
+    double sumwcor4red[npt];  // sumw of <4'>
 
     for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
       
       // Differential flow v2MC
-      pt[ipt] = hPT[icent][ipt] -> GetBinContent(1);
-      ept[ipt] = 0;
+
       v2MCpt[ipt]  = hv2MCpt[icent][ipt] -> GetBinContent(1);
       ev2MCpt[ipt] = hv2MCpt[icent][ipt] -> GetBinError(1);
 
@@ -273,17 +332,20 @@ void v2plot(){
                           cov24prime[ipt], sumwcor24prime[ipt], cov42prime[ipt], sumwcor42prime[ipt]);
 
     } // end of loop for all pT bin
-    grDifFl[0][icent] = new TGraphErrors(npt,pt,v2MCpt,ept,ev2MCpt);
+
+    // Monte-Carlo differential flow
+    grDifFl[0][icent] = new TGraphErrors(npt,pt[icent],v2MCpt,ept[icent],ev2MCpt);
     grDifFl[0][icent] -> SetMarkerColor(kRed+1);
     grDifFl[0][icent] -> SetMarkerStyle(25);
-
-    grDifFl[1][icent] = new TGraphErrors(npt,pt,v22dif,ept,v22difE);
+    // 2QC differential flow
+    grDifFl[1][icent] = new TGraphErrors(npt,pt[icent],v22dif,ept[icent],v22difE);
     grDifFl[1][icent] -> SetMarkerColor(kGreen+1);
     grDifFl[1][icent] -> SetMarkerStyle(20);
-
-    grDifFl[2][icent] = new TGraphErrors(npt,pt,v24dif,ept,v24difE);
+    // 4QC differential flow
+    grDifFl[2][icent] = new TGraphErrors(npt,pt[icent],v24dif,ept[icent],v24difE);
     grDifFl[2][icent] -> SetMarkerColor(kAzure+2);
     grDifFl[2][icent] -> SetMarkerStyle(22);
+    // create multigraph
     mgDifFl[icent] = new TMultiGraph();
     for (int i=0; i<3; i++){
       grDifFl[i][icent] -> SetMarkerSize(1.3);
@@ -291,13 +353,54 @@ void v2plot(){
       mgDifFl[icent] -> Add(grDifFl[i][icent]);
     }
   } // end of loop over centrality classes
+  //==========================================================================================================================
+  grRefFlCent[0] = new TGraphErrors(ncent,bin_cent,v2cent[0],bin_centE,v2centE[0]);
+  grRefFlCent[0]->SetMarkerColor(kRed+1);
+  grRefFlCent[0]->SetMarkerStyle(25);
 
+  grRefFlCent[1] = new TGraphErrors(ncent,bin_cent,v2cent[1],bin_centE,v2centE[1]);
+  grRefFlCent[1]->SetMarkerColor(kGreen+1);
+  grRefFlCent[1]->SetMarkerStyle(20);
+
+  grRefFlCent[2] = new TGraphErrors(ncent,bin_cent,v2cent[2],bin_centE,v2centE[2]);
+  grRefFlCent[2] -> SetMarkerColor(kAzure+2);
+  grRefFlCent[2] -> SetMarkerStyle(22);
+
+  grRefFlCent[3] = new TGraphErrors(ncent,bin_cent,v2cent[3],bin_centE,v2centE[3]);
+  grRefFlCent[3] -> SetMarkerColor(kBlack);
+  grRefFlCent[3] -> SetMarkerStyle(23);  
+
+  for (int i=0;i<4;i++){
+    grRefFlCent[i]->SetMarkerSize(1.3);
+    grRefFlCent[i]->SetDrawOption("P");
+  }
   //==========================================================================================================================
 
-  TLegend *leg = new TLegend(0.11,.89,0.4,.78);
+  const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
+
+  // Elliptic flow from eta sub-event method
+  for (int icent=0; icent<ncent; icent++){
+    double v2EP[npt]={0}, ev2EP[npt]={0};
+    for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
+      v2EP[ipt] = hv2EP[ipt]->GetBinContent(icent+1);
+      ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
+    }
+    // Event plane differential flow
+    grDifFl[3][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
+    grDifFl[3][icent] -> SetMarkerColor(kBlack);
+    grDifFl[3][icent] -> SetMarkerStyle(23);
+    grDifFl[3][icent] -> SetMarkerSize(1.3);
+    grDifFl[3][icent] -> SetDrawOption("P");
+    mgDifFl[icent] -> Add(grDifFl[3][icent]);
+  }
+  //==========================================================================================================================
+  // Drawing multipads of reference & differential flow
+  
+  TLegend *leg = new TLegend(0.11,.95,0.4,.78);
   leg -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
   leg -> AddEntry(grDifFl[1][0],"v_{2}{2,QC}","p");
   leg -> AddEntry(grDifFl[2][0],"v_{2}{4,QC}","p");
+  leg -> AddEntry(grDifFl[3][0],"v_{2}{#eta sub-event}","p");
   leg -> SetFillColor(0);
   leg -> SetTextSize(0.04);
   leg -> SetTextFont(62);
@@ -308,17 +411,16 @@ void v2plot(){
   gStyle->SetOptStat(0);
 
   TCanvas *c1 = new TCanvas("c1","multipads",200,10,1600,900);
-  c1->Divide(4,2,0,0);
+  c1->Divide(3,2,0,0);
   TCanvas *c2 = new TCanvas("c2","multipads",200,10,1600,900);
-  c2->Divide(4,2,0,0);
-  Double_t xmin=0.;
-  Double_t xmax=2.15;
-  Double_t ymin=-0.03;
-  Double_t ymax=0.15;
-  TH2F *h[ncent], *h2[ncent];
-  TLatex *latex, *latex2, *latex3;
-
-  for(int icent=0; icent<8; icent++){
+  c2->Divide(3,2,0,0);
+  double xmin=0.;
+  double xmax=maxpt;
+  double ymin=-0.005;
+  double ymax=0.255;
+  TH2F *h[ncent], *h2[ncent], *h3[ncent];
+  TLatex *latex, *latex2;
+  for(int icent=0; icent<6; icent++){
     // differential flow
     h[icent] = new TH2F("","",5,xmin,xmax,5,ymin,ymax);
     c1 -> cd(icent+1);
@@ -328,89 +430,136 @@ void v2plot(){
     mgDifFl[icent]-> Draw("P");
     leg -> Draw();
     char text1[800];
-    sprintf(text1,"#splitline{cent: %i-%i%%}{#splitline{#eta_{RFP}<-0.05}{#eta_{POI}>0.05}}",10*(icent),10*(icent+1));
-    latex = new TLatex(xmax*0.98,ymin+0.025,text1);
+    sprintf(text1,"cent: %i-%i%%",10*(icent),10*(icent+1));
+    latex = new TLatex(xmax*0.98,ymin+0.02,text1);
     latex -> SetTextFont(62);
     latex -> SetTextSize(0.04);
     latex -> SetTextAlign(31);
     latex -> Draw();
+    //=============================================
     // reference flow
-    Double_t ymin2 = TMath::MinElement(3,v2[icent])*0.98;
-    Double_t ymax2 = TMath::MaxElement(3,v2[icent]) + TMath::MaxElement(3,ev2[icent])*1.1;
-    h2[icent] = new TH2F("","",3,0,3,10,ymin,0.1);
+    double ymin2 = TMath::MinElement(4,v2[icent])*0.98;
+    double ymax2 = TMath::MaxElement(4,v2[icent]) + TMath::MaxElement(4,ev2[icent])*1.1;
+    h2[icent] = new TH2F("","",4,0,4,10,0.015,0.075);
     c2 -> cd(icent+1);
     h2[icent]->SetYTitle("v_{n}");
     h2[icent]->SetCanExtend(TH1::kAllAxes);
-    const char *method[3]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}"};
+    const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
     TAxis* a = h2[icent] -> GetXaxis();
-    h2[icent] -> Fill(method[0],(ymin2+ymax2)/2.,1);
-    h2[icent] -> Fill(method[1],(ymin2+ymax2)/2.,1);
-    h2[icent] -> Fill(method[2],(ymin2+ymax2)/2.,1);
+    h2[icent] -> Fill(ch[0],(ymin2+ymax2)/2.,1);
+    h2[icent] -> Fill(ch[1],(ymin2+ymax2)/2.,1);
+    h2[icent] -> Fill(ch[2],(ymin2+ymax2)/2.,1);
+    h2[icent] -> Fill(ch[3],(ymin2+ymax2)/2.,1);
     h2[icent]->GetXaxis()->SetLabelSize(0.05);
     a->SetNdivisions(300); // 3 division, 0 sub-division
     h2[icent]->Draw();
     //grshade[icent] -> Draw("f");
     mgRefFl[icent]-> Draw("P");
 
-    latex2 = new TLatex(3*0.98,-0.01,text1);
+    latex2 = new TLatex(3*0.98,0.03*1.02,text1);
     latex2 -> SetTextFont(62);
     latex2 -> SetTextSize(0.04);
     latex2 -> SetTextAlign(31);
     latex2 -> Draw();
   }
-  c1 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/UrQMD/graph/v2pt.png");
-  c2 -> SaveAs("~/NIRS/Event Generator, Direct Cumulant/UrQMD/graph/v2.png");
+  sprintf(hname,"./Graphics/v2pt.png");
+  c1 -> SaveAs(hname);
+  sprintf(hname,"./Graphics/v2.png");
+  c2 -> SaveAs(hname);
+  //=============================================
+  
+  // Drawing reference flow separately for analysis
   TCanvas *c[ncent];
   TLatex *text[ncent];
   for (int i=0;i<ncent;i++){
+    double ymin = TMath::MinElement(4,v2[i])*0.98;
+    double ymax = TMath::MaxElement(4,v2[i])*1.02;
+    // double ymin = 0.01*(i+1);
+    // double ymax = 0.03*(i+1);
     sprintf(hname,"Cent%i-%i%%",i*10,(i+1)*10);
     c[i] = new TCanvas(hname,hname,200,10,800,600);
+
+    h3[i] = new TH2F("","",4,0,4,10,ymin,ymax);
+    h3[i]->SetYTitle("v_{n}");
+    h3[i]->SetCanExtend(TH1::kAllAxes);
+    
+    TAxis* a = h3[i] -> GetXaxis();
+    for (int j=0; j<4; j++) h3[i]->Fill(ch[j],(ymin+ymax)/2.,1);
+    h3[i]->GetXaxis()->SetLabelSize(0.05);
+    a->SetNdivisions(300); // 3 division, 0 sub-division
+    h3[i]->Draw();
     grshade[i] -> SetFillStyle(1001);
     grshade[i] -> SetFillColor(18);
     grshade[i] -> Draw("f");
     grRefFl[i] -> SetTitle("Reference flow");
-    grRefFl[i] -> Draw("AP");
+    grRefFl[i] -> Draw("P");
     char text1[800];
-    sprintf(text1,"#splitline{cent: %i-%i%%}{#splitline{#eta_{RFP}<-0.05}{#eta_{POI}>0.05}}",10*(i),10*(i+1));
+    sprintf(text1,"#splitline{Ref. flow}{#splitline{-2<#eta<-0.05}{cent: %i-%i%%}}",10*(i),10*(i+1));
     text[i] = new TLatex(1.,(TMath::MinElement(3,grRefFl[i]->GetY())),text1);
     text[i] -> SetTextFont(62);
     text[i] -> SetTextSize(0.04);
     text[i] -> SetTextAlign(21);
     text[i] -> Draw();
-    sprintf(hname,"~/NIRS/Event Generator, Direct Cumulant/UrQMD/graph/Cent%i-%i%%.png",i*10,(i+1)*10);
+    sprintf(hname,"./Graphics/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-  for (int i=0; i<ncent; i++){
-    cout<< 10*(i)<<"-"<<10*(i+1)<<"\t"<< v2[i][0]<<"\t"<< v2[i][1]<<"\t"<< v2[i][2] << endl;
-  }
-  TCanvas *c3 = new TCanvas("c3","v2pt",200,10,1600,900);
-  // differential flow
-  TH2F *h3 = new TH2F("h3","",5,xmin,xmax,5,ymin,ymax);
-  h3 -> Draw();
-  h3 -> SetXTitle("p_{T}, GeV/c");
-  h3 -> SetYTitle("v_{2}");
-  int mycent = 3;
-  mgDifFl[mycent]-> Draw("P");
-  leg -> Draw();
-  sprintf(hname,"#splitline{cent: %i-%i%%}{#splitline{#eta_{RFP}<-0.05}{#eta_{POI}>0.05}}",10*(mycent),10*(mycent+1));
-  latex3 = new TLatex(xmax*0.98,ymin+0.03,hname);
-  latex3 -> SetTextFont(62);
-  latex3 -> SetTextSize(0.04);
-  latex3 -> SetTextAlign(31);
-  latex3 -> Draw();
-  sprintf(hname,"~/NIRS/Event Generator, Direct Cumulant/UrQMD/graph/v2pt_Cent%i-%i%%.png",mycent*10,(mycent+1)*10);
-  c3 -> SaveAs(hname);
-  TFile *outFile = new TFile("TGraph.root","recreate");
+  
+  //==========================================================================================================================
+  
   outFile -> cd();
-
-  grDifFl[0][mycent] -> SetTitle("Dif.flow v2MC");
-  grDifFl[1][mycent] -> SetTitle("Dif.flow v22");
-  grDifFl[2][mycent] -> SetTitle("Dif.flow v24");
-  grRefFl[mycent] -> SetTitle("Ref.flow: MC: x=0.5; v22: x=1.5; v24: x=2.5");
-  grRefFl[mycent] -> Write("gr");
-  for (int i=0; i<3; i++){
-    sprintf(hname,"gr_%i",i);
-    grDifFl[i][mycent] -> Write(hname);
+  for (int i=0; i<4; i++){
+    sprintf(hname,"grRF_%i",i);
+    grRefFlCent[i] -> SetTitle(ch[i]);
+    grRefFlCent[i] -> Write(hname);
+    for (int icent=0;icent<ncent;icent++){
+      sprintf(hname,"gr_%i_%i",icent,i);
+      grDifFl[i][icent] -> SetTitle(ch[i]);
+      grDifFl[i][icent] -> Write(hname);
+    }
   }
   outFile -> Close();
+
+  std::vector<TGraphErrors*> vgr;
+  for (int i=0; i<4; i++){
+    vgr.push_back(grRefFlCent[i]);
+  }
+  
+  TCanvas *can;
+  TLatex l;
+  //                                                    yRatio_low    x_low     y_low    leg_x_low  leg_x_high
+  can = (TCanvas*) DrawTGraph(vgr,"v2 ratio",0.89, 1.11,    0    , 80, 0., 0.05 , 0.65, 0.11, 0.89, 0.35);
+  //                                                          yRatio_high  x_high   y_high     leg_y_low   leg_y_high
+  sprintf(hname,"v2 vs cent");
+  can -> SetName(hname);
+  l.SetNDC();
+  l.SetTextSize(0.12);
+  l.SetTextAlign(21);  
+  l.DrawLatex(0.5,0.1,hname);
+  sprintf(hname,"./Graphics/v2centratio.png");
+  can -> SaveAs(hname);
+
+  //=============================================
+  std::vector<TGraphErrors*> vgrv2pt[8];
+  for (int icent=0; icent<8; icent++){
+    for (int i=0; i<4; i++){
+      vgrv2pt[icent].push_back(grDifFl[i][icent]);
+    }  
+  }
+  TCanvas *cV2PT[8];
+  TLatex lV2PT[8];
+  for (int icent=0; icent<8; icent++){
+    //                                                           yRatio_low   x_low     y_low    leg_x_low  leg_x_high
+    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"v2 ratio",0.89, 1.11, 0.0, maxpt, 0., 0.25, 0.18, 0.61, 0.42, 0.85);
+    //                                                                yRatio_high  x_high   y_high     leg_y_low   leg_y_high
+    sprintf(hname,"Cent %i-%i%%",icent*10,(icent+1)*10);
+    cV2PT[icent] -> SetName(hname);
+    lV2PT[icent].SetNDC();
+    lV2PT[icent].SetTextSize(0.12);
+    lV2PT[icent].SetTextAlign(21);  
+    lV2PT[icent].DrawLatex(0.5,0.1,hname);
+    sprintf(hname,"./Graphics/DFCent%i-%i%%.png",icent*10,(icent+1)*10);
+    cV2PT[icent] -> SaveAs(hname);
+  }
+  
+
 }

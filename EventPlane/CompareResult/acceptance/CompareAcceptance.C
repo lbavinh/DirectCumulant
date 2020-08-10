@@ -1,5 +1,5 @@
 #include "DrawTGraph.C"
-void CompareAccRatio(){
+void CompareAcceptance(){
   static const int ncent = 8;
   TFile *inputDim, *inputVinh;
   TGraphErrors *grDim[ncent][4], *grVinh[ncent][4];
@@ -13,7 +13,6 @@ void CompareAccRatio(){
       grDim[icent][i] -> SetTitle("Dim");
       grDim[icent][i] -> GetXaxis()-> SetTitle("p_{T}, GeV/c");
       grDim[icent][i] -> Draw("AP");
-      grDim[icent][i] -> GetXaxis()-> SetRangeUser(0.,3.5);
       grDim[icent][i] -> SetMinimum(0.);
       grDim[icent][i] -> SetMaximum(0.25);
     }
@@ -32,7 +31,7 @@ void CompareAccRatio(){
 
   TCanvas *can[ncent][4];
   TLatex l[8][4];
-  char *ch[4]={"v_2{MC}", "v_2{2QC}", "v_2{4QC}", "v_2{EP}"};
+  char *ch[4]={"v2{MC}", "v2{2QC}", "v2{4QC}", "v2{EP}"};
   for (int i=0; i<4; i++){
     for (int icent=1;icent<6;icent++){
       can[icent][i] = (TCanvas*) DrawTGraph(grDim[icent][i],grVinh[icent][i],ch[i]);

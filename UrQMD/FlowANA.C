@@ -24,265 +24,188 @@ using namespace std;
 // static const int nth = 3;
 // static const int npid = 4;
 
-static const int npt = 12; // 0.5 - 3.6 GeV/c - number of pT bins
-// static const int npt = 24;
-// static const double bin_w[11]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8,4.0};
-static const double bin_pT[npt+1]={0.,0.1,0.2,0.3,0.4,0.5,0.6,0.8,1.0,1.2,1.4,1.7,2.0};
+static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
+static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8};
 
 static const int ncent = 8; // 0-80%
 static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 
-static const Float_t maxpt = 3.5; // max pt
-static const Float_t minpt = 0.; // min pt
+static const double maxpt = 2.8; // max pt
+static const double minpt = 0.2; // min pt
 
+static const int neta = 2; // [eta-,eta+]
 
+static const int max_nh = 3000;
 
-TFile *d_outfile;      // out file with histograms and profiles
+TFile *d_outfile; // out file with histograms and profiles
 
-TH1F *hRP;     // reaction plane distr
-TH1F *hPt;     // transverse momentum distr
-TH1F *hPhi;    // distr of particle azimuthal angle with respect to RP 
-TH1F *hPhil;   // distr of particle azimuthal angle in the laboratory coordinate system
-TH1F *hEta;    // pseudorapidity
-TH1F *hBimp;   // impact parameter
-TH1I *hMult;   // emitted multiplicity 
+TH1F *hRP;         // reaction plane distr
+TH1F *hPt;         // transverse momentum distr
+TH1F *hPhi;        // distr of particle azimuthal angle with respect to RP
+TH1F *hPhil;       // distr of particle azimuthal angle in the laboratory coordinate system
+TH1F *hEta;        // pseudorapidity
+TH1F *hBimp;       // impact parameter
+TH1I *hMult;       // emitted multiplicity
 TH2F *hBimpvsMult; // 2-D histogram impact parameter (y) vs mult (x)
 
-// histograms for differential flow calculation from MC toy
-TH1F *hpt[ncent][npt];
-TH1F *hv2pt[ncent][npt];      // dif. v2 distr in each pT bin from MC toy
-// TProfile for reference flow
-TProfile *hv2MC[ncent];       // profile for MC integrated v2
-TProfile *hv22[ncent];        // profile <<2>> from 2nd Q-Cumulants
-TProfile *hv24[ncent];        // profile <<4>> from 4th Q-Cumulants
-// TProfile for differential flow
-TProfile *hPT[ncent][npt];       // profile pt 
-TProfile *hv2MCpt[ncent][npt];   // profile v2pt from MC toy   
-TProfile *hv22pt[ncent][npt];    // profile <<2'>> from 2nd Q-Cumulants
-TProfile *hv24pt[ncent][npt];    // profile <<4'>> from 4th Q-Cumulants
-// TProfile for covariance calculation according to (C.12)
-// Bilandzic, A. (2012). Anisotropic flow measurements in ALICE at the large hadron collider. 
-// Appendix C
-TProfile *hcov24[ncent];       // <2>*<4>
-TProfile *hcov22prime[ncent][npt]; // <2>*<2'>
-TProfile *hcov24prime[ncent][npt]; // <2>*<4'>
-TProfile *hcov42prime[ncent][npt]; // <2>*<4'>
-TProfile *hcov44prime[ncent][npt]; // <4>*<4'>
+// TProfile for reference flow (RF)
+TProfile *hv2MC[ncent]; // profile for MC integrated v2
+TProfile *hv22[ncent];  // profile <<2>> from 2nd Q-Cumulants
+TProfile *hv24[ncent];  // profile <<4>> from 4th Q-Cumulants
+// TProfile for differential flow (DF)
+TProfile *hPT[npt];     // profile pt
+TProfile *hv2MCpt[ncent][npt]; // profile v2pt from MC toy
+TProfile *hv22pt[ncent][npt];  // profile <<2'>> from 2nd Q-Cumulants
+TProfile *hv24pt[ncent][npt];  // profile <<4'>> from 4th Q-Cumulants
+
+// TProfile for covariance calculation according to (C.12), Appendix C
+// in Bilandzic, A. (2012). Anisotropic flow measurements in ALICE at the large hadron collider.
+TProfile *hcov24[ncent];                // <2>*<4>
+TProfile *hcov22prime[ncent][npt];      // <2>*<2'>
+TProfile *hcov24prime[ncent][npt];      // <2>*<4'>
+TProfile *hcov42prime[ncent][npt];      // <2>*<4'>
+TProfile *hcov44prime[ncent][npt];      // <4>*<4'>
 TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 
+TProfile *hv2EP[npt];	// elliptic flow from EP method
+TProfile *hv22EP;      // integrated elliptic flow from EP method
 
-// Vectors saving terms for non-uniform acceptance correction
-Double_t cos2phi1[ncent]={0}, sin2phi1[ncent]={0}, cos2phi12[ncent]={0}, sin2phi12[ncent]={0}, cos2phi123[ncent]={0}, sin2phi123[ncent]={0}; // for non-uniform acceptance RF calc
-Double_t cos2psi1[ncent][npt]={{0}}, sin2psi1[ncent][npt]={{0}}, cos2psi1phi2[ncent][npt]={{0}}, sin2psi1phi2[ncent][npt]={{0}},
-         cos2psi1pphi23[ncent][npt]={{0}}, sin2psi1pphi23[ncent][npt]={{0}}, cos2psi1mphi23[ncent][npt]={{0}}, sin2psi1mphi23[ncent][npt]={{0}}; // for non-uniform acceptance DF calc
-Double_t sumM[ncent]={0}, sumMMm1[ncent]={0}, sumMMm1Mm2[ncent]={0}; // for non-uniform acceptance RF calc
-Double_t summp[ncent][npt]={{0}}, summpMmmq[ncent][npt]={{0}}, summpMm2mqMm1[ncent][npt]={{0}}; // for non-uniform acceptance DF calc
+TH1F *H_Qw[neta];     // sub-event multiplicity
+TH1F *H_EP[neta];		  // reaction plane
+TH1F *H_Qv[neta];     // sub-event <Q> - probably
+TProfile *HRes;		// resolution
 
-TVectorD *vcos2phi1[ncent], *vsin2phi1[ncent], *vcos2phi12[ncent], *vsin2phi12[ncent], *vcos2phi123[ncent], *vsin2phi123[ncent];
-TVectorD *vcos2psi1[ncent], *vsin2psi1[ncent], *vcos2psi1phi2[ncent], *vsin2psi1phi2[ncent], *vcos2psi1pphi23[ncent],
-         *vsin2psi1pphi23[ncent], *vcos2psi1mphi23[ncent], *vsin2psi1mphi23[ncent];
+
 
 void FlowANA::Booking(TString outFile){
-   char name[800];
-   char title[800];
-   d_outfile = new TFile(outFile.Data(),"recreate");
-   cout << outFile.Data() << " has been initialized" << endl;
 
-   hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", 2500, 0, 2500);
-   hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", 2500, 0, 2500, 200, 0., 20.);
-   hBimp = new TH1F("hBimp","Impact parameter;b (fm);dN/db",200, 0., 20.);
-   hPt   = new TH1F("hPt","Pt-distr;p_{T} (GeV/c); dN/dP_{T}",500,0.,6.);
-   hRP   = new TH1F("hRP","Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}",300,0.,7.);
-   hPhi  = new TH1F("hPhi","Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})",300,0.,7.);
-   hPhil = new TH1F("hPhil","Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi",300,0.,7.);
-   hEta  = new TH1F("hEta","Pseudorapidity distr; #eta; dN/d#eta",300,-8.,8.);
+  char name[800];
+  char title[800];
+  d_outfile = new TFile(outFile.Data(), "recreate");
+  cout << outFile.Data() << " has been initialized" << endl;
 
-   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-      sprintf(name,"hv2MC_cent%i",icent);
-      sprintf(title,"v_{2}(cent), cent=%i-%i%%",bin_cent[icent]-5,bin_cent[icent]+5);
-      hv2MC[icent] = new TProfile(name,title,1,0.,1.);
-      hv2MC[icent]->Sumw2();
+  hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
+  hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", max_nh, 0, max_nh, 200, 0., 20.);
+  hBimp = new TH1F("hBimp", "Impact parameter;b (fm);dN/db", 200, 0., 20.);
+  hPt = new TH1F("hPt", "Pt-distr;p_{T} (GeV/c); dN/dP_{T}", 500, 0., 6.);
+  hRP = new TH1F("hRP", "Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}", 300, 0., 7.);
+  hPhi = new TH1F("hPhi", "Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})", 300, 0., 7.);
+  hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
+  hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -10, 10);
+  hv22EP = new TProfile("hv22EP","Ref. v_{2}{EP}", ncent,0.,ncent);
+  hv22EP->Sumw2();
+  HRes = new TProfile("HRes","EP resolution", ncent,0.,ncent);
+  HRes->Sumw2();
+  for( int ieta=0; ieta<neta; ieta++ ){
+    (void)sprintf(name,"H_Qw_%d",ieta);
+    H_Qw[ieta] = new TH1F(name,name, 100, 0, 1000 );    
+    (void)sprintf(name,"H_EP_%d",ieta);
+    H_EP[ieta] = new TH1F(name,name, 100, -TMath::Pi()/2.-0.1, TMath::Pi()/2.+0.1 );
+    (void)sprintf(name,"H_Qv_%d",ieta);
+    H_Qv[ieta] = new TH1F(name,name, 100, 0, 10 );
+  }
+  for (int ipt=0;ipt<npt;ipt++){
+    sprintf(name,"hv2EP_%i",ipt);
+    hv2EP[ipt] = new TProfile(name,name, ncent,0.,ncent);
+    hv2EP[ipt]->Sumw2();
+    sprintf(name, "hPT_%i", ipt);
+    hPT[ipt] = new TProfile(name, name, ncent,0.,ncent);
+    hPT[ipt]->Sumw2();
+  }
+  for (int icent = 0; icent < ncent; icent++)
+  { // loop over centrality classes
+    sprintf(name, "hv2MC_%i", icent);
+    sprintf(title, "v_{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
+    hv2MC[icent] = new TProfile(name, title, 1, 0., 1.);
+    hv2MC[icent]->Sumw2();
 
-      sprintf(name,"hv22_cent%i",icent);
-      sprintf(title,"v_{2}{2}(cent), cent=%i-%i%%",bin_cent[icent]-5,bin_cent[icent]+5);
-      hv22[icent] = new TProfile(name,title,1,0.,1.);
-      hv22[icent]->Sumw2();
+    sprintf(name, "hv22_%i", icent);
+    sprintf(title, "v_{2}{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
+    hv22[icent] = new TProfile(name, title, 1, 0., 1.);
+    hv22[icent]->Sumw2();
 
-      sprintf(name,"hv24_cent%i",icent);
-      sprintf(title,"v_{2}{4}(cent), cent=%i-%i%%",bin_cent[icent]-5,bin_cent[icent]+5);
-      hv24[icent] = new TProfile(name,title,1,0.,1.);
-      hv24[icent]->Sumw2();
+    sprintf(name, "hv24_%i", icent);
+    sprintf(title, "v_{2}{4}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
+    hv24[icent] = new TProfile(name, title, 1, 0., 1.);
+    hv24[icent]->Sumw2();
 
-      sprintf(name,"hcov24_cent%i",icent);
-      sprintf(title,"<2>#upoint<4> distr, cent=%i-%i%%",bin_cent[icent]-5,bin_cent[icent]+5);
-      hcov24[icent] = new TProfile(name,title,1,0.,1.);
-      hcov24[icent]->Sumw2();        
+    sprintf(name, "hcov24_%i", icent);
+    sprintf(title, "<2>#upoint<4> distr, cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
+    hcov24[icent] = new TProfile(name, title, 1, 0., 1.);
+    hcov24[icent]->Sumw2();
 
-      for(int kpt=0; kpt<npt; kpt++){ // loop over pt bin
-         sprintf(name,"hpt_cent%i_pt%i",icent,kpt);
-         sprintf(title,"p_{T} distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
-         hpt[icent][kpt]=new TH1F(name,title,300,0.1,9.2);
+    for (int kpt = 0; kpt < npt; kpt++)
+    { // loop over pt bin
+    
+      sprintf(name, "hv2MCpt_%i_%i", icent, kpt);
+      sprintf(title, "v_{2}{MC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
+      hv2MCpt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hv2MCpt[icent][kpt]->Sumw2();
 
-         sprintf(name,"hv2pt_cent%i_pt%i",icent,kpt);
-         sprintf(title,"v_{2}{MC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
-         hv2pt[icent][kpt]=new TH1F(name,title,400,-1,1);
+      sprintf(name, "hv22pt_%i_%i", icent, kpt);
+      sprintf(title, "v_{2}{2,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
+      hv22pt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hv22pt[icent][kpt]->Sumw2();
 
-         sprintf(name,"hPT_cent%i_pt%i",icent,kpt);
-         sprintf(title,"p_{T} distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
-         hPT[icent][kpt]=new TProfile(name,title,1,0.,1.);
-         hPT[icent][kpt]->Sumw2();
+      sprintf(name, "hv24pt_%i_%i", icent, kpt);
+      sprintf(title, "v_{2}{4,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
+      hv24pt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hv24pt[icent][kpt]->Sumw2();
 
-         sprintf(name,"hv2MCpt_cent%i_pt%i",icent,kpt);
-         sprintf(title,"v_{2}{MC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
-         hv2MCpt[icent][kpt]=new TProfile(name,title,1,0.,1.);
-         hv2MCpt[icent][kpt]->Sumw2();
+      sprintf(name, "hcov22prime_%i_%i", icent, kpt);
+      sprintf(title, "<2>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
+      hcov22prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hcov22prime[icent][kpt]->Sumw2();
 
-         sprintf(name,"hv22pt_cent%i_pt%i",icent,kpt);
-         sprintf(title,"v_{2}{2,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
-         hv22pt[icent][kpt]=new TProfile(name,title,1,0.,1.);
-         hv22pt[icent][kpt]->Sumw2();
+      sprintf(name, "hcov24prime_%i_%i", icent, kpt);
+      sprintf(title, "<2>#upoint<4'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
+      hcov24prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hcov24prime[icent][kpt]->Sumw2();
 
-         sprintf(name,"hv24pt_cent%i_pt%i",icent,kpt);
-         sprintf(title,"v_{2}{4,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
-         hv24pt[icent][kpt]=new TProfile(name,title,1,0.,1.);
-         hv24pt[icent][kpt]->Sumw2();
+      sprintf(name, "hcov42prime_%i_%i", icent, kpt);
+      sprintf(title, "<4>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
+      hcov42prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hcov42prime[icent][kpt]->Sumw2();
 
-         sprintf(name,"hcov22prime_cent%i_pt%i",icent,kpt);
-         sprintf(title,"<2>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
-         hcov22prime[icent][kpt]=new TProfile(name,title,1,0.,1.);
-         hcov22prime[icent][kpt]->Sumw2();
+      sprintf(name, "hcov44prime_%i_%i", icent, kpt);
+      sprintf(title, "<4>#upoint<4'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
+      hcov44prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hcov44prime[icent][kpt]->Sumw2();
 
-         sprintf(name,"hcov24prime_cent%i_pt%i",icent,kpt);
-         sprintf(title,"<2>#upoint<4'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
-         hcov24prime[icent][kpt]=new TProfile(name,title,1,0.,1.);
-         hcov24prime[icent][kpt]->Sumw2();
+      sprintf(name, "hcov2prime4prime_%i_%i", icent, kpt);
+      sprintf(title, "<4'>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
+      hcov2prime4prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hcov2prime4prime[icent][kpt]->Sumw2();
+    } // end of loop over pt bin
+  } // end of loop over centrality classes
 
-         sprintf(name,"hcov42prime_cent%i_pt%i",icent,kpt);
-         sprintf(title,"<4>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
-         hcov42prime[icent][kpt]=new TProfile(name,title,1,0.,1.);
-         hcov42prime[icent][kpt]->Sumw2();
+  cout << "Histograms have been initialized" << endl;
 
-         sprintf(name,"hcov44prime_cent%i_pt%i",icent,kpt);
-         sprintf(title,"<4>#upoint<4'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
-         hcov44prime[icent][kpt]=new TProfile(name,title,1,0.,1.);
-         hcov44prime[icent][kpt]->Sumw2();
-
-         sprintf(name,"hcov2prime4prime_cent%i_pt%i",icent,kpt);
-         sprintf(title,"<4'>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c",bin_cent[icent]-5,bin_cent[icent]+5,bin_pT[kpt],bin_pT[kpt+1]);
-         hcov2prime4prime[icent][kpt]=new TProfile(name,title,1,0.,1.);
-         hcov2prime4prime[icent][kpt]->Sumw2();
-      } // end of loop over pt bin
-
-      // Vectors for non-uniform acceptance correction
-      vcos2phi1[icent] = new TVectorD(1);
-      vsin2phi1[icent] = new TVectorD(1);
-      vcos2phi12[icent] = new TVectorD(1);
-      vsin2phi12[icent] = new TVectorD(1);
-      vcos2phi123[icent] = new TVectorD(1);
-      vsin2phi123[icent] = new TVectorD(1);
-
-      vcos2psi1[icent] = new TVectorD(npt);
-      vsin2psi1[icent] = new TVectorD(npt);
-      vcos2psi1phi2[icent] = new TVectorD(npt);
-      vsin2psi1phi2[icent] = new TVectorD(npt);
-      vcos2psi1pphi23[icent] = new TVectorD(npt);
-      vsin2psi1pphi23[icent] = new TVectorD(npt);
-      vcos2psi1mphi23[icent] = new TVectorD(npt);
-      vsin2psi1mphi23[icent] = new TVectorD(npt);
-
-   } // end of loop over centrality classes
-
-   cout << "Histograms have been initialized" << endl;
 }
 
 void FlowANA::Loop_a_file(TString file){
-   TFile *treefile = TFile::Open(file.Data());
-   TTree *tree = (TTree*)treefile->Get("mctree");
-   if(tree == 0) {
-      cout << "htree is not found in "<< file << endl;
-      treefile->Close();
-      return;
-   }
-   cout << file << " is opened" << endl;
-   Init(tree);
-   Loop();
-   treefile->Close();
-   cout << file  <<" file processed"<<endl;
+  TFile *treefile = TFile::Open(file.Data());
+  TTree *tree = (TTree *)treefile->Get("mctree");
+  if (tree == 0)
+  {
+    cout << "mctree is not found in " << file << endl;
+    treefile->Close();
+    return;
+  }
+  cout << file << " is opened" << endl;
+  Init(tree);
+  // CalRes();
+  // FinishCalRes();
+  Loop();
+  treefile->Close();
+  cout << file << " file processed" << endl;
 }
 
 void FlowANA::Ana_end(){
-
-   d_outfile -> cd();
-   char name[800];
-   for(int icent=0; icent<ncent; icent++){
-      cos2phi1[icent]    /= sumM[icent];
-      sin2phi1[icent]    /= sumM[icent];
-      cos2phi12[icent]   /= sumMMm1[icent];
-      sin2phi12[icent]   /= sumMMm1[icent];
-      cos2phi123[icent]  /= sumMMm1Mm2[icent];
-      sin2phi123[icent]  /= sumMMm1Mm2[icent];
-
-      (*vcos2phi1[icent])(0)   = cos2phi1[icent];
-      (*vsin2phi1[icent])(0)   = sin2phi1[icent];
-      (*vcos2phi12[icent])(0)  = cos2phi12[icent];
-      (*vsin2phi12[icent])(0)  = sin2phi12[icent];
-      (*vcos2phi123[icent])(0) = cos2phi123[icent];
-      (*vsin2phi123[icent])(0) = sin2phi123[icent];
-
-      sprintf(name,"vcos2phi1_cent%i",icent);
-      vcos2phi1[icent] -> Write(name);
-      sprintf(name,"vsin2phi1_cent%i",icent);
-      vsin2phi1[icent] -> Write(name);
-      sprintf(name,"vcos2phi12_cent%i",icent);
-      vcos2phi12[icent] -> Write(name);
-      sprintf(name,"vsin2phi12_cent%i",icent);
-      vsin2phi12[icent] -> Write(name);
-      sprintf(name,"vcos2phi123_cent%i",icent);
-      vcos2phi123[icent] -> Write(name);
-      sprintf(name,"vsin2phi123_cent%i",icent);
-      vsin2phi123[icent] -> Write(name);
-
-      for(int i=0; i<npt; i++){
-         cos2psi1[icent][i]         /= summp[icent][i];
-         sin2psi1[icent][i]         /= summp[icent][i];
-         cos2psi1phi2[icent][i]     /= summpMmmq[icent][i];
-         sin2psi1phi2[icent][i]     /= summpMmmq[icent][i];
-         cos2psi1pphi23[icent][i]   /= summpMm2mqMm1[icent][i];
-         sin2psi1pphi23[icent][i]   /= summpMm2mqMm1[icent][i];
-         cos2psi1mphi23[icent][i]   /= summpMm2mqMm1[icent][i];
-         sin2psi1mphi23[icent][i]   /= summpMm2mqMm1[icent][i];
-
-         (*vcos2psi1[icent])(i)         = cos2psi1[icent][i];
-         (*vsin2psi1[icent])(i)         = sin2psi1[icent][i];
-         (*vcos2psi1phi2[icent])(i)     = cos2psi1phi2[icent][i];
-         (*vsin2psi1phi2[icent])(i)     = sin2psi1phi2[icent][i];
-         (*vcos2psi1pphi23[icent])(i)   = cos2psi1pphi23[icent][i];
-         (*vsin2psi1pphi23[icent])(i)   = sin2psi1pphi23[icent][i];
-         (*vcos2psi1mphi23[icent])(i)   = cos2psi1mphi23[icent][i];
-         (*vsin2psi1mphi23[icent])(i)   = sin2psi1mphi23[icent][i];
-      }
-
-      sprintf(name,"vcos2psi1_cent%i",icent);
-      vcos2psi1[icent] -> Write(name);
-      sprintf(name,"vsin2psi1_cent%i",icent);
-      vsin2psi1[icent] -> Write(name);
-      sprintf(name,"vcos2psi1phi2_cent%i",icent);
-      vcos2psi1phi2[icent] -> Write(name);
-      sprintf(name,"vsin2psi1phi2_cent%i",icent);
-      vsin2psi1phi2[icent] -> Write(name);
-      sprintf(name,"vcos2psi1pphi23_cent%i",icent);
-      vcos2psi1pphi23[icent] -> Write(name);
-      sprintf(name,"vsin2psi1pphi23_cent%i",icent);
-      vsin2psi1pphi23[icent] -> Write(name);
-      sprintf(name,"vcos2psi1mphi23_cent%i",icent);
-      vcos2psi1mphi23[icent] -> Write(name);
-      sprintf(name,"vsin2psi1mphi23_cent%i",icent);
-      vsin2psi1mphi23[icent] -> Write(name);
-   }
-
-   d_outfile -> Write();
-   d_outfile -> Close();
-   cout << "Histfile has been written" << endl;
+  d_outfile -> cd();
+  d_outfile -> Write();
+  d_outfile -> Close();
+  cout << "Histfile has been written" << endl;
 }
 
 void FlowANA::Loop()
@@ -303,180 +226,218 @@ void FlowANA::Loop()
 }
 
 void FlowANA::Ana_event(){
-   float rp = 0;
-   // rp = gRandom->Uniform(0, 2.*TMath::Pi());
-   int icent=CentB(bimp);
-   if (icent<0) return;
-   hMult -> Fill(nh);
-   hRP -> Fill(rp);
-   hBimp -> Fill(bimp);
-   hBimpvsMult -> Fill(nh,bimp);
-   // notation as (26) in DOI:10.1103/PhysRevC.83.044913
+  float rp = 0;
+  // rp = gRandom->Uniform(0, 2.*TMath::Pi());
+  int fcent=CentB(bimp);
+  if (fcent<0) return;
+  hMult -> Fill(nh);
+  hRP -> Fill(rp);
+  hBimp -> Fill(bimp);
+  hBimpvsMult -> Fill(nh,bimp);
+  // notation as (26) in DOI:10.1103/PhysRevC.83.044913
 
-   // Q-vector of RFP
-   Double_t Qx2=0., Qy2=0., Qx4=0., Qy4=0.;
-   TComplex Q2=0., Q4=0.;
-   // p-vector of POI
-   Double_t px2[npt]={0.}, py2[npt]={0.};
-   TComplex p2[npt]={0.}, p4[npt]={0.}, q2[npt]={0.}, q4[npt]={0.};
-   // q-vector of particles marked as POI and RFP, which is used for 
-   // autocorrelation substraction
-   Double_t qx2[npt]={0.}, qy2[npt]={0.}, qx4[npt]={0.}, qy4[npt]={0.};
-   // Total number of RFP in given event
-   Double_t M = 0.;
-   // numbers of POI (mp) and particles marked both POI and RFP (mq)
-   Double_t mq[npt]={0.},mp[npt]={0.};
-   // average reduced single-event 2- and 4-particle correlations : <2'> & <4'>
-   Double_t redCor22[npt]={0.}, redCor24[npt]={0.};
-   // event weights for correlation calculation
-   Double_t w2=0.,w4=0.;
-   // event weights for reduced correlation calculation
-   Double_t wred2[npt]={0.},wred4[npt]={0.};
-   // Average single-event 2- and 4- particle correlations : <2> & <4>
-   Double_t cor22 = 0., cor24 = 0.;
-   for(int i=0;i<nh;i++) { // track loop
-      float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
-      float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
+  // Q-vector of RFP
+  Double_t Qx2=0., Qy2=0., Qx4=0., Qy4=0.;
+  TComplex Q2=0., Q4=0.;
+  // p-vector of POI
+  Double_t px2[npt]={0.}, py2[npt]={0.};
+  TComplex p2[npt]={0.}, p4[npt]={0.}, q2[npt]={0.}, q4[npt]={0.};
+  // q-vector of particles marked as POI and RFP, which is used for 
+  // autocorrelation substraction
+  Double_t qx2[npt]={0.}, qy2[npt]={0.}, qx4[npt]={0.}, qy4[npt]={0.};
+  // Total number of RFP in given event
+  Double_t M = 0.;
+  // numbers of POI (mp) and particles marked both POI and RFP (mq)
+  Double_t mq[npt]={0.},mp[npt]={0.};
+  // average reduced single-event 2- and 4-particle correlations : <2'> & <4'>
+  Double_t redCor22[npt]={0.}, redCor24[npt]={0.};
+  // event weights for correlation calculation
+  Double_t w2=0.,w4=0.;
+  // event weights for reduced correlation calculation
+  Double_t wred2[npt]={0.},wred4[npt]={0.};
+  // Average single-event 2- and 4- particle correlations : <2> & <4>
+  Double_t cor22 = 0., cor24 = 0.;
+
+  Double_t sumQxy[neta][2]={{0}};  // [eta-,eta+][x,y]
+  Double_t multQv[neta]={0};       // [eta+,eta-]
+
+  for(int i=0;i<nh;i++) { // track loop
+    float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
+    float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
+    float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
+    if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5) continue; // track selection
+    float phi = TMath::ATan2( momy[i], momx[i] );
+    if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
+
+    hPhi -> Fill(phi);
+    float phil = phi+rp;
+    while (phil>2.*TMath::Pi()) phil-=2.*TMath::Pi(); /* To make sure that phil is between 0 and 2 Pi */
+    hPhil -> Fill(phil);
+    hEta -> Fill(eta);
+
+    Int_t ipt = 0;
+    hPt -> Fill(pt);
+    for(int j=0; j<npt;j++){
+      if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
+    }
+
+    Double_t v2 = TMath::Cos(2.*phi);
+    hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
+    hPT[ipt]->Fill(0.5+fcent, pt, 1);
+    if(eta<-0.05){ // RFP selection
+      hv2MC[fcent]->Fill(0.5, v2, 1);      
+      Qx2+=TMath::Cos(2.*phi);
+      Qy2+=TMath::Sin(2.*phi);
+      Qx4+=TMath::Cos(4.*phi);
+      Qy4+=TMath::Sin(4.*phi);
+      M++;
+    } // end of RFP selection
+
+    if(eta>0.05){ // POI selection
+
+    px2[ipt]+=TMath::Cos(2.*phi);
+    py2[ipt]+=TMath::Sin(2.*phi);
+    mp[ipt]++;
+    } // end of POI selection
+
+    // Sub eta event method, TPC plane
+    int fEta = -1;
+    if (eta > -1. && eta < -0.1) fEta = 0; // TPC East
+    if (eta > 0.1 && eta < 1.  ) fEta = 1; // TPC West
+
+		if ( fEta>-1 ){
+      sumQxy[fEta][0] += pt * cos( (2.0) * phi );
+      sumQxy[fEta][1] += pt * sin( (2.0) * phi );
+			multQv[fEta]++;
+		} // end of eta selection
+  } // end of track loop
+  // ================================== Direct Cumulants ================================== // 
+  if (M >= 2.)
+  { // <2> definition condition
+    Q2 = TComplex(Qx2, Qy2);
+    w2 = M * (M - 1.);                 // w(<2>)
+    cor22 = CalCor22(Q2, M, w2);       // <2>
+    hv22[fcent]->Fill(0.5, cor22, w2); // <<2>>
+
+  } // end of <2> definition condition
+  for (int ipt = 0; ipt < npt; ipt++)
+  {
+    if (mp[ipt] == 0 || M<1)
+      continue;
+
+    p2[ipt] = TComplex(px2[ipt], py2[ipt]);
+    q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
+    wred2[ipt] = mp[ipt] * M - mq[ipt];                                        // w(<2'>)
+    redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], mq[ipt], wred2[ipt]); // <2'>
+    hv22pt[fcent][ipt]->Fill(0.5, redCor22[ipt], wred2[ipt]);                  // <<2'>>
+
+    // TProfile for covariance calculation in statistic error
+    hcov22prime[fcent][ipt]->Fill(0.5, cor22 * redCor22[ipt], w2 * wred2[ipt]); // <2>*<2'>
+  }
+
+  if (M >= 4.)
+  { // <4> definition condition
+    Q4 = TComplex(Qx4, Qy4);
+    w4 = M * (M - 1.) * (M - 2.) * (M - 3.); // w(<4>)
+    cor24 = CalCor24(Q2, Q4, M, w4);      // <4>
+    hv24[fcent]->Fill(0.5, cor24, w4);    // <<4>>
+
+    // TProfile for covariance calculation in statistic error
+    hcov24[fcent]->Fill(0.5, cor22 * cor24, w2 * w4); // <2>*<4>
+  } // end of <4> definition condition
+  for (int ipt = 0; ipt < npt; ipt++)
+  {
+    if (mp[ipt] == 0 || M<3)
+      continue;
+    q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
+    wred4[ipt] = (mp[ipt] * M - 3. * mq[ipt]) * (M - 1.) * (M - 2.);                                 // w(<4'>)
+
+    redCor24[ipt] = CalRedCor24(Q2, Q4, p2[ipt], q2[ipt], q4[ipt], M, mp[ipt], mq[ipt], wred4[ipt]); // <4'>
+    hv24pt[fcent][ipt]->Fill(0.5, redCor24[ipt], wred4[ipt]);                                        // <<4'>>
+
+    // TProfile for covariance calculation in statistic error
+    hcov24prime[fcent][ipt]->Fill(0.5, cor22 * redCor24[ipt], w2 * wred4[ipt]);
+    hcov42prime[fcent][ipt]->Fill(0.5, cor24 * redCor22[ipt], w4 * wred2[ipt]);
+    hcov44prime[fcent][ipt]->Fill(0.5, cor24 * redCor24[ipt], w4 * wred4[ipt]);
+    hcov2prime4prime[fcent][ipt]->Fill(0.5, redCor22[ipt] * redCor24[ipt], wred2[ipt] * wred4[ipt]);
+  }
+  // ==================================== Eta Sub-event ==================================== //
+
+  Double_t fEP[2]; // [eta-,eta+]
+  Double_t fQv[2];
+  for (int ieta=0; ieta<neta; ieta++){
+    if( multQv[ieta]>5 ){ // multiplicity > 5
+      fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
+      fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
+      fEP[ieta] /= 2.0;
+      fQv[ieta] = TMath::Sqrt(TMath::Power( sumQxy[ieta][0],2.0)+TMath::Power( sumQxy[ieta][1],2.0))/TMath::Sqrt(multQv[ieta]);
+      H_Qw[ieta]->Fill( multQv[ieta] );
+      H_EP[ieta]->Fill( fEP[ieta] );
+      H_Qv[ieta]->Fill( fQv[ieta] );
+    }else{
+      fEP[ieta] = -9999;
+      fQv[ieta] = -9999;
+    }
+  }
+
+  // Resolution
+  Double_t psi1, psi2, fq1, fq2;
+  psi1 = fEP[0];
+  psi2 = fEP[1];
+  fq1 = fQv[0];
+  fq2 = fQv[1];
+  if (psi1<-9000 || psi2<-9000) return;
+  if (fq1<0 || fq2<0) return;
+  Double_t dPsi = 2. *(psi1 - psi2);
+  dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
+  HRes -> Fill(0.5+fcent,cos(dPsi));
+
+  // float res2[ncent]={0.262397,0.456401,0.440158,0.415569,0.301203,0.230708,0.0848875,0.268051}; // 1 file
+  float res2[ncent]={0.27965,0.405564,0.41019,0.364977,0.297911,0.250719,0.230886,0.244932};
+	if(fcent>=0 && fcent<=7){ // centrality selection 0-80%
+    for(int itrk=0;itrk<nh;itrk++) {  //track loop
+
+      float pt  = sqrt( TMath::Power(momx[itrk], 2.0 ) + TMath::Power(momy[itrk], 2.0 ) );
+      float the = TMath::ATan2( pt, momz[itrk] );//atan2(pt/pz)
       float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-      if (pt >= minpt && pt <=maxpt && eta<=2.5 && eta>=-2.5){ // track selection
-         float phi = TMath::ATan2( momy[i], momx[i] );
-         if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
+      if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5) continue; // track selection
+      float phi = TMath::ATan2( momy[itrk], momx[itrk] );
+      if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
-         hPhi -> Fill(phi);
-         float phil = phi+rp;
-         while (phil>2.*TMath::Pi()) phil-=2.*TMath::Pi(); /* To make sure that phil is between 0 and 2 Pi */
-         hPhil -> Fill(phil);
-         hEta -> Fill(eta);
 
-         Int_t ipt = 0;
-         hPt -> Fill(pt);
-         
-         for(int j=0; j<npt;j++){
-            if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
-         }
-
-         Double_t v2 = TMath::Cos(2.*phi);
-
-         if(eta<-0.05){ // RFP selection
-         //if (pdg[i]==211){ // pion selection
-            hv2MC[icent] -> Fill(0.5,v2,1); // v2 from MC toyhv2MC[icent] -> Fill(0.5,v2,1); // v2 from MC toy
-            Qx2+=TMath::Cos(2.*phil);
-            Qy2+=TMath::Sin(2.*phil);
-            Qx4+=TMath::Cos(4.*phil);
-            Qy4+=TMath::Sin(4.*phil);
-            M++;
-         } // end of RFP selection
-
-         if(eta>0.05){ // POI selection
-         //if (pdg[i]==321){ // kaon selection   
-         // Calculate differential v2 from MC toy
-         hpt[icent][ipt]->Fill(pt);             // pt histogram
-         hPT[icent][ipt]-> Fill(0.5,pt,1);      // pt profile
-         hv2pt[icent][ipt]->Fill(v2);
-         hv2MCpt[icent][ipt]->Fill(0.5,v2,1);   // I found it better to use TProfile, than TH1
-
-         px2[ipt]+=TMath::Cos(2.*phil);
-         py2[ipt]+=TMath::Sin(2.*phil);
-         mp[ipt]++;
-         } // end of POI selection
-	   } // end of track selection
-   } // end of track loop
-   if (M >= 2.){ // <2> definition condition
-      Q2 = TComplex(Qx2, Qy2);
-      w2 = M*(M-1);                             // w(<2>)
-      cor22 = CalCor22(Q2, M, w2);     // <2>
-      hv22[icent] -> Fill(0.5,cor22,w2); // <<2>>
-
-      // Non-uniform acceptance correction
-      cos2phi1[icent]   += Qx2; // formula (C2)
-      sin2phi1[icent]   += Qy2; // formula (C3)     
-      sumM[icent] += M;
-
-      for(int ipt=0; ipt<npt;ipt++){
-         if (mp[ipt] == 0) continue;
-
-         p2[ipt] = TComplex(px2[ipt], py2[ipt]);
-         q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
-         wred2[ipt] = mp[ipt]*M-mq[ipt];                                         // w(<2'>)
-         redCor22[ipt] = CalRedCor22(Q2,p2[ipt],M,mp[ipt],mq[ipt],wred2[ipt]);   // <2'>
-         hv22pt[icent][ipt] -> Fill(0.5,redCor22[ipt],wred2[ipt]);                      // <<2'>>
-         
-         // TProfile for covariance calculation in statistic error
-         hcov22prime[icent][ipt] -> Fill(0.5,cor22*redCor22[ipt],w2*wred2[ipt]);        // <2>*<2'>
-
-         // Non-uniform acceptance correction
-         cos2psi1[icent][ipt] += px2[ipt];
-         sin2psi1[icent][ipt] += py2[ipt];
-         summp[icent][ipt] += mp[ipt];
+      Int_t ipt = -1;
+      for (int j = 0; j < npt; j++)
+      {
+        if (pt >= bin_pT[j] && pt < bin_pT[j + 1])
+          ipt = j;
       }
-   } // end of <2> definition condition
 
-   if (M >= 4.){ // <4> definition condition
-      Q4 = TComplex(Qx4, Qy4);                                   
-      w4 = M*(M-1)*(M-2)*(M-3);                             // w(<4>)
-      cor24 = CalCor24(Q2, Q4, M, w4); // <4>
-      hv24[icent] -> Fill(0.5,cor24,w4); // <<4>>
-
-      // TProfile for covariance calculation in statistic error
-      hcov24[icent] -> Fill(0.5,cor22*cor24,w2*w4); // <2>*<4>
-
-      // Non-uniform acceptance correction
-      cos2phi12[icent]  += (Q2*Q2-Q4).Re();
-      sin2phi12[icent]  += (Q2*Q2-Q4).Im();
-      cos2phi123[icent] += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Re())
-                  - 2.*(M-1)*(Qstar(Q2).Re());
-      sin2phi123[icent] += ((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Im())
-                  - 2.*(M-1)*(Qstar(Q2).Im());
-      sumMMm1[icent] += M*(M-1);
-      sumMMm1Mm2[icent] += M*(M-1)*(M-2);
-
-      for(int ipt=0; ipt<npt;ipt++){
-         if (mp[ipt] == 0) continue;
-         q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
-         wred4[ipt] = (mp[ipt]*M-3*mq[ipt])*(M-1)*(M-2);    // w(<4'>)
-         redCor24[ipt] = CalRedCor24(Q2,Q4,p2[ipt],q2[ipt],q4[ipt],M,mp[ipt],mq[ipt],wred4[ipt]);  // <4'>
-         hv24pt[icent][ipt] -> Fill(0.5,redCor24[ipt],wred4[ipt]);                                 // <<4'>>
-         
-         // TProfile for covariance calculation in statistic error
-         hcov24prime[icent][ipt] -> Fill(0.5,cor22*redCor24[ipt],w2*wred4[ipt]);
-         hcov42prime[icent][ipt] -> Fill(0.5,cor24*redCor22[ipt],w4*wred2[ipt]);
-         hcov44prime[icent][ipt] -> Fill(0.5,cor24*redCor24[ipt],w4*wred4[ipt]);
-         hcov2prime4prime[icent][ipt] -> Fill(0.5,redCor22[ipt]*redCor24[ipt],wred2[ipt]*wred4[ipt]);
-
-         // Non-uniform acceptance correction
-         cos2psi1phi2[icent][ipt] += (p2[ipt]*Q2-q4[ipt]).Re();
-         sin2psi1phi2[icent][ipt] += (p2[ipt]*Q2-q4[ipt]).Im();
-         cos2psi1pphi23[icent][ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Re()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Re());
-         sin2psi1pphi23[icent][ipt] += ((p2[ipt]*(Q2.Rho2()-M)).Im()) - ((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Im());
-         cos2psi1mphi23[icent][ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Re())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Re());
-         sin2psi1mphi23[icent][ipt] += ((p2[ipt]*Qstar(Q2)*Qstar(Q2)-p2[ipt]*Qstar(Q4)).Im())-((2.*mq[ipt]*Qstar(Q2)-2.*Qstar(q2[ipt])).Im());
-
-         summpMmmq[icent][ipt] += mp[ipt]*M-mq[ipt];
-         summpMm2mqMm1[icent][ipt] += (mp[ipt]*M-2.*mq[ipt])*(M-1);
+      float v2=-999.0;
+      
+      if(eta>0){ // eta+
+        v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
       }
-   } // end of <4> definition condition
+
+      if(eta<0){ // eta-
+        v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
+      }
+      // if(fabs(eta[itrk])<1.0){ // eliminate spectators
+      hv2EP[ipt]->Fill(0.5+fcent,v2);
+      if (eta < -0.05) { // Reference flow
+        hv22EP->Fill(0.5+fcent,v2);
+      }
+      
+      // } // end of |eta| < 1.0
+    }// end of the track loop
+ 	}// end of centrality selection 
+
+
 }
 
-// void loop_a_list_of_tree(){
-//    hVana *ana = new hVana();
-//    ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC_test.root");
-//    //ana->Loop_a_file("/mnt/pool/2/lbavinh/EventGenerator/OUT/FlowPureEtaBimp/v2hadron_1.root");
-//    ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/FlowPureEtaBimp/runlist.list");
-//    char filename[200];
-//    int nfiles=1;
-//    while(ifile.getline(filename,200)) {
-//       cout << nfiles <<" file is processing "<<filename <<endl;
-//       ana->Loop_a_file(filename);
-//       nfiles++;
-//    }
-//    cout<< "Done. " << nfiles-1 << " files are processed." << endl;
-//    ana -> Ana_end();
-//    cout << "Histfile written. Congratz!" << endl;
-// }
 void loop_test(){
-   FlowANA *ana = new FlowANA();
-   ana->Booking("./ROOTFile/test.root");
-   ana->Loop_a_file("urqmd_1033721_1.mcpico.root");
-   ana -> Ana_end();
-   cout << "Histfile written. Congratz!" << endl;   
+  FlowANA *ana = new FlowANA();
+  ana->Booking("test.root");
+  ana->Loop_a_file("urqmd_1033721_1.mcpico.root");
+  ana -> Ana_end();
+  cout << "Histfile written. Congratz!" << endl;   
 }

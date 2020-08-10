@@ -2,7 +2,7 @@
 
 #
 # Specify working directory
-#$ -wd /weekly/$USER/lbavinh/EventPlane
+#$ -wd /weekly/$USER/lbavinh/UrQMD/
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
@@ -16,8 +16,8 @@
 # Specify job array range (how many jobs will be created
 #$ -t 1-100
 # Specify directory where output and error logs from SGE will be stored
-#$ -o /weekly/$USER/lbavinh/EventPlane/OUT/log/
-#$ -e /weekly/$USER/lbavinh/EventPlane/OUT/log/
+#$ -o /weekly/$USER/lbavinh/UrQMD/OUT/log/
+#$ -e /weekly/$USER/lbavinh/UrQMD/OUT/log/
 #
 
 # ${JOB_ID} - Id of the job array (one for all jobs)
@@ -26,16 +26,16 @@
 #     of N jobs with ${JOB_ID}_1, ${JOB_ID}_2, ..., ${JOB_ID}_N
 
 #Main directory
-export MAIN_DIR=/weekly/$USER/lbavinh/EventPlane
-export FILELIST=${MAIN_DIR}/../Generator/OUT/nonflow/runlist.list
+export MAIN_DIR=/weekly/$USER/lbavinh/UrQMD
+export FILELIST=${MAIN_DIR}/chain/runlist.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
 export TMP_DIR=${MAIN_DIR}/TMP
-export OUT=${OUT_DIR}/nonflow
+export OUT=${OUT_DIR}
 export OUT_LOG=${OUT}/log
 export TMP=${TMP_DIR}/TMP_${JOB_ID}_${SGE_TASK_ID}
-export OUT_FILE=${OUT}/sum_${JOB_ID}_${SGE_TASK_ID}.root
+export OUT_FILE=${OUT}/res2_${JOB_ID}_${SGE_TASK_ID}.root
 export LOG=${OUT_LOG}/JOB_${JOB_ID}_${SGE_TASK_ID}.log
 
 mkdir -p $OUT_LOG

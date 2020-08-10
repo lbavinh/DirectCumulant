@@ -8,7 +8,7 @@ void v2plot(){
   // Temporary variables
   char hname[800]; // histogram hname
   double stats[6]; // stats of TProfile
-  char analysis[20]={"pure"};
+  char analysis[20]={"nonflow"};
 
   TFile *inFile, *outFile;
   sprintf(hname,"./ROOTFile/%s_10mil.root",analysis);
@@ -395,7 +395,7 @@ void v2plot(){
   }
   //==========================================================================================================================
   // Drawing multipads of reference & differential flow
-  /*
+  
   TLegend *leg = new TLegend(0.11,.95,0.4,.78);
   leg -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
   leg -> AddEntry(grDifFl[1][0],"v_{2}{2,QC}","p");
@@ -467,6 +467,7 @@ void v2plot(){
   sprintf(hname,"./Graphics/%s/v2.png",analysis);
   c2 -> SaveAs(hname);
   //=============================================
+  
   // Drawing reference flow separately for analysis
   TCanvas *c[ncent];
   TLatex *text[ncent];
@@ -502,8 +503,9 @@ void v2plot(){
     sprintf(hname,"./Graphics/%s/Cent%i-%i%%.png",analysis,i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-  */
+  
   //==========================================================================================================================
+  
   outFile -> cd();
   for (int i=0; i<4; i++){
     sprintf(hname,"grRF_%i",i);
@@ -558,5 +560,6 @@ void v2plot(){
     sprintf(hname,"./Graphics/%s/DFCent%i-%i%%.png",analysis,icent*10,(icent+1)*10);
     cV2PT[icent] -> SaveAs(hname);
   }
+  
 
 }

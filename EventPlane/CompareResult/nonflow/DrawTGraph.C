@@ -1,4 +1,3 @@
-
 // Draws 2 TGraphErrors (upper panel) with their gr1/gr2 ratio (lower pannel)
 TCanvas *DrawTGraph(TGraphErrors *const &gr1, TGraphErrors *const &gr2, TString str="", 
                     Double_t yRatio_low=0.89, Double_t yRatio_high=1.11)
@@ -61,19 +60,22 @@ TCanvas *DrawTGraph(TGraphErrors *const &gr1, TGraphErrors *const &gr2, TString 
 
   // Draw TGraphErrors in the upper pad
   padUp->cd();
-
-  gr1->GetXaxis()->SetLimits(0.95*vx_gr1[0],1.05*vx_gr1[n1bins-1]);
+  
+  // gr1->GetXaxis()->SetLimits(0.95*vx_gr1[0],1.05*vx_gr1[n1bins-1]);
 
   gr1->GetXaxis()->SetLabelSize(0.06);
   gr1->GetYaxis()->SetLabelSize(0.06);
   gr1->GetXaxis()->SetTitleSize(0.07);
   gr1->GetYaxis()->SetTitleSize(0.07);
   gr1->GetYaxis()->SetTitleOffset(1.08);
-
+  
   gr1->Draw("AP");
+  gPad->Modified(); gPad->Update();
+  gr1->GetXaxis()-> SetLimits(0.,3.5);
+  gPad->Modified(); gPad->Update();
   gr2->Draw("P");
 
-  TLegend *leg_pt = new TLegend(0.468,0.04,0.89,0.309);
+  TLegend *leg_pt = new TLegend(0.56,0.04,0.89,0.25);
   leg_pt->SetBorderSize(0);
   leg_pt->SetHeader(str.Data(),"C");
   // leg_pt->SetHeader(Form("Au+Au,#sqrt{s_{NN}}=200 GeV"),"C");
@@ -136,8 +138,8 @@ TCanvas *DrawTGraph(TGraphErrors *const &gr1, TGraphErrors *const &gr2, TString 
   grRatio->SetLineColor(kRed);
   grRatio->SetMarkerColor(kRed);
 
-  grRatio->GetXaxis()->SetLimits(0.95*vx_gr1[0],1.05*vx_gr1[n1bins-1]);
-
+  // grRatio->GetXaxis()->SetLimits(0.95*vx_gr1[0],1.05*vx_gr1[n1bins-1]);
+  grRatio->GetXaxis()-> SetLimits(0.,3.5);
   grRatio->Draw("AP");
 
   TLine lineOne;
@@ -150,9 +152,13 @@ TCanvas *DrawTGraph(TGraphErrors *const &gr1, TGraphErrors *const &gr2, TString 
 	line110.SetLineStyle(2);
 
   // lineOne.SetLineColor(kRed);
-  lineOne.DrawLine(0.95*vx_gr1[0],1.,  1.05*vx_gr1[n1bins-1],1.);
-  line90.DrawLine( 0.95*vx_gr1[0],.95, 1.05*vx_gr1[n1bins-1],.95);
-  line110.DrawLine(0.95*vx_gr1[0],1.05,1.05*vx_gr1[n1bins-1],1.05);
+  // lineOne.DrawLine(0.95*vx_gr1[0],1.,  1.05*vx_gr1[n1bins-1],1.);
+  // line90.DrawLine( 0.95*vx_gr1[0],.95, 1.05*vx_gr1[n1bins-1],.95);
+  // line110.DrawLine(0.95*vx_gr1[0],1.05,1.05*vx_gr1[n1bins-1],1.05);
+
+  lineOne.DrawLine(0,1.00,3.5,1.00);
+  line90.DrawLine( 0,0.95,3.5,0.95);
+  line110.DrawLine(0,1.05,3.5,1.05);
 
   return canv;
 }
@@ -486,61 +492,3 @@ void Test()
   canv1->SetName("canv1");
   SaveTGraph("outfile.root",grPHENIX[0],grPHENIX[1]);
 }
-
-/*
-TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str, 
-                    Double_t yRatio_low=0.89, Double_t yRatio_high=1.11,
-                    Double_t x_low=0.0, Double_t x_high=1.0,
-                    Double_t y_low=0.0, Double_t y_high=1.0,
-                    Double_t leg_x_low=0.22, Double_t leg_y_low=0.55,
-                    Double_t leg_x_high=0.55, Double_t leg_y_high=0.89)
-*/
-
-void CompareNonflowRatio(){
-  TFile *inputFile = new TFile("./ROOTFile/TGraphError_nonflow.root","read");
-  TGraphErrors *gr[4][2];
-  char name[400];
-  for (int i=0; i<4; i++){
-    sprintf(name,"gr_cent3_%i",i);
-    gr[i][0] = (TGraphErrors*)inputFile->Get(name);
-  }
-  // std::vector<TGraphErrors*> vgr[8];
-  // for (int icent=0; icent<8; icent++){
-  //   for (int i=0; i<4; i++){
-  //     vgr[icent].push_back(gr[i][icent]);
-  //   }  
-  // }
-  TFile *inputFileDim = new TFile("./ROOTFile/NoneFlow30_40_Dim.root","read");
-  gr[0][1] = (TGraphErrors*)inputFileDim->Get("grMC");
-  gr[1][1] = (TGraphErrors*)inputFileDim->Get("grV2");
-  gr[2][1] = (TGraphErrors*)inputFileDim->Get("grV4");
-  gr[3][1] = (TGraphErrors*)inputFileDim->Get("grEP");
-  TCanvas *can[4];
-  TLatex l[4];
-  // char *ch[4]={"v_2{MC}", "v_2{2QC}", "v_2{4QC}", "v_2{EP}"};
-  for (int icent=0; icent<4; icent++){
-    //                                                    yRatio_low    x_low     y_low    leg_x_low  leg_x_high
-    can[icent] = (TCanvas*) DrawTGraph(gr[icent][0],gr[icent][1]);
-    sprintf(name,"canv_%i",icent);
-    can[icent] -> SetName(name);
-    //                                                          yRatio_high  x_high   y_high     leg_y_low   leg_y_high
-    
-    // sprintf(name,"%c",ch[icent]);
-    // can[icent] -> SetName(name);
-    // l[icent].SetNDC();
-    // l[icent].SetTextSize(0.15);
-    // l[icent].SetTextAlign(21);  
-    // l[icent].DrawLatex(0.5,0.1,name);
-    // sprintf(name,"./Graphics/ratio/nonflow/Cent%i-%i%%.png",icent*10,(icent+1)*10);
-    // can[icent] -> SaveAs(name);
-  }
-}
-
-/*
-
-t->SetTextAlign(13); //align at top left
-t->SetTextAlign(12); // left, vertically centered
-t->SetTextAlign(22); // centered horizontally and vertically
-t->SetTextAlign(11); //default bottom alignment
-
-*/

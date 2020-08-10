@@ -75,7 +75,7 @@ TCanvas *DrawTGraph(TGraphErrors *const &gr1, TGraphErrors *const &gr2, TString 
   gPad->Modified(); gPad->Update();
   gr2->Draw("P");
 
-  TLegend *leg_pt = new TLegend(0.468,0.04,0.89,0.309);
+  TLegend *leg_pt = new TLegend(0.56,0.04,0.89,0.25);
   leg_pt->SetBorderSize(0);
   leg_pt->SetHeader(str.Data(),"C");
   // leg_pt->SetHeader(Form("Au+Au,#sqrt{s_{NN}}=200 GeV"),"C");

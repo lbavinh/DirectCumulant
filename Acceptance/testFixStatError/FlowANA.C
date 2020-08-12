@@ -80,11 +80,28 @@ TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 
 // non-uniform acceptance correction
 // Reference flow acceptance correction
-TProfile *hcos2phi1, *hsin2phi1, *hcos2phi12, *hsin2phi12, *hcos2phi123, *hsin2phi123;
+TProfile *hcos2phi1[ncent], *hsin2phi1[ncent], *hcos2phi12[ncent], *hsin2phi12[ncent], *hcos2phi123[ncent], *hsin2phi123[ncent];
 
 // Differential flow acceptance correction
 TProfile *hcos2psi1[npt], *hsin2psi1[npt], *hcos2psi1phi2[npt], *hsin2psi1phi2[npt],
          *hcos2psi1pphi23[npt], *hsin2psi1pphi23[npt], *hcos2psi1mphi23[npt], *hsin2psi1mphi23[npt];
+
+// test fix stat. error
+
+// for v22
+// TProfile *hcov2cos2phi1[ncent], *hcov2sin2phi1[ncent], *hcovsin2phi1cos2phi1[ncent];
+// for v24
+TProfile *hcov4cos2phi1[ncent], *hcov4sin2phi1[ncent], *hcov4cos2phi123[ncent], *hcov4sin2phi123[ncent],
+         *hcov4cos2phi12[ncent], *hcov4sin2phi12[ncent],
+         *hcov2cos2phi1[ncent], *hcov2sin2phi1[ncent], *hcov2cos2phi123[ncent], *hcov2sin2phi123[ncent],
+         *hcov2cos2phi12[ncent], *hcov2sin2phi12[ncent],
+         *hcovcos2phi1sin2phi1[ncent], *hcovcos2phi1cos2phi123[ncent], *hcovcos2phi1sin2phi123[ncent],
+         *hcovcos2phi1cos2phi12[ncent], *hcovcos2phi1sin2phi12[ncent],
+         *hcovsin2phi1cos2phi123[ncent], *hcovsin2phi1sin2phi123[ncent],
+         *hcovsin2phi1cos2phi12[ncent], *hcovsin2phi1sin2phi12[ncent],
+         *hcovcos2phi123sin2phi123[ncent], *hcovcos2phi123cos2phi12[ncent], *hcovcos2phi123sin2phi12[ncent],
+         *hcovsin2phi123cos2phi12[ncent], *hcovsin2phi123sin2phi12[ncent], *hcovcos2phi12sin2phi12[ncent];
+
 
 void FlowANA::Booking(TString outFile)
 {
@@ -102,19 +119,7 @@ void FlowANA::Booking(TString outFile)
   hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -2.2, 2.2);
 
-  // Acceptance correction
-  hcos2phi1 = new TProfile("hcos2phi1","hcos2phi1",ncent,0.,ncent);
-  hcos2phi1 ->Sumw2();
-  hsin2phi1 = new TProfile("hsin2phi1","hsin2phi1",ncent,0.,ncent);
-  hsin2phi1 ->Sumw2();
-  hcos2phi12 = new TProfile("hcos2phi12","hcos2phi12",ncent,0.,ncent);
-  hcos2phi12 ->Sumw2();
-  hsin2phi12 = new TProfile("hsin2phi12","hsin2phi12",ncent,0.,ncent);
-  hsin2phi12 ->Sumw2();
-  hcos2phi123 = new TProfile("hcos2phi123","hcos2phi123",ncent,0.,ncent);
-  hcos2phi123 ->Sumw2();
-  hsin2phi123 = new TProfile("hsin2phi123","hsin2phi123",ncent,0.,ncent);
-  hsin2phi123 ->Sumw2();
+
   hv22EP = new TProfile("hv22EP","Ref. v_{2}{EP}", ncent,0.,ncent);
   hv22EP->Sumw2();
 
@@ -222,6 +227,110 @@ void FlowANA::Booking(TString outFile)
     sprintf(name, "hcov24_%i", icent);
     hcov24[icent] = new TProfile(name, name, 1, 0., 1.);
     hcov24[icent]->Sumw2();
+
+    // test fix stat. error
+    sprintf(name, "hcov4cos2phi1_%i", icent);
+    hcov4cos2phi1[icent] =new TProfile(name, name, 1, 0., 1.);
+    hcov4cos2phi1[icent]->Sumw2();
+    sprintf(name, "hcov4sin2phi1_%i", icent);
+    hcov4sin2phi1[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcov4sin2phi1[icent]->Sumw2();
+    sprintf(name, "hcov4cos2phi123_%i", icent);
+    hcov4cos2phi123[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcov4cos2phi123[icent]->Sumw2();
+    sprintf(name, "hcov4sin2phi123_%i", icent);
+    hcov4sin2phi123[icent]=new TProfile(name, name, 1, 0., 1.);
+    hcov4sin2phi123[icent]->Sumw2();
+    sprintf(name, "hcov4cos2phi12_%i", icent);
+    hcov4cos2phi12[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcov4cos2phi12[icent]->Sumw2();
+    sprintf(name, "hcov4sin2phi12_%i", icent);
+    hcov4sin2phi12[icent]=new TProfile(name, name, 1, 0., 1.);
+    hcov4sin2phi12[icent]->Sumw2();
+    sprintf(name, "hcov2cos2phi1_%i", icent);
+    hcov2cos2phi1[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcov2cos2phi1[icent]->Sumw2();
+    sprintf(name, "hcov2sin2phi1_%i", icent);
+    hcov2sin2phi1[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcov2sin2phi1[icent]->Sumw2();
+    sprintf(name, "hcov2cos2phi123_%i", icent);
+    hcov2cos2phi123[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcov2cos2phi123[icent]->Sumw2();
+    sprintf(name, "hcov2sin2phi123_%i", icent);
+    hcov2sin2phi123[icent]=new TProfile(name, name, 1, 0., 1.);
+    hcov2sin2phi123[icent]->Sumw2();
+    sprintf(name, "hcov2cos2phi12_%i", icent);
+    hcov2cos2phi12[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcov2cos2phi12[icent]->Sumw2();
+    sprintf(name, "hcov2sin2phi12_%i", icent);
+    hcov2sin2phi12[icent]=new TProfile(name, name, 1, 0., 1.);
+    hcov2sin2phi12[icent]->Sumw2();
+    sprintf(name, "hcovcos2phi1sin2phi1_%i", icent);
+    hcovcos2phi1sin2phi1[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcovcos2phi1sin2phi1[icent]->Sumw2();
+    sprintf(name, "hcovcos2phi1cos2phi123_%i", icent);
+    hcovcos2phi1cos2phi123[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcovcos2phi1cos2phi123[icent]->Sumw2();
+    sprintf(name, "hcovcos2phi1sin2phi123_%i", icent);
+    hcovcos2phi1sin2phi123[icent]=new TProfile(name, name, 1, 0., 1.);
+    hcovcos2phi1sin2phi123[icent]->Sumw2();  
+    sprintf(name, "hcovcos2phi1cos2phi12_%i", icent);
+    hcovcos2phi1cos2phi12[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcovcos2phi1cos2phi12[icent]->Sumw2();
+    sprintf(name, "hcovcos2phi1sin2phi12_%i", icent);
+    hcovcos2phi1sin2phi12[icent]=new TProfile(name, name, 1, 0., 1.);
+    hcovcos2phi1sin2phi12[icent]->Sumw2();
+    sprintf(name, "hcovsin2phi1cos2phi123_%i", icent);
+    hcovsin2phi1cos2phi123[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcovsin2phi1cos2phi123[icent]->Sumw2();
+    sprintf(name, "hcovsin2phi1sin2phi123_%i", icent);
+    hcovsin2phi1sin2phi123[icent]=new TProfile(name, name, 1, 0., 1.);
+    hcovsin2phi1sin2phi123[icent]->Sumw2();
+    sprintf(name, "hcovsin2phi1cos2phi12_%i", icent);
+    hcovsin2phi1cos2phi12[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcovsin2phi1cos2phi12[icent]->Sumw2();
+    sprintf(name, "hcovsin2phi1sin2phi12_%i", icent);
+    hcovsin2phi1sin2phi12[icent]=new TProfile(name, name, 1, 0., 1.);
+    hcovsin2phi1sin2phi12[icent]->Sumw2();
+    sprintf(name, "hcovcos2phi123sin2phi123_%i", icent);
+    hcovcos2phi123sin2phi123[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcovcos2phi123sin2phi123[icent]->Sumw2();
+    sprintf(name, "hcovcos2phi123cos2phi12_%i", icent);
+    hcovcos2phi123cos2phi12[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcovcos2phi123cos2phi12[icent]->Sumw2();
+    sprintf(name, "hcovcos2phi123sin2phi12_%i", icent);
+    hcovcos2phi123sin2phi12[icent]=new TProfile(name, name, 1, 0., 1.);
+    hcovcos2phi123sin2phi12[icent]->Sumw2();
+    sprintf(name, "hcovsin2phi123cos2phi12_%i", icent);
+    hcovsin2phi123cos2phi12[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcovsin2phi123cos2phi12[icent]->Sumw2();
+    sprintf(name, "hcovsin2phi123sin2phi12_%i", icent);
+    hcovsin2phi123sin2phi12[icent]= new TProfile(name, name, 1, 0., 1.);
+    hcovsin2phi123sin2phi12[icent]->Sumw2();
+    sprintf(name, "hcovcos2phi12sin2phi12_%i", icent);
+    hcovcos2phi12sin2phi12[icent]=new TProfile(name, name, 1, 0., 1.);
+    hcovcos2phi12sin2phi12[icent]->Sumw2();
+
+    // Acceptance correction
+    sprintf(name, "hcos2phi1_%i", icent);
+    hcos2phi1[icent] = new TProfile(name, name, 1, 0., 1.);
+    hcos2phi1[icent] ->Sumw2();
+    sprintf(name, "hsin2phi1_%i", icent);
+    hsin2phi1[icent] = new TProfile(name, name, 1, 0., 1.);
+    hsin2phi1[icent] ->Sumw2();
+    sprintf(name, "hcos2phi12_%i", icent);
+    hcos2phi12[icent] = new TProfile(name, name, 1, 0., 1.);
+    hcos2phi12[icent] ->Sumw2();
+    sprintf(name, "hsin2phi12_%i", icent);
+    hsin2phi12[icent] = new TProfile(name, name, 1, 0., 1.);
+    hsin2phi12[icent] ->Sumw2();
+    sprintf(name, "hcos2phi123_%i", icent);
+    hcos2phi123[icent] = new TProfile(name, name, 1, 0., 1.);
+    hcos2phi123[icent] ->Sumw2();
+    sprintf(name, "hsin2phi123_%i", icent);
+    hsin2phi123[icent] = new TProfile(name, name, 1, 0., 1.);
+    hsin2phi123[icent] ->Sumw2();
+
 
     for (int ipt=0;ipt<npt;ipt++){
       sprintf(name, "hv2MCpt_%i_%i", icent, ipt);
@@ -492,7 +601,7 @@ void FlowANA::Resolution()
 
           // dPsi += 2./(iharm+2) * (-sinNPhiMean*cos((iharm+2)*psi2Rec) + cosNPhiMean*sin((iharm+2)*psi2Rec));
         }
-        psi2Flat = psi2Rec + dPsi/2.;
+        psi2Flat = psi2Rec + dPsi;
         fEP[ieta] = psi2Flat;
         hPsiFlattened[icent][ieta] -> Fill(psi2Flat);
       }else{
@@ -715,8 +824,14 @@ void FlowANA::CalFlow(){
       hv22[icent]->Fill(0.5, cor22, w2); // <<2>>
 
       // Non-uniform acceptance correction
-      hcos2phi1 -> Fill(0.5+icent,Qx2/M,M);
-      hsin2phi1 -> Fill(0.5+icent,Qy2/M,M);
+      hcos2phi1[icent] -> Fill(0.5,Qx2/M,M);
+      hsin2phi1[icent] -> Fill(0.5,Qy2/M,M);
+
+      // test fix stat. error
+      hcov2cos2phi1[icent] -> Fill(0.5,cor22*Qx2/M,w2*M);
+      hcov2sin2phi1[icent] -> Fill(0.5,cor22*Qy2/M,w2*M);
+      hcovcos2phi1sin2phi1[icent] -> Fill(0.5,(Qx2/M)*(Qy2/M),M*M);
+
     } // end of <2> definition condition
     for (int ipt = 0; ipt < npt; ipt++)
     {
@@ -735,6 +850,8 @@ void FlowANA::CalFlow(){
       // Non-uniform acceptance correction
       hcos2psi1[ipt] -> Fill(0.5+icent,px2[ipt]/mp[ipt],mp[ipt]);
       hsin2psi1[ipt] -> Fill(0.5+icent,py2[ipt]/mp[ipt],mp[ipt]);
+
+      
     }
 
     if (M >= 4.)
@@ -754,10 +871,47 @@ void FlowANA::CalFlow(){
       Double_t sin2phi123=((Q2 * Qstar(Q2) * Qstar(Q2) - Q2 * Qstar(Q4)).Im()) - 2. * (M - 1.) * (Qstar(Q2).Im());
       Double_t sumMMm1=M*(M-1);
       Double_t sumMMm1Mm2=M*(M-1)*(M-2);
-      hcos2phi12  -> Fill( 0.5+icent, cos2phi12/sumMMm1, sumMMm1);
-      hsin2phi12  -> Fill( 0.5+icent, sin2phi12/sumMMm1, sumMMm1);
-      hcos2phi123 -> Fill( 0.5+icent, cos2phi123/sumMMm1Mm2, sumMMm1Mm2);
-      hsin2phi123 -> Fill( 0.5+icent, sin2phi123/sumMMm1Mm2, sumMMm1Mm2);
+      hcos2phi12[icent]  -> Fill( 0.5, cos2phi12/sumMMm1, sumMMm1);
+      hsin2phi12[icent]  -> Fill( 0.5, sin2phi12/sumMMm1, sumMMm1);
+      hcos2phi123[icent] -> Fill( 0.5, cos2phi123/sumMMm1Mm2, sumMMm1Mm2);
+      hsin2phi123[icent] -> Fill( 0.5, sin2phi123/sumMMm1Mm2, sumMMm1Mm2);
+
+      // test fix stat. error
+      hcov4cos2phi1[icent] -> Fill(0.5,cor24*Qx2/M,w4*M);
+      hcov4sin2phi1[icent] -> Fill(0.5,cor24*Qy2/M,w4*M);
+      hcov4cos2phi123[icent] -> Fill(0.5,cor24*cos2phi123/sumMMm1Mm2,w4*sumMMm1Mm2);
+      hcov4sin2phi123[icent] -> Fill(0.5,cor24*sin2phi123/sumMMm1Mm2,w4*sumMMm1Mm2);
+      hcov4cos2phi12[icent] -> Fill(0.5,cor24*cos2phi12/sumMMm1,w4*sumMMm1);
+      hcov4sin2phi12[icent] -> Fill(0.5,cor24*sin2phi12/sumMMm1,w4*sumMMm1);
+
+      // hcov2cos2phi1[icent] -> Fill(0.5,cor22*Qx2/M,w2*M);
+      // hcov2sin2phi1[icent] -> Fill(0.5,cor22*Qy2/M,w2*M);
+      hcov2cos2phi123[icent] -> Fill(0.5,cor22*cos2phi123/sumMMm1Mm2,w2*sumMMm1Mm2);
+      hcov2sin2phi123[icent] -> Fill(0.5,cor22*sin2phi123/sumMMm1Mm2,w2*sumMMm1Mm2);
+      hcov2cos2phi12[icent] -> Fill(0.5,cor22*cos2phi12/sumMMm1,w2*sumMMm1);
+      hcov2sin2phi12[icent] -> Fill(0.5,cor22*sin2phi12/sumMMm1,w2*sumMMm1);
+
+      // hcovcos2phi1sin2phi1[icent] -> Fill(0.5,(Qx2/M)*(Qy2/M),M*M);
+      hcovcos2phi1cos2phi123[icent] -> Fill(0.5,(Qx2/M)*(cos2phi123/sumMMm1Mm2),M*sumMMm1Mm2);
+      hcovcos2phi1sin2phi123[icent] -> Fill(0.5,(Qx2/M)*(sin2phi123/sumMMm1Mm2),M*sumMMm1Mm2);
+      hcovcos2phi1cos2phi12[icent] -> Fill(0.5,(Qx2/M)*(cos2phi12/sumMMm1),M*sumMMm1);
+      hcovcos2phi1sin2phi12[icent] -> Fill(0.5,(Qx2/M)*(sin2phi12/sumMMm1),M*sumMMm1);
+
+      hcovsin2phi1cos2phi123[icent] -> Fill(0.5,(Qy2/M)*(cos2phi123/sumMMm1Mm2),M*sumMMm1Mm2);
+      hcovsin2phi1sin2phi123[icent] -> Fill(0.5,(Qy2/M)*(sin2phi123/sumMMm1Mm2),M*sumMMm1Mm2);
+      hcovsin2phi1cos2phi12[icent] -> Fill(0.5,(Qy2/M)*(cos2phi12/sumMMm1),M*sumMMm1);
+      hcovsin2phi1sin2phi12[icent] -> Fill(0.5,(Qy2/M)*(sin2phi12/sumMMm1),M*sumMMm1);
+
+      hcovcos2phi123sin2phi123[icent] -> Fill(0.5,(cos2phi123/sumMMm1Mm2)*(sin2phi123/sumMMm1Mm2),sumMMm1Mm2*sumMMm1Mm2);
+      hcovcos2phi123cos2phi12[icent] -> Fill(0.5,(cos2phi123/sumMMm1Mm2)*(cos2phi12/sumMMm1),sumMMm1Mm2*sumMMm1);
+      hcovcos2phi123sin2phi12[icent] -> Fill(0.5,(cos2phi123/sumMMm1Mm2)*(sin2phi12/sumMMm1),sumMMm1Mm2*sumMMm1);
+
+      hcovsin2phi123cos2phi12[icent] -> Fill(0.5,(sin2phi123/sumMMm1Mm2)*(cos2phi12/sumMMm1),sumMMm1Mm2*sumMMm1);
+      hcovsin2phi123sin2phi12[icent] -> Fill(0.5,(sin2phi123/sumMMm1Mm2)*(sin2phi12/sumMMm1),sumMMm1Mm2*sumMMm1);
+
+      hcovcos2phi12sin2phi12[icent] -> Fill(0.5,(sin2phi12/sumMMm1)*(cos2phi12/sumMMm1),sumMMm1*sumMMm1);
+
+
     } // end of <4> definition condition
     for (int ipt = 0; ipt < npt; ipt++)
     {

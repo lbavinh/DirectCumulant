@@ -8,10 +8,8 @@
 
 void res2() {
   static const int ncent = 8; // bins of centrality classes
-  
-  // TFile *file = new TFile("./ROOTFile/res2_nonflow.root","read");
-  // TFile *file = new TFile("./ROOTFile/res2.root","read");
-  TFile *file = new TFile("./OUT/res2.root","read");
+  TFile *file = new TFile("sum.root","read");
+  // TFile *file = new TFile("./OUT/res2.root","read");
   float res2EW[ncent]; // 8 - number of cent bins
 
 

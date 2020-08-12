@@ -20,55 +20,60 @@
 
 class FlowANA {
 public :
-   TTree          *fChain;   //!pointer to the analyzed TTree or TChain
-   Int_t           fCurrent; //!current Tree number in a TChain
+  TTree          *fChain;   //!pointer to the analyzed TTree or TChain
+  Int_t           fCurrent; //!current Tree number in a TChain
 
-   // Declaration of leaf types
-   Float_t         bimp;   // impact parameter 
-   Float_t         phi2;   // v2 event plane from model 
-   Float_t         phi3;   // v3 event plane from model
-   Float_t         ecc2;   // eccentricity e2 
-   Float_t         ecc3;   // eccrntricity e3
-   Int_t           npart;  // number of participants
-   Int_t           nh;     // number of particles in event
-   Float_t         momx[1633];   //[nh] momentum px
-   Float_t         momy[1633];   //[nh] momentum py
-   Float_t         momz[1633];   //[nh] momentum pz
-   Float_t         ene[1633];    //[nh] energy of particle
-   Int_t           hid[1633];    //[nh] 
-   Int_t           pdg[1633];    //[nh] particle ID
-   Short_t         charge[1633]; //[nh] charge of particle
+  // Declaration of leaf types
+  Float_t         bimp;   // impact parameter 
+  Float_t         phi2;   // v2 event plane from model 
+  Float_t         phi3;   // v3 event plane from model
+  Float_t         ecc2;   // eccentricity e2 
+  Float_t         ecc3;   // eccrntricity e3
+  Int_t           npart;  // number of participants
+  Int_t           nh;     // number of particles in event
+  Float_t         momx[1633];   //[nh] momentum px
+  Float_t         momy[1633];   //[nh] momentum py
+  Float_t         momz[1633];   //[nh] momentum pz
+  Float_t         ene[1633];    //[nh] energy of particle
+  Int_t           hid[1633];    //[nh] 
+  Int_t           pdg[1633];    //[nh] particle ID
+  Short_t         charge[1633]; //[nh] charge of particle
 
-   // List of branches
-   TBranch        *b_bimp;   //!
-   TBranch        *b_phi2;   //!
-   TBranch        *b_phi3;   //!
-   TBranch        *b_ecc2;   //!
-   TBranch        *b_ecc3;   //!
-   TBranch        *b_npart;   //!
-   TBranch        *b_nh;   //!
-   TBranch        *b_momx;   //!
-   TBranch        *b_momy;   //!
-   TBranch        *b_momz;   //!
-   TBranch        *b_ene;   //!
-   TBranch        *b_hid;   //!
-   TBranch        *b_pdg;   //!
-   TBranch        *b_charge;   //!
+  // List of branches
+  TBranch        *b_bimp;   //!
+  TBranch        *b_phi2;   //!
+  TBranch        *b_phi3;   //!
+  TBranch        *b_ecc2;   //!
+  TBranch        *b_ecc3;   //!
+  TBranch        *b_npart;   //!
+  TBranch        *b_nh;   //!
+  TBranch        *b_momx;   //!
+  TBranch        *b_momy;   //!
+  TBranch        *b_momz;   //!
+  TBranch        *b_ene;   //!
+  TBranch        *b_hid;   //!
+  TBranch        *b_pdg;   //!
+  TBranch        *b_charge;   //!
 
-   FlowANA(TTree *tree=0);
-   virtual ~FlowANA();
-   virtual Int_t    Cut(Long64_t entry);
-   virtual Int_t    GetEntry(Long64_t entry);
-   virtual Long64_t LoadTree(Long64_t entry);
-   virtual void     Init(TTree *tree);
-   virtual void     Loop();
-   virtual Bool_t   Notify();
-   virtual void     Show(Long64_t entry = -1);
-   // additional function
-   void Booking(TString outFile);
-   void Loop_a_file(TString file);
-   void Ana_end();
-   void Ana_event();   
+  FlowANA(TTree *tree=0);
+  virtual ~FlowANA();
+  virtual Int_t    Cut(Long64_t entry);
+  virtual Int_t    GetEntry(Long64_t entry);
+  virtual Long64_t LoadTree(Long64_t entry);
+  virtual void     Init(TTree *tree);
+  virtual void     Loop();
+  virtual Bool_t   Notify();
+  virtual void     Show(Long64_t entry = -1);
+  // additional function
+  void book_hist(char* outFile);
+  void loop_a_file(char* file);
+  void ana_end();
+  void ana_event(int jentry, int ientry);
+  void ana_init(char *outfile);
+  int GetCentrality10_Bimp( float bimp );
+  int GetCentrality10_RefMultPHENIX( double refMult );
+  int GetCentrality10_RefMult( double refMult );
+
 };
 
 #endif

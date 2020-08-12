@@ -35,7 +35,7 @@ static const double minpt = 0.2; // min pt
 
 static const int neta = 2; // [eta-,eta+]
 
-static const int max_nh = 3000;
+static const int max_nh = 1633;
 
 TFile *d_outfile; // out file with histograms and profiles
 
@@ -221,7 +221,7 @@ void FlowANA::Loop()
       nb = fChain->GetEntry(jentry);   nbytes += nb;
       // if (Cut(ientry) < 0) continue;
       Ana_event();
-      if (ientry%100000==0) cout << ientry << endl;
+      if (jentry%100000==0) cout << jentry << endl;
    }
 }
 
@@ -282,9 +282,7 @@ void FlowANA::Ana_event(){
     }
 
     Double_t v2 = TMath::Cos(2.*phi);
-    hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
-    hPT[ipt]->Fill(0.5+fcent, pt, 1);
-    if(eta<-0.05){ // RFP selection
+    if(eta<-0.1){ // RFP selection
       hv2MC[fcent]->Fill(0.5, v2, 1);      
       Qx2+=TMath::Cos(2.*phi);
       Qy2+=TMath::Sin(2.*phi);
@@ -293,8 +291,9 @@ void FlowANA::Ana_event(){
       M++;
     } // end of RFP selection
 
-    if(eta>0.05){ // POI selection
-
+    if(eta>0.1){ // POI selection
+    hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
+    hPT[ipt]->Fill(0.5+fcent, pt, 1);
     px2[ipt]+=TMath::Cos(2.*phi);
     py2[ipt]+=TMath::Sin(2.*phi);
     mp[ipt]++;
@@ -302,8 +301,8 @@ void FlowANA::Ana_event(){
 
     // Sub eta event method, TPC plane
     int fEta = -1;
-    if (eta > -1. && eta < -0.1) fEta = 0; // TPC East
-    if (eta > 0.1 && eta < 1.  ) fEta = 1; // TPC West
+    if (eta >-2.5 && eta <-0.1) fEta = 0; // TPC East
+    if (eta > 0.1 && eta < 2.5) fEta = 1; // TPC West
 
 		if ( fEta>-1 ){
       sumQxy[fEta][0] += pt * cos( (2.0) * phi );
@@ -393,7 +392,7 @@ void FlowANA::Ana_event(){
   HRes -> Fill(0.5+fcent,cos(dPsi));
 
   // float res2[ncent]={0.262397,0.456401,0.440158,0.415569,0.301203,0.230708,0.0848875,0.268051}; // 1 file
-  float res2[ncent]={0.27965,0.405564,0.41019,0.364977,0.297911,0.250719,0.230886,0.244932};
+  float res2[ncent]={0.328468,0.483964,0.480728,0.414627,0.323557,0.26017,0.240916,0.26867};
 	if(fcent>=0 && fcent<=7){ // centrality selection 0-80%
     for(int itrk=0;itrk<nh;itrk++) {  //track loop
 
@@ -437,7 +436,7 @@ void FlowANA::Ana_event(){
 void loop_test(){
   FlowANA *ana = new FlowANA();
   ana->Booking("test.root");
-  ana->Loop_a_file("urqmd_1033721_1.mcpico.root");
+  ana->Loop_a_file("./ROOTFile/urqmd_1033721_1.mcpico.root");
   ana -> Ana_end();
   cout << "Histfile written. Congratz!" << endl;   
 }

@@ -8,7 +8,7 @@ void v2plot(){
   // Temporary variables
   char hname[800]; // histogram hname
   double stats[6]; // stats of TProfile
-  char analysis[20]={"nonflow"};
+  char analysis[20]={"pure"};
 
   TFile *inFile, *outFile;
   sprintf(hname,"./ROOTFile/%s_10mil.root",analysis);
@@ -137,6 +137,8 @@ void v2plot(){
   double v2cent[4][ncent];
   double v2centE[4][ncent];
 
+  ofstream ofile2("v2int.txt");
+
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // Reference flow calculation
 
@@ -194,6 +196,9 @@ void v2plot(){
     v24intE = Evn4(cor2,cor2E,sumwcor2,sumw2cor2,
                   cor4,cor4E,sumwcor4,sumw2cor4,
                   cov24,sumwcor24);
+
+    ofile2 << icent*10<<"-"<< (icent+1)*10<<" "<< v22intE << " " << v24intE << endl;
+
     //=============================================
     // v2{#eta sub-event}
     v2EPint = hv22EP->GetBinContent(icent+1);

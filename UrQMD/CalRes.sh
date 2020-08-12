@@ -42,18 +42,17 @@ mkdir -p $OUT_LOG
 mkdir -p $TMP
 touch $LOG
 
-cp $MAIN_DIR/calculateFlow.C $TMP
+cp $MAIN_DIR/calculateRes.C $TMP
 
 # Set correct environment variables (needed version of root)
 source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh
 
 echo "Input arguments (Job Id = ${JOB_ID}, Task ID = ${SGE_TASK_ID}):" &>> $LOG
-echo "Main directory:           ${MAIN_DIR}" &>> $LOG
 echo "Input file:    $IN_FILE"  &>> $LOG
 echo "Output file:   $OUT_FILE" &>> $LOG
 echo "---------------" &>> $LOG
-echo "Run elliptic flow calculation..." &>> $LOG
-root -l -b -q $TMP/calculateFlow.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
+echo "Run resolution calculation..." &>> $LOG
+root -l -b -q $TMP/calculateRes.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
 
 echo "---------------" &>> $LOG
 echo "Cleaning temporary directory..." &>> $LOG

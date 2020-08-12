@@ -22,7 +22,7 @@ static const double minpt = 0.2; // min pt
 static const int npt = 12;        // 0.2 - 3.5 GeV/c
 static const double bin_pT[npt + 1] ={0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
 static const int neta = 2; // [eta-,eta+]
-static const int max_nh = 5100;
+static const int max_nh = 6000;
 TFile *d_outfile; // out file with histograms and profiles
 
 TH1F *hRP;         // reaction plane distr
@@ -169,7 +169,7 @@ void hVana::Booking(TString outFile)
 void hVana::Loop_a_file(TString file)
 {
   TFile *treefile = TFile::Open(file.Data());
-  TTree *tree = (TTree *)treefile->Get("htree");
+  TTree *tree = (TTree *)treefile->Get("tree");
   if (tree == 0)
   {
     cout << "htree is not found in " << file << endl;

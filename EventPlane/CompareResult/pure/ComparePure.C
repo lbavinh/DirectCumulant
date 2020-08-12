@@ -40,7 +40,7 @@ void ComparePure(){
       l[icent][i].SetTextSize(0.12);
       l[icent][i].SetTextAlign(21);  
       l[icent][i].DrawLatex(0.5,0.1,name);
-      sprintf(name,"Cent%i-%i%%_%s.png", icent*10,(icent+1)*10,ch[i]);
+      sprintf(name,"%s_Cent%i-%i%%.png",ch[i], icent*10,(icent+1)*10);
       can[icent][i] -> SetName(name);
       can[icent][i] -> SaveAs(name);
     }

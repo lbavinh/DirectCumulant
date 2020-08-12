@@ -577,19 +577,3 @@ int FlowANA::GetCentrality10_Bimp( float bimp ){
 
 	return fcent;
 }
-
-int FlowANA::GetCentrality10_BimpExp( float bimp ){
-
-	int fcent;
-	if     ( bimp<4.68 ) fcent = 0; // 0-10%
-	else if( bimp<6.47 ) fcent = 1; //10-20%
-	else if( bimp<7.99 ) fcent = 2; //20-30%
-	else if( bimp<9.31 ) fcent = 3; //30-40%
-	else if( bimp<10.48 ) fcent = 4; //40-50%
-	else if( bimp<11.49 ) fcent = 5; //50-60%
-	else if( bimp<12.35) fcent = 6; //60-70%
-	else if( bimp<13.0) fcent = 7; //70-80%
-	else                fcent =-1;
-
-	return fcent;
-}

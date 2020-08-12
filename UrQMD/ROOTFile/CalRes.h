@@ -5,8 +5,8 @@
 // found on file: urqmd_1033721_1.mcpico.root
 //////////////////////////////////////////////////////////
 
-#ifndef FlowANA_h
-#define FlowANA_h
+#ifndef CalRes_h
+#define CalRes_h
 
 #include <TROOT.h>
 #include <TChain.h>
@@ -18,7 +18,7 @@
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
-class FlowANA {
+class CalRes {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
@@ -55,8 +55,8 @@ public :
    TBranch        *b_pdg;   //!
    TBranch        *b_charge;   //!
 
-   FlowANA(TTree *tree=0);
-   virtual ~FlowANA();
+   CalRes(TTree *tree=0);
+   virtual ~CalRes();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
@@ -73,35 +73,35 @@ public :
 
 #endif
 
-#ifdef FlowANA_cxx
-FlowANA::FlowANA(TTree *tree) : fChain(0) 
+#ifdef CalRes_cxx
+CalRes::CalRes(TTree *tree) : fChain(0) 
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
-  //  if (tree == 0) {
-  //     TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("urqmd_1033721_1.mcpico.root");
-  //     if (!f || !f->IsOpen()) {
-  //        f = new TFile("urqmd_1033721_1.mcpico.root");
-  //     }
-  //     f->GetObject("mctree",tree);
+//    if (tree == 0) {
+//       TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("urqmd_1033721_1.mcpico.root");
+//       if (!f || !f->IsOpen()) {
+//          f = new TFile("urqmd_1033721_1.mcpico.root");
+//       }
+//       f->GetObject("mctree",tree);
 
-  //  }
-  //  Init(tree);
+//    }
+//    Init(tree);
 }
 
-FlowANA::~FlowANA()
+CalRes::~CalRes()
 {
    if (!fChain) return;
    delete fChain->GetCurrentFile();
 }
 
-Int_t FlowANA::GetEntry(Long64_t entry)
+Int_t CalRes::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
    if (!fChain) return 0;
    return fChain->GetEntry(entry);
 }
-Long64_t FlowANA::LoadTree(Long64_t entry)
+Long64_t CalRes::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
    if (!fChain) return -5;
@@ -114,7 +114,7 @@ Long64_t FlowANA::LoadTree(Long64_t entry)
    return centry;
 }
 
-void FlowANA::Init(TTree *tree)
+void CalRes::Init(TTree *tree)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -147,7 +147,7 @@ void FlowANA::Init(TTree *tree)
    Notify();
 }
 
-Bool_t FlowANA::Notify()
+Bool_t CalRes::Notify()
 {
    // The Notify() function is called when a new file is opened. This
    // can be either for a new TTree in a TChain or when when a new TTree
@@ -158,18 +158,18 @@ Bool_t FlowANA::Notify()
    return kTRUE;
 }
 
-void FlowANA::Show(Long64_t entry)
+void CalRes::Show(Long64_t entry)
 {
 // Print contents of entry.
 // If entry is not specified, print current entry
    if (!fChain) return;
    fChain->Show(entry);
 }
-Int_t FlowANA::Cut(Long64_t entry)
+Int_t CalRes::Cut(Long64_t entry)
 {
 // This function may be called from Loop.
 // returns  1 if entry is accepted.
 // returns -1 otherwise.
    return 1;
 }
-#endif // #ifdef FlowANA_cxx
+#endif // #ifdef CalRes_cxx

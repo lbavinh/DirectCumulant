@@ -527,7 +527,7 @@ void v2plot(){
   TCanvas *can;
   TLatex l;
   //                                                    yRatio_low    x_low     y_low    leg_x_low  leg_x_high
-  can = (TCanvas*) DrawTGraph(vgr,"v2 ratio",0.89, 1.11,    0    , 80, 0., 0.05 , 0.65, 0.11, 0.89, 0.35);
+  can = (TCanvas*) DrawTGraph(vgr,"v2 ratio",0.89, 1.11,    0    , 80, 0., 0.1 , 0.18, 0.61, 0.42, 0.85);
   //                                                          yRatio_high  x_high   y_high     leg_y_low   leg_y_high
   sprintf(hname,"v2 vs cent");
   can -> SetName(hname);

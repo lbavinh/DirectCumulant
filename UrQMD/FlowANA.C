@@ -75,8 +75,6 @@ TH1F *H_EP[neta];		  // reaction plane
 TH1F *H_Qv[neta];     // sub-event <Q> - probably
 TProfile *HRes;		// resolution
 
-
-
 void FlowANA::Booking(TString outFile){
 
   char name[800];
@@ -306,8 +304,8 @@ void FlowANA::Ana_event(){
     if (eta > 0.1 && eta < 2.5) fEta = 1; // TPC West
 
 		if ( fEta>-1 ){
-      sumQxy[fEta][0] += pt * cos( (2.0) * phi );
-      sumQxy[fEta][1] += pt * sin( (2.0) * phi );
+      sumQxy[fEta][0] += 1. * cos( (2.0) * phi );
+      sumQxy[fEta][1] += 1. * sin( (2.0) * phi );
 			multQv[fEta]++;
 		} // end of eta selection
   } // end of track loop
@@ -392,9 +390,7 @@ void FlowANA::Ana_event(){
   dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
   HRes -> Fill(0.5+fcent,cos(dPsi));
 
-  // float res2[ncent]={0.262397,0.456401,0.440158,0.415569,0.301203,0.230708,0.0848875,0.268051}; // 1 file
-  // float res2[ncent]={0.328468,0.483964,0.480728,0.414627,0.323557,0.26017,0.240916,0.26867}; // 11 mil
-  float res2[ncent]={0.246631,0.370836,0.369859,0.31821,0.246213,0.192905,0.173104,0.18851}; // 56mil
+  // float res2[ncent]={0.246631,0.370836,0.369859,0.31821,0.246213,0.192905,0.173104,0.18851}; // 56mil
 	if(fcent>=0 && fcent<=7){ // centrality selection 0-80%
     for(int itrk=0;itrk<nh;itrk++) {  //track loop
 
@@ -404,7 +400,6 @@ void FlowANA::Ana_event(){
       if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5 || charge[itrk]==0 || TMath::Abs(eta)<0.1) continue; // track selection
       float phi = TMath::ATan2( momy[itrk], momx[itrk] );
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
-
 
       Int_t ipt = -1;
       for (int j = 0; j < npt; j++)
@@ -416,11 +411,13 @@ void FlowANA::Ana_event(){
       float v2=-999.0;
       
       if(eta>0.1){ // eta+
-        v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
+        // v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
+        v2 = cos(2.0 * (phi-psi1) );
       }
 
       if(eta<-0.1){ // eta-
-        v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
+        // v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
+        v2 = cos(2.0 * (phi-psi2) );
       }
       // if(fabs(eta[itrk])<1.0){ // eliminate spectators
       hv2EP[ipt]->Fill(0.5+fcent,v2);
@@ -431,14 +428,4 @@ void FlowANA::Ana_event(){
       // } // end of |eta| < 1.0
     }// end of the track loop
  	}// end of centrality selection 
-
-
-}
-
-void loop_test(){
-  FlowANA *ana = new FlowANA();
-  ana->Booking("test.root");
-  ana->Loop_a_file("./ROOTFile/urqmd_1033721_1.mcpico.root");
-  ana -> Ana_end();
-  cout << "Histfile written. Congratz!" << endl;   
-}
+} // end of Ana_event();

@@ -77,7 +77,7 @@ void v2plot(){
 
   TProfile *hv2EP[npt];	// elliptic flow from EP method
   TProfile *hv22EP;        // elliptic flow cent: 10-40% from EP method
-
+  TProfile *HRes;
 
   // OUTPUT
 
@@ -86,6 +86,7 @@ void v2plot(){
 
   // Get TProfile histograms from ROOTFile
   hv22EP = (TProfile*)inFile->Get("hv22EP");
+  HRes = (TProfile*)inFile->Get("HRes");
   for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
     sprintf(hname,"hv2EP_%i",ipt);
     hv2EP[ipt]=(TProfile*)inFile->Get(hname);
@@ -202,7 +203,13 @@ void v2plot(){
                   cov24,sumwcor24);
     //=============================================
     // v2{#eta sub-event}
-    v2EPint = hv22EP->GetBinContent(icent+1);
+    double res2 = sqrt(HRes->GetBinContent(icent+1));
+    double v2obs = hv22EP->GetBinContent(icent+1);
+    v2EPint = v2obs / res2;
+    double dv2obs = hv22EP->GetBinError(icent+1);
+    double dres2 = HRes->GetBinError(icent+1);
+
+    // v2EPintE = sqrt(dv2obs*dv2obs/res2/res2 + v2obs*v2obs/(4*pow(res2,6)*dres2*dres2));
     v2EPintE = hv22EP->GetBinError(icent+1);
     //=============================================
     // Reference flow comparison: MC, 2QC, 4QC, eta sub-event
@@ -388,7 +395,16 @@ void v2plot(){
   for (int icent=0; icent<ncent; icent++){
     double v2EP[npt]={0}, ev2EP[npt]={0};
     for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
-      v2EP[ipt] = hv2EP[ipt]->GetBinContent(icent+1);
+      // v2EP[ipt] = hv2EP[ipt]->GetBinContent(icent+1);
+      // ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
+
+      double res2 = sqrt(HRes->GetBinContent(icent+1));
+      double v2obs = hv2EP[ipt]->GetBinContent(icent+1);
+      v2EP[ipt] = v2obs / res2;
+      double dv2obs = hv2EP[ipt]->GetBinError(icent+1);
+      double dres2 = HRes->GetBinError(icent+1);
+
+      // ev2EP[ipt] = sqrt(dv2obs*dv2obs/res2/res2 + v2obs*v2obs/(4*pow(res2,6)*dres2*dres2));
       ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
     }
     // Event plane differential flow
@@ -401,7 +417,7 @@ void v2plot(){
   }
   //==========================================================================================================================
   // Drawing multipads of reference & differential flow
-  /*
+  
   TLegend *leg = new TLegend(0.11,.95,0.4,.78);
   leg -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
   leg -> AddEntry(grDifFl[1][0],"v_{2}{2,QC}","p");
@@ -509,7 +525,7 @@ void v2plot(){
     sprintf(hname,"../Graphics/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-  */
+  
   //==========================================================================================================================
   const char *grTitleDF[4]={"[1] v_{2}{#eta sub-event};p_{T}, GeV/c;v_{2}","[2] v_{2}{2,QC};p_{T}, GeV/c;v_{2}","[3] v_{2}{4,QC};p_{T}, GeV/c;v_{2}","v_{2}{MC};p_{T}, GeV/c;v_{2}"};
   const char *grTitleRF[4]={"[1] v_{2}{#eta sub-event};cent, %;v_{2}","[2] v_{2}{2,QC};cent, %;v_{2}","[3] v_{2}{4,QC};cent, %;v_{2}","v_{2}{MC};cent, %;v_{2}"};
@@ -520,7 +536,7 @@ void v2plot(){
     grRefFlCent[i] -> SetTitle(grTitleRF[i]);
     grRefFlCent[i] -> Write(hname);
     for (int icent=0;icent<ncent;icent++){
-      sprintf(hname,"gr_%i_%i",icent,i);
+      sprintf(hname,"gr_cent%i_%i",icent,i);
       grDifFl[i][icent] -> SetTitle(grTitleDF[i]);
       grDifFl[i][icent] -> Write(hname);
     }

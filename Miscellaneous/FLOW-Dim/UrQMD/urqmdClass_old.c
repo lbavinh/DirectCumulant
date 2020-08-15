@@ -445,8 +445,8 @@ void urqmdClass::Loop()
                 p[k][m] += TComplex(cos(n * (phi)), sin(n * (phi)));
                 if (true)
                 {
-                    QMC[k][m] += (cos(n * (phi - rp)));
-                    dMf[k][m] += 1;
+                  QMC[k][m] += (cos(n * (phi - rp)));
+                  dMf[k][m] += 1;
                 }
                 //cout << pt <<" "<<p2[k][m] <<p[k][m] << QMC[k][m]<< Q[k] <<mp[k][m]<<endl;
               }
@@ -463,7 +463,7 @@ void urqmdClass::Loop()
           } // end of loop over pt bin
         }// end of loop over centrality
       } // end of loop over centrality
-    } // end of loop over particles
+    } // end of track loop
 
     for (int k = 0; k < Nb; k++)
         
@@ -515,7 +515,7 @@ void urqmdClass::Loop()
             }
           }
           
-        }
+        } // end of track loop
       } // end of loop over centrality
 
     for (int k = 0; k < Nb; k++)

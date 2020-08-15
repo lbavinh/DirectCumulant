@@ -3,6 +3,86 @@
 
 char tGraphErrors[400]={"TGraphError.root"};
 
+// struct Covariance{
+//   Covariance(){
+//     mVal = 0;
+//     mSumWXY = 0;
+//   }
+//   Covariance(TProfile *const &hcovXY, TProfile *const &hX, TProfile *const &hY){
+//     double statsXY[6], statsX[6], statsY[6];
+//     double meanXY, meanX, meanY, sumWX, sumWY;
+//     hcovXY -> GetStats(statsXY);
+//     hX -> GetStats(statsX);
+//     hY -> GetStats(statsY);
+    
+//     mSumWXY = statsXY[0];
+//     sumWX = statsX[0];
+//     sumWY = statsY[0];
+
+//     meanXY = hcovXY -> GetBinContent(1);
+//     meanX = hX -> GetBinContent(1);
+//     meanY = hY -> GetBinContent(1);
+//     // mVal = (meanXY-meanX*meanY)/(1-mSumW/sumWX/sumWY); // Cov(x,y) // formula (C.12)
+//     mVal = (meanXY-meanX*meanY)/(sumWX*sumWY/mSumWXY-1.); // Cov(x,y)/(sumWX*sumWY/sumWXY)
+
+//   }
+//  public:
+//   double mVal;
+//   double mSumWXY; // sum(wx*wy)
+// };
+
+double Covariance(TProfile *const &hcovXY, TProfile *const &hX, TProfile *const &hY){
+  double statsXY[6], statsX[6], statsY[6];
+  double meanXY, meanX, meanY, sumWX, sumWY;
+  hcovXY -> GetStats(statsXY);
+  hX -> GetStats(statsX);
+  hY -> GetStats(statsY);
+  
+  double mSumWXY = statsXY[0];
+  sumWX = statsX[0];
+  sumWY = statsY[0];
+
+  meanXY = hcovXY -> GetBinContent(1);
+  meanX = hX -> GetBinContent(1);
+  meanY = hY -> GetBinContent(1);
+  // mVal = (meanXY-meanX*meanY)/(1-mSumW/sumWX/sumWY); // Cov(x,y) // formula (C.12)
+  double mVal = (meanXY-meanX*meanY)/(sumWX*sumWY/mSumWXY-1.); // Cov(x,y)/(sumWX*sumWY/sumWXY)
+  return mVal;
+}
+
+
+struct term{
+  term(){
+    mVal = 0;
+    mSumW = 0;
+    mNeff = 0;
+    mS2 = 0;
+    mMSE = 0;
+  }
+  term(TProfile *const &pr){
+    double stats[6];
+    pr->GetStats(stats);
+    mSumW = stats[0];
+    double sumW2 = stats[1];
+    
+    mNeff = pr -> GetBinEffectiveEntries(1); // Number of effective entries
+    // mNeff = mSumW*mSumW/sumW2;
+    mVal = pr -> GetBinContent(1);
+    pr -> SetErrorOption("s");
+    double stdevW = pr -> GetBinError(1);
+    mS2 = stdevW*stdevW/(1-sumW2/mSumW/mSumW); // formula (C.3)
+    // mS2 = pr -> GetBinError(1);
+    mMSE = mS2/mNeff;
+  };
+ public: 
+  double mVal; // weithted mean value
+  double mSumW; // sum of weights
+  double mNeff; // Number of effective entries
+  double mS2; // Unbiased estimator for the root of variance, (C.3) in Ante's dissertation
+  double mMSE; // Mean squared error of mean, https://en.wikipedia.org/wiki/Mean_squared_error
+
+};
+
 void v2plot(){
   // Temporary variables
   char hname[800]; // histogram hname
@@ -78,7 +158,7 @@ void v2plot(){
   TProfile *hv22pt[ncent][npt];  // profile <<2'>> from 2nd Q-Cumulants
   TProfile *hv24pt[ncent][npt];  // profile <<4'>> from 4th Q-Cumulants
 
-  // TProfile for covariance calculation according to (C.12), Appendix C
+  // TProfile for Covariance calculation according to (C.12), Appendix C
   // in Bilandzic, A. (2012). Anisotropic flow measurements in ALICE at the large hadron collider.
   TProfile *hcov24[ncent];                // <2>*<4>
   TProfile *hcov22prime[ncent][npt];      // <2>*<2'>
@@ -93,8 +173,8 @@ void v2plot(){
   // test fix stat. error
   TProfile *hcos2phi1[ncent], *hsin2phi1[ncent], *hcos2phi12[ncent], *hsin2phi12[ncent], *hcos2phi123[ncent], *hsin2phi123[ncent]; // 6
   // Differential flow acceptance correction
-  TProfile *hcos2psi1[npt], *hsin2psi1[npt], *hcos2psi1phi2[npt], *hsin2psi1phi2[npt],
-           *hcos2psi1pphi23[npt], *hsin2psi1pphi23[npt], *hcos2psi1mphi23[npt], *hsin2psi1mphi23[npt]; // 8
+  TProfile *hcos2psi1[ncent][npt], *hsin2psi1[ncent][npt], *hcos2psi1phi2[npt], *hsin2psi1phi2[npt],
+           *hcos2psi1pphi23[npt], *hsin2psi1pphi23[npt], *hcos2psi1mphi23[npt], *hsin2psi1mphi23[npt];
 
   TProfile *hv2EP[npt];	// elliptic flow from EP method
   TProfile *hv22EP;      // integrated elliptic flow from EP method
@@ -111,45 +191,16 @@ void v2plot(){
           *hcovcos2phi123sin2phi123[ncent], *hcovcos2phi123cos2phi12[ncent], *hcovcos2phi123sin2phi12[ncent],
           *hcovsin2phi123cos2phi12[ncent], *hcovsin2phi123sin2phi12[ncent], *hcovcos2phi12sin2phi12[ncent];
 
+  TProfile *hcov[ncent][npt][6][6];
 
-  // OUTPUT
+  // OUTPUT    
+
   // Acceptance correction terms
-  double  cos2phi1[ncent], sin2phi1[ncent], cos2phi12[ncent], sin2phi12[ncent],
-          cos2phi123[ncent], sin2phi123[ncent];
-  double  cos2psi1[ncent][npt], sin2psi1[ncent][npt], cos2psi1phi2[ncent][npt], sin2psi1phi2[ncent][npt],
+  // double  cos2phi1[ncent], sin2phi1[ncent], cos2phi12[ncent], sin2phi12[ncent],
+  //         cos2phi123[ncent], sin2phi123[ncent];
+  // double  cos2psi1[ncent][npt], sin2psi1[ncent][npt];
+  double  cos2psi1phi2[ncent][npt], sin2psi1phi2[ncent][npt],
           cos2psi1pphi23[ncent][npt], sin2psi1pphi23[ncent][npt], cos2psi1mphi23[ncent][npt], sin2psi1mphi23[ncent][npt];
-
-  // test fix stat. error
-  double  cos2phi1E[ncent], sin2phi1E[ncent], cos2phi12E[ncent], sin2phi12E[ncent],
-          cos2phi123E[ncent], sin2phi123E[ncent];
-
-  double  cos2phi1Neff[ncent], sin2phi1Neff[ncent], cos2phi12Neff[ncent], sin2phi12Neff[ncent],
-          cos2phi123Neff[ncent], sin2phi123Neff[ncent];        
-
-  double sumwcos2phi1[ncent], sumwsin2phi1[ncent], sumwcos2phi12[ncent], sumwsin2phi12[ncent],
-         sumwcos2phi123[ncent], sumwsin2phi123[ncent];
-
-  double  cov4cos2phi1[ncent], cov4sin2phi1[ncent], cov4cos2phi123[ncent], cov4sin2phi123[ncent],
-          cov4cos2phi12[ncent], cov4sin2phi12[ncent],
-          cov2cos2phi1[ncent], cov2sin2phi1[ncent], cov2cos2phi123[ncent], cov2sin2phi123[ncent],
-          cov2cos2phi12[ncent], cov2sin2phi12[ncent],
-          covcos2phi1sin2phi1[ncent], covcos2phi1cos2phi123[ncent], covcos2phi1sin2phi123[ncent],
-          covcos2phi1cos2phi12[ncent], covcos2phi1sin2phi12[ncent],
-          covsin2phi1cos2phi123[ncent], covsin2phi1sin2phi123[ncent],
-          covsin2phi1cos2phi12[ncent], covsin2phi1sin2phi12[ncent],
-          covcos2phi123sin2phi123[ncent], covcos2phi123cos2phi12[ncent], covcos2phi123sin2phi12[ncent],
-          covsin2phi123cos2phi12[ncent], covsin2phi123sin2phi12[ncent], covcos2phi12sin2phi12[ncent];
-
-  double  sumwcov4cos2phi1[ncent], sumwcov4sin2phi1[ncent], sumwcov4cos2phi123[ncent], sumwcov4sin2phi123[ncent],
-          sumwcov4cos2phi12[ncent], sumwcov4sin2phi12[ncent],
-          sumwcov2cos2phi1[ncent], sumwcov2sin2phi1[ncent], sumwcov2cos2phi123[ncent], sumwcov2sin2phi123[ncent],
-          sumwcov2cos2phi12[ncent], sumwcov2sin2phi12[ncent],
-          sumwcovcos2phi1sin2phi1[ncent], sumwcovcos2phi1cos2phi123[ncent], sumwcovcos2phi1sin2phi123[ncent],
-          sumwcovcos2phi1cos2phi12[ncent], sumwcovcos2phi1sin2phi12[ncent],
-          sumwcovsin2phi1cos2phi123[ncent], sumwcovsin2phi1sin2phi123[ncent],
-          sumwcovsin2phi1cos2phi12[ncent], sumwcovsin2phi1sin2phi12[ncent],
-          sumwcovcos2phi123sin2phi123[ncent], sumwcovcos2phi123cos2phi12[ncent], sumwcovcos2phi123sin2phi12[ncent],
-          sumwcovsin2phi123cos2phi12[ncent], sumwcovsin2phi123sin2phi12[ncent], sumwcovcos2phi12sin2phi12[ncent];          
 
   TGraphErrors *grDifFl[4][ncent], *grRefFl[ncent];     // 4 = {MC, 2QC, 4QC, EP}
   TGraphErrors *grRefFlCent[4];                         // v2(cent)
@@ -264,6 +315,22 @@ void v2plot(){
       sprintf(hname,"hcov2prime4prime_%i_%i",icent,ipt);
       hcov2prime4prime[icent][ipt]=(TProfile*)inFile->Get(hname);
 
+      // test fix stat. error
+      sprintf(hname,"hcos2psi1_%i_%i",icent,ipt);
+      hcos2psi1[icent][ipt]=(TProfile*)inFile->Get(hname);
+      sprintf(hname,"hsin2psi1_%i_%i",icent,ipt);
+      hsin2psi1[icent][ipt]=(TProfile*)inFile->Get(hname);
+
+      for (int iterm=0;iterm<6;iterm++){
+        for (int jterm=0;jterm<6;jterm++){
+          sprintf(hname, "hcov_%i_%i_%i_%i", icent, ipt, iterm, jterm);
+          hcov[icent][ipt][iterm][jterm] = (TProfile*)inFile->Get(hname);   
+        }
+      }
+
+
+
+
     } // end of loop over pt bin
   } // end of loop over centrality classes
 
@@ -273,10 +340,10 @@ void v2plot(){
     hPT[ipt]=(TProfile*)inFile->Get(hname);
     sprintf(hname,"hv2EP_%i",ipt);
     hv2EP[ipt]=(TProfile*)inFile->Get(hname);
-    sprintf(hname,"hcos2psi1_%i",ipt);
-    hcos2psi1[ipt]=(TProfile*)inFile->Get(hname);
-    sprintf(hname,"hsin2psi1_%i",ipt);
-    hsin2psi1[ipt]=(TProfile*)inFile->Get(hname);
+    // sprintf(hname,"hcos2psi1_%i",ipt);
+    // hcos2psi1[ipt]=(TProfile*)inFile->Get(hname);
+    // sprintf(hname,"hsin2psi1_%i",ipt);
+    // hsin2psi1[ipt]=(TProfile*)inFile->Get(hname);
     sprintf(hname,"hcos2psi1phi2_%i",ipt);
     hcos2psi1phi2[ipt]=(TProfile*)inFile->Get(hname);
     sprintf(hname,"hsin2psi1phi2_%i",ipt);
@@ -291,114 +358,17 @@ void v2plot(){
     hsin2psi1mphi23[ipt]=(TProfile*)inFile->Get(hname);
   } // end of loop over pt bin
   //==========================================================================================================================
-
   // Extract the acceptance correction terms
   for (int icent=0; icent<ncent; icent++){
-    cos2phi1[icent] = hcos2phi1[icent] -> GetBinContent(1);
-    sin2phi1[icent] = hsin2phi1[icent] -> GetBinContent(1);
-    cos2phi12[icent] = hcos2phi12[icent] -> GetBinContent(1);
-    sin2phi12[icent] = hsin2phi12[icent] -> GetBinContent(1);
-    cos2phi123[icent] = hcos2phi123[icent] -> GetBinContent(1);
-    sin2phi123[icent] = hsin2phi123[icent] -> GetBinContent(1);
-    
-    // test fix stat. error
-    cos2phi1E[icent] = sx(hcos2phi1[icent]);
-    sin2phi1E[icent] = sx(hsin2phi1[icent]);
-    cos2phi12E[icent] = sx(hcos2phi12[icent]);
-    sin2phi12E[icent] = sx(hsin2phi12[icent]);
-    cos2phi123E[icent] = sx(hcos2phi123[icent]);
-    sin2phi123E[icent] = sx(hsin2phi123[icent]);
-
-    cos2phi1Neff[icent] = hcos2phi1[icent] -> GetBinEffectiveEntries(1);
-    sin2phi1Neff[icent] = hsin2phi1[icent] -> GetBinEffectiveEntries(1);
-    cos2phi12Neff[icent] = hcos2phi12[icent] -> GetBinEffectiveEntries(1);
-    sin2phi12Neff[icent] = hsin2phi12[icent] -> GetBinEffectiveEntries(1);
-    cos2phi123Neff[icent] = hcos2phi123[icent] -> GetBinEffectiveEntries(1);
-    sin2phi123Neff[icent] = hsin2phi123[icent] -> GetBinEffectiveEntries(1);
-
-    hcos2phi1[icent] -> GetStats(stats);
-    sumwcos2phi1[icent] = stats[1];
-    hsin2phi1[icent] -> GetStats(stats);
-    sumwsin2phi1[icent] = stats[1];
-    hcos2phi12[icent] -> GetStats(stats);
-    sumwcos2phi12[icent] = stats[1];
-    hsin2phi12[icent] -> GetStats(stats);
-    sumwsin2phi12[icent] = stats[1];
-    hcos2phi123[icent] -> GetStats(stats);
-    sumwcos2phi123[icent] = stats[1];
-    hsin2phi123[icent] -> GetStats(stats);
-    sumwsin2phi123[icent] = stats[1];
-
-    cov4cos2phi1[icent] = Cov(hcov4cos2phi1[icent],hv24[icent],hcos2phi1[icent]);
-    cov4sin2phi1[icent] = Cov(hcov4sin2phi1[icent],hv24[icent],hsin2phi1[icent]);
-    cov4cos2phi123[icent] = Cov(hcov4cos2phi123[icent],hv24[icent],hcos2phi123[icent]);
-    cov4sin2phi123[icent] = Cov(hcov4sin2phi123[icent],hv24[icent],hsin2phi123[icent]);
-    cov4cos2phi12[icent] = Cov(hcov4cos2phi12[icent],hv24[icent],hcos2phi12[icent]);
-    cov4sin2phi12[icent] = Cov(hcov4sin2phi12[icent],hv24[icent],hsin2phi12[icent]);
-
-    cov2cos2phi1[icent] = Cov(hcov2cos2phi1[icent],hv22[icent],hcos2phi1[icent]);
-    cov2sin2phi1[icent] = Cov(hcov2sin2phi1[icent],hv22[icent],hsin2phi1[icent]);
-    cov2cos2phi123[icent] = Cov(hcov2cos2phi123[icent],hv22[icent],hcos2phi123[icent]);
-    cov2sin2phi123[icent] = Cov(hcov2sin2phi123[icent],hv22[icent],hsin2phi123[icent]);
-    cov2cos2phi12[icent] = Cov(hcov2cos2phi12[icent],hv22[icent],hcos2phi12[icent]);
-    cov2sin2phi12[icent] = Cov(hcov2sin2phi12[icent],hv22[icent],hsin2phi12[icent]);
-
-    covcos2phi1sin2phi1[icent] = Cov(hcovcos2phi1sin2phi1[icent],hcos2phi1[icent],hsin2phi1[icent]);
-    covcos2phi1cos2phi123[icent] = Cov(hcovcos2phi1cos2phi123[icent],hcos2phi1[icent],hcos2phi123[icent]);
-    covcos2phi1sin2phi123[icent] = Cov(hcovcos2phi1sin2phi123[icent],hcos2phi1[icent],hsin2phi123[icent]);
-    covcos2phi1cos2phi12[icent] = Cov(hcovcos2phi1cos2phi12[icent],hcos2phi1[icent],hcos2phi12[icent]);
-    covcos2phi1sin2phi12[icent] = Cov(hcovcos2phi1sin2phi12[icent],hcos2phi1[icent],hsin2phi12[icent]);
-
-    covsin2phi1cos2phi123[icent] = Cov(hcovsin2phi1cos2phi123[icent],hsin2phi1[icent],hcos2phi123[icent]);
-    covsin2phi1sin2phi123[icent] = Cov(hcovsin2phi1sin2phi123[icent],hsin2phi1[icent],hsin2phi123[icent]);
-    covsin2phi1cos2phi12[icent] = Cov(hcovsin2phi1cos2phi12[icent],hsin2phi1[icent],hcos2phi12[icent]);
-    covsin2phi1sin2phi12[icent] = Cov(hcovsin2phi1sin2phi12[icent],hsin2phi1[icent],hsin2phi12[icent]);
-
-    covcos2phi123sin2phi123[icent] = Cov(hcovcos2phi123sin2phi123[icent],hcos2phi123[icent],hsin2phi123[icent]);
-    covcos2phi123cos2phi12[icent] = Cov(hcovcos2phi123cos2phi12[icent],hcos2phi123[icent],hcos2phi12[icent]);
-    covcos2phi123sin2phi12[icent] = Cov(hcovcos2phi123sin2phi12[icent],hcos2phi123[icent],hsin2phi12[icent]);
-
-    covsin2phi123cos2phi12[icent] = Cov(hcovsin2phi123cos2phi12[icent],hsin2phi123[icent],hcos2phi12[icent]);
-    covsin2phi123sin2phi12[icent] = Cov(hcovsin2phi123sin2phi12[icent],hsin2phi123[icent],hsin2phi12[icent]);
-
-    covcos2phi12sin2phi12[icent] = Cov(hcovcos2phi12sin2phi12[icent],hcos2phi12[icent],hsin2phi12[icent]);
-
-
-    sumwcov4cos2phi1[icent] = Sumwxwy(hcov4cos2phi1[icent]);
-    sumwcov4sin2phi1[icent] = Sumwxwy(hcov4sin2phi1[icent]);
-    sumwcov4cos2phi123[icent] = Sumwxwy(hcov4cos2phi123[icent]); 
-    sumwcov4sin2phi123[icent] = Sumwxwy(hcov4sin2phi123[icent]);
-    sumwcov4cos2phi12[icent] = Sumwxwy(hcov4cos2phi12[icent]); 
-    sumwcov4sin2phi12[icent] = Sumwxwy(hcov4sin2phi12[icent]);
-    sumwcov2cos2phi1[icent] = Sumwxwy(hcov2cos2phi1[icent]); 
-    sumwcov2sin2phi1[icent] = Sumwxwy(hcov2sin2phi1[icent]); 
-    sumwcov2cos2phi123[icent] = Sumwxwy(hcov2cos2phi123[icent]); 
-    sumwcov2sin2phi123[icent] = Sumwxwy(hcov2sin2phi123[icent]);
-    sumwcov2cos2phi12[icent] = Sumwxwy(hcov2cos2phi12[icent]); 
-    sumwcov2sin2phi12[icent] = Sumwxwy(hcov2sin2phi12[icent]);
-    sumwcovcos2phi1sin2phi1[icent] = Sumwxwy(hcovcos2phi1sin2phi1[icent]); 
-    sumwcovcos2phi1cos2phi123[icent] = Sumwxwy(hcovcos2phi1cos2phi123[icent]); 
-    sumwcovcos2phi1sin2phi123[icent] = Sumwxwy(hcovcos2phi1sin2phi123[icent]);
-    sumwcovcos2phi1cos2phi12[icent] = Sumwxwy(hcovcos2phi1cos2phi12[icent]); 
-    sumwcovcos2phi1sin2phi12[icent] = Sumwxwy(hcovcos2phi1sin2phi12[icent]);
-    sumwcovsin2phi1cos2phi123[icent] = Sumwxwy(hcovsin2phi1cos2phi123[icent]); 
-    sumwcovsin2phi1sin2phi123[icent] = Sumwxwy(hcovsin2phi1sin2phi123[icent]);
-    sumwcovsin2phi1cos2phi12[icent] = Sumwxwy(hcovsin2phi1cos2phi12[icent]); 
-    sumwcovsin2phi1sin2phi12[icent] = Sumwxwy(hcovsin2phi1sin2phi12[icent]);
-    sumwcovcos2phi123sin2phi123[icent] = Sumwxwy(hcovcos2phi123sin2phi123[icent]); 
-    sumwcovcos2phi123cos2phi12[icent] = Sumwxwy(hcovcos2phi123cos2phi12[icent]); 
-    sumwcovcos2phi123sin2phi12[icent] = Sumwxwy(hcovcos2phi123sin2phi12[icent]);
-    sumwcovsin2phi123cos2phi12[icent] = Sumwxwy(hcovsin2phi123cos2phi12[icent]);
-    sumwcovsin2phi123sin2phi12[icent] = Sumwxwy(hcovsin2phi123sin2phi12[icent]); 
-    sumwcovcos2phi12sin2phi12[icent] = Sumwxwy(hcovcos2phi12sin2phi12[icent]);
-
-    
-
-
-
+    // cos2phi1[icent] = hcos2phi1[icent] -> GetBinContent(1);
+    // sin2phi1[icent] = hsin2phi1[icent] -> GetBinContent(1);
+    // cos2phi12[icent] = hcos2phi12[icent] -> GetBinContent(1);
+    // sin2phi12[icent] = hsin2phi12[icent] -> GetBinContent(1);
+    // cos2phi123[icent] = hcos2phi123[icent] -> GetBinContent(1);
+    // sin2phi123[icent] = hsin2phi123[icent] -> GetBinContent(1);
     for (int ipt=0; ipt<npt; ipt++){
-      cos2psi1[icent][ipt] = hcos2psi1[ipt] -> GetBinContent(1+icent);
-      sin2psi1[icent][ipt] = hsin2psi1[ipt] -> GetBinContent(1+icent);
+      // cos2psi1[icent][ipt] = hcos2psi1[icent][ipt] -> GetBinContent(1);
+      // sin2psi1[icent][ipt] = hsin2psi1[icent][ipt] -> GetBinContent(1);
       cos2psi1phi2[icent][ipt] = hcos2psi1phi2[ipt] -> GetBinContent(1+icent);
       sin2psi1phi2[icent][ipt] = hsin2psi1phi2[ipt] -> GetBinContent(1+icent);
       cos2psi1pphi23[icent][ipt] = hcos2psi1pphi23[ipt] -> GetBinContent(1+icent);
@@ -477,123 +447,216 @@ void v2plot(){
     //=============================================
     // v2{2,QC}
     // estimate of the 2-particle reference flow (C.22)
-    cor2 = hv22[icent] -> GetBinContent(1);  // <<2>>
-    v22int = Vn2(cor2);
+    // cor2 = hv22[icent] -> GetBinContent(1);  // <<2>>
+    // v22int = Vn2(cor2);
     // acceptance correction
-    v22intAC = sqrt(cor2 - (pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2)));
 
+
+
+    // v22intAC = sqrt(cor2 - (pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2)));
+    
     // statistical error of the 2-particle reference flow estimate (C.24)
-    cor2E = sx(hv22[icent]);
-    hv22[icent] -> GetStats(stats);
-    sumwcor2 = stats[0];
-    sumw2cor2 = stats[1];
-    v22intE = Evn2(cor2,cor2E,sumwcor2,sumw2cor2);
-    double cor2Neff;
+    // cor2E = sx(hv22[icent]);
+    // hv22[icent] -> GetStats(stats);
+    // sumwcor2 = stats[0];
+    // sumw2cor2 = stats[1];
+    // v22intE = Evn2(cor2,cor2E,sumwcor2,sumw2cor2);
+
     // test fix stat. error
 
-    v22intEAC = 1./pow(2.*v22intAC,2.)
-              *(sumw2cor2*pow(cor2E/sumwcor2,2.) 
-              + 4.*pow(cos2phi1[icent]*cos2phi1E[icent],2.)/cos2phi1Neff[icent]
-              + 4.*pow(sin2phi1[icent]*sin2phi1E[icent],2.)/sin2phi1Neff[icent]
-              - 4.*cos2phi1[icent]*sumwcov2cos2phi1[icent]*cov2sin2phi1[icent]/(sumwcor2*sumwcos2phi1[icent])
-              - 4.*sin2phi1[icent]*sumwcov2sin2phi1[icent]*cov2sin2phi1[icent]/(sumwcor2*sumwsin2phi1[icent])
-              + 8.*sin2phi1[icent]*cos2phi1[icent]*sumwcovcos2phi1sin2phi1[icent]*covcos2phi1sin2phi1[icent]/(sumwsin2phi1[icent]*sumwcos2phi1[icent])
-              );
-    v22intEAC = sqrt(v22intEAC);
+    term cor22, cosnphi1, sinnphi1;
+    cor22 = term(hv22[icent]);
+    cosnphi1 = term(hcos2phi1[icent]);
+    sinnphi1 = term(hsin2phi1[icent]);
+    cor2 = cor22.mVal;
+    v22int = sqrt(cor2);
+    v22intAC = sqrt(cor22.mVal - pow(cosnphi1.mVal,2) - pow(sinnphi1.mVal,2) );
+    
+    v22intE  = sqrt(1./(4.*cor22.mVal)*cor22.mMSE);
 
+    double cor2cosnphi1, cor2sinnphi1, cosnphi1sinnphi1;
+    cor2cosnphi1 = Covariance(hcov2cos2phi1[icent],hv22[icent],hcos2phi1[icent]);
+    cor2sinnphi1 = Covariance(hcov2sin2phi1[icent],hv22[icent],hsin2phi1[icent]);
+    cosnphi1sinnphi1 = Covariance(hcovcos2phi1sin2phi1[icent],hsin2phi1[icent],hcos2phi1[icent]);
+
+    v22intEAC = sqrt(
+      1./pow(2*v22intAC,2)
+      *( cor22.mMSE
+      + pow(2*cosnphi1.mVal,2)*cosnphi1.mMSE
+      + pow(2*sinnphi1.mVal,2)*sinnphi1.mMSE
+      - 4*cosnphi1.mVal*cor2cosnphi1
+      - 4*sinnphi1.mVal*cor2sinnphi1
+      + 8*cosnphi1.mVal*sinnphi1.mVal*cosnphi1sinnphi1
+       )
+    );
 
     //=============================================
     // v2{4,QC}
     // estimate of the 4-particle reference flow (C.27)
-    cor4 = hv24[icent]->GetBinContent(1);  // <<4>>
-    v24int = Vn4(cor2,cor4);
+    // cor4 = hv24[icent]->GetBinContent(1);  // <<4>>
+    // v24int = Vn4(cor2,cor4);
 
-    v24intAC = pow( -
-        (cor4 - 2.*cor2*cor2
-        - 4. * cos2phi1[icent] * cos2phi123[icent]
-        + 4. * sin2phi1[icent] * sin2phi123[icent]
-        - pow(cos2phi12[icent],2) - pow(sin2phi12[icent],2)
-        + 4. * cos2phi12[icent]
-        * (pow(cos2phi1[icent],2) - pow(sin2phi1[icent],2))
-        + 8. * sin2phi12[icent] * sin2phi1[icent] * cos2phi1[icent]
-        + 8. * cor2
-        * (pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2))
-        - 6. * pow(pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2),2))
-        ,0.25);
+    // v24intAC = pow( -
+    //     (cor4 - 2.*cor2*cor2
+    //     - 4. * cosnphi1.mVal * cos2phi123[icent]
+    //     + 4. * sinnphi1.mVal * sin2phi123[icent]
+    //     - pow(cos2phi12[icent],2) - pow(sin2phi12[icent],2)
+    //     + 4. * cos2phi12[icent]
+    //     * (pow(cos2phi1[icent],2) - pow(sin2phi1[icent],2))
+    //     + 8. * sin2phi12[icent] * sin2phi1[icent] * cos2phi1[icent]
+    //     + 8. * cor2
+    //     * (pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2))
+    //     - 6. * pow(pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2),2))
+    //     ,0.25);
 
     // statistical error of the 4-particle reference flow estimate (C.28)
-    cor4E = sx(hv24[icent]);
-    hv24[icent] -> GetStats(stats);
-    sumwcor4 = stats[0];
-    sumw2cor4 = stats[1];
-    // calculate covariance of <2> and <4>
-    cov24 = Cov(hcov24[icent],hv22[icent],hv24[icent]);
-    sumwcor24 = Sumwxwy(hcov24[icent]);
-    v24intE = Evn4(cor2,cor2E,sumwcor2,sumw2cor2,
-                  cor4,cor4E,sumwcor4,sumw2cor4,
-                  cov24,sumwcor24);
+    // cor4E = sx(hv24[icent]);
+    // hv24[icent] -> GetStats(stats);
+    // sumwcor4 = stats[0];
+    // sumw2cor4 = stats[1];
+    // calculate Covariance of <2> and <4>
+    // cov24 = Cov(hcov24[icent],hv22[icent],hv24[icent]);
+    // sumwcor24 = Sumwxwy(hcov24[icent]);
+    // v24intE = Evn4(cor2,cor2E,sumwcor2,sumw2cor2,
+    //               cor4,cor4E,sumwcor4,sumw2cor4,
+    //               cov24,sumwcor24);
 
     // test fix stat. error
-    double c = 4*cor2-8*(pow(cos2phi1[icent],2)+pow(sin2phi1[icent],2));
-    double a = 4*cos2phi123[icent]-8*cos2phi12[icent]*cos2phi1[icent]
-             - 8*sin2phi12[icent]*sin2phi1[icent]-16*cor2*cos2phi1[icent]+24*(pow(cos2phi1[icent],2)+pow(sin2phi1[icent],2))*cos2phi1[icent];
-    double b =-4*sin2phi123[icent]+8*cos2phi12[icent]*sin2phi1[icent]
-             - 8*sin2phi12[icent]*cos2phi1[icent]-16*cor2*sin2phi1[icent]+24*(pow(cos2phi1[icent],2)+pow(sin2phi1[icent],2))*sin2phi1[icent];
-    double d = 4*cos2phi1[icent];
-    double e =-4*sin2phi1[icent];
-    double f = 2*cos2phi12[icent]-4*(pow(cos2phi1[icent],2)-pow(sin2phi1[icent],2));
-    double g = 2*sin2phi12[icent]-8*sin2phi1[icent]*cos2phi1[icent];
+
+    term cor24,cos2phi1,sin2phi1,cos2phi123,sin2phi123,cos2phi12,sin2phi12;
+    cor24 = term(hv24[icent]);
+    cos2phi1 = term(hcos2phi1[icent]);
+    sin2phi1 = term(hsin2phi1[icent]);
+    cos2phi123 = term(hcos2phi123[icent]);
+    sin2phi123 = term(hsin2phi123[icent]);
+    cos2phi12 = term(hcos2phi12[icent]);
+    sin2phi12 = term(hsin2phi12[icent]);
+
+    double cov42, cov4cos2phi1, cov4sin2phi1, cov4cos2phi123, cov4sin2phi123, cov4cos2phi12, cov4sin2phi12;
+    double cov2cos2phi1, cov2sin2phi1, cov2cos2phi123, cov2sin2phi123, cov2cos2phi12, cov2sin2phi12;
+    double covcos2phi1sin2phi1, covcos2phi1cos2phi123, covcos2phi1sin2phi123, covcos2phi1cos2phi12, covcos2phi1sin2phi12;
+    double covsin2phi1cos2phi123, covsin2phi1sin2phi123, covsin2phi1cos2phi12, covsin2phi1sin2phi12;
+    double covcos2phi123sin2phi123, covcos2phi123cos2phi12, covcos2phi123sin2phi12;
+    double covsin2phi123cos2phi12, covsin2phi123sin2phi12;
+    double covcos2phi12sin2phi12;
+
+    cov42 = Covariance(hcov24[icent],hv22[icent],hv24[icent]);
+    cov4cos2phi1 = Covariance(hcov4cos2phi1[icent],hv24[icent],hcos2phi1[icent]);
+    cov4sin2phi1 = Covariance(hcov4sin2phi1[icent],hv24[icent],hsin2phi1[icent]);
+    cov4cos2phi123 = Covariance(hcov4cos2phi123[icent],hv24[icent],hcos2phi123[icent]);
+    cov4sin2phi123 = Covariance(hcov4sin2phi123[icent],hv24[icent],hsin2phi123[icent]);
+    cov4cos2phi12 = Covariance(hcov4cos2phi12[icent],hv24[icent],hcos2phi12[icent]);
+    cov4sin2phi12 = Covariance(hcov4sin2phi12[icent],hv24[icent],hsin2phi12[icent]);
+
+    cov2cos2phi1 = Covariance(hcov2cos2phi1[icent],hv22[icent],hcos2phi1[icent]);
+    cov2sin2phi1 = Covariance(hcov2sin2phi1[icent],hv22[icent],hsin2phi1[icent]);
+    cov2cos2phi123 = Covariance(hcov2cos2phi123[icent],hv22[icent],hcos2phi123[icent]);
+    cov2sin2phi123 = Covariance(hcov2sin2phi123[icent],hv22[icent],hsin2phi123[icent]);
+    cov2cos2phi12 = Covariance(hcov2cos2phi12[icent],hv22[icent],hcos2phi12[icent]);
+    cov2sin2phi12 = Covariance(hcov2sin2phi12[icent],hv22[icent],hsin2phi12[icent]);
+
+    covcos2phi1sin2phi1 = Covariance(hcovcos2phi1sin2phi1[icent],hcos2phi1[icent],hsin2phi1[icent]);
+    covcos2phi1cos2phi123 = Covariance(hcovcos2phi1cos2phi123[icent],hcos2phi1[icent],hcos2phi123[icent]);
+    covcos2phi1sin2phi123 = Covariance(hcovcos2phi1sin2phi123[icent],hcos2phi1[icent],hsin2phi123[icent]);
+    covcos2phi1cos2phi12 = Covariance(hcovcos2phi1cos2phi12[icent],hcos2phi1[icent],hcos2phi12[icent]);
+    covcos2phi1sin2phi12 = Covariance(hcovcos2phi1sin2phi12[icent],hcos2phi1[icent],hsin2phi12[icent]);
+
+    covsin2phi1cos2phi123 = Covariance(hcovsin2phi1cos2phi123[icent],hsin2phi1[icent],hcos2phi123[icent]);
+    covsin2phi1sin2phi123 = Covariance(hcovsin2phi1sin2phi123[icent],hsin2phi1[icent],hsin2phi123[icent]);
+    covsin2phi1cos2phi12 = Covariance(hcovsin2phi1cos2phi12[icent],hsin2phi1[icent],hcos2phi12[icent]);
+    covsin2phi1sin2phi12 = Covariance(hcovsin2phi1sin2phi12[icent],hsin2phi1[icent],hsin2phi12[icent]);
+
+    covcos2phi123sin2phi123 = Covariance(hcovcos2phi123sin2phi123[icent],hcos2phi123[icent],hsin2phi123[icent]);
+    covcos2phi123cos2phi12 = Covariance(hcovcos2phi123cos2phi12[icent],hcos2phi123[icent],hcos2phi12[icent]);
+    covcos2phi123sin2phi12 = Covariance(hcovcos2phi123sin2phi12[icent],hcos2phi123[icent],hsin2phi12[icent]);
+
+    covsin2phi123cos2phi12 = Covariance(hcovsin2phi123cos2phi12[icent],hsin2phi123[icent],hcos2phi12[icent]);
+    covsin2phi123sin2phi12 = Covariance(hcovsin2phi123sin2phi12[icent],hsin2phi123[icent],hsin2phi12[icent]);
+
+    covcos2phi12sin2phi12 = Covariance(hcovcos2phi12sin2phi12[icent],hcos2phi12[icent],hsin2phi12[icent]);
+    // without AC
+    cor4 = cor24.mVal;
+    v24int = pow(2*pow(cor2,2)-cor4,0.25);
+    v24intE = sqrt(
+      1./pow(v24int,6)*(
+        cor22.mVal*cor22.mVal*cor22.mMSE
+      + 1./16*cor24.mMSE
+      - 0.5*cor22.mVal*cov42
+      )
+    );
+    // end of without AC
+    v24intAC = pow( -
+        (cor4 - 2.*cor2*cor2
+        - 4. * cosnphi1.mVal * cos2phi123.mVal
+        + 4. * sinnphi1.mVal * sin2phi123.mVal
+        - pow(cos2phi12.mVal,2) - pow(sin2phi12.mVal,2)
+        + 4. * cos2phi12.mVal
+        * (pow(cos2phi1.mVal,2) - pow(sin2phi1.mVal,2))
+        + 8. * sin2phi12.mVal * sin2phi1.mVal * cos2phi1.mVal
+        + 8. * cor2
+        * (pow(cos2phi1.mVal,2) + pow(sin2phi1.mVal,2))
+        - 6. * pow(pow(cos2phi1.mVal,2) + pow(sin2phi1.mVal,2),2))
+        ,0.25);
+
+    double c = 4*cor2-8*(pow(cos2phi1.mVal,2)+pow(sin2phi1.mVal,2));
+    double a = 4*cos2phi123.mVal-8*cos2phi12.mVal*cos2phi1.mVal
+             - 8*sin2phi12.mVal*sin2phi1.mVal-16*cor2*cos2phi1.mVal+24*(pow(cos2phi1.mVal,2)+pow(sin2phi1.mVal,2))*cos2phi1.mVal;
+    double b =-4*sin2phi123.mVal+8*cos2phi12.mVal*sin2phi1.mVal
+             - 8*sin2phi12.mVal*cos2phi1.mVal-16*cor2*sin2phi1.mVal+24*(pow(cos2phi1.mVal,2)+pow(sin2phi1.mVal,2))*sin2phi1.mVal;
+    double d = 4*cos2phi1.mVal;
+    double e =-4*sin2phi1.mVal;
+    double f = 2*cos2phi12.mVal-4*(pow(cos2phi1.mVal,2)-pow(sin2phi1.mVal,2));
+    double g = 2*sin2phi12.mVal-8*sin2phi1.mVal*cos2phi1.mVal;
     v24intEAC = (1./(16.*pow(v24intAC,6)))
-              *( sumw2cor4*pow(cor4E/sumwcor4,2)
-               + pow(c*cor2E/sumwcor2,2)*sumw2cor2
-               + pow(a*cos2phi1E[icent],2)/cos2phi1Neff[icent]
-               + pow(b*sin2phi1E[icent],2)/sin2phi1Neff[icent]
-               + pow(d*cos2phi123E[icent],2)/cos2phi123Neff[icent]
-               + pow(e*sin2phi123E[icent],2)/sin2phi123Neff[icent]
-               + pow(f*cos2phi12E[icent],2)/cos2phi12Neff[icent]
-               + pow(g*sin2phi12E[icent],2)/sin2phi12Neff[icent]
-               - 2*c*sumwcor24/sumwcor2/sumwcor4*cov24
-               - 2*a*sumwcov4cos2phi1[icent]/sumwcor4/sumwcos2phi1[icent]*cov4cos2phi1[icent]
-               - 2*b*sumwcov4sin2phi1[icent]/sumwcor4/sumwsin2phi1[icent]*cov4sin2phi1[icent]
-               - 2*d*sumwcov4cos2phi123[icent]/sumwcor4/sumwcos2phi123[icent]*cov4cos2phi123[icent]
-               - 2*e*sumwcov4sin2phi123[icent]/sumwcor4/sumwsin2phi123[icent]*cov4sin2phi123[icent]
-               - 2*f*sumwcov4cos2phi12[icent]/sumwcor4/sumwcos2phi12[icent]*cov4cos2phi12[icent]
-               - 2*g*sumwcov4sin2phi12[icent]/sumwcor4/sumwsin2phi12[icent]*cov4sin2phi12[icent]
+              *( cor24.mMSE
+               + c*c*cor22.mMSE
+               + a*a*cos2phi1.mMSE
+               + b*b*sin2phi1.mMSE
+               + d*d*cos2phi123.mMSE
+               + e*e*sin2phi123.mMSE
+               + f*f*cos2phi12.mMSE
+               + g*g*sin2phi12.mMSE
 
-               + 2*c*a*sumwcov2cos2phi1[icent]/sumwcor2/sumwcos2phi1[icent]*cov2cos2phi1[icent]
-               + 2*c*b*sumwcov2sin2phi1[icent]/sumwcor2/sumwsin2phi1[icent]*cov2sin2phi1[icent]
-               + 2*c*d*sumwcov2cos2phi123[icent]/sumwcor2/sumwcos2phi123[icent]*cov2cos2phi123[icent]
-               + 2*c*e*sumwcov2sin2phi123[icent]/sumwcor2/sumwsin2phi123[icent]*cov2sin2phi123[icent]
-               + 2*c*f*sumwcov2cos2phi12[icent]/sumwcor2/sumwcos2phi12[icent]*cov2cos2phi12[icent]
-               + 2*c*g*sumwcov2sin2phi12[icent]/sumwcor2/sumwsin2phi12[icent]*cov2sin2phi12[icent]
+               - 2*c*cov24
+               - 2*a*cov4cos2phi1
+               - 2*b*cov4sin2phi1
+               - 2*d*cov4cos2phi123
+               - 2*e*cov4sin2phi123
+               - 2*f*cov4cos2phi12
+               - 2*g*cov4sin2phi12
 
-               + 2*a*b*sumwcovcos2phi1sin2phi1[icent]/sumwcos2phi1[icent]/sumwsin2phi1[icent]*covcos2phi1sin2phi1[icent]
-               + 2*a*e*sumwcovcos2phi1sin2phi123[icent]/sumwcos2phi1[icent]/sumwsin2phi123[icent]*covcos2phi1sin2phi123[icent]
-               + 2*a*g*sumwcovcos2phi1sin2phi12[icent]/sumwcos2phi1[icent]/sumwsin2phi12[icent]*covcos2phi1sin2phi12[icent]
-               + 2*a*d*sumwcovcos2phi1cos2phi123[icent]/sumwcos2phi1[icent]/sumwcos2phi123[icent]*covcos2phi1cos2phi123[icent]
-               + 2*a*f*sumwcovcos2phi1cos2phi12[icent]/sumwcos2phi1[icent]/sumwcos2phi12[icent]*covcos2phi1cos2phi12[icent]
+               + 2*c*a*cov2cos2phi1
+               + 2*c*b*cov2sin2phi1
+               + 2*c*d*cov2cos2phi123
+               + 2*c*e*cov2sin2phi123
+               + 2*c*f*cov2cos2phi12
+               + 2*c*g*cov2sin2phi12
 
-               + 2*b*d*sumwcovsin2phi1cos2phi123[icent]/sumwsin2phi1[icent]/sumwcos2phi123[icent]*covsin2phi1cos2phi123[icent]
-               + 2*b*e*sumwcovsin2phi1sin2phi123[icent]/sumwsin2phi1[icent]/sumwsin2phi123[icent]*covsin2phi1sin2phi123[icent]
-               + 2*b*f*sumwcovsin2phi1cos2phi12[icent]/sumwsin2phi1[icent]/sumwcos2phi12[icent]*covsin2phi1cos2phi12[icent]
-               + 2*b*g*sumwcovsin2phi1sin2phi12[icent]/sumwsin2phi1[icent]/sumwsin2phi12[icent]*covsin2phi1sin2phi12[icent]
+               + 2*a*b*covcos2phi1sin2phi1
+               + 2*a*e*covcos2phi1sin2phi123
+               + 2*a*g*covcos2phi1sin2phi12
+               + 2*a*d*covcos2phi1cos2phi123
+               + 2*a*f*covcos2phi1cos2phi12
 
-               + 2*d*e*sumwcovcos2phi123sin2phi123[icent]/sumwcos2phi123[icent]/sumwsin2phi123[icent]*covcos2phi123sin2phi123[icent]
-               + 2*d*f*sumwcovcos2phi123cos2phi12[icent]/sumwcos2phi123[icent]/sumwcos2phi12[icent]*covcos2phi123cos2phi12[icent]
-               + 2*d*g*sumwcovcos2phi123sin2phi12[icent]/sumwcos2phi123[icent]/sumwsin2phi12[icent]*covcos2phi123sin2phi12[icent]
+               + 2*b*d*covsin2phi1cos2phi123
+               + 2*b*e*covsin2phi1sin2phi123
+               + 2*b*f*covsin2phi1cos2phi12
+               + 2*b*g*covsin2phi1sin2phi12
 
-               + 2*e*f*sumwcovsin2phi123cos2phi12[icent]/sumwsin2phi123[icent]/sumwcos2phi12[icent]/covsin2phi123cos2phi12[icent]
-               + 2*e*g*sumwcovsin2phi123sin2phi12[icent]/sumwsin2phi123[icent]/sumwsin2phi12[icent]/covsin2phi123sin2phi12[icent]
+               + 2*d*e*covcos2phi123sin2phi123
+               + 2*d*f*covcos2phi123cos2phi12
+               + 2*d*g*covcos2phi123sin2phi12
 
-               + 2*f*g*sumwcovcos2phi12sin2phi12[icent]/sumwcos2phi12[icent]/sumwsin2phi12[icent]*covcos2phi12sin2phi12[icent]
+               + 2*e*f*covsin2phi123cos2phi12
+               + 2*e*g*covsin2phi123sin2phi12
 
-
+               + 2*f*g*covcos2phi12sin2phi12
               );
     v24intEAC = sqrt(v24intEAC);          
 
 
     
-    ofile2 << icent*10<<"-"<< (icent+1)*10<<" "<< v22intEAC << " " << v24intEAC << endl;
+    ofile2 << icent*10<<"-"<< (icent+1)*10<<" "<< v22intAC <<" "<< v22intEAC << " "<< v24intAC <<" "<< v24intEAC << endl;
 
     //=============================================
 
@@ -630,7 +693,7 @@ void v2plot(){
 
     v2centEAC[0][icent] = v2MCintE;
     v2centEAC[1][icent] = v22intEAC;
-    v2centEAC[2][icent] = v24intEAC;
+    v2centEAC[2][icent] = v24intE;
     v2centEAC[3][icent] = v2EPintE;  
 
     // TGraphErrors for compare 4 method
@@ -660,43 +723,44 @@ void v2plot(){
     grshade[icent] -> SetFillStyle(1001);
     grshade[icent] -> SetFillColor(18);
     grshade[icent] -> SetDrawOption("f");
-
+  
     //==========================================================================================================================
-
+    
     // Differential flow calculation
 
     double v2MCpt[npt]; // v2 in given pT bin
     double ev2MCpt[npt]; // standard error of v2 in given pT bin
   
-    double cor2Red[npt];         // Differential 2nd order cumulant d_{2}{2} = <<2'>>
-    double cor2RedE[npt];        // Error of <<2'>>
+    // double cor2Red[npt];         // Differential 2nd order cumulant d_{2}{2} = <<2'>>
+    // double cor2RedE[npt];        // Error of <<2'>>
     double v22dif[npt];      // Differential elliptic flow v'_{2}{2} extracted from 2nd order cumulants
                             // v'_{2}{2} = d_{2}{2} / sqrt( c_{2}{2} )
     double v22difE[npt];     // Error of v'_{2}{2}
     
-    double cor4Red[npt];    // Reduced average all-event 4-particle correlation <<4'>>
-    double cor4RedE[npt];   // Error of <<4'>>
+    // double cor4Red[npt];    // Reduced average all-event 4-particle correlation <<4'>>
+    // double cor4RedE[npt];   // Error of <<4'>>
     double v24dif[npt];      // Differential elliptic flow v'_{2}{4} extracted from 4th order cumulants
                             // v'_{2}{4} = -d_{2}{4} / pow( -c_{2}{4} , 3/4 )
     double v24difE[npt];     // Error of v'_{2}{4}
 
-    double sumwcor22prime[npt];        // sum(w(<2>)*w(<2'>))
-    double cov22prime[npt];            // Cov(<2>,<2'>)
-    double sumwcor24prime[npt];        // sum(w(<2>)*w(<4'>))
-    double cov24prime[npt];            // Cov(<2>,<4'>)
-    double sumwcor42prime[npt];        // sum(w(<4>)*w(<2'>))
-    double cov42prime[npt];            // Cov(<4>,<2'>)
-    double sumwcor44prime[npt];        // sum(w(<4>)*w(<4'>))
-    double cov44prime[npt];            // Cov(<4>,<4'>)
-    double sumwcor2prime4prime[npt];   // sum(w(<2'>)*w(<4'>))
-    double cov2prime4prime[npt];       // Cov(<2'>,<4'>)
+    // double sumwcor22prime[npt];        // sum(w(<2>)*w(<2'>))
+    // double cov22prime[npt];            // Cov(<2>,<2'>)
+    // double sumwcor24prime[npt];        // sum(w(<2>)*w(<4'>))
+    // double cov24prime[npt];            // Cov(<2>,<4'>)
+    // double sumwcor42prime[npt];        // sum(w(<4>)*w(<2'>))
+    // double cov42prime[npt];            // Cov(<4>,<2'>)
+    // double sumwcor44prime[npt];        // sum(w(<4>)*w(<4'>))
+    // double cov44prime[npt];            // Cov(<4>,<4'>)
+    // double sumwcor2prime4prime[npt];   // sum(w(<2'>)*w(<4'>))
+    // double cov2prime4prime[npt];       // Cov(<2'>,<4'>)
 
-    double sumw2cor2red[npt]; // sumw2 of <2'>
-    double sumwcor2red[npt];  // sumw of <2'>    
-    double sumw2cor4red[npt]; // sumw2 of <4'>
-    double sumwcor4red[npt];  // sumw of <4'>
+    // double sumw2cor2red[npt]; // sumw2 of <2'>
+    // double sumwcor2red[npt];  // sumw of <2'>    
+    // double sumw2cor4red[npt]; // sumw2 of <4'>
+    // double sumwcor4red[npt];  // sumw of <4'>
 
     double v22difAC[npt], v24difAC[npt];
+    double v22difEAC[npt]={0}, v24difEAC[npt]={0};
 
     for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
       
@@ -705,25 +769,79 @@ void v2plot(){
       ev2MCpt[ipt] = hv2MCpt[icent][ipt] -> GetBinError(1);
 
       // 2-particle correlations
-      // estimate of the 2-particle differential flow (C.41)
-      cor2Red[ipt] = hv22pt[icent][ipt]->GetBinContent(1);
-      v22dif[ipt] = Vn2Dif(cor2Red[ipt],cor2);
-      // acceptance correction
-      v22difAC[ipt] = (cor2Red[ipt] - cos2psi1[icent][ipt] * cos2phi1[icent] - sin2psi1[icent][ipt] * sin2phi1[icent]) / v22intAC;
+      // // estimate of the 2-particle differential flow (C.41)
+      // cor2Red[ipt] = hv22pt[icent][ipt]->GetBinContent(1);
+      // v22dif[ipt] = Vn2Dif(cor2Red[ipt],cor2);
+      // // acceptance correction
+      // v22difAC[ipt] = (cor2Red[ipt] - cos2psi1[icent][ipt] * cos2phi1[icent] - sin2psi1[icent][ipt] * sin2phi1[icent]) / v22intAC;
 
+      term cor2Red, cos2psi1, sin2psi1;
+      cor2Red = term(hv22pt[icent][ipt]);
+      cos2psi1 = term(hcos2psi1[icent][ipt]);
+      sin2psi1 = term(hsin2psi1[icent][ipt]);
+
+      double cov[6][6]={{0}};
+      for (int iterm=0;iterm<6;iterm++){
+        for (int jterm=iterm;jterm<6;jterm++){
+          if (iterm==jterm) continue;
+          cov[iterm][jterm] = Covariance(hcov[icent][ipt][iterm][jterm],hterm[icent][ipt][iterm],hterm[jterm]);
+        }  
+      }
+
+      v22dif[ipt] = cor2Red.mVal/v22int;
+      v22difAC[ipt] = (cor2Red.mVal - cos2psi1.mVal * cos2phi1.mVal - sin2psi1.mVal * sin2phi1.mVal) / v22intAC;
+      v22difE[ipt] = sqrt(0.25*pow(cor2,-3.)*(cor2Red.mVal*cor2Red.mVal*cor22.mMSE
+          + 4.*cor2*cor2*cor2Red.mMSE - 4.*cor2*cor2Red.mVal
+          * cov[0][1]));
+      // partial derivate terms
+      double partDer[6];
+
+      double h = v22intAC;
+      double i = cor2Red.mVal - cos2psi1.mVal * cos2phi1.mVal - sin2psi1.mVal * sin2phi1.mVal;
+      partDer[0] = 1./h;
+      partDer[1] = -0.5*i*pow(h,-3);
+      partDer[2] = -cos2phi1.mVal/h;
+      partDer[3] = -sin2phi.mVal/h;
+      partDer[4] = (-cos2psi1.mVal*h+i/h*cos2phi1.mVal)/(h*h);
+      partDer[5] = (-sin2psi1.mVal*h+i/h*sin2phi1.mVal)/(h*h);
+
+      // double j = 1./h;
+      // double k = -0.5*i*pow(h,-3);
+      // double l = -cos2phi1.mVal/h;
+      // double m = -sin2phi.mVal/h;
+      // double n = (-cos2psi1.mVal*h+i/h*cos2phi1.mVal)/(h*h);
+      // double o = (-sin2psi1.mVal*h+i/h*sin2phi1.mVal)/(h*h);
+      term termV22Dif[6];
+      termV22Dif[0] = cor2Red;
+      termV22Dif[1] = cor22;
+      termV22Dif[2] = cos2psi1;
+      termV22Dif[3] = sin2psi1;
+      termV22Dif[4] = cos2phi1;
+      termV22Dif[5] = sin2phi1;
+
+      for (int iterm=0;iterm<6;iterm++){
+        v22difEAC[ipt] += pow(partDer[iterm],2)*termV22Dif[iterm].mMSE;
+      }
+      for (int iterm=0;iterm<6;iterm++){
+        for (int jterm=iterm;jterm<6;jterm++){
+          if (iterm==jterm) continue;
+          v22difEAC[ipt] += 2*partDer[iterm]*partDer[jterm]*cov[iterm][jterm];
+        }
+      }
+      v22difEAC[ipt] = sqrt(v22difEAC[ipt]);
 
       // statistical error of the 2-particle differential flow estimate (C.42)
-      cor2RedE[ipt] = sx(hv22pt[icent][ipt]);
-      hv22pt[icent][ipt] -> GetStats(stats);
-      sumwcor2red[ipt] = stats[0];
-      sumw2cor2red[ipt] = stats[1];
+      // cor2RedE[ipt] = sx(hv22pt[icent][ipt]);
+      // hv22pt[icent][ipt] -> GetStats(stats);
+      // sumwcor2red[ipt] = stats[0];
+      // sumw2cor2red[ipt] = stats[1];
 
-      // calculate covariance of <2> and <2'>
-      cov22prime[ipt] = Cov(hcov22prime[icent][ipt],hv22[icent],hv22pt[icent][ipt]);
-      sumwcor22prime[ipt] = Sumwxwy(hcov22prime[icent][ipt]);
-      v22difE[ipt] = Evn2dif(cor2, cor2E, sumwcor2, sumw2cor2,
-                             cor2Red[ipt], cor2RedE[ipt], sumwcor2red[ipt],sumw2cor2red[ipt],
-                             cov22prime[ipt], sumwcor22prime[ipt]);
+      // calculate Covariance of <2> and <2'>
+      // cov22prime[ipt] = Cov(hcov22prime[icent][ipt],hv22[icent],hv22pt[icent][ipt]);
+      // sumwcor22prime[ipt] = Sumwxwy(hcov22prime[icent][ipt]);
+      // v22difE[ipt] = Evn2dif(cor2, cor2E, sumwcor2, sumw2cor2,
+      //                        cor2Red[ipt], cor2RedE[ipt], sumwcor2red[ipt],sumw2cor2red[ipt],
+      //                        cov22prime[ipt], sumwcor22prime[ipt]);
 
       // 4-particle correlations
       // estimate of the 4-particle differential flow (C.45)
@@ -764,19 +882,19 @@ void v2plot(){
       sumwcor4red[ipt] = stats[0];
       sumw2cor4red[ipt] = stats[1];
 
-      // calculate covariance of <2> and <4'>
+      // calculate Covariance of <2> and <4'>
       cov24prime[ipt] = Cov(hcov24prime[icent][ipt],hv22[icent],hv24pt[icent][ipt]);
       sumwcor24prime[ipt] = Sumwxwy(hcov24prime[icent][ipt]);
 
-      // calculate covariance of <4> and <2'>
+      // calculate Covariance of <4> and <2'>
       cov42prime[ipt] = Cov(hcov42prime[icent][ipt],hv24[icent],hv22pt[icent][ipt]);
       sumwcor42prime[ipt] = Sumwxwy(hcov42prime[icent][ipt]);
 
-      // calculate covariance of <4> and <4'>
+      // calculate Covariance of <4> and <4'>
       cov44prime[ipt] = Cov(hcov44prime[icent][ipt],hv24[icent],hv24pt[icent][ipt]);
       sumwcor44prime[ipt] = Sumwxwy(hcov44prime[icent][ipt]);
 
-      // calculate covariance of <2'> and <4'>
+      // calculate Covariance of <2'> and <4'>
       cov2prime4prime[ipt] = Cov(hcov2prime4prime[icent][ipt],hv22pt[icent][ipt],hv24pt[icent][ipt]);
       sumwcor2prime4prime[ipt] = Sumwxwy(hcov2prime4prime[icent][ipt]);
       v24difE[ipt] = Evn4dif(cor2, cor2E, sumwcor2, sumw2cor2,
@@ -822,24 +940,26 @@ void v2plot(){
       grDifFlWOAC[i][icent] -> SetDrawOption("P");
       mgDifFlWOAC[icent] -> Add(grDifFlWOAC[i][icent]);
     }    
+  
   } // end of loop over centrality classes
 
   //==========================================================================================================================
-  // Elliptic flow from eta sub-event method
-  for (int icent=0; icent<ncent; icent++){
-    double v2EP[npt]={0}, ev2EP[npt]={0};
-    for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
-      v2EP[ipt] = hv2EP[ipt]->GetBinContent(icent+1);
-      ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
-    }
-    // Event plane differential flow
-    grDifFl[3][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
-    grDifFl[3][icent] -> SetMarkerColor(kBlack);
-    grDifFl[3][icent] -> SetMarkerStyle(23);
-    grDifFl[3][icent] -> SetMarkerSize(1.3);
-    grDifFl[3][icent] -> SetDrawOption("P");
-    mgDifFl[icent] -> Add(grDifFl[3][icent]);
-  }
+  // // Elliptic flow from eta sub-event method
+  // for (int icent=0; icent<ncent; icent++){
+  //   double v2EP[npt]={0}, ev2EP[npt]={0};
+  //   for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
+  //     v2EP[ipt] = hv2EP[ipt]->GetBinContent(icent+1);
+  //     ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
+  //   }
+  //   // Event plane differential flow
+  //   grDifFl[3][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
+  //   grDifFl[3][icent] -> SetMarkerColor(kBlack);
+  //   grDifFl[3][icent] -> SetMarkerStyle(23);
+  //   grDifFl[3][icent] -> SetMarkerSize(1.3);
+  //   grDifFl[3][icent] -> SetDrawOption("P");
+  //   mgDifFl[icent] -> Add(grDifFl[3][icent]);
+  // }
+
   //==========================================================================================================================
   // TGraphErrors of reference flow with respect to centrality
   grRefFlCent[0] = new TGraphErrors(ncent,bin_cent,v2centAC[0],bin_centE,v2centEAC[0]);
@@ -862,7 +982,8 @@ void v2plot(){
     grRefFl[i]->SetMarkerSize(1.6);
     grRefFl[i]->SetDrawOption("P");
   }
-
+  const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
+  /*  
   //==========================================================================================================================
   
   TLegend *leg[3];
@@ -905,7 +1026,7 @@ void v2plot(){
   leg[2] -> Draw();
   c4 -> SaveAs("./Graphics/v2cent_AC.png");
   
-  const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
+  
   //==========================================================================================================================
 
   // Drawing multipads of reference & differential flow
@@ -1021,22 +1142,65 @@ void v2plot(){
     sprintf(hname,"./Graphics/RFCent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-  
+  */
   //==========================================================================================================================
 
-  outFile -> cd();
-  for (int i=0; i<4; i++){
-    sprintf(hname,"grRF_%i",i);
-    grRefFlCent[i] -> SetTitle(ch[i]);
-    grRefFlCent[i] -> Write(hname);
-    for (int icent=0;icent<ncent;icent++){
-      sprintf(hname,"gr_%i_%i",icent,i);
-      grDifFl[i][icent] -> SetTitle(ch[i]);
-      grDifFl[i][icent] -> Write(hname);
-    }
-  }
-  outFile -> Close();
+  // outFile -> cd();
+  // for (int i=0; i<4; i++){
+  //   sprintf(hname,"grRF_%i",i);
+  //   grRefFlCent[i] -> SetTitle(ch[i]);
+  //   grRefFlCent[i] -> Write(hname);
+  //   for (int icent=0;icent<ncent;icent++){
+  //     sprintf(hname,"gr_%i_%i",icent,i);
+  //     grDifFl[i][icent] -> SetTitle(ch[i]);
+  //     grDifFl[i][icent] -> Write(hname);
+  //   }
+  // }
+  // outFile -> Close();
 
+
+  gStyle->SetPadTickX(1);
+  gStyle->SetPadTickY(1);
+  gStyle->SetOptStat(0);  
+  TCanvas *c[ncent];
+  TLatex *text[ncent];
+  TH2F *h4[ncent];
+  for (int i=0;i<ncent;i++){
+    double ymin2 = TMath::MinElement(4,v2AC[i])*0.8;
+    double ymax2 = TMath::MaxElement(4,v2AC[i])*1.2;
+    // double ymin = 0.01*(i+1);
+    // double ymax = 0.03*(i+1);
+    sprintf(hname,"Cent%i-%i%%",i*10,(i+1)*10);
+    c[i] = new TCanvas(hname,hname,200,10,800,600);
+
+    h4[i] = new TH2F("","",4,0,4,10,ymin2,ymax2);
+    h4[i]->SetYTitle("v_{n}");
+    h4[i]->SetCanExtend(TH1::kAllAxes);
+    
+    TAxis* a = h4[i] -> GetXaxis();
+    for (int j=0; j<4; j++) h4[i]->Fill(ch[j],(ymin2+ymax2)/2.,1);
+    h4[i]->GetXaxis()->SetLabelSize(0.05);
+    a->SetNdivisions(300); // 3 division, 0 sub-division
+    h4[i]->Draw();
+    grshade[i] -> SetFillStyle(1001);
+    grshade[i] -> SetFillColor(18);
+    grshade[i] -> Draw("f");
+    grRefFl[i] -> SetTitle("Reference flow");
+    // grRefFlWOAC[i] -> Draw("P");
+    grRefFl[i] -> Draw("P");
+    sprintf(hname,"#splitline{Ref. flow}{#splitline{-2<#eta<-0.05}{cent: %i-%i%%}}",10*(i),10*(i+1));
+    text[i] = new TLatex(1.,(TMath::MinElement(4,grRefFl[i]->GetY())),hname);
+    text[i] -> SetTextFont(62);
+    text[i] -> SetTextSize(0.04);
+    text[i] -> SetTextAlign(21);
+    text[i] -> Draw();
+    sprintf(hname,"./Graphics/RFCent%i-%i%%.png",i*10,(i+1)*10);
+    c[i] -> SaveAs(hname);
+  }
+  const char *grTitleRF[4]={"v_{2}{MC};cent, %;v_{2}","v_{2}{2,QC};cent, %;v_{2}","v_{2}{4,QC};cent, %;v_{2}","v_{2}{#eta sub-event};cent, %;v_{2}"};
+  for (int i=0; i<4; i++){
+    grRefFlCent[i] -> SetTitle(grTitleRF[i]);
+  }
   std::vector<TGraphErrors*> vgr;
   for (int i=0; i<4; i++){
     vgr.push_back(grRefFlCent[i]);
@@ -1055,7 +1219,7 @@ void v2plot(){
   l.DrawLatex(0.5,0.1,hname);
   sprintf(hname,"./Graphics/%s/v2centratio.png",analysis);
   can -> SaveAs(hname);
-
+/*
   //=============================================
   std::vector<TGraphErrors*> vgrv2pt[8];
   for (int icent=0; icent<8; icent++){
@@ -1079,5 +1243,5 @@ void v2plot(){
     cV2PT[icent] -> SaveAs(hname);
   }
 
-
+*/
 }

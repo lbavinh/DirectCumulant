@@ -10,11 +10,11 @@
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job
-#$ -l h_rt=01:00:00
+#$ -l h_rt=03:30:00
 # Set soft time limit - set up the same as a hard limit
-#$ -l s_rt=01:00:00
+#$ -l s_rt=03:30:00
 # Specify job array range (how many jobs will be created
-#$ -t 1-100
+#$ -t 1-385
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /weekly/$USER/lbavinh/UrQMD/OUT/log/
 #$ -e /weekly/$USER/lbavinh/UrQMD/OUT/log/

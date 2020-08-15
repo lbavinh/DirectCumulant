@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
 using namespace std;
 
 static const int ncent = 8; // 0-80%
@@ -83,7 +84,7 @@ TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 TProfile *hcos2phi1[ncent], *hsin2phi1[ncent], *hcos2phi12[ncent], *hsin2phi12[ncent], *hcos2phi123[ncent], *hsin2phi123[ncent];
 
 // Differential flow acceptance correction
-TProfile *hcos2psi1[npt], *hsin2psi1[npt], *hcos2psi1phi2[npt], *hsin2psi1phi2[npt],
+TProfile *hcos2psi1[ncent][npt], *hsin2psi1[ncent][npt], *hcos2psi1phi2[npt], *hsin2psi1phi2[npt],
          *hcos2psi1pphi23[npt], *hsin2psi1pphi23[npt], *hcos2psi1mphi23[npt], *hsin2psi1mphi23[npt];
 
 // test fix stat. error
@@ -102,7 +103,14 @@ TProfile *hcov4cos2phi1[ncent], *hcov4sin2phi1[ncent], *hcov4cos2phi123[ncent], 
          *hcovcos2phi123sin2phi123[ncent], *hcovcos2phi123cos2phi12[ncent], *hcovcos2phi123sin2phi12[ncent],
          *hcovsin2phi123cos2phi12[ncent], *hcovsin2phi123sin2phi12[ncent], *hcovcos2phi12sin2phi12[ncent];
 
+TProfile *hcov[ncent][npt][6][6];
+TProfile *hterm[ncent][npt][6];
 
+struct term{
+  term(double val=0, double w=0) : mValue(val), mWeight(w) {}
+  double mValue;
+  double mWeight;
+};
 void FlowANA::Booking(TString outFile)
 {
   char name[800];
@@ -170,13 +178,13 @@ void FlowANA::Booking(TString outFile)
     hPT[ipt] = new TProfile(name, title, 1, 0., 1.);
     hPT[ipt]->Sumw2();
 
-    sprintf(name, "hcos2psi1_%i", ipt);
-    hcos2psi1[ipt] = new TProfile(name,name,ncent,0.,ncent);
-    hcos2psi1[ipt] -> Sumw2();
+    // sprintf(name, "hcos2psi1_%i", ipt);
+    // hcos2psi1[ipt] = new TProfile(name,name,ncent,0.,ncent);
+    // hcos2psi1[ipt] -> Sumw2();
 
-    sprintf(name, "hsin2psi1_%i", ipt);
-    hsin2psi1[ipt] = new TProfile(name,name,ncent,0.,ncent);
-    hsin2psi1[ipt] -> Sumw2();
+    // sprintf(name, "hsin2psi1_%i", ipt);
+    // hsin2psi1[ipt] = new TProfile(name,name,ncent,0.,ncent);
+    // hsin2psi1[ipt] -> Sumw2();
 
     sprintf(name, "hcos2psi1phi2_%i", ipt);
     hcos2psi1phi2[ipt] = new TProfile(name,name,ncent,0.,ncent);
@@ -205,6 +213,29 @@ void FlowANA::Booking(TString outFile)
     sprintf(name,"hv2EP_%i",ipt);
     hv2EP[ipt] = new TProfile(name,name, ncent,0.,ncent);
     hv2EP[ipt]->Sumw2();
+
+    // test fix stat. error
+    for (int icent=0;icent<ncent;icent++){
+      sprintf(name, "hcos2psi1_%i_%i", icent, ipt);
+      hcos2psi1[icent][ipt] = new TProfile(name,name,1,0.,1.);
+      hcos2psi1[icent][ipt] -> Sumw2();
+
+      sprintf(name, "hsin2psi1_%i_%i", icent, ipt);
+      hsin2psi1[icent][ipt] = new TProfile(name,name,1,0.,1.);
+      hsin2psi1[icent][ipt] -> Sumw2();
+      
+      for (int iterm=0;iterm<6;iterm++){
+        sprintf(name, "hterm_%i_%i_%i",icent,ipt,iterm);
+        hterm[icent][ipt][iterm] = new TProfile(name,name,1,0.,1.);
+        hterm[icent][ipt][iterm] -> Sumw2();
+        for (int jterm=0;jterm<6;jterm++){
+          sprintf(name, "hcov_%i_%i_%i_%i", icent, ipt, iterm, jterm);
+          hcov[icent][ipt][iterm][jterm] =  new TProfile(name,name,1,0.,1.);
+          hcov[icent][ipt][iterm][jterm] -> Sumw2();
+        }
+      }
+      
+    }
   }
 
   for (int icent=0;icent<ncent;icent++){
@@ -330,6 +361,8 @@ void FlowANA::Booking(TString outFile)
     sprintf(name, "hsin2phi123_%i", icent);
     hsin2phi123[icent] = new TProfile(name, name, 1, 0., 1.);
     hsin2phi123[icent] ->Sumw2();
+
+
 
 
     for (int ipt=0;ipt<npt;ipt++){
@@ -646,7 +679,7 @@ void FlowANA::CalFlow(){
     nb = fChain->GetEntry(jentry);
     nbytes += nb;
     // if (Cut(ientry) < 0) continue;
-    if (ientry % 100000 == 0) cout << ientry << endl; // event counter
+    if (ientry % 25000 == 0) cout << ientry << endl; // event counter
 
     // ==================== Analysis ==================== //
     
@@ -815,9 +848,12 @@ void FlowANA::CalFlow(){
 
 
     // ================= Direct cumulants ================= //
+
+    // ================= <<2>> ================= //
     
     if (M >= 2.)
     { // <2> definition condition
+      term cos2phi1, sin2phi1, cor2;
       Q2 = TComplex(Qx2, Qy2);
       w2 = M * (M - 1.);                 // w(<2>)
       cor22 = CalCor22(Q2, M, w2);       // <2>
@@ -828,15 +864,23 @@ void FlowANA::CalFlow(){
       hsin2phi1[icent] -> Fill(0.5,Qy2/M,M);
 
       // test fix stat. error
-      hcov2cos2phi1[icent] -> Fill(0.5,cor22*Qx2/M,w2*M);
-      hcov2sin2phi1[icent] -> Fill(0.5,cor22*Qy2/M,w2*M);
-      hcovcos2phi1sin2phi1[icent] -> Fill(0.5,(Qx2/M)*(Qy2/M),M*M);
+      cos2phi1.mValue = Qx2/M;
+      cos2phi1.mWeight = M;
+      sin2phi1.mValue = Qy2/M;
+      sin2phi1.mWeight = M;
+      cor2.mValue = cor22;
+      cor2.mWeight = w2;
+      hcov2cos2phi1[icent] -> Fill(0.5,cor2.mValue*cos2phi1.mValue,cor2.mWeight*cos2phi1.mWeight);
+      hcov2sin2phi1[icent] -> Fill(0.5,cor2.mValue*sin2phi1.mValue,cor2.mWeight*sin2phi1.mWeight);
+      hcovcos2phi1sin2phi1[icent] -> Fill(0.5,cos2phi1.mValue*sin2phi1.mValue,cos2phi1.mWeight*sin2phi1.mWeight);
 
     } // end of <2> definition condition
-    for (int ipt = 0; ipt < npt; ipt++)
-    {
-      if (mp[ipt] == 0 || M < 1)
-        continue;
+
+    // ================= <<2'>> ================= //
+
+    for (int ipt = 0; ipt < npt; ipt++) {
+      if (mp[ipt] == 0 || M < 1) continue;
+
 
       p2[ipt] = TComplex(px2[ipt], py2[ipt]);
       q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
@@ -848,10 +892,43 @@ void FlowANA::CalFlow(){
       hcov22prime[icent][ipt]->Fill(0.5, cor22 * redCor22[ipt], w2 * wred2[ipt]); // <2>*<2'>
 
       // Non-uniform acceptance correction
-      hcos2psi1[ipt] -> Fill(0.5+icent,px2[ipt]/mp[ipt],mp[ipt]);
-      hsin2psi1[ipt] -> Fill(0.5+icent,py2[ipt]/mp[ipt],mp[ipt]);
+      hcos2psi1[icent][ipt] -> Fill(0.5,px2[ipt]/mp[ipt],mp[ipt]);
+      hsin2psi1[icent][ipt] -> Fill(0.5,py2[ipt]/mp[ipt],mp[ipt]);
 
+      // test fix stat. error
+      term redCor2,cor2,cos2psi1,sin2psi1,cos2phi1,sin2phi1;
+      vector <term> termV22;
+      redCor2.mValue = redCor22[ipt];
+      redCor2.mWeight = wred2[ipt];
+      Q2 = TComplex(Qx2, Qy2);
+      w2 = M*(M-1);                     // w(<2>)
+      cor22 = CalCor22(Q2, M, w2);       // <2>
+      cor2.mValue = cor22;
+      cor2.mWeight = w2;
+      cos2psi1.mValue = px2[ipt]/mp[ipt];
+      cos2psi1.mWeight = mp[ipt];
+      sin2psi1.mValue = py2[ipt]/mp[ipt];
+      sin2psi1.mWeight = mp[ipt];
+      cos2phi1.mValue = Qx2/M;
+      cos2phi1.mWeight = M;
+      sin2phi1.mValue = Qy2/M;
+      sin2phi1.mWeight = M;
+
+
+      termV22.push_back(redCor2);
+      termV22.push_back(cor2);
+      termV22.push_back(cos2psi1);
+      termV22.push_back(sin2psi1);
+      termV22.push_back(cos2phi1);
+      termV22.push_back(sin2phi1);
       
+      for (int iterm=0;iterm<6;iterm++){
+        hterm[icent][ipt][iterm] -> Fill(0.5,termV22[iterm].mValue,termV22[iterm].mWeight);
+        for (int jterm=iterm;jterm<6;jterm++){
+          if (iterm==jterm) continue;
+          hcov[icent][ipt][iterm][jterm] -> Fill(0.5,termV22[iterm].mValue*termV22[jterm].mValue,termV22[iterm].mWeight*termV22[jterm].mWeight);
+        }  
+      }
     }
 
     if (M >= 4.)

@@ -256,8 +256,7 @@ void hVana::Ana_event()
 
   Double_t sumQxy[neta][2]={{0}};  // [eta-,eta+][x,y]
   Double_t multQv[neta]={0};       // [eta+,eta-]
-  for (int i = 0; i < nh; i++)
-  { // track loop
+  for (int i = 0; i < nh; i++){ // track loop
     double pT = pt[i];
     if( pT<minpt  || pT>maxpt ) continue;
     hPt->Fill(pT);
@@ -268,26 +267,16 @@ void hVana::Ana_event()
     hEta->Fill(eta[i]);
 
     Int_t ipt = 0;
-    for (int j = 0; j < npt; j++)
-    {
-      if (pT >= bin_pT[j] && pT < bin_pT[j + 1])
-        ipt = j;
+    for (int j = 0; j < npt; j++) {
+      if (pT >= bin_pT[j] && pT < bin_pT[j + 1]) ipt = j;
     }
-
-    if (bFlow[i]){
-      Double_t v2 = TMath::Cos(2 * (phi0[i] - rp));
-      // calculate reference v2 from MC toy
-      if (eta[i] < -0.05) hv2MC[icent]->Fill(0.5, v2, 1);
-      // hv2MC[icent]->Fill(0.5, v2, 1);
-      // Calculate differential v2 from MC toy
-      hPT[ipt]->Fill(0.5+icent, pT, 1);
-      hv2MCpt[icent][ipt]->Fill(0.5, v2, 1);
-    }
-
+   
+    Double_t v2 = TMath::Cos(2 * (phi0[i] - rp));
+    hPT[ipt]->Fill(0.5+icent, pT, 1);
 
     // RFP
-    if (eta[i] < -0.05)
-    {
+    if (eta[i] < -0.05){
+      if (bFlow[i]) hv2MC[icent]->Fill(0.5, v2, 1); // calculate reference v2 from MC toy
       Qx2 += TMath::Cos(2. * phi0[i]);
       Qy2 += TMath::Sin(2. * phi0[i]);
       Qx4 += TMath::Cos(4. * phi0[i]);
@@ -296,8 +285,8 @@ void hVana::Ana_event()
     }
 
     // POI
-    if (eta[i] > 0.05)
-    {
+    if (eta[i] > 0.05){
+      if (bFlow[i]) hv2MCpt[icent][ipt]->Fill(0.5, v2, 1); // Calculate differential v2 from MC toy
       px2[ipt] += TMath::Cos(2. * phi0[i]);
       py2[ipt] += TMath::Sin(2. * phi0[i]); 
       mp[ipt]++;
@@ -318,21 +307,17 @@ void hVana::Ana_event()
       sumQxy[fEta][1] += pT * sin( (2.0) * phi0[i] );
 			multQv[fEta]++;
 		} // end of eta selection
-
   } // end of track loop
-  if (M >= 2.)
-  { // <2> definition condition
+
+  if (M >= 2.){ // <2> definition condition
     Q2 = TComplex(Qx2, Qy2);
     w2 = M * (M - 1.);                 // w(<2>)
     cor22 = CalCor22(Q2, M, w2);       // <2>
     hv22[icent]->Fill(0.5, cor22, w2); // <<2>>
-
   } // end of <2> definition condition
-  for (int ipt = 0; ipt < npt; ipt++)
-  {
-    if (mp[ipt] == 0 || M<1)
-      continue;
 
+  for (int ipt = 0; ipt < npt; ipt++){
+    if (mp[ipt] == 0 || M<1) continue;
     p2[ipt] = TComplex(px2[ipt], py2[ipt]);
     q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
     wred2[ipt] = mp[ipt] * M - mq[ipt];                                        // w(<2'>)
@@ -343,8 +328,7 @@ void hVana::Ana_event()
     hcov22prime[icent][ipt]->Fill(0.5, cor22 * redCor22[ipt], w2 * wred2[ipt]); // <2>*<2'>
   }
 
-  if (M >= 4.)
-  { // <4> definition condition
+  if (M >= 4.){ // <4> definition condition
     Q4 = TComplex(Qx4, Qy4);
     w4 = M * (M - 1.) * (M - 2.) * (M - 3.); // w(<4>)
     cor24 = CalCor24(Q2, Q4, M, w4);      // <4>
@@ -353,10 +337,9 @@ void hVana::Ana_event()
     // TProfile for covariance calculation in statistic error
     hcov24[icent]->Fill(0.5, cor22 * cor24, w2 * w4); // <2>*<4>
   } // end of <4> definition condition
-  for (int ipt = 0; ipt < npt; ipt++)
-  {
-    if (mp[ipt] == 0 || M<3)
-      continue;
+
+  for (int ipt = 0; ipt < npt; ipt++){
+    if ( mp[ipt] == 0 || M < 3 ) continue;
     q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
     wred4[ipt] = (mp[ipt] * M - 3. * mq[ipt]) * (M - 1.) * (M - 2.);                                 // w(<4'>)
 

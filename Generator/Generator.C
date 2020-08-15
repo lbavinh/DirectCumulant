@@ -31,7 +31,7 @@ static const double bin_pT[npt+1]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1
 static const float maxpt = 3.5; // max pt
 static const float minpt = 0.2; // min pt
 
-static const int max_nh = 6000;
+static const int max_nh = 6100;
 
 float   d_rp;           // reaction plane azimuthal angle
 float   d_b;            // impact parameter
@@ -76,7 +76,7 @@ void Book_hist(TString outfile) {
   d_outfile = new TFile(outfile.Data(),"recreate");
   cout << outfile.Data() << " was initialized." << endl;
   d_outfile -> cd();
-  htree = new TTree("htree","Simulation of acceptance");
+  htree = new TTree("tree","Simulation of acceptance");
 
   htree->Branch("rp",&d_rp,"rp/F");
   htree->Branch("nh",&d_nh,"nh/I");
@@ -136,13 +136,13 @@ void V2gen(int nevent,double Mmean) {
   double eta; // pseudorapidity
   bool bFlow;
 
-  float nonflow = 1.; /* Simulating nonflow correlations: 
+  float nonflow = 0.; /* Simulating nonflow correlations: 
 		     0: no nonflow correlations; 
 		     1: "pair wise" emission (2 particles with same azimuth);
          2: "quadruplet" emission (4 particles with same azimuth).*/
   float nonflowrate = 0.2;
   /* Fraction of particles that are affected by nonflow effects. */
-  bool bAcceptance = 0;
+  bool bAcceptance = 1;
   float A = PI/3.;
   float B = PI/2.;
 

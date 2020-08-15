@@ -31,13 +31,13 @@ public :
    Float_t         ecc3;   // eccrntricity e3
    Int_t           npart;  // number of participants
    Int_t           nh;     // number of particles in event
-   Float_t         momx[1633];   //[nh] momentum px
-   Float_t         momy[1633];   //[nh] momentum py
-   Float_t         momz[1633];   //[nh] momentum pz
-   Float_t         ene[1633];    //[nh] energy of particle
-   Int_t           hid[1633];    //[nh] 
-   Int_t           pdg[1633];    //[nh] particle ID
-   Short_t         charge[1633]; //[nh] charge of particle
+   Float_t         momx[1700];   //[nh] momentum px
+   Float_t         momy[1700];   //[nh] momentum py
+   Float_t         momz[1700];   //[nh] momentum pz
+   Float_t         ene[1700];    //[nh] energy of particle
+   Int_t           hid[1700];    //[nh] 
+   Int_t           pdg[1700];    //[nh] particle ID
+   Short_t         charge[1700]; //[nh] charge of particle
 
    // List of branches
    TBranch        *b_bimp;   //!

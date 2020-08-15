@@ -1,4 +1,3 @@
-
 // Draws 2 TGraphErrors (upper panel) with their gr1/gr2 ratio (lower pannel)
 TCanvas *DrawTGraph(TGraphErrors *const &gr1, TGraphErrors *const &gr2, TString str="", 
                     Double_t yRatio_low=0.89, Double_t yRatio_high=1.11)
@@ -486,14 +485,3 @@ void Test()
   canv1->SetName("canv1");
   SaveTGraph("outfile.root",grPHENIX[0],grPHENIX[1]);
 }
-
-/*
-TGraphErrors *gr1 = new TGraphErrors();
-TGraphErrors *gr2 = new TGraphErrors();
-TFile *f1 = new TFile("TGraph_Dim.root","read");
-gr1 = (TGraphErrors*)f1->Get("grMc");
-gr1 -> SetTitle("Dim");
-TFile *f2 = new TFile("v2pt.root","read");
-gr2 = (TGraphErrors*)f2->Get("grDF_1"); // MC
-gr2 -> SetTitle("Vinh");
-*/

@@ -4,14 +4,77 @@ static const int ncent = 8; // 0-80%
 TGraphErrors *grDifFl[4][ncent];    // v2(pt); 4 = {MC, 2QC, 4QC, EP}
 TGraphErrors *grRefFl[ncent];     
 TGraphErrors *grRefFlCent[4];       // v2(cent); 4 = {MC, 2QC, 4QC, EP}
+
+struct covariance{
+  covariance(){
+    mVal = 0;
+    mSumW = 0;
+    mW = 0;
+  }
+  covariance(TProfile *const &hcovXY, TProfile *const &hX, TProfile *const &hY){
+    double statsXY[6], statsX[6], statsY[6];
+    double meanXY, meanX, meanY, sumWX, sumWY;
+    hcovXY -> GetStats(statsXY);
+    hX -> GetStats(statsX);
+    hY -> GetStats(statsY);
+    
+    mSumW = statsXY[0];
+    sumWX = statsX[0];
+    sumWY = statsY[0];
+
+    meanXY = hcovXY -> GetBinContent(1);
+    meanX = hX -> GetBinContent(1);
+    meanY = hY -> GetBinContent(1);
+    // mVal = (meanXY-meanX*meanY)/(1-mSumW/sumWX/sumWY);
+    mVal = (meanXY-meanX*meanY)/(sumWX*sumWY/mSumW-1.);
+    mW = mSumW/sumWX/sumWY;
+  }
+ public:
+  double mVal;
+  double mSumW; // sum(wx*wy)
+  double mW; // sum(wx*wy) / ( sum(wx)*sum(wy) )
+};
+
+struct term{
+  term(){
+    mVal = 0;
+    mSumW = 0;
+    mNeff = 0;
+    mS = 0;
+    mMSE = 0;
+  }
+  term(TProfile *const &pr){
+    double stats[6];
+    pr->GetStats(stats);
+    mSumW = stats[0];
+    double sumW2 = stats[1];
+    
+    mNeff = pr -> GetBinEffectiveEntries(1); // Number of effective entries
+    // mNeff = mSumW*mSumW/sumW2;
+    mVal = pr -> GetBinContent(1);
+    pr -> SetErrorOption("s");
+    double stdevW = pr -> GetBinError(1);
+    mS = stdevW*stdevW/(1-sumW2/mSumW/mSumW); // formula (C.3)
+    // mS = pr -> GetBinError(1);
+    mMSE = mS/mNeff;
+  };
+ public: 
+  double mVal; // weithted mean value
+  double mSumW; // sum of weights
+  double mNeff; // Number of effective entries
+  double mS; // Unbiased estimator for the root of variance, (C.3) in Ante's dissertation
+  double mMSE; // Mean squared error of mean, https://en.wikipedia.org/wiki/Mean_squared_error
+
+};
+
 void v2plot(){
   // Temporary variables
   char hname[800]; // histogram hname
   double stats[6]; // stats of TProfile
-  char analysis[20]={"nonflow"};
+  char analysis[20]={"pure"};
 
   TFile *inFile, *outFile;
-  sprintf(hname,"./ROOTFile/%s_10mil.root",analysis);
+  sprintf(hname,"%s_10mil.root",analysis);
   inFile = new TFile(hname,"read");
   sprintf(hname,"./ROOTFile/TGraphError_%s_10mil.root",analysis);
   outFile = new TFile(hname,"recreate");
@@ -171,33 +234,65 @@ void v2plot(){
     v2MCintE = hv2MC[icent] -> GetBinError(1);
     //=============================================
     // v2{2,QC}
+    term cor22;
+    cor22 = term(hv22[icent]);
     // estimate of the 2-particle reference flow (C.22)
-    cor2 = hv22[icent] -> GetBinContent(1);  // <<2>>
-    v22int = Vn2(cor2);
+    // cor2 = hv22[icent] -> GetBinContent(1);  // <<2>>
+    // v22int = Vn2(cor2);
+    v22int = sqrt(cor22.mVal);
+
     // statistical error of the 2-particle reference flow estimate (C.24)
     cor2E = sx(hv22[icent]);
     hv22[icent] -> GetStats(stats);
     sumwcor2 = stats[0];
     sumw2cor2 = stats[1];
     v22intE = Evn2(cor2,cor2E,sumwcor2,sumw2cor2);
+
+    // test fix stat. error
+
+
+    v22intE = sqrt(
+      1./(4.*cor22.mVal)*cor22.mMSE
+    );
+    
     //=============================================
     // v2{4,QC}
-    // estimate of the 4-particle reference flow (C.27)
-    cor4 = hv24[icent]->GetBinContent(1);  // <<4>>
-    v24int = Vn4(cor2,cor4);
-    // statistical error of the 4-particle reference flow estimate (C.28)
-    cor4E = sx(hv24[icent]);
-    hv24[icent] -> GetStats(stats);
-    sumwcor4 = stats[0];
-    sumw2cor4 = stats[1];
-    // calculate covariance of <2> and <4>
-    cov24 = Cov(hcov24[icent],hv22[icent],hv24[icent]);
-    sumwcor24 = Sumwxwy(hcov24[icent]);
-    v24intE = Evn4(cor2,cor2E,sumwcor2,sumw2cor2,
-                  cor4,cor4E,sumwcor4,sumw2cor4,
-                  cov24,sumwcor24);
+    term cor24;
+    cor24 = term(hv24[icent]);
 
-    ofile2 << icent*10<<"-"<< (icent+1)*10<<" "<< v22intE << " " << v24intE << endl;
+    // estimate of the 4-particle reference flow (C.27)
+    // cor4 = hv24[icent]->GetBinContent(1);  // <<4>>
+    // v24int = Vn4(cor2,cor4);
+
+    v24int = pow(2*pow(cor22.mVal,2)-cor24.mVal,0.25);
+
+    // // statistical error of the 4-particle reference flow estimate (C.28)
+    // cor4E = sx(hv24[icent]);
+    // hv24[icent] -> GetStats(stats);
+    // sumwcor4 = stats[0];
+    // sumw2cor4 = stats[1];
+    // // calculate covariance of <2> and <4>
+    // cov24 = Cov(hcov24[icent],hv22[icent],hv24[icent]);
+    // sumwcor24 = Sumwxwy(hcov24[icent]);
+    // v24intE = Evn4(cor2,cor2E,sumwcor2,sumw2cor2,
+    //               cor4,cor4E,sumwcor4,sumw2cor4,
+    //               cov24,sumwcor24);
+
+
+    // test fix stat. error
+
+    covariance covcor24;
+    covcor24 = covariance(hcov24[icent],hv22[icent],hv24[icent]);
+    v24intE = sqrt(
+      1./pow(v24int,6)*(
+        cor22.mVal*cor22.mVal*cor22.mMSE
+      + 1./16*cor24.mMSE
+      - 0.5*cor22.mVal*covcor24.mVal
+      )
+    );
+
+
+    ofile2 << icent*10<<"-"<< (icent+1)*10<<" "<< v22int <<" "<< v22intE << " "<< v24int <<" "<< v24intE << endl;
 
     //=============================================
     // v2{#eta sub-event}

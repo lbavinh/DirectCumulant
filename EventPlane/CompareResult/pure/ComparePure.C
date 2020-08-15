@@ -10,8 +10,8 @@ void ComparePure(){
     for (int icent=0; icent<ncent; icent++){
       sprintf(name,"gr_cent%i_%i",icent,i);
       grDim[icent][i] = (TGraphErrors*)inputDim->Get(name);
-      grDim[icent][i] -> SetTitle("Dim");
-      grDim[icent][i] -> GetXaxis()-> SetTitle("p_{T}, GeV/c");
+      grDim[icent][i] -> SetTitle("Dim; p_{T}, GeV/c; v_{2}");
+      // grDim[icent][i] -> GetXaxis()-> SetTitle("p_{T}, GeV/c");
       grDim[icent][i] -> Draw("AP");
       grDim[icent][i] -> SetMinimum(0.);
       grDim[icent][i] -> SetMaximum(0.25);

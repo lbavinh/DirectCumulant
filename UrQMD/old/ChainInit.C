@@ -23,13 +23,22 @@ void MakeChain(const char* fileList, const char *outFile, const int line1, const
   cout << "Done. " << nFiles << " files are added to chain" << outFile <<endl;
 }
 
+// void ChainInit(){
+//   char list[500], chain[500];
+//   sprintf(list,"/weekly/povarov/lbavinh/UrQMD/runlist_1.list");
+//   for (int i=0; i<396; i++){
+//     sprintf(chain,"/weekly/povarov/lbavinh/UrQMD/chain/chain%i.root",i);
+//     MakeChain(list,chain,(i*49)+1,(i+1)*49);
+//   }
+//   cout << "Tree chains were created successfully!" << endl;
+// }
+
 void ChainInit(){
   char list[500], chain[500];
-  sprintf(list,"/weekly/povarov/lbavinh/UrQMD/runlist2.list");
-  for (int i=0; i<100; i++){
+  sprintf(list,"/weekly/povarov/lbavinh/UrQMD/runlist_Dim.list");
+  for (int i=0; i<385; i++){
     sprintf(chain,"/weekly/povarov/lbavinh/UrQMD/chain/chain%i.root",i);
-    MakeChain(list,chain,(i*69)+1,(i+1)*69);
+    MakeChain(list,chain,(i*48)+1,(i+1)*48);
   }
   cout << "Tree chains were created successfully!" << endl;
 }
-

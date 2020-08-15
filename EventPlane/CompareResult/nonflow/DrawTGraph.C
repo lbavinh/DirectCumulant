@@ -63,17 +63,21 @@ TCanvas *DrawTGraph(TGraphErrors *const &gr1, TGraphErrors *const &gr2, TString 
   
   // gr1->GetXaxis()->SetLimits(0.95*vx_gr1[0],1.05*vx_gr1[n1bins-1]);
 
-  gr1->GetXaxis()->SetLabelSize(0.06);
-  gr1->GetYaxis()->SetLabelSize(0.06);
-  gr1->GetXaxis()->SetTitleSize(0.07);
-  gr1->GetYaxis()->SetTitleSize(0.07);
-  gr1->GetYaxis()->SetTitleOffset(1.08);
+  gr2->GetXaxis()->SetLabelSize(0.06);
+  gr2->GetYaxis()->SetLabelSize(0.06);
+  gr2->GetXaxis()->SetTitleSize(0.07);
+  gr2->GetYaxis()->SetTitleSize(0.07);
+  gr2->GetYaxis()->SetTitleOffset(1.08);
   
-  gr1->Draw("AP");
+ 
   gPad->Modified(); gPad->Update();
   gr1->GetXaxis()-> SetLimits(0.,3.5);
   gPad->Modified(); gPad->Update();
-  gr2->Draw("P");
+  gr2->GetXaxis()-> SetLimits(0.,3.5);
+  gr2->Draw("AP");
+  gr2 -> SetMinimum(0.);
+  gr2 -> SetMaximum(0.25);
+  gr1->Draw("P");
 
   TLegend *leg_pt = new TLegend(0.56,0.04,0.89,0.25);
   leg_pt->SetBorderSize(0);

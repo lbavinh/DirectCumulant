@@ -10,11 +10,12 @@ void CompareNonflow(){
     for (int icent=0; icent<ncent; icent++){
       sprintf(name,"gr_cent%i_%i",icent,i);
       grDim[icent][i] = (TGraphErrors*)inputDim->Get(name);
-      grDim[icent][i] -> SetTitle("Dim");
-      grDim[icent][i] -> GetXaxis()-> SetTitle("p_{T}, GeV/c");
-      grDim[icent][i] -> Draw("AP");
-      grDim[icent][i] -> SetMinimum(0.);
-      grDim[icent][i] -> SetMaximum(0.25);
+      grDim[icent][i] -> SetTitle("Dim;p_{T}, GeV/c;v_{2}");
+      // grDim[icent][i] -> GetXaxis()-> SetLimits(0.,3.5);
+      // grDim[icent][i] -> GetXaxis()-> SetTitle("p_{T}, GeV/c");
+      // grDim[icent][i] -> Draw("AP");
+      // grDim[icent][i] -> SetMinimum(0.);
+      // grDim[icent][i] -> SetMaximum(0.25);
     }
   }
 
@@ -23,9 +24,12 @@ void CompareNonflow(){
     for (int icent=0; icent<ncent; icent++){
       sprintf(name,"gr_%i_%i",icent,i);
       grVinh[icent][i] = (TGraphErrors*)inputVinh->Get(name);
-      grVinh[icent][i] -> SetTitle("Vinh");
+      grVinh[icent][i] -> SetTitle("Vinh;p_{T}, GeV/c;v_{2}");
       // grVinh[icent][i] -> GetXaxis()-> SetLimits(0.,3.5);
       // grVinh[icent][i] -> GetYaxis()-> SetLimits(0.,0.25);
+      // grVinh[icent][i] -> Draw("AP");
+      // grVinh[icent][i] -> SetMinimum(0.);
+      // grVinh[icent][i] -> SetMaximum(0.25);
     }
   }  
 

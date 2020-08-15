@@ -35,10 +35,10 @@ static const double minpt = 0.2; // min pt
 
 static const int neta = 2; // [eta-,eta+]
 
-static const int max_nh = 1633;
+static const int max_nh = 1700;
 
 TFile *d_outfile; // out file with histograms and profiles
-
+TH1I *hEvt;        // Event number 
 TH1F *hRP;         // reaction plane distr
 TH1F *hPt;         // transverse momentum distr
 TH1F *hPhi;        // distr of particle azimuthal angle with respect to RP
@@ -83,7 +83,7 @@ void FlowANA::Booking(TString outFile){
   char title[800];
   d_outfile = new TFile(outFile.Data(), "recreate");
   cout << outFile.Data() << " has been initialized" << endl;
-
+  hEvt  = new TH1I("hEvt","Event number",1,0,1);
   hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
   hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", max_nh, 0, max_nh, 200, 0., 20.);
   hBimp = new TH1F("hBimp", "Impact parameter;b (fm);dN/db", 200, 0., 20.);
@@ -226,6 +226,7 @@ void FlowANA::Loop()
 }
 
 void FlowANA::Ana_event(){
+  hEvt -> Fill(1);
   float rp = 0;
   // rp = gRandom->Uniform(0, 2.*TMath::Pi());
   int fcent=CentB(bimp);
@@ -265,7 +266,7 @@ void FlowANA::Ana_event(){
     float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
     float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
     float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-    if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5) continue; // track selection
+    if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5 || charge[i]==0 || TMath::Abs(eta)<0.1) continue; // track selection
     float phi = TMath::ATan2( momy[i], momx[i] );
     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
@@ -392,14 +393,15 @@ void FlowANA::Ana_event(){
   HRes -> Fill(0.5+fcent,cos(dPsi));
 
   // float res2[ncent]={0.262397,0.456401,0.440158,0.415569,0.301203,0.230708,0.0848875,0.268051}; // 1 file
-  float res2[ncent]={0.328468,0.483964,0.480728,0.414627,0.323557,0.26017,0.240916,0.26867};
+  // float res2[ncent]={0.328468,0.483964,0.480728,0.414627,0.323557,0.26017,0.240916,0.26867}; // 11 mil
+  float res2[ncent]={0.246631,0.370836,0.369859,0.31821,0.246213,0.192905,0.173104,0.18851}; // 56mil
 	if(fcent>=0 && fcent<=7){ // centrality selection 0-80%
     for(int itrk=0;itrk<nh;itrk++) {  //track loop
 
       float pt  = sqrt( TMath::Power(momx[itrk], 2.0 ) + TMath::Power(momy[itrk], 2.0 ) );
       float the = TMath::ATan2( pt, momz[itrk] );//atan2(pt/pz)
       float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-      if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5) continue; // track selection
+      if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5 || charge[itrk]==0 || TMath::Abs(eta)<0.1) continue; // track selection
       float phi = TMath::ATan2( momy[itrk], momx[itrk] );
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
@@ -413,16 +415,16 @@ void FlowANA::Ana_event(){
 
       float v2=-999.0;
       
-      if(eta>0){ // eta+
+      if(eta>0.1){ // eta+
         v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
       }
 
-      if(eta<0){ // eta-
+      if(eta<-0.1){ // eta-
         v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
       }
       // if(fabs(eta[itrk])<1.0){ // eliminate spectators
       hv2EP[ipt]->Fill(0.5+fcent,v2);
-      if (eta < -0.05) { // Reference flow
+      if (eta < -0.1) { // Reference flow
         hv22EP->Fill(0.5+fcent,v2);
       }
       

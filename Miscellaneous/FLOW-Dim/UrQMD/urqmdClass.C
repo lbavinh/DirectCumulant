@@ -394,7 +394,7 @@ void urqmdClass::Loop()
 
     //rp=2*Pi*(rnd.Rndm());
     rp = phi2;
-
+    // first track loop for Q-vectors filling
     for (int i = 0; i < nh; i++)
     { // first track loop
       phi = Phi(momx[i], momy[i], momz[i]);
@@ -452,23 +452,23 @@ void urqmdClass::Loop()
         } // centrality class determination
       } // centrality class determination
     } // end of first track loop
-
+    // centrality determination for given event
     for (int k = 0; k < Nb; k++)
 
       if (bimp >= b_bin[k] && bimp <= b_bin[k + 1])
       { // centrality class determination
         PSIplus[k] = PHIn(Qplus[k].Re(), Qplus[k].Im(), k);
         PSIminus[k] = PHIn(Qminus[k].Re(), Qminus[k].Im(), k);
-        //PSIplus[k]=KorPSI(PSIplus[k]/2,k);
-        //PSIminus[k] =KorPSI(PSIminus[k]/2,k);
+        // PSIplus[k]=KorPSI(PSIplus[k]/2,k);
+        // PSIminus[k] =KorPSI(PSIminus[k]/2,k);
         hdPHI->Fill(PSIplus[k]);
-        //HMeanCosP[k][0]->Fill(cos(n * PSIplus[k]));
+        // HMeanCosP[k][0]->Fill(cos(n * PSIplus[k]));
         hdPHI->Fill(PSIminus[k]);
-        //HMeanSinP[k][0]->Fill(sin(n * PSIplus[k]));
+        // HMeanSinP[k][0]->Fill(sin(n * PSIplus[k]));
 
         for (int i = 0; i < nh; i++)
-        { // second track loop
-          {
+        { // second track loop for elliptic flow calculation (observable elliptic flow v_{2}(obs))
+          
             phi = Phi(momx[i], momy[i], momz[i]);
             if (phi > 2 * Pi)
             {
@@ -504,7 +504,7 @@ void urqmdClass::Loop()
                 }
               }
             }
-          }
+          
         } // end of second track loop
       } // end of centrality class determination for given event
 

@@ -6,15 +6,15 @@
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
-#$ -N run_sim_urqmd
+#$ -N Cumulants_UrQMD_7.7GeV
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job
-#$ -l h_rt=03:30:00
+#$ -l h_rt=06:30:00
 # Set soft time limit - set up the same as a hard limit
-#$ -l s_rt=03:30:00
+#$ -l s_rt=06:30:00
 # Specify job array range (how many jobs will be created
-#$ -t 1-385
+#$ -t 1-551
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /weekly/$USER/lbavinh/UrQMD/OUT/log/
 #$ -e /weekly/$USER/lbavinh/UrQMD/OUT/log/

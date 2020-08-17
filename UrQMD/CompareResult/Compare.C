@@ -1,5 +1,5 @@
 #include "DrawTGraph.C"
-void ComparePure(){
+void Compare(){
   static const int ncent = 8;
   TFile *inputDim, *inputVinh;
   TGraphErrors *grDim[ncent][3], *grVinh[ncent][3];

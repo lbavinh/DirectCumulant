@@ -5,6 +5,7 @@ TGraphErrors *grDifFl[4][ncent];    // v2(pt); 4 = {MC, 2QC, 4QC, EP}
 TGraphErrors *grRefFl[ncent];     
 TGraphErrors *grRefFlCent[4];       // v2(cent); 4 = {MC, 2QC, 4QC, EP}
 void v2plot(){
+  bool bDrawPlots = 1;
   // Temporary variables
   char hname[800]; // histogram hname
   double stats[6]; // stats of TProfile
@@ -25,44 +26,46 @@ void v2plot(){
   static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8};
 
 
+  if (bDrawPlots){
+    TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
 
-  TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
+    TH1I *hMult = (TH1I*)inFile->Get("hMult");
+    hMult -> Draw();
+    sprintf(hname,"../Graphics/mult.png");
+    cTemp -> Draw();
+    cTemp -> SaveAs(hname);
 
-  TH1I *hMult = (TH1I*)inFile->Get("hMult");
-  hMult -> Draw();
-  sprintf(hname,"../Graphics/mult.png");
-  cTemp -> Draw();
-  cTemp -> SaveAs(hname);
+    TH1I *hEvt = (TH1I*)inFile->Get("hEvt");
+    hEvt -> Draw();
+    sprintf(hname,"../Graphics/evt.png");
+    cTemp -> Draw();
+    cTemp -> SaveAs(hname);
 
-  TH1I *hEvt = (TH1I*)inFile->Get("hEvt");
-  hEvt -> Draw();
-  sprintf(hname,"../Graphics/evt.png");
-  cTemp -> Draw();
-  cTemp -> SaveAs(hname);
+    TH1F *hEta = (TH1F*)inFile->Get("hEta");
+    hEta -> Draw();
+    sprintf(hname,"../Graphics/eta.png");
+    cTemp -> SaveAs(hname);  
 
-  TH1F *hEta = (TH1F*)inFile->Get("hEta");
-  hEta -> Draw();
-  sprintf(hname,"../Graphics/eta.png");
-  cTemp -> SaveAs(hname);  
+    TH1F *hPhi = (TH1F*)inFile->Get("hPhi");
+    hPhi -> Draw();
+    sprintf(hname,"../Graphics/phi.png");
+    cTemp -> SaveAs(hname);
 
-  TH1F *hPhi = (TH1F*)inFile->Get("hPhi");
-  hPhi -> Draw();
-  sprintf(hname,"../Graphics/phi.png");
-  cTemp -> SaveAs(hname);
+    TH1F *hPt = (TH1F*)inFile->Get("hPt");
+    hPt -> Draw();
+    sprintf(hname,"../Graphics/pt.png");
+    cTemp -> SaveAs(hname);
+  }
 
-  TH1F *hPt = (TH1F*)inFile->Get("hPt");
-  hPt -> Draw();
-  sprintf(hname,"../Graphics/pt.png");
-  cTemp -> SaveAs(hname);
 
   // Input hist
   // TProfile for reference flow
-  TProfile *hv2MC[ncent];       // profile for MC integrated v2
+  // TProfile *hv2MC[ncent];       // profile for MC integrated v2
   TProfile *hv22[ncent];        // profile <<2>> from 2nd Q-Cumulants
   TProfile *hv24[ncent];        // profile <<4>> from 4th Q-Cumulants
   // TProfile for differential flow
   TProfile *hPT[npt];       // profile pt 
-  TProfile *hv2MCpt[ncent][npt];   // profile v2pt from MC toy   
+  // TProfile *hv2MCpt[ncent][npt];   // profile v2pt from MC toy   
   TProfile *hv22pt[ncent][npt];    // profile <<2'>> from 2nd Q-Cumulants
   TProfile *hv24pt[ncent][npt];    // profile <<4'>> from 4th Q-Cumulants
   // TProfile for covariance calculation according to (C.12)
@@ -94,8 +97,8 @@ void v2plot(){
     hPT[ipt]=(TProfile*)inFile->Get(hname);
   }
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    sprintf(hname,"hv2MC_%i",icent);
-    hv2MC[icent] = (TProfile*)inFile->Get(hname);
+    // sprintf(hname,"hv2MC_%i",icent);
+    // hv2MC[icent] = (TProfile*)inFile->Get(hname);
     sprintf(hname,"hv22_%i",icent);
     hv22[icent] = (TProfile*)inFile->Get(hname);
     sprintf(hname,"hv24_%i",icent);
@@ -104,8 +107,8 @@ void v2plot(){
     hcov24[icent] = (TProfile*)inFile->Get(hname);
 
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-        sprintf(hname,"hv2MCpt_%i_%i",icent,ipt);
-        hv2MCpt[icent][ipt]=(TProfile*)inFile->Get(hname);
+        // sprintf(hname,"hv2MCpt_%i_%i",icent,ipt);
+        // hv2MCpt[icent][ipt]=(TProfile*)inFile->Get(hname);
         sprintf(hname,"hv22pt_%i_%i",icent,ipt);
         hv22pt[icent][ipt]=(TProfile*)inFile->Get(hname);
         sprintf(hname,"hv24pt_%i_%i",icent,ipt);
@@ -172,8 +175,8 @@ void v2plot(){
     double v2EPintE;
     //=============================================
     //v2{MC}
-    v2MCint  = hv2MC[icent] -> GetBinContent(1);
-    v2MCintE = hv2MC[icent] -> GetBinError(1);
+    // v2MCint  = hv2MC[icent] -> GetBinContent(1);
+    // v2MCintE = hv2MC[icent] -> GetBinError(1);
     //=============================================
     // v2{2,QC}
     // estimate of the 2-particle reference flow (C.22)
@@ -290,8 +293,8 @@ void v2plot(){
       
       // Differential flow v2MC
 
-      v2MCpt[ipt]  = hv2MCpt[icent][ipt] -> GetBinContent(1);
-      ev2MCpt[ipt] = hv2MCpt[icent][ipt] -> GetBinError(1);
+      // v2MCpt[ipt]  = hv2MCpt[icent][ipt] -> GetBinContent(1);
+      // ev2MCpt[ipt] = hv2MCpt[icent][ipt] -> GetBinError(1);
 
       // 2-particle correlations
       // estimate of the 2-particle differential flow (C.41)
@@ -413,11 +416,27 @@ void v2plot(){
     grDifFl[0][icent] -> SetMarkerStyle(25);
     grDifFl[0][icent] -> SetMarkerSize(1.3);
     grDifFl[0][icent] -> SetDrawOption("P");
-    mgDifFl[icent] -> Add(grDifFl[0][icent]);
+    // mgDifFl[icent] -> Add(grDifFl[0][icent]);
   }
   //==========================================================================================================================
+  // TFile *inFileGraphEP = new TFile("../ROOTFile/TGraphErrors_EP_MultLargerThan5.root","read");
+  // for (int icent=0;icent<ncent;icent++){
+  //   sprintf(hname,"gr_cent%i_0",icent);
+  //   grDifFl[0][icent] = (TGraphErrors*)inFileGraphEP->Get(hname);
+  //   grDifFl[0][icent] -> SetMarkerColor(kRed);
+  //   grDifFl[0][icent] -> SetMarkerStyle(25);
+  //   grDifFl[0][icent] -> SetMarkerSize(1.3);
+  //   grDifFl[0][icent] -> SetDrawOption("P");    
+  // }
+  // sprintf(hname,"grRF_0");
+  // grRefFlCent[0] = (TGraphErrors*)inFileGraphEP->Get(hname);
+  // grRefFlCent[0] -> SetMarkerColor(kRed);
+  // grRefFlCent[0] -> SetMarkerStyle(25);
+  // inFileGraphEP -> Close();
+
+  //==========================================================================================================================
   // Drawing multipads of reference & differential flow
-  
+  /*
   TLegend *leg = new TLegend(0.11,.95,0.4,.78);
   leg -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
   leg -> AddEntry(grDifFl[1][0],"v_{2}{2,QC}","p");
@@ -525,7 +544,7 @@ void v2plot(){
     sprintf(hname,"../Graphics/Cent%i-%i%%.png",i*10,(i+1)*10);
     c[i] -> SaveAs(hname);
   }
-  
+  */
   //==========================================================================================================================
   const char *grTitleDF[4]={"[1] v_{2}{#eta sub-event};p_{T}, GeV/c;v_{2}","[2] v_{2}{2,QC};p_{T}, GeV/c;v_{2}","[3] v_{2}{4,QC};p_{T}, GeV/c;v_{2}","v_{2}{MC};p_{T}, GeV/c;v_{2}"};
   const char *grTitleRF[4]={"[1] v_{2}{#eta sub-event};cent, %;v_{2}","[2] v_{2}{2,QC};cent, %;v_{2}","[3] v_{2}{4,QC};cent, %;v_{2}","v_{2}{MC};cent, %;v_{2}"};
@@ -542,7 +561,7 @@ void v2plot(){
     }
   }
   outFile -> Close();
-
+  if (!bDrawPlots) return;
   std::vector<TGraphErrors*> vgr;
   for (int i=0; i<3; i++){
     vgr.push_back(grRefFlCent[i]);
@@ -573,10 +592,26 @@ void v2plot(){
   // TLatex lV2PT[8];
   TPaveText *ptext[8];
 
-  for (int icent=0; icent<8; icent++){
+  for (int icent=0; icent<6; icent++){
     sprintf(hname,"Centrality %i-%i%%",icent*10,(icent+1)*10);
     //                                                           yRatio_low   x_low     y_low    leg_x_low  leg_x_high
-    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.65, 1.35, 0., maxpt, -0.2, 0.6, 0.18, 0.65, 0.42, 0.89, hname);
+    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.65, 1.35, 0., maxpt, 0., 0.25, 0.18, 0.65, 0.42, 0.89, hname);
+    //                                                                yRatio_high  x_high   y_high     leg_y_low   leg_y_high
+    sprintf(hname,"Cent %i-%i%%",icent*10,(icent+1)*10);
+    cV2PT[icent] -> SetName(hname);
+
+    // lV2PT[icent].SetNDC();
+    // lV2PT[icent].SetTextSize(0.12);
+    // lV2PT[icent].SetTextAlign(21);  
+    // lV2PT[icent].DrawLatex(0.5,0.1,hname);
+    sprintf(hname,"../Graphics/DFCent%i-%i%%.png",icent*10,(icent+1)*10);
+    cV2PT[icent] -> SaveAs(hname);
+  }
+
+  for (int icent=6; icent<8; icent++){
+    sprintf(hname,"Centrality %i-%i%%",icent*10,(icent+1)*10);
+    //                                                           yRatio_low   x_low     y_low    leg_x_low  leg_x_high
+    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.65, 1.35, 0., maxpt, -0.5, 1.0, 0.18, 0.65, 0.42, 0.89, hname);
     //                                                                yRatio_high  x_high   y_high     leg_y_low   leg_y_high
     sprintf(hname,"Cent %i-%i%%",icent*10,(icent+1)*10);
     cV2PT[icent] -> SetName(hname);

@@ -49,12 +49,12 @@ TH1I *hMult;       // emitted multiplicity
 TH2F *hBimpvsMult; // 2-D histogram impact parameter (y) vs mult (x)
 
 // TProfile for reference flow (RF)
-// TProfile *hv2MC[ncent]; // profile for MC integrated v2
+TProfile *hv2MC[ncent]; // profile for MC integrated v2
 TProfile *hv22[ncent];  // profile <<2>> from 2nd Q-Cumulants
 TProfile *hv24[ncent];  // profile <<4>> from 4th Q-Cumulants
 // TProfile for differential flow (DF)
 TProfile *hPT[npt];     // profile pt
-// TProfile *hv2MCpt[ncent][npt]; // profile v2pt from MC toy
+TProfile *hv2MCpt[ncent][npt]; // profile v2pt from MC toy
 TProfile *hv22pt[ncent][npt];  // profile <<2'>> from 2nd Q-Cumulants
 TProfile *hv24pt[ncent][npt];  // profile <<4'>> from 4th Q-Cumulants
 
@@ -112,10 +112,10 @@ void FlowANA::Booking(TString outFile){
   }
   for (int icent = 0; icent < ncent; icent++)
   { // loop over centrality classes
-    // sprintf(name, "hv2MC_%i", icent);
-    // sprintf(title, "v_{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
-    // hv2MC[icent] = new TProfile(name, title, 1, 0., 1.);
-    // hv2MC[icent]->Sumw2();
+    sprintf(name, "hv2MC_%i", icent);
+    sprintf(title, "v_{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
+    hv2MC[icent] = new TProfile(name, title, 1, 0., 1.);
+    hv2MC[icent]->Sumw2();
 
     sprintf(name, "hv22_%i", icent);
     sprintf(title, "v_{2}{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
@@ -135,10 +135,10 @@ void FlowANA::Booking(TString outFile){
     for (int kpt = 0; kpt < npt; kpt++)
     { // loop over pt bin
     
-      // sprintf(name, "hv2MCpt_%i_%i", icent, kpt);
-      // sprintf(title, "v_{2}{MC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      // hv2MCpt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
-      // hv2MCpt[icent][kpt]->Sumw2();
+      sprintf(name, "hv2MCpt_%i_%i", icent, kpt);
+      sprintf(title, "v_{2}{MC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
+      hv2MCpt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hv2MCpt[icent][kpt]->Sumw2();
 
       sprintf(name, "hv22pt_%i_%i", icent, kpt);
       sprintf(title, "v_{2}{2,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
@@ -234,6 +234,7 @@ void FlowANA::Ana_event(){
   hBimp -> Fill(bimp);
   hBimpvsMult -> Fill(nh,bimp);
   // notation as (26) in DOI:10.1103/PhysRevC.83.044913
+
   // Q-vector of RFP
   Double_t Qx2=0., Qy2=0., Qx4=0., Qy4=0.;
   TComplex Q2=0., Q4=0.;
@@ -279,9 +280,9 @@ void FlowANA::Ana_event(){
       if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
     }
 
-    // Double_t v2 = TMath::Cos(2.*phi);
+    Double_t v2 = TMath::Cos(2.*phi);
     if(eta<-0.1){ // RFP selection
-      // hv2MC[fcent]->Fill(0.5, v2, 1);      
+      hv2MC[fcent]->Fill(0.5, v2, 1);      
       Qx2+=TMath::Cos(2.*phi);
       Qy2+=TMath::Sin(2.*phi);
       Qx4+=TMath::Cos(4.*phi);
@@ -290,7 +291,7 @@ void FlowANA::Ana_event(){
     } // end of RFP selection
 
     if(eta>0.1){ // POI selection
-    // hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
+    hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
     hPT[ipt]->Fill(0.5+fcent, pt, 1);
     px2[ipt]+=TMath::Cos(2.*phi);
     py2[ipt]+=TMath::Sin(2.*phi);
@@ -308,7 +309,52 @@ void FlowANA::Ana_event(){
 			multQv[fEta]++;
 		} // end of eta selection
   } // end of track loop
+  // ================================== Direct Cumulants ================================== // 
+  if (M >= 2.){ // <2> definition condition
+    Q2 = TComplex(Qx2, Qy2);
+    w2 = M*(M-1);                 // w(<2>)
+    cor22 = CalCor22(Q2, M, w2);       // <2>
+    hv22[fcent]->Fill(0.5, cor22, w2); // <<2>>
 
+  } // end of <2> definition condition
+  for (int ipt = 0; ipt < npt; ipt++){
+    if (mp[ipt] == 0 || M<1) continue;
+    Q2 = TComplex(Qx2, Qy2);
+    p2[ipt] = TComplex(px2[ipt], py2[ipt]);
+    q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
+    wred2[ipt] = mp[ipt]*M-mq[ipt];                                        // w(<2'>)
+    if (wred2[ipt]==0) continue;
+    redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], mq[ipt], wred2[ipt]); // <2'>
+    hv22pt[fcent][ipt]->Fill(0.5, redCor22[ipt], wred2[ipt]);                  // <<2'>>
+
+    // TProfile for covariance calculation in statistic error
+    hcov22prime[fcent][ipt]->Fill(0.5, cor22 * redCor22[ipt], w2 * wred2[ipt]); // <2>*<2'>
+  }
+
+  if (M >= 4.){ // <4> definition condition
+    Q4 = TComplex(Qx4, Qy4);
+    w4 = M*(M-1)*(M-2)*(M-3); // w(<4>)
+    cor24 = CalCor24(Q2, Q4, M, w4);      // <4>
+    hv24[fcent]->Fill(0.5, cor24, w4);    // <<4>>
+
+    // TProfile for covariance calculation in statistic error
+    hcov24[fcent]->Fill(0.5, cor22 * cor24, w2 * w4); // <2>*<4>
+  } // end of <4> definition condition
+  for (int ipt = 0; ipt < npt; ipt++){
+    if (mp[ipt] == 0 || M<3) continue;
+    Q4 = TComplex(Qx4, Qy4);   
+    q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
+    wred4[ipt] = (mp[ipt]*M-3*mq[ipt])*(M-1)*(M-2);                                 // w(<4'>)
+    if (wred4[ipt]==0) continue;
+    redCor24[ipt] = CalRedCor24(Q2, Q4, p2[ipt], q2[ipt], q4[ipt], M, mp[ipt], mq[ipt], wred4[ipt]); // <4'>
+    hv24pt[fcent][ipt]->Fill(0.5, redCor24[ipt], wred4[ipt]);                                        // <<4'>>
+
+    // TProfile for covariance calculation in statistic error
+    hcov24prime[fcent][ipt]->Fill(0.5, cor22 * redCor24[ipt], w2 * wred4[ipt]);
+    hcov42prime[fcent][ipt]->Fill(0.5, cor24 * redCor22[ipt], w4 * wred2[ipt]);
+    hcov44prime[fcent][ipt]->Fill(0.5, cor24 * redCor24[ipt], w4 * wred4[ipt]);
+    hcov2prime4prime[fcent][ipt]->Fill(0.5, redCor22[ipt] * redCor24[ipt], wred2[ipt] * wred4[ipt]);
+  }
   // ==================================== Eta Sub-event ==================================== //
 
   Double_t fEP[2]; // [eta-,eta+]
@@ -340,208 +386,42 @@ void FlowANA::Ana_event(){
   dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
   HRes -> Fill(0.5+fcent,cos(dPsi));
 
-  // ================================== Direct Cumulants ================================== // 
-  if (M >= 2.){ // <2> definition condition
-    Q2 = TComplex(Qx2, Qy2);
-    w2 = M*(M-1);                 // w(<2>)
-    cor22 = CalCor22(Q2, M, w2);       // <2>
-    hv22[fcent]->Fill(0.5, cor22, w2); // <<2>>
+  // float res2[ncent]={0.246631,0.370836,0.369859,0.31821,0.246213,0.192905,0.173104,0.18851}; // 56mil
+	if(fcent>=0 && fcent<=7){ // centrality selection 0-80%
+    for(int itrk=0;itrk<nh;itrk++) {  //track loop
 
-  } // end of <2> definition condition
-  for (int ipt = 0; ipt < npt; ipt++){
-    if (mp[ipt] == 0 || M<1) continue;
-    Q2 = TComplex(Qx2, Qy2);
-    p2[ipt] = TComplex(px2[ipt], py2[ipt]);
-    q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
-    wred2[ipt] = mp[ipt]*M-mq[ipt];                                        // w(<2'>)
-    if (wred2[ipt]==0) continue;
-    redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], mq[ipt], wred2[ipt]); // <2'>
-    hv22pt[fcent][ipt]->Fill(0.5, redCor22[ipt], wred2[ipt]);                  // <<2'>>
+      float pt  = sqrt( TMath::Power(momx[itrk], 2.0 ) + TMath::Power(momy[itrk], 2.0 ) );
+      float the = TMath::ATan2( pt, momz[itrk] );//atan2(pt/pz)
+      float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
+      if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5 || charge[itrk]==0 || TMath::Abs(eta)<0.1) continue; // track selection
+      float phi = TMath::ATan2( momy[itrk], momx[itrk] );
+      if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
-    // TProfile for covariance calculation in statistic error
-    hcov22prime[fcent][ipt]->Fill(0.5, cor22 * redCor22[ipt], w2 * wred2[ipt]); // <2>*<2'>
-  }
+      Int_t ipt = -1;
+      for (int j = 0; j < npt; j++)
+      {
+        if (pt >= bin_pT[j] && pt < bin_pT[j + 1])
+          ipt = j;
+      }
 
-  if (M >= 4.){ // <4> definition condition
-    Q4 = TComplex(Qx4, Qy4);
-    w4 = M*(M-1)*(M-2)*(M-3); // w(<4>)
-    cor24 = CalCor24(Q2, Q4, M, w4);      // <4>
-    hv24[fcent]->Fill(0.5, cor24, w4);    // <<4>>
-
-    // TProfile for covariance calculation in statistic error
-    hcov24[fcent]->Fill(0.5, cor22 * cor24, w2 * w4); // <2>*<4>
-  } // end of <4> definition condition
-  for (int ipt = 0; ipt < npt; ipt++){
-    if (mp[ipt] == 0 || M<3) continue;
-    Q4 = TComplex(Qx4, Qy4);   
-    q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
-    wred4[ipt] = (mp[ipt]*M-3*mq[ipt])*(M-1)*(M-2);                                 // w(<4'>)
-    if (wred4[ipt]==0) continue;
-    redCor24[ipt] = CalRedCor24(Q2, Q4, p2[ipt], q2[ipt], q4[ipt], M, mp[ipt], mq[ipt], wred4[ipt]); // <4'>
-    hv24pt[fcent][ipt]->Fill(0.5, redCor24[ipt], wred4[ipt]);                                        // <<4'>>
-
-    // TProfile for covariance calculation in statistic error
-    hcov24prime[fcent][ipt]->Fill(0.5, cor22 * redCor24[ipt], w2 * wred4[ipt]);
-    hcov42prime[fcent][ipt]->Fill(0.5, cor24 * redCor22[ipt], w4 * wred2[ipt]);
-    hcov44prime[fcent][ipt]->Fill(0.5, cor24 * redCor24[ipt], w4 * wred4[ipt]);
-    hcov2prime4prime[fcent][ipt]->Fill(0.5, redCor22[ipt] * redCor24[ipt], wred2[ipt] * wred4[ipt]);
-  }
-
-  // ==================================== reverse POI & RFP ==================================== //
-  // Q-vector of RFP
-  Qx2=0.; Qy2=0.; Qx4=0.; Qy4=0.;
-  Q2 =0.; Q4 =0.;
-  // Total number of RFP in given event
-  M = 0.;
-  // event weights for correlation calculation
-  w2=0.; w4=0.;
-  // Average single-event 2- and 4- particle correlations : <2> & <4>
-  cor22 = 0.; cor24 = 0.;
-  for (int ipt=0;ipt<npt;ipt++){
-    // p-vector of POI
-    px2[ipt]=0.; py2[ipt]=0.;
-    p2[ipt] =0.; p4[ipt] =0.; q2[ipt]=0.; q4[ipt]=0.;
-    // q-vector of particles marked as POI and RFP, which is used for 
-    // autocorrelation substraction
-    qx2[ipt]=0.; qy2[ipt]=0.;
-    qx4[ipt]=0.; qy4[ipt]=0.;
-    // numbers of POI (mp) and particles marked both POI and RFP (mq)
-    mq[ipt]=0.; mp[ipt]=0.;
-    // average reduced single-event 2- and 4-particle correlations : <2'> & <4'>
-    redCor22[ipt]=0.; redCor24[ipt]=0.;
-    // event weights for reduced correlation calculation
-    wred2[ipt]=0.; wred4[ipt]=0.;
-  }
-
-  for(int i=0;i<nh;i++) { // track loop
-    float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
-    float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
-    float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-    if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5 || charge[i]==0 || TMath::Abs(eta)<0.1) continue; // track selection
-    float phi = TMath::ATan2( momy[i], momx[i] );
-    if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
-
-    Int_t ipt = 0;
-    for(int j=0; j<npt;j++){
-      if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
-    }
-
-    // Double_t v2 = TMath::Cos(2.*phi);
-    if(eta>0.1){ // RFP selection
-      // hv2MC[fcent]->Fill(0.5, v2, 1);      
-      Qx2+=TMath::Cos(2.*phi);
-      Qy2+=TMath::Sin(2.*phi);
-      Qx4+=TMath::Cos(4.*phi);
-      Qy4+=TMath::Sin(4.*phi);
-      M++;
-    } // end of RFP selection
-
-    if(eta<-0.1){ // POI selection
-      // hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
-      // hPT[ipt]->Fill(0.5+fcent, pt, 1);
-      px2[ipt]+=TMath::Cos(2.*phi);
-      py2[ipt]+=TMath::Sin(2.*phi);
-      mp[ipt]++;
-    } // end of POI selection
-
-    // ==================================== Eta Sub-event ==================================== //
-    float v2=-999.0;
-    if(eta>0.1){ // eta+
-      // v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
-      v2 = cos(2.0 * (phi-psi1) );
-    }
-    if(eta<-0.1){ // eta-
-      // v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
-      v2 = cos(2.0 * (phi-psi2) );
-    }
-    hv2EP[ipt]->Fill(0.5+fcent,v2);
-    // if (eta < -0.1) { // Reference flow
-    hv22EP->Fill(0.5+fcent,v2);
-    // }
-  } // end of track loop
-
-  // ================================== Direct Cumulants ================================== // 
-  if (M >= 2.){ // <2> definition condition
-    Q2 = TComplex(Qx2, Qy2);
-    w2 = M*(M-1);                 // w(<2>)
-    cor22 = CalCor22(Q2, M, w2);       // <2>
-    hv22[fcent]->Fill(0.5, cor22, w2); // <<2>>
-
-  } // end of <2> definition condition
-  for (int ipt = 0; ipt < npt; ipt++){
-    if (mp[ipt] == 0 || M<1) continue;
-    Q2 = TComplex(Qx2, Qy2);
-    p2[ipt] = TComplex(px2[ipt], py2[ipt]);
-    q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
-    wred2[ipt] = mp[ipt]*M-mq[ipt];                                        // w(<2'>)
-    if (wred2[ipt]==0) continue;
-    redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], mq[ipt], wred2[ipt]); // <2'>
-    hv22pt[fcent][ipt]->Fill(0.5, redCor22[ipt], wred2[ipt]);                  // <<2'>>
-
-    // TProfile for covariance calculation in statistic error
-    hcov22prime[fcent][ipt]->Fill(0.5, cor22 * redCor22[ipt], w2 * wred2[ipt]); // <2>*<2'>
-  }
-
-  if (M >= 4.){ // <4> definition condition
-    Q4 = TComplex(Qx4, Qy4);
-    w4 = M*(M-1)*(M-2)*(M-3); // w(<4>)
-    cor24 = CalCor24(Q2, Q4, M, w4);      // <4>
-    hv24[fcent]->Fill(0.5, cor24, w4);    // <<4>>
-
-    // TProfile for covariance calculation in statistic error
-    hcov24[fcent]->Fill(0.5, cor22 * cor24, w2 * w4); // <2>*<4>
-  } // end of <4> definition condition
-  for (int ipt = 0; ipt < npt; ipt++){
-    if (mp[ipt] == 0 || M<3) continue;
-    Q4 = TComplex(Qx4, Qy4);   
-    q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
-    wred4[ipt] = (mp[ipt]*M-3*mq[ipt])*(M-1)*(M-2);                                 // w(<4'>)
-    if (wred4[ipt]==0) continue;
-    redCor24[ipt] = CalRedCor24(Q2, Q4, p2[ipt], q2[ipt], q4[ipt], M, mp[ipt], mq[ipt], wred4[ipt]); // <4'>
-    hv24pt[fcent][ipt]->Fill(0.5, redCor24[ipt], wred4[ipt]);                                        // <<4'>>
-
-    // TProfile for covariance calculation in statistic error
-    hcov24prime[fcent][ipt]->Fill(0.5, cor22 * redCor24[ipt], w2 * wred4[ipt]);
-    hcov42prime[fcent][ipt]->Fill(0.5, cor24 * redCor22[ipt], w4 * wred2[ipt]);
-    hcov44prime[fcent][ipt]->Fill(0.5, cor24 * redCor24[ipt], w4 * wred4[ipt]);
-    hcov2prime4prime[fcent][ipt]->Fill(0.5, redCor22[ipt] * redCor24[ipt], wred2[ipt] * wred4[ipt]);
-  }
-
-  // float res2[ncent]={0.246631,0.370836,0.369859,0.31821,0.246213,0.192905,0.173104,0.18851};
-	// if(fcent>=0 && fcent<=7){ // centrality selection 0-80%
-  //   for(int itrk=0;itrk<nh;itrk++) {  //track loop
-
-  //     float pt  = sqrt( TMath::Power(momx[itrk], 2.0 ) + TMath::Power(momy[itrk], 2.0 ) );
-  //     float the = TMath::ATan2( pt, momz[itrk] );//atan2(pt/pz)
-  //     float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-  //     if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5 || charge[itrk]==0 || TMath::Abs(eta)<0.1) continue; // track selection
-  //     float phi = TMath::ATan2( momy[itrk], momx[itrk] );
-  //     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
-
-  //     Int_t ipt = -1;
-  //     for (int j = 0; j < npt; j++)
-  //     {
-  //       if (pt >= bin_pT[j] && pt < bin_pT[j + 1])
-  //         ipt = j;
-  //     }
-
-  //     float v2=-999.0;
+      float v2=-999.0;
       
-  //     if(eta>0.1){ // eta+
-  //       // v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
-  //       v2 = cos(2.0 * (phi-psi1) );
-  //     }
+      if(eta>0.1){ // eta+
+        // v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
+        v2 = cos(2.0 * (phi-psi1) );
+      }
 
-  //     if(eta<-0.1){ // eta-
-  //       // v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
-  //       v2 = cos(2.0 * (phi-psi2) );
-  //     }
-  //     hv2EP[ipt]->Fill(0.5+fcent,v2);
-  //     // if (eta < -0.1) { // Reference flow
-  //     hv22EP->Fill(0.5+fcent,v2);
-  //     // }
-
-  //   }// end of the track loop
-
- 	// }// end of centrality selection 
+      if(eta<-0.1){ // eta-
+        // v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
+        v2 = cos(2.0 * (phi-psi2) );
+      }
+      // if(fabs(eta[itrk])<1.0){ // eliminate spectators
+      hv2EP[ipt]->Fill(0.5+fcent,v2);
+      if (eta < -0.1) { // Reference flow
+        hv22EP->Fill(0.5+fcent,v2);
+      }
+      
+      // } // end of |eta| < 1.0
+    }// end of the track loop
+ 	}// end of centrality selection 
 } // end of Ana_event();

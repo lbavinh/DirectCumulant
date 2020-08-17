@@ -25,7 +25,7 @@ void v2plot(){
   static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
   static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8};
 
-
+/*
   if (bDrawPlots){
     TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
 
@@ -57,7 +57,7 @@ void v2plot(){
     cTemp -> SaveAs(hname);
   }
 
-
+*/
   // Input hist
   // TProfile for reference flow
   // TProfile *hv2MC[ncent];       // profile for MC integrated v2
@@ -419,20 +419,20 @@ void v2plot(){
     // mgDifFl[icent] -> Add(grDifFl[0][icent]);
   }
   //==========================================================================================================================
-  // TFile *inFileGraphEP = new TFile("../ROOTFile/TGraphErrors_EP_MultLargerThan5.root","read");
-  // for (int icent=0;icent<ncent;icent++){
-  //   sprintf(hname,"gr_cent%i_0",icent);
-  //   grDifFl[0][icent] = (TGraphErrors*)inFileGraphEP->Get(hname);
-  //   grDifFl[0][icent] -> SetMarkerColor(kRed);
-  //   grDifFl[0][icent] -> SetMarkerStyle(25);
-  //   grDifFl[0][icent] -> SetMarkerSize(1.3);
-  //   grDifFl[0][icent] -> SetDrawOption("P");    
-  // }
-  // sprintf(hname,"grRF_0");
-  // grRefFlCent[0] = (TGraphErrors*)inFileGraphEP->Get(hname);
-  // grRefFlCent[0] -> SetMarkerColor(kRed);
-  // grRefFlCent[0] -> SetMarkerStyle(25);
-  // inFileGraphEP -> Close();
+  TFile *inFileGraphEP = new TFile("../ROOTFile/TGraphErrors_EP_MultLargerThan5.root","read");
+  for (int icent=0;icent<ncent;icent++){
+    sprintf(hname,"gr_cent%i_0",icent);
+    grDifFl[0][icent] = (TGraphErrors*)inFileGraphEP->Get(hname);
+    grDifFl[0][icent] -> SetMarkerColor(kRed);
+    grDifFl[0][icent] -> SetMarkerStyle(25);
+    grDifFl[0][icent] -> SetMarkerSize(1.3);
+    grDifFl[0][icent] -> SetDrawOption("P");    
+  }
+  sprintf(hname,"grRF_0");
+  grRefFlCent[0] = (TGraphErrors*)inFileGraphEP->Get(hname);
+  grRefFlCent[0] -> SetMarkerColor(kRed);
+  grRefFlCent[0] -> SetMarkerStyle(25);
+  inFileGraphEP -> Close();
 
   //==========================================================================================================================
   // Drawing multipads of reference & differential flow

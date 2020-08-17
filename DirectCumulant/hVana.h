@@ -23,36 +23,38 @@ public :
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
-   // Declaration of leaf types
-   Float_t         rp;
-   Int_t           nh;
-   Float_t         b;
-   Float_t         pt[1500];   //[nh]
-   Float_t         phi0[1500];   //[nh]
-   Float_t         eta[1500];   //[nh]
+  // Declaration of leaf types
+  Int_t nh;
+  Float_t b;
+  Float_t rp;
+  Float_t phi0[6000]; //[nh]
+  Bool_t bFlow[6000]; //[nh]
+  Float_t eta[6000];  //[nh]
+  Float_t pt[6000];   //[nh]
 
-   // List of branches
-   TBranch        *b_rp;   //!
-   TBranch        *b_nh;   //!
-   TBranch        *b_b;   //!
-   TBranch        *b_pt;   //!
-   TBranch        *b_phi0;   //!
-   TBranch        *b_eta;   //!
+  // List of branches
+  TBranch *b_nh;    //!
+  TBranch *b_b;     //!
+  TBranch *b_rp;    //!
+  TBranch *b_phi0;  //!
+  TBranch *b_bFlow; //!
+  TBranch *b_eta;   //!
+  TBranch *b_pt;    //!
 
-   hVana(TTree *tree=0);
-   virtual ~hVana();
-   virtual Int_t    Cut(Long64_t entry);
-   virtual Int_t    GetEntry(Long64_t entry);
-   virtual Long64_t LoadTree(Long64_t entry);
-   virtual void     Init(TTree *tree);
-   virtual void     Loop();
-   virtual Bool_t   Notify();
-   virtual void     Show(Long64_t entry = -1);
-   // additional function
-   void Booking(TString outFile);
-   void Loop_a_file(TString file);
-   void Ana_end();
-   void Ana_event();        
+  hVana(TTree *tree=0);
+  virtual ~hVana();
+  virtual Int_t    Cut(Long64_t entry);
+  virtual Int_t    GetEntry(Long64_t entry);
+  virtual Long64_t LoadTree(Long64_t entry);
+  virtual void     Init(TTree *tree);
+  virtual void     Loop();
+  virtual Bool_t   Notify();
+  virtual void     Show(Long64_t entry = -1);
+  // additional function
+  void Booking(TString outFile);
+  void Loop_a_file(TString file);
+  void Ana_end();
+  void Ana_event();        
 };
 
 #endif
@@ -117,13 +119,14 @@ void hVana::Init(TTree *tree)
    fCurrent = -1;
    fChain->SetMakeClass(1);
 
-   fChain->SetBranchAddress("rp", &rp, &b_rp);
-   fChain->SetBranchAddress("nh", &nh, &b_nh);
-   fChain->SetBranchAddress("b", &b, &b_b);
-   fChain->SetBranchAddress("pt", pt, &b_pt);
-   fChain->SetBranchAddress("phi0", phi0, &b_phi0);
-   fChain->SetBranchAddress("eta", eta, &b_eta);
-   Notify();
+  fChain->SetBranchAddress("nh", &nh, &b_nh);
+  fChain->SetBranchAddress("b", &b, &b_b);
+  fChain->SetBranchAddress("rp", &rp, &b_rp);
+  fChain->SetBranchAddress("phi0", phi0, &b_phi0);
+  fChain->SetBranchAddress("bFlow", bFlow, &b_bFlow);
+  fChain->SetBranchAddress("eta", eta, &b_eta);
+  fChain->SetBranchAddress("pt", pt, &b_pt);
+  Notify();
 }
 
 Bool_t hVana::Notify()

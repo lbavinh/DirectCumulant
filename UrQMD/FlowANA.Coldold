@@ -264,7 +264,7 @@ void FlowANA::Ana_event(){
     float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
     float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
     float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-    if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5 || charge[i]==0 || TMath::Abs(eta)<0.1) continue; // track selection
+    if (pt < minpt || pt > maxpt || eta>3.0 || eta<-3.0 || charge[i]==0 || TMath::Abs(eta)<0.05) continue; // track selection
     float phi = TMath::ATan2( momy[i], momx[i] );
     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
@@ -281,7 +281,7 @@ void FlowANA::Ana_event(){
     }
 
     Double_t v2 = TMath::Cos(2.*phi);
-    if(eta>0.1){ // RFP selection
+    if(eta>0.05){ // RFP selection
       hv2MC[fcent]->Fill(0.5, v2, 1);      
       Qx2+=TMath::Cos(2.*phi);
       Qy2+=TMath::Sin(2.*phi);
@@ -290,7 +290,7 @@ void FlowANA::Ana_event(){
       M++;
     } // end of RFP selection
 
-    if(eta<-0.1){ // POI selection
+    if(eta<-0.05){ // POI selection
     hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
     hPT[ipt]->Fill(0.5+fcent, pt, 1);
     px2[ipt]+=TMath::Cos(2.*phi);
@@ -393,7 +393,7 @@ void FlowANA::Ana_event(){
       float pt  = sqrt( TMath::Power(momx[itrk], 2.0 ) + TMath::Power(momy[itrk], 2.0 ) );
       float the = TMath::ATan2( pt, momz[itrk] );//atan2(pt/pz)
       float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-      if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5 || charge[itrk]==0 || TMath::Abs(eta)<0.1) continue; // track selection
+      if (pt < minpt || pt > maxpt || eta>3. || eta<-3. || charge[itrk]==0 || TMath::Abs(eta)<0.05) continue; // track selection
       float phi = TMath::ATan2( momy[itrk], momx[itrk] );
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
@@ -417,7 +417,7 @@ void FlowANA::Ana_event(){
       }
       // if(fabs(eta[itrk])<1.0){ // eliminate spectators
       hv2EP[ipt]->Fill(0.5+fcent,v2);
-      if (eta>0.1) { // Reference flow
+      if (eta>0.05) { // Reference flow
         hv22EP->Fill(0.5+fcent,v2);
       }
       

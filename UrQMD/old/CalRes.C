@@ -38,26 +38,15 @@ static const int neta = 2; // [eta-,eta+]
 static const int max_nh = 1633;
 
 TFile *d_outfile; // out file with histograms and profiles
-TH1F *hRP;         // reaction plane distr
-TH1F *hPt;         // transverse momentum distr
-TH1F *hPhi;        // distr of particle azimuthal angle with respect to RP
-TH1F *hPhil;       // distr of particle azimuthal angle in the laboratory coordinate system
-TH1F *hEta;        // pseudorapidity
-TH1F *hBimp;       // impact parameter
-TH1I *hMult;       // emitted multiplicity
-TH2F *hBimpvsMult; // 2-D histogram impact parameter (y) vs mult (x)
+TProfile *HRes;		// resolution
+
+
 
 void CalRes::Booking(TString outFile){
   d_outfile = new TFile(outFile.Data(), "recreate");
   cout << outFile.Data() << " has been initialized" << endl;
-  hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
-  hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", max_nh, 0, max_nh, 200, 0., 20.);
-  hBimp = new TH1F("hBimp", "Impact parameter;b (fm);dN/db", 200, 0., 20.);
-  hPt = new TH1F("hPt", "Pt-distr;p_{T} (GeV/c); dN/dP_{T}", 500, 0., 7.);
-  hRP = new TH1F("hRP", "Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}", 300, 0., 7.);
-  hPhi = new TH1F("hPhi", "Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})", 300, 0., 7.);
-  hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
-  hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -10, 10);
+  HRes = new TProfile("HRes","EP resolution", ncent,0.,ncent);
+  HRes->Sumw2();
   cout << "Histograms have been initialized" << endl;
 
 }
@@ -105,41 +94,66 @@ void CalRes::Loop()
 void CalRes::Ana_event(){
   float rp = 0;
   // rp = gRandom->Uniform(0, 2.*TMath::Pi());
-  // int fcent=CentB(bimp);
-  // if (fcent<0) return;
-  hMult -> Fill(nh);
-  hRP -> Fill(rp);
-  hBimp -> Fill(bimp);
-  hBimpvsMult -> Fill(nh,bimp);
+  int fcent=CentB(bimp);
+  if (fcent<0) return;
+  Double_t sumQxy[neta][2]={{0}};  // [eta-,eta+][x,y]
+  Double_t multQv[neta]={0};       // [eta+,eta-]
 
   for(int i=0;i<nh;i++) { // track loop
     float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
     float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
     float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-    // if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5) continue; // track selection
-    if (abs(eta)<2.5) continue; // spectator
+    if (pt < minpt || pt > maxpt || eta>2.5 || eta<-2.5) continue; // track selection
     float phi = TMath::ATan2( momy[i], momx[i] );
     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
+
     float phil = phi+rp;
-    hPhi -> Fill(phi);
     while (phil>2.*TMath::Pi()) phil-=2.*TMath::Pi(); /* To make sure that phil is between 0 and 2 Pi */
-    hPhil -> Fill(phil);
-    hEta -> Fill(eta);
 
-    Int_t ipt = 0;
-    hPt -> Fill(pt);
-    for(int j=0; j<npt;j++){
-      if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
-    }
+    // Sub eta event method, TPC plane
+    int fEta = -1;
+    if (eta >-2.5 && eta <-0.1) fEta = 0; // TPC East
+    if (eta > 0.1 && eta < 2.5) fEta = 1; // TPC West
 
-
+		if ( fEta>-1 ){
+      sumQxy[fEta][0] += pt * cos( (2.0) * phi );
+      sumQxy[fEta][1] += pt * sin( (2.0) * phi );
+			multQv[fEta]++;
+		} // end of eta selection
   } // end of track loop
 
+  // ==================================== Eta Sub-event ==================================== //
+
+  Double_t fEP[2]; // [eta-,eta+]
+  Double_t fQv[2];
+  for (int ieta=0; ieta<neta; ieta++){
+    if( multQv[ieta]>5 ){ // multiplicity > 5
+      fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
+      fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
+      fEP[ieta] /= 2.0;
+      fQv[ieta] = TMath::Sqrt(TMath::Power( sumQxy[ieta][0],2.0)+TMath::Power( sumQxy[ieta][1],2.0))/TMath::Sqrt(multQv[ieta]);
+    }else{
+      fEP[ieta] = -9999;
+      fQv[ieta] = -9999;
+    }
+  }
+
+  // Resolution
+  Double_t psi1, psi2, fq1, fq2;
+  psi1 = fEP[0];
+  psi2 = fEP[1];
+  fq1 = fQv[0];
+  fq2 = fQv[1];
+  if (psi1<-9000 || psi2<-9000) return;
+  if (fq1<0 || fq2<0) return;
+  Double_t dPsi = 2. *(psi1 - psi2);
+  dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
+  HRes -> Fill(0.5+fcent,cos(dPsi));
 }
 void loop_test(){
   CalRes *ana = new CalRes();
   ana->Booking("test.root");
-  ana->Loop_a_file("urqmd_1033721.mcpico.root");
+  ana->Loop_a_file("./ROOTFile/urqmd_1033721_1.mcpico.root");
   ana -> Ana_end();
   cout << "Histfile written. Congratz!" << endl;   
 }

@@ -31,7 +31,7 @@ static const double bin_pT[npt+1]={0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1
 static const float maxpt = 3.5; // max pt
 static const float minpt = 0.2; // min pt
 
-static const int max_nh = 6100;
+static const int max_nh = 6000;
 
 float   d_rp;           // reaction plane azimuthal angle
 float   d_b;            // impact parameter
@@ -65,7 +65,7 @@ static TH1F *hEta; // pseudorapidity
 void Book_hist(TString outfile) {
   // read input TFile
 
-  d_infile = new TFile("merge_hist_glaub_200gev.root","read");
+  d_infile = new TFile("/mnt/pool/2/lbavinh/EventGenerator/merge_hist_glaub_200gev.root","read");
   // d_infile = new TFile("/weekly/povarov/lbavinh/Generator/merge_hist_glaub_200gev.root", "read");
   hBimp = (TH1F *)d_infile->Get("hBimp");
   hNpart = (TH1I *)d_infile->Get("hNpart");

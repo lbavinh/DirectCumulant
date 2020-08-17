@@ -8,12 +8,12 @@ void v2plot(){
   // Temporary variables
   char hname[800]; // histogram hname
   double stats[6]; // stats of TProfile
-  char analysis[20]={"nonflow"};
+  char analysis[20]={"pure"};
 
   TFile *inFile, *outFile;
-  sprintf(hname,"./ROOTFile/%s_10mil.root",analysis);
+  sprintf(hname,"./ROOTFile/%s_1mil.root",analysis);
   inFile = new TFile(hname,"read");
-  sprintf(hname,"./ROOTFile/TGraphError_%s_10mil.root",analysis);
+  sprintf(hname,"./ROOTFile/TGraphError_%s_1mil.root",analysis);
   outFile = new TFile(hname,"recreate");
   
   
@@ -71,7 +71,7 @@ void v2plot(){
 
   TProfile *hv2EP[npt];	// elliptic flow from EP method
   TProfile *hv22EP;        // elliptic flow cent: 10-40% from EP method
-
+  TProfile *HRes;
 
   // OUTPUT
 
@@ -79,6 +79,7 @@ void v2plot(){
   TMultiGraph *mgRefFl[ncent], *mgDifFl[ncent];
 
   // Get TProfile histograms from ROOTFile
+  HRes = (TProfile*)inFile->Get("HRes");
   hv22EP = (TProfile*)inFile->Get("hv22EP");
   for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
     sprintf(hname,"hv2EP_%i",ipt);
@@ -137,7 +138,7 @@ void v2plot(){
   double v2cent[4][ncent];
   double v2centE[4][ncent];
 
-  ofstream ofile2("v2int.txt");
+  // ofstream ofile2("v2int.txt");
 
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // Reference flow calculation
@@ -197,11 +198,17 @@ void v2plot(){
                   cor4,cor4E,sumwcor4,sumw2cor4,
                   cov24,sumwcor24);
 
-    ofile2 << icent*10<<"-"<< (icent+1)*10<<" "<< v22intE << " " << v24intE << endl;
+    // ofile2 << icent*10<<"-"<< (icent+1)*10<<" "<< v22intE << " " << v24intE << endl;
 
     //=============================================
     // v2{#eta sub-event}
-    v2EPint = hv22EP->GetBinContent(icent+1);
+    double res2 = sqrt(HRes->GetBinContent(icent+1));
+    double v2obs = hv22EP->GetBinContent(icent+1);
+    v2EPint = v2obs / res2;
+    double dv2obs = hv22EP->GetBinError(icent+1);
+    double dres2 = HRes->GetBinError(icent+1);
+
+    // v2EPintE = sqrt(dv2obs*dv2obs/res2/res2 + v2obs*v2obs/(4*pow(res2,6)*dres2*dres2));
     v2EPintE = hv22EP->GetBinError(icent+1);
     //=============================================
     // Reference flow comparison: MC, 2QC, 4QC, eta sub-event
@@ -382,18 +389,27 @@ void v2plot(){
   //==========================================================================================================================
 
   const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
-
+  
   // Elliptic flow from eta sub-event method
   for (int icent=0; icent<ncent; icent++){
     double v2EP[npt]={0}, ev2EP[npt]={0};
     for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
-      v2EP[ipt] = hv2EP[ipt]->GetBinContent(icent+1);
+      // v2EP[ipt] = hv2EP[ipt]->GetBinContent(icent+1);
+      // ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
+
+      double res2 = sqrt(HRes->GetBinContent(icent+1));
+      double v2obs = hv2EP[ipt]->GetBinContent(icent+1);
+      v2EP[ipt] = v2obs / res2;
+      double dv2obs = hv2EP[ipt]->GetBinError(icent+1);
+      double dres2 = HRes->GetBinError(icent+1);
+
+      // ev2EP[ipt] = sqrt(dv2obs*dv2obs/res2/res2 + v2obs*v2obs/(4*pow(res2,6)*dres2*dres2));
       ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
     }
     // Event plane differential flow
     grDifFl[3][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
-    grDifFl[3][icent] -> SetMarkerColor(kBlack);
-    grDifFl[3][icent] -> SetMarkerStyle(23);
+    grDifFl[3][icent] -> SetMarkerColor(kRed);
+    grDifFl[3][icent] -> SetMarkerStyle(25);
     grDifFl[3][icent] -> SetMarkerSize(1.3);
     grDifFl[3][icent] -> SetDrawOption("P");
     mgDifFl[icent] -> Add(grDifFl[3][icent]);
@@ -523,7 +539,7 @@ void v2plot(){
     }
   }
   outFile -> Close();
-
+  
   std::vector<TGraphErrors*> vgr;
   for (int i=0; i<4; i++){
     vgr.push_back(grRefFlCent[i]);

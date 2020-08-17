@@ -54,9 +54,7 @@ public :
   void Booking(TString outFile);
   void Loop_a_file(TString file);
   void Ana_end();
-  void Ana_event();
-  void CalRes();
-  void FinishCalRes();        
+  void Ana_event();      
 };
 
 #endif

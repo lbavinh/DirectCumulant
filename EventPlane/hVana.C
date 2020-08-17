@@ -178,8 +178,6 @@ void hVana::Loop_a_file(TString file)
   }
   cout << file << " is opened" << endl;
   Init(tree);
-  CalRes();
-  FinishCalRes();
   Loop();
   treefile->Close();
   cout << file << " file processed" << endl;
@@ -211,8 +209,8 @@ void hVana::Loop()
     nbytes += nb;
     // if (Cut(ientry) < 0) continue;
     Ana_event();
-    if (ientry % 100000 == 0)
-      cout << ientry << endl;
+    if (jentry % 100000 == 0)
+      cout << jentry << endl;
   }
 }
 
@@ -318,9 +316,11 @@ void hVana::Ana_event()
 
   for (int ipt = 0; ipt < npt; ipt++){
     if (mp[ipt] == 0 || M<1) continue;
+    Q2 = TComplex(Qx2, Qy2);
     p2[ipt] = TComplex(px2[ipt], py2[ipt]);
     q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
     wred2[ipt] = mp[ipt] * M - mq[ipt];                                        // w(<2'>)
+    if (wred2[ipt]==0) continue;
     redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], mq[ipt], wred2[ipt]); // <2'>
     hv22pt[icent][ipt]->Fill(0.5, redCor22[ipt], wred2[ipt]);                  // <<2'>>
 
@@ -340,9 +340,10 @@ void hVana::Ana_event()
 
   for (int ipt = 0; ipt < npt; ipt++){
     if ( mp[ipt] == 0 || M < 3 ) continue;
+    Q4 = TComplex(Qx4, Qy4);
     q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
     wred4[ipt] = (mp[ipt] * M - 3. * mq[ipt]) * (M - 1.) * (M - 2.);                                 // w(<4'>)
-
+    if (wred4[ipt]==0) continue;
     redCor24[ipt] = CalRedCor24(Q2, Q4, p2[ipt], q2[ipt], q4[ipt], M, mp[ipt], mq[ipt], wred4[ipt]); // <4'>
     hv24pt[icent][ipt]->Fill(0.5, redCor24[ipt], wred4[ipt]);                                        // <<4'>>
 
@@ -393,11 +394,11 @@ void hVana::Ana_event()
       float v2=-999.0;
       
       if(eta[itrk]>0){ // eta+
-        v2 = cos(2.0 * (phi0[itrk]-psi1) )/res2[icent];
+        v2 = cos(2.0 * (phi0[itrk]-psi1) );
       }
 
       if(eta[itrk]<0){ // eta-
-        v2 = cos(2.0 * (phi0[itrk]-psi2) )/res2[icent];
+        v2 = cos(2.0 * (phi0[itrk]-psi2) );
       }
       // if(fabs(eta[itrk])<1.0){ // eliminate spectators
       hv2EP[ipt]->Fill(0.5+icent,v2);
@@ -411,88 +412,22 @@ void hVana::Ana_event()
 
 } // end of hVana::Ana_event()
 
-void hVana::CalRes()
+
+void loop_a_list_of_trees()
 {
-  cout << "Calculate resolution..." << endl;
-  if (fChain == 0) return;
-  Long64_t nentries = fChain->GetEntriesFast();
-  Long64_t nbytes = 0, nb = 0;
-  for (Long64_t jentry = 0; jentry < nentries; jentry++)
-  { // loop over all entries (nentries) of chain
-    Long64_t ientry = LoadTree(jentry);
-    if (ientry < 0) break;
-    nb = fChain->GetEntry(jentry);
-    nbytes += nb;
-    // if (Cut(ientry) < 0) continue;
-    if (ientry % 100000 == 0)
-      cout << ientry << endl; // event counter
-    // Analysis
-    Double_t sumQxy[neta][2]={{0}};    // [eta-,eta+][x,y]
-    Double_t multQv[neta]={0};         // [eta+,eta-]    
+  hVana *ana = new hVana();
+  ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC_Pure_1mil.root");
 
-    int icent = -1;
-    for (int i = 0; i < ncent; i++)
-    { // loop over centrality
-      if (CentB(b) == bin_cent[i])
-        icent = i;
-    }
-    if (icent < 0) continue;
-    for (int i = 0; i < nh; i++)
-    { // track loop
-      double pT = pt[i];
-      if (pT < minpt || pT > maxpt) continue; // pt cut
-      int fEta = -1;
-      if (eta[i] <-0.05 && eta[i] >-2.0) fEta = 0;
-      if (eta[i] > 0.05 && eta[i] < 2.0) fEta = 1;
-
-      if ( fEta>-1 ){
-        sumQxy[fEta][0] += pT * cos( 2.0 * phi0[i] );
-        sumQxy[fEta][1] += pT * sin( 2.0 * phi0[i] );
-        multQv[fEta]++;
-      } // end of eta selection
-
-    } // end of track loop
-
-    Double_t fEP[2]; // [eta-,eta+]
-    Double_t fQv[2];
-    for (int ieta=0; ieta<neta; ieta++){
-      if( multQv[ieta]>5 ){ // multiplicity > 5
-        fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
-        fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
-        fEP[ieta] /= 2.0;
-        fQv[ieta] = TMath::Sqrt(TMath::Power( sumQxy[ieta][0],2.0)+TMath::Power( sumQxy[ieta][1],2.0))/TMath::Sqrt(multQv[ieta]);
-        H_Qw[ieta]->Fill( multQv[ieta] );
-      }else{
-        fEP[ieta] = -9999;
-        fQv[ieta] = -9999;
-      }
-    }
-
-    for( int ieta=0; ieta<neta; ieta++ ){// eta EP detector loop
-      if( fEP[ieta]>-9000 ){ // EP reconstructed 
-        H_EP[ieta]->Fill( fEP[ieta] );
-        H_Qv[ieta]->Fill( fQv[ieta] );
-      }// end of EP reconstructed
-    }// end of eta loop
-
-    // Resolution
-    Double_t psi1, psi2, fq1, fq2;
-    psi1 = fEP[0];
-    psi2 = fEP[1];
-    fq1 = fQv[0];
-    fq2 = fQv[1];
-    if (psi1<-9000 || psi2<-9000) continue;
-    if (fq1<0 || fq2<0) continue;
-    Double_t dPsi = 2. *(psi1 - psi2);
-    dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
-    HRes -> Fill(0.5+icent,cos(dPsi));
+  ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/Pure/runlist.list"); // tree runlist
+  char filename[200];
+  int nfiles = 1;
+  while (ifile.getline(filename, 200))
+  {
+    cout << nfiles << " file is processing " << filename << endl;
+    ana->Loop_a_file(filename);
+    nfiles++;
   }
-}
-void hVana::FinishCalRes(){
-  cout << "Resolution psi2 = {";
-  for (int icent=0; icent<ncent; icent++){
-    res2[icent] = TMath::Sqrt(HRes->GetBinContent(1+icent));
-    cout << res2[icent] <<", ";
-  }
-  cout << "}" <<endl;
+  cout << "Done. " << nfiles - 1 << " files are processed." << endl;
+  ana->Ana_end();
+  cout << "Histfile written. Congratz!" << endl;
 }

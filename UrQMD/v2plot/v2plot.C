@@ -14,7 +14,7 @@ void v2plot(){
   TFile *inFile, *outFile;
   sprintf(hname,"../ROOTFile/sum.root");
   inFile = new TFile(hname,"read");
-  sprintf(hname,"../ROOTFile/TGraphError.root");
+  sprintf(hname,"../CompareResult/Vinh.root");
   outFile = new TFile(hname,"recreate");
   
   

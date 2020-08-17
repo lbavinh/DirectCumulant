@@ -36,13 +36,22 @@ void Compare(){
   TLatex l[8][3];
   char *ch[3]={"v2{#eta sub-event}","v2{2QC}","v2{4QC}"};
   for (int i=0; i<3; i++){
-    for (int icent=0;icent<8;icent++){
+    for (int icent=0;icent<6;icent++){
       sprintf(name,"Centrality %i-%i%%",icent*10,(icent+1)*10);
       can[icent][i] = (TCanvas*) DrawTGraph(grDim[icent][i],grVinh[icent][i],ch[i],0.69,1.31,0.,2.8,0,0.25,0.18,0.72,0.42,0.89,name);
       sprintf(name,"%s_Cent%i-%i%%.png",ch[i], icent*10,(icent+1)*10);
       can[icent][i] -> SetName(name);
       can[icent][i] -> SaveAs(name);
     }
+
+    for (int icent=6;icent<8;icent++){
+      sprintf(name,"Centrality %i-%i%%",icent*10,(icent+1)*10);
+      can[icent][i] = (TCanvas*) DrawTGraph(grDim[icent][i],grVinh[icent][i],ch[i],0.69,1.31,0.,2.8,0,0.8,0.18,0.72,0.42,0.89,name);
+      sprintf(name,"%s_Cent%i-%i%%.png",ch[i], icent*10,(icent+1)*10);
+      can[icent][i] -> SetName(name);
+      can[icent][i] -> SaveAs(name);
+    }
+
   }
 }
 

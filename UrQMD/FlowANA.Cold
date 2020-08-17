@@ -417,7 +417,7 @@ void FlowANA::Ana_event(){
       }
       // if(fabs(eta[itrk])<1.0){ // eliminate spectators
       hv2EP[ipt]->Fill(0.5+fcent,v2);
-      if (eta < -0.1) { // Reference flow
+      if (eta<-0.1) { // Reference flow
         hv22EP->Fill(0.5+fcent,v2);
       }
       

@@ -1,5 +1,5 @@
-#define FlowANA_cxx
-#include "FlowANA.h"
+#define mpdsim_reduced_cxx
+#include "mpdsim_reduced.h"
 #include "function.C"
 #include "TH1.h"
 #include "TH1I.h"
@@ -11,35 +11,29 @@
 #include "TVector3.h"
 #include "TVectorD.h"
 #include "TRandom3.h"
+#include "TF2.h"
 
 #include <iostream>
 #include <fstream>
 #include <cmath>
-using namespace std;
-//List of histograms and Ntuples....
 
-// static const int neta = 7;
-// static const int ndet = 3;
-// static const int ncent = 6;
-// static const int nth = 3;
-// static const int npid = 4;
 
-static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
-static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8};
+static const int npt = 10; // 0.5 - 3.6 GeV/c - number of pT bins
+static const double bin_pT[npt+1]={0.0,0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,3.0};
 
-static const int ncent = 8; // 0-80%
-static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
+static const int ncent = 2; // 0-40%
+static const int bin_cent[ncent] = {5,25};
 
-static const double maxpt = 2.8; // max pt
-static const double minpt = 0.2; // min pt
+static const double maxpt = 3.; // max pt
+static const double minpt = 0.; // min pt
 
-static const float mineta = -2.5; // min pt
-static const float maxeta = 2.5; // min pt
-static const float etagap = 0.2; // min pt
+static const float mineta = -1.5; // min pt
+static const float maxeta = 1.5; // min pt
+static const float etagap = 0.05; // min pt
 
 static const int neta = 2; // [eta-,eta+]
 
-static const int max_nh = 1700;
+static const int max_nh = 1500;
 
 TFile *d_outfile; // out file with histograms and profiles
 TH1I *hEvt;        // Event number 
@@ -79,7 +73,16 @@ TH1F *H_EP[neta];		  // reaction plane
 TH1F *H_Qv[neta];     // sub-event <Q> - probably
 TProfile *HRes;		// resolution
 
-void FlowANA::Booking(TString outFile){
+TFile *inputDCAfile; // "/nica/mpd21/parfenov/mpd_winter2019/mpd_prod/7.7gev/prod_new_test_picodst/dca/dca_fit.root"
+TF2 *fDCAx, *fDCAy, *fDCAz;
+
+void mpdsim_reduced::Booking(TString outFile){
+  // inputDCAfile = new TFile("/nica/mpd21/parfenov/mpd_winter2019/mpd_prod/7.7gev/prod_new_test_picodst/dca/dca_fit.root","read");
+  inputDCAfile = new TFile("dca_fit.root","read");
+  
+  fDCAx = (TF2 *)inputDCAfile->Get("f_sigma0");
+  fDCAy = (TF2 *)inputDCAfile->Get("f_sigma1");
+  fDCAz = (TF2 *)inputDCAfile->Get("f_sigma2");
 
   char name[800];
   char title[800];
@@ -185,12 +188,12 @@ void FlowANA::Booking(TString outFile){
 
 }
 
-void FlowANA::Loop_a_file(TString file){
+void mpdsim_reduced::Loop_a_file(TString file){
   TFile *treefile = TFile::Open(file.Data());
-  TTree *tree = (TTree *)treefile->Get("mctree");
+  TTree *tree = (TTree *)treefile->Get("mpdsim_reduced");
   if (tree == 0)
   {
-    cout << "mctree is not found in " << file << endl;
+    cout << "mpdsim_reduced is not found in " << file << endl;
     treefile->Close();
     return;
   }
@@ -203,14 +206,14 @@ void FlowANA::Loop_a_file(TString file){
   cout << file << " file processed" << endl;
 }
 
-void FlowANA::Ana_end(){
+void mpdsim_reduced::Ana_end(){
   d_outfile -> cd();
   d_outfile -> Write();
   d_outfile -> Close();
   cout << "Histfile has been written" << endl;
 }
 
-void FlowANA::Loop()
+void mpdsim_reduced::Loop()
 {
    if (fChain == 0) return;
 
@@ -227,16 +230,16 @@ void FlowANA::Loop()
    }
 }
 
-void FlowANA::Ana_event(){
+void mpdsim_reduced::Ana_event(){
   hEvt -> Fill(1);
   float rp = 0;
   // rp = gRandom->Uniform(0, 2.*TMath::Pi());
-  int fcent=CentB(bimp);
+  int fcent=CentB(b_mc);
   if (fcent<0) return;
-  hMult -> Fill(nh);
+  hMult -> Fill(n_tracks_mpd);
   hRP -> Fill(rp);
-  hBimp -> Fill(bimp);
-  hBimpvsMult -> Fill(nh,bimp);
+  hBimp -> Fill(b_mc);
+  hBimpvsMult -> Fill(n_tracks_mpd,b_mc);
   // notation as (26) in DOI:10.1103/PhysRevC.83.044913
   // Q-vector of RFP
   Double_t Qx2[neta]={0.}, Qy2[neta]={0.}, Qx4[neta]={0.}, Qy4[neta]={0.};
@@ -263,18 +266,31 @@ void FlowANA::Ana_event(){
   Double_t sumQxy[neta][2]={{0}};  // [eta-,eta+][x,y]
   Double_t multQv[neta]={0};       // [eta+,eta-]
 
-  for(int i=0;i<nh;i++) { // track loop
-    float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
-    float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
-    float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-    if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || charge[i]==0 || TMath::Abs(eta)<etagap/2.) continue; // track selection
-    float phi = TMath::ATan2( momy[i], momx[i] );
+  for(int i=0;i<n_tracks_mpd;i++) { // track loop
+
+    if (n_hits_mpd[i]<=32 ) continue;
+    // if (pid_tpc_prob_pion_mpd[i]<0.9 || 
+    //     pid_tof_prob_kaon_mpd[i]<0.9 ||
+    //     pid_tof_prob_proton_mpd[i]<0.9
+    // || TOF_flag_mpd[i]==0 || TOF_flag_mpd[i]==4) continue;
+    float pt  = TMath::Abs(signed_pt_mpd[i]);
+    // float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
+    // float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
+    float eta = eta_mpd[i];
+    
+    if (DCA_x_mpd[i] > 2.*fDCAx->Eval(pt, eta)) continue; //трек не проходит по DCAx
+    if (DCA_y_mpd[i] > 2.*fDCAy->Eval(pt, eta)) continue; //трек не проходит по DCAy
+    if (DCA_z_mpd[i] > 2.*fDCAz->Eval(pt, eta)) continue; //трек не проходит по DCAz
+
+    if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || TMath::Abs(eta)<etagap) continue; // track selection
+    // float phi = TMath::ATan2( momy[i], momx[i] );
+    float phi = phi_mpd[i];
     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
     hPhi -> Fill(phi);
-    float phil = phi+rp;
-    while (phil>2.*TMath::Pi()) phil-=2.*TMath::Pi(); /* To make sure that phil is between 0 and 2 Pi */
-    hPhil -> Fill(phil);
+    // float phil = phi+rp;
+    // while (phil>2.*TMath::Pi()) phil-=2.*TMath::Pi(); /* To make sure that phil is between 0 and 2 Pi */
+    // hPhil -> Fill(phil);
     hEta -> Fill(eta);
 
     Int_t ipt = 0;
@@ -287,7 +303,7 @@ void FlowANA::Ana_event(){
     // Double_t v2 = TMath::Cos(2.*phi);
     // hv2MC[fcent]->Fill(0.5, v2, 1);
     // hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
-    if(eta<-etagap/2.){
+    if(eta<-etagap){
       // RFP selection
       Qx2[0]+=TMath::Cos(2.*phi);
       Qy2[0]+=TMath::Sin(2.*phi);
@@ -301,7 +317,7 @@ void FlowANA::Ana_event(){
 
     } // end of RFP selection
 
-    if(eta>etagap/2.){ 
+    if(eta>etagap){ 
       Qx2[1]+=TMath::Cos(2.*phi);
       Qy2[1]+=TMath::Sin(2.*phi);
       Qx4[1]+=TMath::Cos(4.*phi);
@@ -315,8 +331,8 @@ void FlowANA::Ana_event(){
 
     // Sub eta event method, TPC plane
     int fEta = -1;
-    if (eta > mineta && eta <-etagap/2.) fEta = 0; // TPC East
-    if (eta > etagap/2. && eta < maxeta) fEta = 1; // TPC West
+    if (eta > mineta && eta <-etagap) fEta = 0; // TPC East
+    if (eta > etagap && eta < maxeta) fEta = 1; // TPC West
 
 		if ( fEta>-1 ){
       sumQxy[fEta][0] += 1. * cos( (2.0) * phi );
@@ -406,12 +422,25 @@ void FlowANA::Ana_event(){
   dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
   HRes -> Fill(0.5+fcent,cos(dPsi));
 
-  for(int i=0;i<nh;i++) { // track loop
-    float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
-    float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
-    float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-    if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || charge[i]==0 || TMath::Abs(eta)<etagap/2.) continue; // track selection
-    float phi = TMath::ATan2( momy[i], momx[i] );
+  for(int i=0;i<n_tracks_mpd;i++) { // track loop
+
+    if (n_hits_mpd[i]<=32 ) continue;
+    // if (pid_tpc_prob_pion_mpd[i]<0.9 || 
+    //     pid_tof_prob_kaon_mpd[i]<0.9 ||
+    //     pid_tof_prob_proton_mpd[i]<0.9
+    // || TOF_flag_mpd[i]==0 || TOF_flag_mpd[i]==4) continue;
+    float pt  = TMath::Abs(signed_pt_mpd[i]);
+    // float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
+    // float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
+    float eta = eta_mpd[i];
+    
+    if (DCA_x_mpd[i] > 2.*fDCAx->Eval(pt, eta)) continue; //трек не проходит по DCAx
+    if (DCA_y_mpd[i] > 2.*fDCAy->Eval(pt, eta)) continue; //трек не проходит по DCAy
+    if (DCA_z_mpd[i] > 2.*fDCAz->Eval(pt, eta)) continue; //трек не проходит по DCAz
+
+    if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || TMath::Abs(eta)<etagap) continue; // track selection
+    // float phi = TMath::ATan2( momy[i], momx[i] );
+    float phi = phi_mpd[i];
     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
     Int_t ipt = 0;
@@ -420,11 +449,11 @@ void FlowANA::Ana_event(){
     }
     // ==================================== Eta Sub-event ==================================== //
     float v2=-999.0;
-    if(eta>etagap/2.){ // eta+
+    if(eta>etagap){ // eta+
       // v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
       v2 = cos(2.0 * (phi-psi1) );
     }
-    if(eta<-etagap/2.){ // eta-
+    if(eta<-etagap){ // eta-
       // v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
       v2 = cos(2.0 * (phi-psi2) );
     }
@@ -435,17 +464,10 @@ void FlowANA::Ana_event(){
   } // end of track loop
 } // end of Ana_event();
 
-// void test_loop(){
-//   FlowANA *ana = new FlowANA();
-//   ana->Booking("/weekly/povarov/lbavinh/UrQMD/test.root");
-//   ana->Loop_a_file("/weekly/dmitriev/Urqmd77/part2/urqmd_1590957_416.mcpico.root");
-//   ana->Ana_end();
-//   cout << "Histfile written. Congratz!" << endl;
-// }
-// void test_loop(){
-//   FlowANA *ana = new FlowANA();
-//   ana->Booking("./ROOTFile/sum.root");
-//   ana->Loop_a_file("./ROOTFile/old/urqmd_1033721.mcpico.root");
-//   ana->Ana_end();
-//   cout << "Histfile written. Congratz!" << endl;
-// }
+void loop_test(){
+  mpdsim_reduced *ana = new mpdsim_reduced();
+  ana->Booking("test.root");
+  ana->Loop_a_file("/weekly/parfenov/mpd_winter2019/mpd_prod/7.7gev/mpd_reduced/picodst_1103519_1.root");
+  ana->Ana_end();
+  cout << "Histfile written. Congratz!" << endl;
+}

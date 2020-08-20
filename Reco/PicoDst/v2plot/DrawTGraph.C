@@ -100,7 +100,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   pt->SetBorderSize(0);
   pt->SetFillColor(0);
   char hname[400];
-  pt->AddText("Au+Au @ #sqrt{s_{NN}}=7.7 GeV, UrQMD");
+  pt->AddText("UrQMD, GEANT4, Au+Au, #sqrt{s_{NN}}=7.7 GeV");
 
   pt->AddText(strCent.Data());
   pt->Draw();

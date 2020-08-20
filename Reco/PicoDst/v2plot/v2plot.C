@@ -1,6 +1,6 @@
 #include "Func_StatErrCalc.C"
 #include "DrawTGraph.C"
-static const int ncent = 8; // 0-80%
+static const int ncent = 8; // 0-10,10-40
 TGraphErrors *grDifFl[4][ncent];    // v2(pt); 4 = {MC, 2QC, 4QC, EP}
 TGraphErrors *grRefFl[ncent];     
 TGraphErrors *grRefFlCent[4];       // v2(cent); 4 = {MC, 2QC, 4QC, EP}
@@ -18,14 +18,17 @@ void v2plot(){
   outFile = new TFile(hname,"recreate");
   
   
-  static const double bin_cent[ncent] = {5,15,25,35,45,55,65,75};
   static const double bin_centE[ncent] = {0};
-  static const double maxpt = 2.8; // max pt
-  static const double minpt = 0.2; // min pt
-  static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
-  static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8};
+  static const int npt = 10; // 0.5 - 3.6 GeV/c - number of pT bins
+  static const double bin_pT[npt+1]={0.1,0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,3.0};
 
-  /*
+  static const int ncent = 8; // 0-40%
+  // static const double bin_cent[ncent] = {5,25};
+  static const double bin_cent[ncent] = {5,15,25,35,45,55,65,75};
+  static const double maxpt = 3.; // max pt
+  static const double minpt = 0.; // min pt
+
+  
   if (bDrawPlots){
     TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
 
@@ -55,9 +58,10 @@ void v2plot(){
     hPt -> Draw();
     sprintf(hname,"../Graphics/pt.png");
     cTemp -> SaveAs(hname);
+    // cTemp -> SaveAs("../Graphics/pt.pdf");
   }
 
-  */
+  
   // Input hist
   // TProfile for reference flow
   // TProfile *hv2MC[ncent];       // profile for MC integrated v2
@@ -86,8 +90,47 @@ void v2plot(){
 
   TGraph *grshade[ncent];
   TMultiGraph *mgRefFl[ncent], *mgDifFl[ncent];
-
+  /*
   // Get TProfile histograms from ROOTFile
+  // hv22EP = (TProfile*)inFile->Get("hv22EP");
+  // HRes = (TProfile*)inFile->Get("HRes");
+  // for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+  //   sprintf(hname,"hv2EP_%i",ipt);
+  //   hv2EP[ipt]=(TProfile*)inFile->Get(hname);
+  //   sprintf(hname,"hPT_%i",ipt);
+  //   hPT[ipt]=(TProfile*)inFile->Get(hname);
+  // }
+  // for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
+  //   // sprintf(hname,"hv2MC_%i",icent);
+  //   // hv2MC[icent] = (TProfile*)inFile->Get(hname);
+  //   sprintf(hname,"hv22_%i",icent);
+  //   hv22[icent] = (TProfile*)inFile->Get(hname);
+  //   sprintf(hname,"hv24_%i",icent);
+  //   hv24[icent] = (TProfile*)inFile->Get(hname);
+  //   sprintf(hname,"hcov24_%i",icent);
+  //   hcov24[icent] = (TProfile*)inFile->Get(hname);
+
+  //   for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+  //       // sprintf(hname,"hv2MCpt_%i_%i",icent,ipt);
+  //       // hv2MCpt[icent][ipt]=(TProfile*)inFile->Get(hname);
+  //       sprintf(hname,"hv22pt_%i_%i",icent,ipt);
+  //       hv22pt[icent][ipt]=(TProfile*)inFile->Get(hname);
+  //       sprintf(hname,"hv24pt_%i_%i",icent,ipt);
+  //       hv24pt[icent][ipt]=(TProfile*)inFile->Get(hname);
+  //       sprintf(hname,"hcov22prime_%i_%i",icent,ipt);
+  //       hcov22prime[icent][ipt]=(TProfile*)inFile->Get(hname);
+  //       sprintf(hname,"hcov24prime_%i_%i",icent,ipt);
+  //       hcov24prime[icent][ipt]=(TProfile*)inFile->Get(hname);
+  //       sprintf(hname,"hcov42prime_%i_%i",icent,ipt);
+  //       hcov42prime[icent][ipt]=(TProfile*)inFile->Get(hname);
+  //       sprintf(hname,"hcov44prime_%i_%i",icent,ipt);
+  //       hcov44prime[icent][ipt]=(TProfile*)inFile->Get(hname);
+  //       sprintf(hname,"hcov2prime4prime_%i_%i",icent,ipt);
+  //       hcov2prime4prime[icent][ipt]=(TProfile*)inFile->Get(hname);
+  //   } // end of loop over pt bin
+  // } // end of loop over centrality classes
+  */
+
   hv22EP = (TProfile*)inFile->Get("hv22EP");
   HRes = (TProfile*)inFile->Get("HRes");
   for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
@@ -124,8 +167,8 @@ void v2plot(){
         sprintf(hname,"hcov2prime4prime_%i_%i",icent,ipt);
         hcov2prime4prime[icent][ipt]=(TProfile*)inFile->Get(hname);
     } // end of loop over pt bin
-  } // end of loop over centrality classes
-
+  } // end of loop over centrality classes  
+  
   //==========================================================================================================================
   // Filling pT bin
   double pt[ncent][npt];
@@ -550,7 +593,7 @@ void v2plot(){
   const char *grTitleRF[4]={"[1] v_{2}{#eta sub-event};cent, %;v_{2}","[2] v_{2}{2,QC};cent, %;v_{2}","[3] v_{2}{4,QC};cent, %;v_{2}","v_{2}{MC};cent, %;v_{2}"};
 
   outFile -> cd();
-  for (int i=0; i<4; i++){
+  for (int i=0; i<3; i++){
     sprintf(hname,"grRF_%i",i);
     grRefFlCent[i] -> SetTitle(grTitleRF[i]);
     grRefFlCent[i] -> Write(hname);
@@ -585,20 +628,34 @@ void v2plot(){
   // for (int i=0;i<ncent;i++){
   //   grDifFl[2][i] -> SetMarkerColor(kRed);
   // }
-  std::vector<TGraphErrors*> vgrv2pt[8];
-  for (int icent=0; icent<8; icent++){
+  std::vector<TGraphErrors*> vgrv2pt[ncent];
+  for (int icent=0; icent<ncent; icent++){
     for (int i=0; i<3; i++){
       vgrv2pt[icent].push_back(grDifFl[i][icent]);
     }  
   }
-  TCanvas *cV2PT[8];
-  // TLatex lV2PT[8];
-  TPaveText *ptext[8];
+  TCanvas *cV2PT[ncent];
+  // TLatex lV2PT[ncent];
+  TPaveText *ptext[ncent];
 
-  for (int icent=0; icent<4; icent++){
+  // sprintf(hname,"Centrality 0-10");
+  // cV2PT[0] = (TCanvas*) DrawTGraph(vgrv2pt[0],"",0.76, 1.24, 0., maxpt, 0., 0.2, 0.18, 0.65, 0.5, 0.89, "Centrality 0-10%");
+  // sprintf(hname,"Centrality 0-10");
+  // cV2PT[0] -> SetName(hname);
+  // sprintf(hname,"../Graphics/DFCentrality0-10.png");
+  // cV2PT[0] -> SaveAs(hname);
+
+  // sprintf(hname,"Centrality 10-40");
+  // cV2PT[1] = (TCanvas*) DrawTGraph(vgrv2pt[1],"",0.76, 1.24, 0., maxpt, 0., 0.2, 0.18, 0.65, 0.5, 0.89, "Centrality 10-40%");
+  // sprintf(hname,"Centrality 10-40");
+  // cV2PT[1] -> SetName(hname);
+  // sprintf(hname,"../Graphics/DFCentrality10-40.png");
+  // cV2PT[1] -> SaveAs(hname);
+
+  for (int icent=0; icent<8; icent++){
     sprintf(hname,"Centrality %i-%i%%",icent*10,(icent+1)*10);
     //                                                           yRatio_low   x_low     y_low    leg_x_low  leg_x_high
-    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.76, 1.24, 0., maxpt, 0., 0.2, 0.18, 0.65, 0.5, 0.89, hname);
+    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.65, 1.35, 0., maxpt, 0, 0.2, 0.18, 0.65, 0.5, 0.89, hname);
     //                                                                yRatio_high  x_high   y_high     leg_y_low   leg_y_high
     sprintf(hname,"Cent %i-%i%%",icent*10,(icent+1)*10);
     cV2PT[icent] -> SetName(hname);
@@ -609,21 +666,5 @@ void v2plot(){
     // lV2PT[icent].DrawLatex(0.5,0.1,hname);
     sprintf(hname,"../Graphics/DFCent%i-%i%%.png",icent*10,(icent+1)*10);
     cV2PT[icent] -> SaveAs(hname);
-  }
-
-  for (int icent=4; icent<8; icent++){
-    sprintf(hname,"Centrality %i-%i%%",icent*10,(icent+1)*10);
-    //                                                           yRatio_low   x_low     y_low    leg_x_low  leg_x_high
-    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.65, 1.35, 0., maxpt, -0.5, 1.0, 0.18, 0.65, 0.5, 0.89, hname);
-    //                                                                yRatio_high  x_high   y_high     leg_y_low   leg_y_high
-    sprintf(hname,"Cent %i-%i%%",icent*10,(icent+1)*10);
-    cV2PT[icent] -> SetName(hname);
-
-    // lV2PT[icent].SetNDC();
-    // lV2PT[icent].SetTextSize(0.12);
-    // lV2PT[icent].SetTextAlign(21);  
-    // lV2PT[icent].DrawLatex(0.5,0.1,hname);
-    sprintf(hname,"../Graphics/DFCent%i-%i%%.png",icent*10,(icent+1)*10);
-    // cV2PT[icent] -> SaveAs(hname);
   }
 }

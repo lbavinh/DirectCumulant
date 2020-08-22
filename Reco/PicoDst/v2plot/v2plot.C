@@ -19,8 +19,8 @@ void v2plot(){
   
   
   static const double bin_centE[ncent] = {0};
-  static const int npt = 10; // 0.5 - 3.6 GeV/c - number of pT bins
-  static const double bin_pT[npt+1]={0.1,0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,3.0};
+  static const int npt = 8; // 0.5 - 3.6 GeV/c - number of pT bins
+  static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.4, 3.};
 
   static const int ncent = 8; // 0-40%
   // static const double bin_cent[ncent] = {5,25};
@@ -28,38 +28,38 @@ void v2plot(){
   static const double maxpt = 3.; // max pt
   static const double minpt = 0.; // min pt
 
-  
-  if (bDrawPlots){
-    TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
 
-    TH1I *hMult = (TH1I*)inFile->Get("hMult");
-    hMult -> Draw();
-    sprintf(hname,"../Graphics/mult.png");
-    cTemp -> Draw();
-    cTemp -> SaveAs(hname);
+  // if (bDrawPlots){
+  //   TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
 
-    TH1I *hEvt = (TH1I*)inFile->Get("hEvt");
-    hEvt -> Draw();
-    sprintf(hname,"../Graphics/evt.png");
-    cTemp -> Draw();
-    cTemp -> SaveAs(hname);
+  //   TH1I *hMult = (TH1I*)inFile->Get("hMult");
+  //   hMult -> Draw();
+  //   sprintf(hname,"../Graphics/mult.png");
+  //   cTemp -> Draw();
+  //   cTemp -> SaveAs(hname);
 
-    TH1F *hEta = (TH1F*)inFile->Get("hEta");
-    hEta -> Draw();
-    sprintf(hname,"../Graphics/eta.png");
-    cTemp -> SaveAs(hname);  
+  //   TH1I *hEvt = (TH1I*)inFile->Get("hEvt");
+  //   hEvt -> Draw();
+  //   sprintf(hname,"../Graphics/evt.png");
+  //   cTemp -> Draw();
+  //   cTemp -> SaveAs(hname);
 
-    TH1F *hPhi = (TH1F*)inFile->Get("hPhi");
-    hPhi -> Draw();
-    sprintf(hname,"../Graphics/phi.png");
-    cTemp -> SaveAs(hname);
+  //   TH1F *hEta = (TH1F*)inFile->Get("hEta");
+  //   hEta -> Draw();
+  //   sprintf(hname,"../Graphics/eta.png");
+  //   cTemp -> SaveAs(hname);  
 
-    TH1F *hPt = (TH1F*)inFile->Get("hPt");
-    hPt -> Draw();
-    sprintf(hname,"../Graphics/pt.png");
-    cTemp -> SaveAs(hname);
-    // cTemp -> SaveAs("../Graphics/pt.pdf");
-  }
+  //   TH1F *hPhi = (TH1F*)inFile->Get("hPhi");
+  //   hPhi -> Draw();
+  //   sprintf(hname,"../Graphics/phi.png");
+  //   cTemp -> SaveAs(hname);
+
+  //   TH1F *hPt = (TH1F*)inFile->Get("hPt");
+  //   hPt -> Draw();
+  //   sprintf(hname,"../Graphics/pt.png");
+  //   cTemp -> SaveAs(hname);
+  //   // cTemp -> SaveAs("../Graphics/pt.pdf");
+  // }
 
   
   // Input hist
@@ -68,7 +68,7 @@ void v2plot(){
   TProfile *hv22[ncent];        // profile <<2>> from 2nd Q-Cumulants
   TProfile *hv24[ncent];        // profile <<4>> from 4th Q-Cumulants
   // TProfile for differential flow
-  TProfile *hPT[npt];       // profile pt 
+  TProfile *hPT[ncent][npt];       // profile pt 
   // TProfile *hv2MCpt[ncent][npt];   // profile v2pt from MC toy   
   TProfile *hv22pt[ncent][npt];    // profile <<2'>> from 2nd Q-Cumulants
   TProfile *hv24pt[ncent][npt];    // profile <<4'>> from 4th Q-Cumulants
@@ -82,64 +82,19 @@ void v2plot(){
   TProfile *hcov44prime[ncent][npt]; // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 
-  TProfile *hv2EP[npt];	// elliptic flow from EP method
-  TProfile *hv22EP;        // elliptic flow cent: 10-40% from EP method
-  TProfile *HRes;
+  TProfile *hv2EP[ncent][npt];	// elliptic flow from EP method
+  TProfile *hv22EP[ncent];        // elliptic flow cent: 10-40% from EP method
+  TProfile *HRes[ncent];
 
   // OUTPUT
 
   TGraph *grshade[ncent];
   TMultiGraph *mgRefFl[ncent], *mgDifFl[ncent];
-  /*
-  // Get TProfile histograms from ROOTFile
-  // hv22EP = (TProfile*)inFile->Get("hv22EP");
-  // HRes = (TProfile*)inFile->Get("HRes");
-  // for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-  //   sprintf(hname,"hv2EP_%i",ipt);
-  //   hv2EP[ipt]=(TProfile*)inFile->Get(hname);
-  //   sprintf(hname,"hPT_%i",ipt);
-  //   hPT[ipt]=(TProfile*)inFile->Get(hname);
-  // }
-  // for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-  //   // sprintf(hname,"hv2MC_%i",icent);
-  //   // hv2MC[icent] = (TProfile*)inFile->Get(hname);
-  //   sprintf(hname,"hv22_%i",icent);
-  //   hv22[icent] = (TProfile*)inFile->Get(hname);
-  //   sprintf(hname,"hv24_%i",icent);
-  //   hv24[icent] = (TProfile*)inFile->Get(hname);
-  //   sprintf(hname,"hcov24_%i",icent);
-  //   hcov24[icent] = (TProfile*)inFile->Get(hname);
-
-  //   for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-  //       // sprintf(hname,"hv2MCpt_%i_%i",icent,ipt);
-  //       // hv2MCpt[icent][ipt]=(TProfile*)inFile->Get(hname);
-  //       sprintf(hname,"hv22pt_%i_%i",icent,ipt);
-  //       hv22pt[icent][ipt]=(TProfile*)inFile->Get(hname);
-  //       sprintf(hname,"hv24pt_%i_%i",icent,ipt);
-  //       hv24pt[icent][ipt]=(TProfile*)inFile->Get(hname);
-  //       sprintf(hname,"hcov22prime_%i_%i",icent,ipt);
-  //       hcov22prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-  //       sprintf(hname,"hcov24prime_%i_%i",icent,ipt);
-  //       hcov24prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-  //       sprintf(hname,"hcov42prime_%i_%i",icent,ipt);
-  //       hcov42prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-  //       sprintf(hname,"hcov44prime_%i_%i",icent,ipt);
-  //       hcov44prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-  //       sprintf(hname,"hcov2prime4prime_%i_%i",icent,ipt);
-  //       hcov2prime4prime[icent][ipt]=(TProfile*)inFile->Get(hname);
-  //   } // end of loop over pt bin
-  // } // end of loop over centrality classes
-  */
-
-  hv22EP = (TProfile*)inFile->Get("hv22EP");
-  HRes = (TProfile*)inFile->Get("HRes");
-  for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-    sprintf(hname,"hv2EP_%i",ipt);
-    hv2EP[ipt]=(TProfile*)inFile->Get(hname);
-    sprintf(hname,"hPT_%i",ipt);
-    hPT[ipt]=(TProfile*)inFile->Get(hname);
-  }
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
+    sprintf(hname,"hv22EP_%i",icent);
+    hv22EP[icent] = (TProfile*)inFile->Get(hname);
+    sprintf(hname,"HRes_%i",icent);
+    HRes[icent] = (TProfile*)inFile->Get(hname);
     // sprintf(hname,"hv2MC_%i",icent);
     // hv2MC[icent] = (TProfile*)inFile->Get(hname);
     sprintf(hname,"hv22_%i",icent);
@@ -150,6 +105,11 @@ void v2plot(){
     hcov24[icent] = (TProfile*)inFile->Get(hname);
 
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+      sprintf(hname,"hv2EP_%i_%i",icent,ipt);
+      hv2EP[icent][ipt]=(TProfile*)inFile->Get(hname);
+      sprintf(hname,"hPT_%i_%i",icent,ipt);
+      hPT[icent][ipt]=(TProfile*)inFile->Get(hname);
+
         // sprintf(hname,"hv2MCpt_%i_%i",icent,ipt);
         // hv2MCpt[icent][ipt]=(TProfile*)inFile->Get(hname);
         sprintf(hname,"hv22pt_%i_%i",icent,ipt);
@@ -249,14 +209,14 @@ void v2plot(){
                   cov24,sumwcor24);
     //=============================================
     // v2{#eta sub-event}
-    double res2 = sqrt(HRes->GetBinContent(icent+1));
-    double v2obs = hv22EP->GetBinContent(icent+1);
+    double res2 = sqrt(HRes[icent]->GetBinContent(1));
+    double v2obs = hv22EP[icent]->GetBinContent(1);
     v2EPint = v2obs / res2;
-    double dv2obs = hv22EP->GetBinError(icent+1);
-    double dres2 = HRes->GetBinError(icent+1);
+    double dv2obs = hv22EP[icent]->GetBinError(1);
+    double dres2 = HRes[icent]->GetBinError(1);
 
     // v2EPintE = sqrt(dv2obs*dv2obs/res2/res2 + v2obs*v2obs/(4*pow(res2,6)*dres2*dres2));
-    v2EPintE = hv22EP->GetBinError(icent+1);
+    v2EPintE = hv22EP[icent]->GetBinError(1);
     //=============================================
     // Reference flow comparison: MC, 2QC, 4QC, eta sub-event
     v2[icent][0] = v2MCint;
@@ -444,14 +404,14 @@ void v2plot(){
       // v2EP[ipt] = hv2EP[ipt]->GetBinContent(icent+1);
       // ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
 
-      double res2 = sqrt(HRes->GetBinContent(icent+1));
-      double v2obs = hv2EP[ipt]->GetBinContent(icent+1);
+      double res2 = sqrt(HRes[icent]->GetBinContent(1));
+      double v2obs = hv2EP[icent][ipt]->GetBinContent(1);
       v2EP[ipt] = v2obs / res2;
-      double dv2obs = hv2EP[ipt]->GetBinError(icent+1);
-      double dres2 = HRes->GetBinError(icent+1);
+      double dv2obs = hv2EP[icent][ipt]->GetBinError(1);
+      double dres2 = HRes[icent]->GetBinError(1);
 
       // ev2EP[ipt] = sqrt(dv2obs*dv2obs/res2/res2 + v2obs*v2obs/(4*pow(res2,6)*dres2*dres2));
-      ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
+      ev2EP[ipt] = hv2EP[icent][ipt]->GetBinError(1);
     }
     // Event plane differential flow
     grDifFl[0][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
@@ -652,19 +612,19 @@ void v2plot(){
   // sprintf(hname,"../Graphics/DFCentrality10-40.png");
   // cV2PT[1] -> SaveAs(hname);
 
-  for (int icent=0; icent<8; icent++){
-    sprintf(hname,"Centrality %i-%i%%",icent*10,(icent+1)*10);
-    //                                                           yRatio_low   x_low     y_low    leg_x_low  leg_x_high
-    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.65, 1.35, 0., maxpt, 0, 0.2, 0.18, 0.65, 0.5, 0.89, hname);
-    //                                                                yRatio_high  x_high   y_high     leg_y_low   leg_y_high
-    sprintf(hname,"Cent %i-%i%%",icent*10,(icent+1)*10);
-    cV2PT[icent] -> SetName(hname);
+  // for (int icent=0; icent<8; icent++){
+  //   sprintf(hname,"Centrality %i-%i%%",icent*10,(icent+1)*10);
+  //   //                                                           yRatio_low   x_low     y_low    leg_x_low  leg_x_high
+  //   cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.65, 1.35, 0., maxpt, 0, 0.2, 0.18, 0.65, 0.5, 0.89, hname);
+  //   //                                                                yRatio_high  x_high   y_high     leg_y_low   leg_y_high
+  //   sprintf(hname,"Cent %i-%i%%",icent*10,(icent+1)*10);
+  //   cV2PT[icent] -> SetName(hname);
 
-    // lV2PT[icent].SetNDC();
-    // lV2PT[icent].SetTextSize(0.12);
-    // lV2PT[icent].SetTextAlign(21);  
-    // lV2PT[icent].DrawLatex(0.5,0.1,hname);
-    sprintf(hname,"../Graphics/DFCent%i-%i%%.png",icent*10,(icent+1)*10);
-    cV2PT[icent] -> SaveAs(hname);
-  }
+  //   // lV2PT[icent].SetNDC();
+  //   // lV2PT[icent].SetTextSize(0.12);
+  //   // lV2PT[icent].SetTextAlign(21);  
+  //   // lV2PT[icent].DrawLatex(0.5,0.1,hname);
+  //   sprintf(hname,"../Graphics/DFCent%i-%i%%.png",icent*10,(icent+1)*10);
+  //   cV2PT[icent] -> SaveAs(hname);
+  // }
 }

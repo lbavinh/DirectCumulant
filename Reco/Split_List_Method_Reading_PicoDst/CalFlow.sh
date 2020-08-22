@@ -2,7 +2,7 @@
 
 #
 # Specify working directory
-#$ -wd /weekly/$USER/lbavinh/PicoDst/
+#$ -wd /weekly/$USER/lbavinh/Split_List_PicoDst/
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
@@ -14,10 +14,10 @@
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=01:30:00
 # Specify job array range (how many jobs will be created
-# #$ -t 1-386
+#$ -t 1-396
 # Specify directory where output and error logs from SGE will be stored
-#$ -o /weekly/$USER/lbavinh/PicoDst/OUT/log/
-#$ -e /weekly/$USER/lbavinh/PicoDst/OUT/log/
+#$ -o /weekly/$USER/lbavinh/Split_List_PicoDst/OUT/log/
+#$ -e /weekly/$USER/lbavinh/Split_List_PicoDst/OUT/log/
 #
 
 # ${JOB_ID} - Id of the job array (one for all jobs)
@@ -26,8 +26,8 @@
 #     of N jobs with ${JOB_ID}_1, ${JOB_ID}_2, ..., ${JOB_ID}_N
 
 #Main directory
-export MAIN_DIR=/weekly/$USER/lbavinh/PicoDst
-export FILELIST=${MAIN_DIR}/runlist_PicoDst.list
+export MAIN_DIR=/weekly/$USER/lbavinh/Split_List_PicoDst
+export FILELIST=${MAIN_DIR}/split/runlist.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT

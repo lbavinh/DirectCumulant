@@ -78,9 +78,11 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   vgr.at(0)->GetYaxis()->SetTitleSize(0.07);
   vgr.at(0)->GetYaxis()->SetTitleOffset(1.08);
 
+  vgr.at(0)->SetMarkerSize(1.5);
   vgr.at(0)->Draw("AP PLC PMC");
   for (int i=1; i<vgr.size();i++)
   {
+    vgr.at(1)->SetMarkerSize(1.5);
     vgr.at(i)->Draw("P PLC PMC");
   }
 
@@ -96,12 +98,13 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   leg_pt->Draw();
 
   //==============================================
-  TPaveText *pt = new TPaveText(leg_x_high+0.01,0.74,0.89,0.89,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
+  TPaveText *pt = new TPaveText(0.5,0.74,0.89,0.89,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
   pt->SetBorderSize(0);
   pt->SetFillColor(0);
   char hname[400];
-  pt->AddText("Au+Au @ #sqrt{s_{NN}}=7.7 GeV, UrQMD");
-
+  pt->SetTextSize(0.05);
+  pt->AddText("Toy model generator");
+  pt->AddText("with \"pure\" flow");
   pt->AddText(strCent.Data());
   pt->Draw();
   padUp->Modified();
@@ -190,14 +193,6 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     TLine lineOne;
     lineOne.SetLineStyle(1);
     lineOne.SetLineColor(kAzure+4); // 1
-
-    TLine line95;
-    line95.SetLineWidth(2.);
-    line95.SetLineStyle(2);	
-    TLine line105;
-    line105.SetLineWidth(2.);
-    line105.SetLineStyle(2);
-
     TLine line90;
     line90.SetLineWidth(2.);
     line90.SetLineStyle(2);	
@@ -206,6 +201,14 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     line110.SetLineStyle(2);
 
     //========
+
+    TLine line95;
+    line95.SetLineWidth(2.);
+    line95.SetLineStyle(2);	
+    TLine line105;
+    line105.SetLineWidth(2.);
+    line105.SetLineStyle(2);
+
     TLine line80;
     line80.SetLineWidth(2.);
     line80.SetLineStyle(2);	
@@ -222,13 +225,15 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
 
     // lineOne.SetLineColor(kRed);
     lineOne.DrawLine(x_low,1.,  x_high,1.);
-    line95.DrawLine( x_low,.95, x_high,.95);
-    line105.DrawLine(x_low,1.05,x_high,1.05);
     line90.DrawLine( x_low,.9, x_high,.9);
     line110.DrawLine(x_low,1.1,x_high,1.1);
+    
+    line95.DrawLine( x_low,.95, x_high,.95);
+    line105.DrawLine(x_low,1.05,x_high,1.05);
+    
     // line80.DrawLine( x_low,.8, x_high,.8);
     line120.DrawLine(x_low,1.2,x_high,1.2);
-    line70.DrawLine( x_low,.7, x_high,.7);
+    // line70.DrawLine( x_low,.7, x_high,.7);
     line130.DrawLine(x_low,1.3,x_high,1.3);
   }
 

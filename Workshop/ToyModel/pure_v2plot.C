@@ -4,7 +4,7 @@ static const int ncent = 8; // 0-80%
 TGraphErrors *grDifFl[4][ncent];    // v2(pt); 4 = {MC, 2QC, 4QC, EP}
 TGraphErrors *grRefFl[ncent];     
 TGraphErrors *grRefFlCent[4];       // v2(cent); 4 = {MC, 2QC, 4QC, EP}
-void v2plot(){
+void pure_v2plot(){
   // Temporary variables
   char hname[800]; // histogram hname
   double stats[6]; // stats of TProfile
@@ -26,28 +26,28 @@ void v2plot(){
   
 
 
-  TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
+  // TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
 
-  TH1I *hMult = (TH1I*)inFile->Get("hMult");
-  hMult -> Draw();
-  sprintf(hname,"./Graphics/%s/mult.png",analysis);
-  cTemp -> Draw();
-  cTemp -> SaveAs(hname);
+  // TH1I *hMult = (TH1I*)inFile->Get("hMult");
+  // hMult -> Draw();
+  // sprintf(hname,"./Graphics/%s/mult.png",analysis);
+  // cTemp -> Draw();
+  // cTemp -> SaveAs(hname);
 
-  TH1F *hEta = (TH1F*)inFile->Get("hEta");
-  hEta -> Draw();
-  sprintf(hname,"./Graphics/%s/eta.png",analysis);
-  cTemp -> SaveAs(hname);  
+  // TH1F *hEta = (TH1F*)inFile->Get("hEta");
+  // hEta -> Draw();
+  // sprintf(hname,"./Graphics/%s/eta.png",analysis);
+  // cTemp -> SaveAs(hname);  
 
-  TH1F *hPhi = (TH1F*)inFile->Get("hPhi");
-  hPhi -> Draw();
-  sprintf(hname,"./Graphics/%s/phi.png",analysis);
-  cTemp -> SaveAs(hname);
+  // TH1F *hPhi = (TH1F*)inFile->Get("hPhi");
+  // hPhi -> Draw();
+  // sprintf(hname,"./Graphics/%s/phi.png",analysis);
+  // cTemp -> SaveAs(hname);
 
-  TH1F *hPt = (TH1F*)inFile->Get("hPt");
-  hPt -> Draw();
-  sprintf(hname,"./Graphics/%s/pt.png",analysis);
-  cTemp -> SaveAs(hname);
+  // TH1F *hPt = (TH1F*)inFile->Get("hPt");
+  // hPt -> Draw();
+  // sprintf(hname,"./Graphics/%s/pt.png",analysis);
+  // cTemp -> SaveAs(hname);
 
   // Input hist
   // TProfile for reference flow
@@ -417,113 +417,113 @@ void v2plot(){
   //==========================================================================================================================
   // Drawing multipads of reference & differential flow
   
-  TLegend *leg = new TLegend(0.11,.95,0.4,.78);
-  leg -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
-  leg -> AddEntry(grDifFl[1][0],"v_{2}{2,QC}","p");
-  leg -> AddEntry(grDifFl[2][0],"v_{2}{4,QC}","p");
-  leg -> AddEntry(grDifFl[3][0],"v_{2}{#eta sub-event}","p");
-  leg -> SetFillColor(0);
-  leg -> SetTextSize(0.04);
-  leg -> SetTextFont(62);
-  leg -> SetBorderSize(0);
+  // TLegend *leg = new TLegend(0.11,.95,0.4,.78);
+  // leg -> AddEntry(grDifFl[0][0],"v_{2}{MC}","p");
+  // leg -> AddEntry(grDifFl[1][0],"v_{2}{2,QC}","p");
+  // leg -> AddEntry(grDifFl[2][0],"v_{2}{4,QC}","p");
+  // leg -> AddEntry(grDifFl[3][0],"v_{2}{#eta sub-event}","p");
+  // leg -> SetFillColor(0);
+  // leg -> SetTextSize(0.04);
+  // leg -> SetTextFont(62);
+  // leg -> SetBorderSize(0);
 
-  gStyle->SetPadTickX(1);
-  gStyle->SetPadTickY(1);
-  gStyle->SetOptStat(0);
+  // gStyle->SetPadTickX(1);
+  // gStyle->SetPadTickY(1);
+  // gStyle->SetOptStat(0);
 
-  TCanvas *c1 = new TCanvas("c1","multipads",200,10,1600,900);
-  c1->Divide(3,2,0,0);
-  TCanvas *c2 = new TCanvas("c2","multipads",200,10,1600,900);
-  c2->Divide(3,2,0,0);
-  double xmin=0.15;
-  double xmax=3.45;
-  double ymin=-0.005;
-  double ymax=0.255;
-  TH2F *h[ncent], *h2[ncent], *h3[ncent];
-  TLatex *latex, *latex2;
-  for(int icent=0; icent<6; icent++){
-    // differential flow
-    h[icent] = new TH2F("","",5,xmin,xmax,5,ymin,ymax);
-    c1 -> cd(icent+1);
-    h[icent] -> Draw();
-    h[icent] -> SetXTitle("p_{T}, GeV/c");
-    h[icent] -> SetYTitle("v_{2}");
-    mgDifFl[icent]-> Draw("P");
-    leg -> Draw();
-    char text1[800];
-    sprintf(text1,"cent: %i-%i%%",10*(icent),10*(icent+1));
-    latex = new TLatex(xmax*0.98,ymin+0.02,text1);
-    latex -> SetTextFont(62);
-    latex -> SetTextSize(0.04);
-    latex -> SetTextAlign(31);
-    latex -> Draw();
-    //=============================================
-    // reference flow
-    double ymin2 = TMath::MinElement(4,v2[icent])*0.98;
-    double ymax2 = TMath::MaxElement(4,v2[icent]) + TMath::MaxElement(4,ev2[icent])*1.1;
-    h2[icent] = new TH2F("","",4,0,4,10,0.015,0.075);
-    c2 -> cd(icent+1);
-    h2[icent]->SetYTitle("v_{n}");
-    h2[icent]->SetCanExtend(TH1::kAllAxes);
-    const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
-    TAxis* a = h2[icent] -> GetXaxis();
-    h2[icent] -> Fill(ch[0],(ymin2+ymax2)/2.,1);
-    h2[icent] -> Fill(ch[1],(ymin2+ymax2)/2.,1);
-    h2[icent] -> Fill(ch[2],(ymin2+ymax2)/2.,1);
-    h2[icent] -> Fill(ch[3],(ymin2+ymax2)/2.,1);
-    h2[icent]->GetXaxis()->SetLabelSize(0.05);
-    a->SetNdivisions(300); // 3 division, 0 sub-division
-    h2[icent]->Draw();
-    //grshade[icent] -> Draw("f");
-    mgRefFl[icent]-> Draw("P");
+  // TCanvas *c1 = new TCanvas("c1","multipads",200,10,1600,900);
+  // c1->Divide(3,2,0,0);
+  // TCanvas *c2 = new TCanvas("c2","multipads",200,10,1600,900);
+  // c2->Divide(3,2,0,0);
+  // double xmin=0.15;
+  // double xmax=3.45;
+  // double ymin=-0.005;
+  // double ymax=0.255;
+  // TH2F *h[ncent], *h2[ncent], *h3[ncent];
+  // TLatex *latex, *latex2;
+  // for(int icent=0; icent<6; icent++){
+  //   // differential flow
+  //   h[icent] = new TH2F("","",5,xmin,xmax,5,ymin,ymax);
+  //   c1 -> cd(icent+1);
+  //   h[icent] -> Draw();
+  //   h[icent] -> SetXTitle("p_{T}, GeV/c");
+  //   h[icent] -> SetYTitle("v_{2}");
+  //   mgDifFl[icent]-> Draw("P");
+  //   leg -> Draw();
+  //   char text1[800];
+  //   sprintf(text1,"cent: %i-%i%%",10*(icent),10*(icent+1));
+  //   latex = new TLatex(xmax*0.98,ymin+0.02,text1);
+  //   latex -> SetTextFont(62);
+  //   latex -> SetTextSize(0.04);
+  //   latex -> SetTextAlign(31);
+  //   latex -> Draw();
+  //   //=============================================
+  //   // reference flow
+  //   double ymin2 = TMath::MinElement(4,v2[icent])*0.98;
+  //   double ymax2 = TMath::MaxElement(4,v2[icent]) + TMath::MaxElement(4,ev2[icent])*1.1;
+  //   h2[icent] = new TH2F("","",4,0,4,10,0.015,0.075);
+  //   c2 -> cd(icent+1);
+  //   h2[icent]->SetYTitle("v_{n}");
+  //   h2[icent]->SetCanExtend(TH1::kAllAxes);
+  //   const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
+  //   TAxis* a = h2[icent] -> GetXaxis();
+  //   h2[icent] -> Fill(ch[0],(ymin2+ymax2)/2.,1);
+  //   h2[icent] -> Fill(ch[1],(ymin2+ymax2)/2.,1);
+  //   h2[icent] -> Fill(ch[2],(ymin2+ymax2)/2.,1);
+  //   h2[icent] -> Fill(ch[3],(ymin2+ymax2)/2.,1);
+  //   h2[icent]->GetXaxis()->SetLabelSize(0.05);
+  //   a->SetNdivisions(300); // 3 division, 0 sub-division
+  //   h2[icent]->Draw();
+  //   //grshade[icent] -> Draw("f");
+  //   mgRefFl[icent]-> Draw("P");
 
-    latex2 = new TLatex(3*0.98,0.03*1.02,text1);
-    latex2 -> SetTextFont(62);
-    latex2 -> SetTextSize(0.04);
-    latex2 -> SetTextAlign(31);
-    latex2 -> Draw();
-  }
-  sprintf(hname,"./Graphics/%s/v2pt.png",analysis);
-  c1 -> SaveAs(hname);
-  sprintf(hname,"./Graphics/%s/v2.png",analysis);
-  c2 -> SaveAs(hname);
-  //=============================================
+  //   latex2 = new TLatex(3*0.98,0.03*1.02,text1);
+  //   latex2 -> SetTextFont(62);
+  //   latex2 -> SetTextSize(0.04);
+  //   latex2 -> SetTextAlign(31);
+  //   latex2 -> Draw();
+  // }
+  // sprintf(hname,"./Graphics/%s/v2pt.png",analysis);
+  // c1 -> SaveAs(hname);
+  // sprintf(hname,"./Graphics/%s/v2.png",analysis);
+  // c2 -> SaveAs(hname);
+  // //=============================================
   
-  // Drawing reference flow separately for analysis
-  TCanvas *c[ncent];
-  TLatex *text[ncent];
-  for (int i=0;i<ncent;i++){
-    double ymin = TMath::MinElement(4,v2[i])*0.98;
-    double ymax = TMath::MaxElement(4,v2[i])*1.02;
-    // double ymin = 0.01*(i+1);
-    // double ymax = 0.03*(i+1);
-    sprintf(hname,"Cent%i-%i%%",i*10,(i+1)*10);
-    c[i] = new TCanvas(hname,hname,200,10,550,550);
+  // // Drawing reference flow separately for analysis
+  // TCanvas *c[ncent];
+  // TLatex *text[ncent];
+  // for (int i=0;i<ncent;i++){
+  //   double ymin = TMath::MinElement(4,v2[i])*0.98;
+  //   double ymax = TMath::MaxElement(4,v2[i])*1.02;
+  //   // double ymin = 0.01*(i+1);
+  //   // double ymax = 0.03*(i+1);
+  //   sprintf(hname,"Cent%i-%i%%",i*10,(i+1)*10);
+  //   c[i] = new TCanvas(hname,hname,200,10,550,550);
 
-    h3[i] = new TH2F("","",4,0,4,10,ymin,ymax);
-    h3[i]->SetYTitle("v_{n}");
-    h3[i]->SetCanExtend(TH1::kAllAxes);
+  //   h3[i] = new TH2F("","",4,0,4,10,ymin,ymax);
+  //   h3[i]->SetYTitle("v_{n}");
+  //   h3[i]->SetCanExtend(TH1::kAllAxes);
     
-    TAxis* a = h3[i] -> GetXaxis();
-    for (int j=0; j<4; j++) h3[i]->Fill(ch[j],(ymin+ymax)/2.,1);
-    h3[i]->GetXaxis()->SetLabelSize(0.05);
-    a->SetNdivisions(300); // 3 division, 0 sub-division
-    h3[i]->Draw();
-    grshade[i] -> SetFillStyle(1001);
-    grshade[i] -> SetFillColor(18);
-    grshade[i] -> Draw("f");
-    grRefFl[i] -> SetTitle("Reference flow");
-    grRefFl[i] -> Draw("P");
-    char text1[800];
-    sprintf(text1,"#splitline{Ref. flow}{#splitline{-2<#eta<-0.05}{cent: %i-%i%%}}",10*(i),10*(i+1));
-    text[i] = new TLatex(1.,(TMath::MinElement(3,grRefFl[i]->GetY())),text1);
-    text[i] -> SetTextFont(62);
-    text[i] -> SetTextSize(0.04);
-    text[i] -> SetTextAlign(21);
-    text[i] -> Draw();
-    sprintf(hname,"./Graphics/%s/Cent%i-%i%%.png",analysis,i*10,(i+1)*10);
-    c[i] -> SaveAs(hname);
-  }
+  //   TAxis* a = h3[i] -> GetXaxis();
+  //   for (int j=0; j<4; j++) h3[i]->Fill(ch[j],(ymin+ymax)/2.,1);
+  //   h3[i]->GetXaxis()->SetLabelSize(0.05);
+  //   a->SetNdivisions(300); // 3 division, 0 sub-division
+  //   h3[i]->Draw();
+  //   grshade[i] -> SetFillStyle(1001);
+  //   grshade[i] -> SetFillColor(18);
+  //   grshade[i] -> Draw("f");
+  //   grRefFl[i] -> SetTitle("Reference flow");
+  //   grRefFl[i] -> Draw("P");
+  //   char text1[800];
+  //   sprintf(text1,"#splitline{Ref. flow}{#splitline{-2<#eta<-0.05}{cent: %i-%i%%}}",10*(i),10*(i+1));
+  //   text[i] = new TLatex(1.,(TMath::MinElement(3,grRefFl[i]->GetY())),text1);
+  //   text[i] -> SetTextFont(62);
+  //   text[i] -> SetTextSize(0.04);
+  //   text[i] -> SetTextAlign(21);
+  //   text[i] -> Draw();
+  //   sprintf(hname,"./Graphics/%s/Cent%i-%i%%.png",analysis,i*10,(i+1)*10);
+  //   c[i] -> SaveAs(hname);
+  // }
   
   //==========================================================================================================================
   
@@ -540,47 +540,51 @@ void v2plot(){
   }
   outFile -> Close();
   
-  std::vector<TGraphErrors*> vgr;
-  for (int i=0; i<4; i++){
-    vgr.push_back(grRefFlCent[i]);
-  }
-  
-  TCanvas *can;
-  TLatex l;
-  //                                                    yRatio_low    x_low     y_low    leg_x_low  leg_x_high
-  can = (TCanvas*) DrawTGraph(vgr,"v2 ratio",0.89, 1.11,    0    , 80, 0., 0.1 , 0.65, 0.11, 0.89, 0.35);
-  //                                                          yRatio_high  x_high   y_high     leg_y_low   leg_y_high
-  sprintf(hname,"v2 vs cent");
-  can -> SetName(hname);
-  l.SetNDC();
-  l.SetTextSize(0.12);
-  l.SetTextAlign(21);  
-  l.DrawLatex(0.5,0.1,hname);
-  sprintf(hname,"./Graphics/%s/v2centratio.png",analysis);
-  can -> SaveAs(hname);
-
-  //=============================================
   std::vector<TGraphErrors*> vgrv2pt[8];
   for (int icent=0; icent<8; icent++){
-    for (int i=0; i<4; i++){
+    for (int i=0; i<3; i++){
       vgrv2pt[icent].push_back(grDifFl[i][icent]);
     }  
   }
   TCanvas *cV2PT[8];
   TLatex lV2PT[8];
   for (int icent=0; icent<8; icent++){
-    //                                                           yRatio_low   x_low     y_low    leg_x_low  leg_x_high
-    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"v2 ratio",0.89, 1.11, 0.0, 3.5, 0., 0.25, 0.65, 0.11, 0.89, 0.35);
-    //                                                                yRatio_high  x_high   y_high     leg_y_low   leg_y_high
-    sprintf(hname,"Cent %i-%i%%",icent*10,(icent+1)*10);
+    sprintf(hname,"Centrality %i-%i%%",icent*10,(icent+1)*10);
+    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.89, 1.11, 0., maxpt, 0, 0.25, 0.18, 0.65, 0.5, 0.89, hname);
     cV2PT[icent] -> SetName(hname);
-    lV2PT[icent].SetNDC();
-    lV2PT[icent].SetTextSize(0.12);
-    lV2PT[icent].SetTextAlign(21);  
-    lV2PT[icent].DrawLatex(0.5,0.1,hname);
-    sprintf(hname,"./Graphics/%s/DFCent%i-%i%%.png",analysis,icent*10,(icent+1)*10);
-    cV2PT[icent] -> SaveAs(hname);
   }
+  sprintf(hname,"./Graphics/%s/DFCent30-40.png",analysis);
+  cV2PT[3] -> SaveAs(hname);
+
+  // Drawing reference flow separately for analysis
+  TCanvas *c = new TCanvas("c","canvas",200,10,550,550);
+  c->SetBottomMargin(0.1);
+  c->SetTopMargin(0.06);
+  c->SetLeftMargin(0.17);
+  c->SetRightMargin(0.02);
+
+
+
+  double ymin2 = TMath::MinElement(3,v2[3])*0.985;
+  double ymax2 = TMath::MaxElement(3,v2[3])*1.015;
+
+  TH2F *h = new TH2F("h","",3,0,3,10,ymin2,ymax2);
+  // h->SetYTitle("v_{2}");
+  h->SetCanExtend(TH1::kAllAxes);
+  
+  TAxis* a = h -> GetXaxis();
+  for (int j=0; j<3; j++) h->Fill(ch[j],(ymin2+ymax2)/2.,1);
+  h->GetXaxis()->SetLabelSize(0.05);
+  a->SetNdivisions(300); // 3 division, 0 sub-division
+  h->Draw();
+  grshade[3] -> SetFillStyle(1001);
+  grshade[3] -> SetFillColor(18);
+  grshade[3] -> Draw("f");
+  grRefFl[3] -> Draw("P");
+
+
+  sprintf(hname,"./Graphics/%s/RFCent30-40.png",analysis);
+  c -> SaveAs(hname);
   
 
 }

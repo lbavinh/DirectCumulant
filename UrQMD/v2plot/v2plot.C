@@ -570,7 +570,7 @@ void v2plot(){
   TCanvas *can;
   TLatex l;
   //                                                    yRatio_low    x_low     y_low    leg_x_low  leg_x_high
-  can = (TCanvas*) DrawTGraph(vgr,"",0.67, 1.07,    0    , 80, 0., 0.1 , 0.18, 0.65, 0.5, 0.89);
+  can = (TCanvas*) DrawTGraph(vgr,"",0.67, 1.07,    0    , 60, 0., 0.1 , 0.18, 0.65, 0.5, 0.89);
   //                                                          yRatio_high  x_high   y_high     leg_y_low   leg_y_high
   sprintf(hname,"v2 vs cent");
   can -> SetName(hname);
@@ -598,7 +598,7 @@ void v2plot(){
   for (int icent=0; icent<4; icent++){
     sprintf(hname,"Centrality %i-%i%%",icent*10,(icent+1)*10);
     //                                                           yRatio_low   x_low     y_low    leg_x_low  leg_x_high
-    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.76, 1.24, 0., maxpt, 0., 0.2, 0.18, 0.65, 0.5, 0.89, hname);
+    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.86, 1.14, 0., maxpt, 0., 0.2, 0.18, 0.65, 0.5, 0.89, hname);
     //                                                                yRatio_high  x_high   y_high     leg_y_low   leg_y_high
     sprintf(hname,"Cent %i-%i%%",icent*10,(icent+1)*10);
     cV2PT[icent] -> SetName(hname);

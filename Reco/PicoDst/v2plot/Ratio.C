@@ -79,8 +79,10 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   vgr.at(0)->GetYaxis()->SetTitleOffset(1.08);
 
   vgr.at(0)->Draw("AP PLC PMC");
+  vgr.at(0)->SetMarkerSize(1.6);
   for (int i=1; i<vgr.size();i++)
   {
+    vgr.at(i)->SetMarkerSize(1.6);
     vgr.at(i)->Draw("P PLC PMC");
   }
 
@@ -223,4 +225,27 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   }
 
   return canv;
+}
+void Ratio(){
+  char hname[400];
+  const char *grTitleDF[3]={"[1] v_{2}{#eta sub-event};p_{T}, GeV/c;v_{2}","[2] v_{2}{2,QC};p_{T}, GeV/c;v_{2}","[3] v_{2}{4,QC};p_{T}, GeV/c;v_{2}"};
+
+  TFile *f = new TFile("TGraph.root","read");
+  TGraphErrors *grDifFl[3];
+  for (int i=0;i<3;i++){
+    sprintf(hname,"gr_cent1_%i",i);
+    grDifFl[i] = (TGraphErrors*)f->Get(hname);
+    grDifFl[i] -> SetTitle(grTitleDF[i]);
+  }
+  grDifFl[0] -> SetMarkerStyle(25);
+  grDifFl[1] -> SetMarkerStyle(20);
+  grDifFl[2] -> SetMarkerStyle(22);
+  std::vector<TGraphErrors*> vgrv2pt;
+  for (int i=0; i<3; i++){
+    vgrv2pt.push_back(grDifFl[i]);
+  }
+
+  TCanvas *cV2PT = (TCanvas*) DrawTGraph(vgrv2pt,"",0.65, 1.35, 0., 3.0, 0, 0.2, 0.18, 0.65, 0.5, 0.89, "Centrality 10-40%");
+  cV2PT -> SetName(hname);
+  cV2PT -> SaveAs("v2pt_cent10-40.png");
 }

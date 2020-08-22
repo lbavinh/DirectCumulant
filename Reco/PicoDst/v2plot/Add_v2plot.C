@@ -1,10 +1,12 @@
 #include "Func_StatErrCalc.C"
 #include "DrawTGraph.C"
-static const int ncent = 2; // 0-10,10-40
+static const int ncent = 8; // 0-10,10-40
 TGraphErrors *grDifFl[4][ncent];    // v2(pt); 4 = {MC, 2QC, 4QC, EP}
 TGraphErrors *grRefFl[ncent];     
 TGraphErrors *grRefFlCent[4];       // v2(cent); 4 = {MC, 2QC, 4QC, EP}
-void v2plot(){
+TGraphErrors *grDifFlcent1040[3]; // EP, 2QC, 4QC
+
+void Add_v2plot(){
   bool bDrawPlots = 1;
   // Temporary variables
   char hname[800]; // histogram hname
@@ -20,7 +22,7 @@ void v2plot(){
   
   static const double bin_centE[ncent] = {0};
   static const int npt = 10; // 0.5 - 3.6 GeV/c - number of pT bins
-  static const double bin_pT[npt+1]={0.0,0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,3.0};
+  static const double bin_pT[npt+1]={0.1,0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,3.0};
 
   static const int ncent = 8; // 0-40%
   // static const double bin_cent[ncent] = {5,25};
@@ -28,38 +30,44 @@ void v2plot(){
   static const double maxpt = 3.; // max pt
   static const double minpt = 0.; // min pt
 
-  
-  if (bDrawPlots){
-    TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
+  double mv2EP[npt];
+  double mv2EPE[npt];
+  // TProfile *pv2EPE[npt];
+  double mv22[npt];
+  double mv24[npt];
+  double mv22E[npt];
+  double mv24E[npt];
+  // if (bDrawPlots){
+  //   TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
 
-    TH1I *hMult = (TH1I*)inFile->Get("hMult");
-    hMult -> Draw();
-    sprintf(hname,"../Graphics/mult.png");
-    cTemp -> Draw();
-    cTemp -> SaveAs(hname);
+  //   TH1I *hMult = (TH1I*)inFile->Get("hMult");
+  //   hMult -> Draw();
+  //   sprintf(hname,"../Graphics/mult.png");
+  //   cTemp -> Draw();
+  //   cTemp -> SaveAs(hname);
 
-    TH1I *hEvt = (TH1I*)inFile->Get("hEvt");
-    hEvt -> Draw();
-    sprintf(hname,"../Graphics/evt.png");
-    cTemp -> Draw();
-    cTemp -> SaveAs(hname);
+  //   TH1I *hEvt = (TH1I*)inFile->Get("hEvt");
+  //   hEvt -> Draw();
+  //   sprintf(hname,"../Graphics/evt.png");
+  //   cTemp -> Draw();
+  //   cTemp -> SaveAs(hname);
 
-    TH1F *hEta = (TH1F*)inFile->Get("hEta");
-    hEta -> Draw();
-    sprintf(hname,"../Graphics/eta.png");
-    cTemp -> SaveAs(hname);  
+  //   TH1F *hEta = (TH1F*)inFile->Get("hEta");
+  //   hEta -> Draw();
+  //   sprintf(hname,"../Graphics/eta.png");
+  //   cTemp -> SaveAs(hname);  
 
-    TH1F *hPhi = (TH1F*)inFile->Get("hPhi");
-    hPhi -> Draw();
-    sprintf(hname,"../Graphics/phi.png");
-    cTemp -> SaveAs(hname);
+  //   TH1F *hPhi = (TH1F*)inFile->Get("hPhi");
+  //   hPhi -> Draw();
+  //   sprintf(hname,"../Graphics/phi.png");
+  //   cTemp -> SaveAs(hname);
 
-    TH1F *hPt = (TH1F*)inFile->Get("hPt");
-    hPt -> Draw();
-    sprintf(hname,"../Graphics/pt.png");
-    cTemp -> SaveAs(hname);
-    // cTemp -> SaveAs("../Graphics/pt.pdf");
-  }
+  //   TH1F *hPt = (TH1F*)inFile->Get("hPt");
+  //   hPt -> Draw();
+  //   sprintf(hname,"../Graphics/pt.png");
+  //   cTemp -> SaveAs(hname);
+  //   // cTemp -> SaveAs("../Graphics/pt.pdf");
+  // }
 
   
   // Input hist
@@ -390,6 +398,13 @@ void v2plot(){
                           cov2prime4prime[ipt], sumwcor2prime4prime[ipt], cov44prime[ipt], sumwcor44prime[ipt],
                           cov24prime[ipt], sumwcor24prime[ipt], cov42prime[ipt], sumwcor42prime[ipt]);
 
+      if (icent>=1 && icent<=3){
+        mv22[ipt]=v22dif[ipt];
+        // mv22E[ipt]+=v22difE[ipt]*v22difE[ipt];
+        mv24[ipt]=v24dif[ipt];
+        // mv24E[ipt]+=v24difE[ipt]*v24difE[ipt];  
+      }
+
     } // end of loop for all pT bin
 
     // Monte-Carlo differential flow
@@ -452,6 +467,13 @@ void v2plot(){
 
       // ev2EP[ipt] = sqrt(dv2obs*dv2obs/res2/res2 + v2obs*v2obs/(4*pow(res2,6)*dres2*dres2));
       ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
+
+      if (icent>=1 && icent<=3){
+        mv2EP[ipt]+=v2EP[ipt];
+        // mv2EPE[ipt]+=ev2EP[ipt]*ev2EP[ipt];
+        mv2EPE[ipt]=ev2EP[ipt];
+      }
+
     }
     // Event plane differential flow
     grDifFl[0][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
@@ -461,6 +483,24 @@ void v2plot(){
     grDifFl[0][icent] -> SetDrawOption("P");
     // mgDifFl[icent] -> Add(grDifFl[0][icent]);
   }
+  //==========================================================================================================================
+  for (int ipt=0;ipt<npt;ipt++){
+    mv22[ipt] /= 3.;
+    // mv22E[ipt] = sqrt(mv22E[ipt]);
+    mv24[ipt] /= 3.;
+    // mv24E[ipt] = sqrt(mv24E[ipt]);
+    mv2EP[ipt] /= 3.;
+    // mv2EPE[ipt] = sqrt(mv2EPE[ipt]);
+  }
+  grDifFlcent1040[0] = new TGraphErrors(npt,pt[0],mv2EP,ept[0],mv2EPE);
+  grDifFlcent1040[0] -> SetMarkerColor(kRed);
+  grDifFlcent1040[0] -> SetMarkerStyle(25);
+  grDifFlcent1040[1] = new TGraphErrors(npt,pt[0],mv22,ept[0],mv22E);
+  grDifFlcent1040[1] -> SetMarkerColor(kGreen+1);
+  grDifFlcent1040[1] -> SetMarkerStyle(20);  
+  grDifFlcent1040[2] = new TGraphErrors(npt,pt[0],mv24,ept[0],mv24E);
+  grDifFlcent1040[2] -> SetMarkerColor(kAzure+2);
+  grDifFlcent1040[2] -> SetMarkerStyle(22);
   //==========================================================================================================================
   // TFile *inFileGraphEP = new TFile("../ROOTFile/TGraphErrors_EP_MultLargerThan5.root","read");
   // for (int icent=0;icent<ncent;icent++){
@@ -593,10 +633,14 @@ void v2plot(){
   const char *grTitleRF[4]={"[1] v_{2}{#eta sub-event};cent, %;v_{2}","[2] v_{2}{2,QC};cent, %;v_{2}","[3] v_{2}{4,QC};cent, %;v_{2}","v_{2}{MC};cent, %;v_{2}"};
 
   outFile -> cd();
-  for (int i=0; i<4; i++){
+  for (int i=0; i<3; i++){
     sprintf(hname,"grRF_%i",i);
     grRefFlCent[i] -> SetTitle(grTitleRF[i]);
     grRefFlCent[i] -> Write(hname);
+
+    sprintf(hname,"gr1040_%i",i);
+    grDifFlcent1040[i] -> SetTitle(grTitleDF[i]);
+    grDifFlcent1040[i] -> Write(hname);
     for (int icent=0;icent<ncent;icent++){
       sprintf(hname,"gr_cent%i_%i",icent,i);
       grDifFl[i][icent] -> SetTitle(grTitleDF[i]);
@@ -636,7 +680,7 @@ void v2plot(){
   }
   TCanvas *cV2PT[ncent];
   // TLatex lV2PT[ncent];
-  TPaveText *ptext[ncent];
+  // TPaveText *ptext[ncent];
 
   // sprintf(hname,"Centrality 0-10");
   // cV2PT[0] = (TCanvas*) DrawTGraph(vgrv2pt[0],"",0.76, 1.24, 0., maxpt, 0., 0.2, 0.18, 0.65, 0.5, 0.89, "Centrality 0-10%");
@@ -665,6 +709,15 @@ void v2plot(){
     // lV2PT[icent].SetTextAlign(21);  
     // lV2PT[icent].DrawLatex(0.5,0.1,hname);
     sprintf(hname,"../Graphics/DFCent%i-%i%%.png",icent*10,(icent+1)*10);
-    // cV2PT[icent] -> SaveAs(hname);
+    cV2PT[icent] -> SaveAs(hname);
   }
+
+  std::vector<TGraphErrors*> vgrv2pt1040;
+  for (int i=0; i<3; i++){
+    vgrv2pt1040.push_back(grDifFlcent1040[i]);
+  }  
+  TCanvas *c1040 = (TCanvas*) DrawTGraph(vgrv2pt1040,"",0.65, 1.35, 0., maxpt, 0, 0.2, 0.18, 0.65, 0.5, 0.89, "Centrality 10-40%");
+  c1040 -> SetName("c1040");
+  c1040 -> SaveAs("../Graphics/DFCent10-40.png");
+
 }

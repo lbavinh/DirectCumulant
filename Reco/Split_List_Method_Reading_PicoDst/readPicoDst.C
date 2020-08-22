@@ -1,6 +1,7 @@
 // Do not forget to source setPicoDst.sh script
 
 #include <iostream>
+#include <fstream>
 
 #include <TStopwatch.h>
 #include <TChain.h>
@@ -33,7 +34,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   TStopwatch timer;
   timer.Start();
 
-  inputDCAfile = new TFile("dca_fit.root","read");
+  inputDCAfile = new TFile("/weekly/parfenov/mpd_winter2019/mpd_prod/7.7gev/prod_picodst/dca/dca_fit.root","read");
   
   fDCAx = (TF2 *)inputDCAfile->Get("f_sigma0");
   fDCAy = (TF2 *)inputDCAfile->Get("f_sigma1");
@@ -43,11 +44,11 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5, 15, 25, 35, 45, 55, 65, 75};
 
-  static const int npt = 10; // 0.5 - 3.6 GeV/c - number of pT bins
-  static const double bin_pT[npt+1]={0.0,0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,3.0};
+  static const int npt = 8; // 0.5 - 3.6 GeV/c - number of pT bins
+  static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.4, 3.};
 
   static const double maxpt = 3.; // max pt
-  static const double minpt = 0.; // min pt
+  static const double minpt = 0.1; // min pt
 
   static const float mineta = -1.5; // min pt
   static const float maxeta = 1.5; // min pt
@@ -73,7 +74,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   TProfile *hv22[ncent];  // profile <<2>> from 2nd Q-Cumulants
   TProfile *hv24[ncent];  // profile <<4>> from 4th Q-Cumulants
   // TProfile for differential flow (DF)
-  TProfile *hPT[npt];     // profile pt
+  TProfile *hPT[ncent][npt];     // profile pt
   // TProfile *hv2MCpt[ncent][npt]; // profile v2pt from MC toy
   TProfile *hv22pt[ncent][npt];  // profile <<2'>> from 2nd Q-Cumulants
   TProfile *hv24pt[ncent][npt];  // profile <<4'>> from 4th Q-Cumulants
@@ -87,16 +88,13 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   TProfile *hcov44prime[ncent][npt];      // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 
-  TProfile *hv2EP[npt];	// elliptic flow from EP method
-  TProfile *hv22EP;      // integrated elliptic flow from EP method
+  TProfile *hv2EP[ncent][npt];	// elliptic flow from EP method
+  TProfile *hv22EP[ncent];      // integrated elliptic flow from EP method
 
   TH1F *H_Qw[neta];     // sub-event multiplicity
   TH1F *H_EP[neta];		  // reaction plane
   TH1F *H_Qv[neta];     // sub-event <Q> - probably
-  TProfile *HRes;		// resolution
-
-
-
+  TProfile *HRes[ncent];		// resolution
 
   char name[800];
   char title[800];
@@ -111,10 +109,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   hPhi = new TH1F("hPhi", "Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})", 300, 0., 7.);
   hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -10, 10);
-  hv22EP = new TProfile("hv22EP","Ref. v_{2}{EP}", ncent,0.,ncent);
-  hv22EP->Sumw2();
-  HRes = new TProfile("HRes","EP resolution", ncent,0.,ncent);
-  HRes->Sumw2();
+
   for( int ieta=0; ieta<neta; ieta++ ){
     (void)sprintf(name,"H_Qw_%d",ieta);
     H_Qw[ieta] = new TH1F(name,name, 100, 0, 1000 );    
@@ -123,20 +118,19 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     (void)sprintf(name,"H_Qv_%d",ieta);
     H_Qv[ieta] = new TH1F(name,name, 100, 0, 10 );
   }
-  for (int ipt=0;ipt<npt;ipt++){
-    sprintf(name,"hv2EP_%i",ipt);
-    hv2EP[ipt] = new TProfile(name,name, ncent,0.,ncent);
-    hv2EP[ipt]->Sumw2();
-    sprintf(name, "hPT_%i", ipt);
-    hPT[ipt] = new TProfile(name, name, ncent,0.,ncent);
-    hPT[ipt]->Sumw2();
-  }
+
   for (int icent = 0; icent < ncent; icent++)
   { // loop over centrality classes
     // sprintf(name, "hv2MC_%i", icent);
     // sprintf(title, "v_{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
     // hv2MC[icent] = new TProfile(name, title, 1, 0., 1.);
     // hv2MC[icent]->Sumw2();
+    sprintf(name, "hv22EP_%i", icent);
+    hv22EP[icent] = new TProfile(name,name, 1,0.,1.);
+    hv22EP[icent]->Sumw2();
+    sprintf(name, "HRes_%i", icent);
+    HRes[icent] = new TProfile(name,name, 1,0.,1.);
+    HRes[icent]->Sumw2();
 
     sprintf(name, "hv22_%i", icent);
     sprintf(title, "v_{2}{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
@@ -160,6 +154,13 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       // sprintf(title, "v_{2}{MC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
       // hv2MCpt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       // hv2MCpt[icent][kpt]->Sumw2();
+
+      sprintf(name,"hv2EP_%i_%i", icent, kpt);
+      hv2EP[icent][kpt] = new TProfile(name,name, ncent,0.,ncent);
+      hv2EP[icent][kpt]->Sumw2();
+      sprintf(name, "hPT_%i_%i", icent, kpt);
+      hPT[icent][kpt] = new TProfile(name, name, ncent,0.,ncent);
+      hPT[icent][kpt]->Sumw2();
 
       sprintf(name, "hv22pt_%i_%i", icent, kpt);
       sprintf(title, "v_{2}{2,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
@@ -204,7 +205,13 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
   // Configure input information
   TChain *chain = new TChain("picodst");
-  chain->Add(inputFileName.Data());
+
+  std::ifstream file(inputFileName.Data());
+  std::string line;
+  while(std::getline(file, line))
+  {
+      chain->Add(line.c_str());
+  }
 
   PicoDstMCEvent *mcEvent = nullptr;
   TClonesArray *recoTracks = nullptr;
@@ -218,7 +225,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   {
     if (iEv%1000==0) std::cout << "Event [" << iEv << "/" << n_entries << "]" << std::endl;
     chain->GetEntry(iEv);
-
+    hEvt -> Fill(1);
     // Read MC event
     float bimp = mcEvent->GetB();
     int fcent = -1;
@@ -227,7 +234,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     hBimp -> Fill(bimp);
     Int_t reco_mult = recoTracks->GetEntriesFast();
 
-    hEvt -> Fill(1);
+    
     // rp = gRandom->Uniform(0, 2.*TMath::Pi());
 
     hMult -> Fill(reco_mult);
@@ -277,9 +284,9 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       if (recoTrack->GetNhits()<=32 ) continue;
       float pt  = recoTrack->GetPt();
       float eta = recoTrack->GetEta();
-      if (recoTrack->GetDCAx() > 2.*fDCAx->Eval(pt, eta)) continue; //трек не проходит по DCAx
-      if (recoTrack->GetDCAy() > 2.*fDCAy->Eval(pt, eta)) continue; //трек не проходит по DCAy
-      if (recoTrack->GetDCAz() > 2.*fDCAz->Eval(pt, eta)) continue; //трек не проходит по DCAz
+      // if (abs(recoTrack->GetDCAx()) > 0.2) continue; //трек не проходит по DCAx
+      // if (abs(recoTrack->GetDCAy()) > 0.2) continue; //трек не проходит по DCAy
+      // if (abs(recoTrack->GetDCAz()) > 0.2) continue; //трек не проходит по DCAz
       if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || TMath::Abs(eta)<etagap) continue; // track selection
       float phi = recoTrack->GetPhi();
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
@@ -295,7 +302,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
         if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
       }
 
-      hPT[ipt]->Fill(0.5+fcent, pt, 1);
+      hPT[fcent][ipt]->Fill(0.5, pt, 1);
       // Double_t v2 = TMath::Cos(2.*phi);
       // hv2MC[fcent]->Fill(0.5, v2, 1);
       // hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
@@ -416,16 +423,19 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     if (fq1<0 || fq2<0) continue;
     Double_t dPsi = 2. *(psi1 - psi2);
     dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
-    HRes -> Fill(0.5+fcent,cos(dPsi));
+    HRes[fcent] -> Fill(0.5,cos(dPsi));
 
     for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
       auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
       if (recoTrack->GetNhits()<=32 ) continue;
       float pt  = recoTrack->GetPt();
       float eta = recoTrack->GetEta();
-      if (recoTrack->GetDCAx() > 2.*fDCAx->Eval(pt, eta)) continue; //трек не проходит по DCAx
-      if (recoTrack->GetDCAy() > 2.*fDCAy->Eval(pt, eta)) continue; //трек не проходит по DCAy
-      if (recoTrack->GetDCAz() > 2.*fDCAz->Eval(pt, eta)) continue; //трек не проходит по DCAz
+      // if (recoTrack->GetDCAx() > 2.*fDCAx->Eval(pt, eta)) continue; //трек не проходит по DCAx
+      // if (recoTrack->GetDCAy() > 2.*fDCAy->Eval(pt, eta)) continue; //трек не проходит по DCAy
+      // if (recoTrack->GetDCAz() > 2.*fDCAz->Eval(pt, eta)) continue; //трек не проходит по DCAz
+      // if (abs(recoTrack->GetDCAx()) > 0.2) continue; //трек не проходит по DCAx
+      // if (abs(recoTrack->GetDCAy()) > 0.2) continue; //трек не проходит по DCAy
+      // if (abs(recoTrack->GetDCAz()) > 0.2) continue; //трек не проходит по DCAz
       if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || TMath::Abs(eta)<etagap) continue; // track selection
       float phi = recoTrack->GetPhi();
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
@@ -444,9 +454,9 @@ void readPicoDst(TString inputFileName, TString outputFileName)
         // v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
         v2 = cos(2.0 * (phi-psi2) );
       }
-      hv2EP[ipt]->Fill(0.5+fcent,v2);
+      hv2EP[fcent][ipt]->Fill(0.5,v2);
       // if (eta < -0.1) { // Reference flow
-      hv22EP->Fill(0.5+fcent,v2);
+      hv22EP[fcent]->Fill(0.5,v2);
       // }
     } // end of track loop
 
@@ -465,9 +475,10 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   hBimp->Write();
   hMult->Write();
   hBimpvsMult->Write();
-  HRes->Write();
-  hv22EP->Write();
+
   for (int icent=0;icent<ncent;icent++){
+    HRes[icent]->Write();
+    hv22EP[icent]->Write();
     hv22[icent]->Write();
     hv24[icent]->Write();
     hcov24[icent]->Write();
@@ -479,11 +490,9 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       hcov42prime[icent][ipt]->Write();
       hcov44prime[icent][ipt]->Write();
       hcov2prime4prime[icent][ipt]->Write();
+      hPT[icent][ipt]->Write();
+      hv2EP[icent][ipt]->Write();  
     }
-  }
-  for (int ipt=0;ipt<npt;ipt++){
-    hPT[ipt]->Write();
-    hv2EP[ipt]->Write();  
   }
   for (int ieta=0;ieta<neta;ieta++){
     H_Qw[ieta]->Write();
@@ -498,3 +507,6 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   timer.Stop();
   timer.Print();
 }
+// compilation test
+// source /weekly/parfenov/Soft/PicoDst/build/setPicoDst.sh 
+// root -l -b -q readPicoDst.C+'("/weekly/povarov/lbavinh/Split_List_PicoDst/split/runlist_PicoDst_9305","test.root")'

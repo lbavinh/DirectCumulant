@@ -24,18 +24,20 @@ using namespace std;
 // static const int nth = 3;
 // static const int npid = 4;
 
-static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
-static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8};
+
 
 static const int ncent = 8; // 0-80%
 static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 
-static const double maxpt = 2.8; // max pt
-static const double minpt = 0.2; // min pt
+static const int npt = 8; // 0.5 - 3.6 GeV/c - number of pT bins
+static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.4, 3.};
 
-static const float mineta = -2.5; // min pt
-static const float maxeta = 2.5; // min pt
-static const float etagap = 0.2; // min pt
+static const double maxpt = 3.0; // max pt
+static const double minpt = 0.1; // min pt
+
+static const float mineta = -1.8; // min pt
+static const float maxeta =  1.8; // min pt
+static const float etagap = 0.05; // min pt
 
 static const int neta = 2; // [eta-,eta+]
 
@@ -57,7 +59,7 @@ TH2F *hBimpvsMult; // 2-D histogram impact parameter (y) vs mult (x)
 TProfile *hv22[ncent];  // profile <<2>> from 2nd Q-Cumulants
 TProfile *hv24[ncent];  // profile <<4>> from 4th Q-Cumulants
 // TProfile for differential flow (DF)
-TProfile *hPT[npt];     // profile pt
+TProfile *hPT[ncent][npt];     // profile pt
 // TProfile *hv2MCpt[ncent][npt]; // profile v2pt from MC toy
 TProfile *hv22pt[ncent][npt];  // profile <<2'>> from 2nd Q-Cumulants
 TProfile *hv24pt[ncent][npt];  // profile <<4'>> from 4th Q-Cumulants
@@ -71,13 +73,13 @@ TProfile *hcov42prime[ncent][npt];      // <2>*<4'>
 TProfile *hcov44prime[ncent][npt];      // <4>*<4'>
 TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
 
-TProfile *hv2EP[npt];	// elliptic flow from EP method
-TProfile *hv22EP;      // integrated elliptic flow from EP method
+TProfile *hv2EP[ncent][npt];	// elliptic flow from EP method
+TProfile *hv22EP[ncent];      // integrated elliptic flow from EP method
 
 TH1F *H_Qw[neta];     // sub-event multiplicity
 TH1F *H_EP[neta];		  // reaction plane
 TH1F *H_Qv[neta];     // sub-event <Q> - probably
-TProfile *HRes;		// resolution
+TProfile *HRes[ncent];		// resolution
 
 void FlowANA::Booking(TString outFile){
 
@@ -94,10 +96,7 @@ void FlowANA::Booking(TString outFile){
   hPhi = new TH1F("hPhi", "Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})", 300, 0., 7.);
   hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -10, 10);
-  hv22EP = new TProfile("hv22EP","Ref. v_{2}{EP}", ncent,0.,ncent);
-  hv22EP->Sumw2();
-  HRes = new TProfile("HRes","EP resolution", ncent,0.,ncent);
-  HRes->Sumw2();
+
   for( int ieta=0; ieta<neta; ieta++ ){
     (void)sprintf(name,"H_Qw_%d",ieta);
     H_Qw[ieta] = new TH1F(name,name, 100, 0, 1000 );    
@@ -106,20 +105,20 @@ void FlowANA::Booking(TString outFile){
     (void)sprintf(name,"H_Qv_%d",ieta);
     H_Qv[ieta] = new TH1F(name,name, 100, 0, 10 );
   }
-  for (int ipt=0;ipt<npt;ipt++){
-    sprintf(name,"hv2EP_%i",ipt);
-    hv2EP[ipt] = new TProfile(name,name, ncent,0.,ncent);
-    hv2EP[ipt]->Sumw2();
-    sprintf(name, "hPT_%i", ipt);
-    hPT[ipt] = new TProfile(name, name, ncent,0.,ncent);
-    hPT[ipt]->Sumw2();
-  }
+
   for (int icent = 0; icent < ncent; icent++)
   { // loop over centrality classes
     // sprintf(name, "hv2MC_%i", icent);
     // sprintf(title, "v_{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
     // hv2MC[icent] = new TProfile(name, title, 1, 0., 1.);
     // hv2MC[icent]->Sumw2();
+
+    sprintf(name, "hv22EP_%i", icent);
+    hv22EP[icent] = new TProfile(name,name, 1,0.,1.);
+    hv22EP[icent]->Sumw2();
+    sprintf(name, "HRes_%i", icent);
+    HRes[icent] = new TProfile(name,name, 1,0.,1.);
+    HRes[icent]->Sumw2();
 
     sprintf(name, "hv22_%i", icent);
     sprintf(title, "v_{2}{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
@@ -143,6 +142,13 @@ void FlowANA::Booking(TString outFile){
       // sprintf(title, "v_{2}{MC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
       // hv2MCpt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
       // hv2MCpt[icent][kpt]->Sumw2();
+
+      sprintf(name,"hv2EP_%i_%i", icent, kpt);
+      hv2EP[icent][kpt] = new TProfile(name,name, ncent,0.,ncent);
+      hv2EP[icent][kpt]->Sumw2();
+      sprintf(name, "hPT_%i_%i", icent, kpt);
+      hPT[icent][kpt] = new TProfile(name, name, ncent,0.,ncent);
+      hPT[icent][kpt]->Sumw2();
 
       sprintf(name, "hv22pt_%i_%i", icent, kpt);
       sprintf(title, "v_{2}{2,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
@@ -267,27 +273,26 @@ void FlowANA::Ana_event(){
     float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
     float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
     float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-    if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || charge[i]==0 || TMath::Abs(eta)<etagap/2.) continue; // track selection
+    if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || charge[i]==0 || TMath::Abs(eta)<etagap) continue; // track selection
     float phi = TMath::ATan2( momy[i], momx[i] );
     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
     hPhi -> Fill(phi);
-    float phil = phi+rp;
-    while (phil>2.*TMath::Pi()) phil-=2.*TMath::Pi(); /* To make sure that phil is between 0 and 2 Pi */
-    hPhil -> Fill(phil);
+    // float phil = phi+rp;
+    // while (phil>2.*TMath::Pi()) phil-=2.*TMath::Pi(); /* To make sure that phil is between 0 and 2 Pi */
+    // hPhil -> Fill(phil);
     hEta -> Fill(eta);
-
     Int_t ipt = 0;
     hPt -> Fill(pt);
     for(int j=0; j<npt;j++){
       if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
     }
 
-    hPT[ipt]->Fill(0.5+fcent, pt, 1);
+    hPT[fcent][ipt]->Fill(0.5, pt, 1);
     // Double_t v2 = TMath::Cos(2.*phi);
     // hv2MC[fcent]->Fill(0.5, v2, 1);
     // hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
-    if(eta<-etagap/2.){
+    if(eta<-etagap){
       // RFP selection
       Qx2[0]+=TMath::Cos(2.*phi);
       Qy2[0]+=TMath::Sin(2.*phi);
@@ -301,7 +306,7 @@ void FlowANA::Ana_event(){
 
     } // end of RFP selection
 
-    if(eta>etagap/2.){ 
+    if(eta>etagap){ 
       Qx2[1]+=TMath::Cos(2.*phi);
       Qy2[1]+=TMath::Sin(2.*phi);
       Qx4[1]+=TMath::Cos(4.*phi);
@@ -315,8 +320,8 @@ void FlowANA::Ana_event(){
 
     // Sub eta event method, TPC plane
     int fEta = -1;
-    if (eta > mineta && eta <-etagap/2.) fEta = 0; // TPC East
-    if (eta > etagap/2. && eta < maxeta) fEta = 1; // TPC West
+    if (eta > mineta && eta <-etagap) fEta = 0; // TPC East
+    if (eta > etagap && eta < maxeta) fEta = 1; // TPC West
 
 		if ( fEta>-1 ){
       sumQxy[fEta][0] += 1. * cos( (2.0) * phi );
@@ -380,7 +385,7 @@ void FlowANA::Ana_event(){
   Double_t fEP[2]; // [eta-,eta+]
   Double_t fQv[2];
   for (int ieta=0; ieta<neta; ieta++){
-    if( multQv[ieta]>5 ){ // multiplicity > 5
+    if( multQv[ieta]>=4. ){ // multiplicity > 3
       fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
       fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
       fEP[ieta] /= 2.0;
@@ -404,13 +409,13 @@ void FlowANA::Ana_event(){
   if (fq1<0 || fq2<0) return;
   Double_t dPsi = 2. *(psi1 - psi2);
   dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
-  HRes -> Fill(0.5+fcent,cos(dPsi));
+  HRes[fcent] -> Fill(0.5,cos(dPsi));
 
   for(int i=0;i<nh;i++) { // track loop
     float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
     float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
     float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-    if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || charge[i]==0 || TMath::Abs(eta)<etagap/2.) continue; // track selection
+    if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || charge[i]==0 || TMath::Abs(eta)<etagap) continue; // track selection
     float phi = TMath::ATan2( momy[i], momx[i] );
     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
@@ -420,17 +425,17 @@ void FlowANA::Ana_event(){
     }
     // ==================================== Eta Sub-event ==================================== //
     float v2=-999.0;
-    if(eta>etagap/2.){ // eta+
+    if(eta>etagap){ // eta+
       // v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
       v2 = cos(2.0 * (phi-psi1) );
     }
-    if(eta<-etagap/2.){ // eta-
+    if(eta<-etagap){ // eta-
       // v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
       v2 = cos(2.0 * (phi-psi2) );
     }
-    hv2EP[ipt]->Fill(0.5+fcent,v2);
+    hv2EP[fcent][ipt]->Fill(0.5,v2);
     // if (eta < -0.1) { // Reference flow
-    hv22EP->Fill(0.5+fcent,v2);
+    hv22EP[fcent]->Fill(0.5,v2);
     // }
   } // end of track loop
 } // end of Ana_event();
@@ -449,3 +454,4 @@ void FlowANA::Ana_event(){
 //   ana->Ana_end();
 //   cout << "Histfile written. Congratz!" << endl;
 // }
+// root -l -b -q calculateFlow.C+'("/weekly/povarov/lbavinh/UrQMD/chain/chain550.root","test.root")'

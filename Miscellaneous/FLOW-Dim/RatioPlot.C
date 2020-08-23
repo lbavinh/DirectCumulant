@@ -105,12 +105,6 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   pt->AddText(strCent.Data());
   pt->Draw();
   padUp->Modified();
-
-  TLine lineZero;
-	lineZero.SetLineStyle(2);
-  lineZero.SetLineWidth(2.);
-  lineZero.SetLineColor(kAzure+2);
-  lineZero.DrawLine(x_low,0.00,x_high,0.00);
   //==============================================
   //Draw grN/gr1 ratio in the bottom pad
   padDown->cd();
@@ -196,14 +190,6 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     TLine lineOne;
     lineOne.SetLineStyle(1);
     lineOne.SetLineColor(kAzure+4); // 1
-
-    TLine line95;
-    line95.SetLineWidth(2.);
-    line95.SetLineStyle(2);	
-    TLine line105;
-    line105.SetLineWidth(2.);
-    line105.SetLineStyle(2);
-
     TLine line90;
     line90.SetLineWidth(2.);
     line90.SetLineStyle(2);	
@@ -226,22 +212,28 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     line130.SetLineWidth(2.);
     line130.SetLineStyle(2);
 
-    TLine line85;
-    line85.SetLineWidth(2.);
-    line85.SetLineStyle(2);	
-
     // lineOne.SetLineColor(kRed);
     lineOne.DrawLine(x_low,1.,  x_high,1.);
-    // line95.DrawLine( x_low,.95, x_high,.95);
-    // line105.DrawLine(x_low,1.05,x_high,1.05);
     line90.DrawLine( x_low,.9, x_high,.9);
     line110.DrawLine(x_low,1.1,x_high,1.1);
     line80.DrawLine( x_low,.8, x_high,.8);
-    // line85.DrawLine( x_low,.85, x_high,.85);
     line120.DrawLine(x_low,1.2,x_high,1.2);
     // line70.DrawLine( x_low,.7, x_high,.7);
     line130.DrawLine(x_low,1.3,x_high,1.3);
   }
 
   return canv;
+}
+
+void RatioPlot(){
+  std::vector<TGraphErrors*> vgrv2pt;
+  for (int i=0; i<3; i++){ // 0 - EP , 1 - 2QC, 2 - 4QC
+    vgrv2pt.push_back(grDifFl[i]);
+  }  
+  TCanvas *cV2PT;
+  cV2PT = (TCanvas*) DrawTGraph(vgrv2pt,"",0.76, 1.24, 0., maxpt, 0., 0.2, 0.18, 0.65, 0.5, 0.89, "Centrality 0-10%");
+  sprintf(hname,"Centrality 0-10");
+  cV2PT -> SetName(hname);
+  sprintf(hname,"DFCentrality0-10.png");
+  cV2PT -> SaveAs(hname);
 }

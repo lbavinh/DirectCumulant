@@ -100,11 +100,17 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   pt->SetBorderSize(0);
   pt->SetFillColor(0);
   char hname[400];
-  pt->AddText("Au+Au @ #sqrt{s_{NN}}=7.7 GeV, UrQMD");
+  pt->AddText("UrQMD, Au+Au @ #sqrt{s_{NN}}=7.7 GeV");
 
   pt->AddText(strCent.Data());
   pt->Draw();
   padUp->Modified();
+  
+  TLine lineZero;
+	lineZero.SetLineStyle(2);
+  lineZero.SetLineWidth(2.);
+  lineZero.SetLineColor(kAzure+2);
+  lineZero.DrawLine(x_low,0.00,x_high,0.00);
   //==============================================
   //Draw grN/gr1 ratio in the bottom pad
   padDown->cd();
@@ -220,15 +226,20 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     line130.SetLineWidth(2.);
     line130.SetLineStyle(2);
 
+    TLine line85;
+    line85.SetLineWidth(2.);
+    line85.SetLineStyle(2);	
+
     // lineOne.SetLineColor(kRed);
     lineOne.DrawLine(x_low,1.,  x_high,1.);
     line95.DrawLine( x_low,.95, x_high,.95);
     line105.DrawLine(x_low,1.05,x_high,1.05);
     line90.DrawLine( x_low,.9, x_high,.9);
     line110.DrawLine(x_low,1.1,x_high,1.1);
-    // line80.DrawLine( x_low,.8, x_high,.8);
+    line80.DrawLine( x_low,.8, x_high,.8);
+    line85.DrawLine( x_low,.85, x_high,.85);
     line120.DrawLine(x_low,1.2,x_high,1.2);
-    line70.DrawLine( x_low,.7, x_high,.7);
+    // line70.DrawLine( x_low,.7, x_high,.7);
     line130.DrawLine(x_low,1.3,x_high,1.3);
   }
 

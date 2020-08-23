@@ -17,10 +17,10 @@ using namespace std;
 static const int ncent = 8; // 0-80%
 static const int bin_cent[ncent] = {5, 15, 25, 35, 45, 55, 65, 75};
 
-static const Float_t maxpt = 3.5; // max pt
-static const Float_t minpt = 0.2; // min pt
+static const float maxpt = 3.5; // max pt
+static const float minpt = 0.2; // min pt
 static const int npt = 24;        // 0.2 - 3.5 GeV/c
-static const double bin_pT[npt + 1] = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1,
+static const float bin_pT[npt + 1] = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1,
                                        1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0, 2.2, 2.4,
                                        2.6, 2.8, 3.0, 3.2, 3.5};
 
@@ -206,7 +206,7 @@ void hVana::Booking(TString outFile)
 void hVana::Loop_a_file(TString file)
 {
   TFile *treefile = TFile::Open(file.Data());
-  TTree *tree = (TTree *)treefile->Get("tree");
+  TTree *tree = (TTree *)treefile->Get("htree");
   if (tree == 0)
   {
     cout << "htree is not found in " << file << endl;
@@ -289,12 +289,14 @@ void hVana::Ana_event()
   Double_t cor22 = 0., cor24 = 0.;
   for (int i = 0; i < nh; i++)
   { // track loop
+    
     hPhi->Fill(phi0[i] - rp);
     hPhil->Fill(phi0[i]);
     hEta->Fill(eta[i]);
 
     Int_t ipt = 0;
-    Float_t pT = pt[i];
+    float pT = pt[i];
+    if( pT<minpt  || pT>maxpt ) continue;
     hPt->Fill(pT);
 
     for (int j = 0; j < npt; j++)
@@ -304,37 +306,37 @@ void hVana::Ana_event()
     }
 
     Double_t v2 = TMath::Cos(2. * (phi0[i] - rp));
-    // Calculate differential v2 from MC toy
+
     hPT[ipt]->Fill(0.5+icent, pT, 1);
-    
-    
-    // RFP
-    if (eta[i] < 0.)
-    // if (TMath::Abs(eta[i]) > 1.)
-    {
+    if (bFlow[i]){ // flag of flow particle
       hv2MC[icent]->Fill(0.5, v2, 1); // v2 from MC toy
-      Qx2 += TMath::Cos(2. * phi0[i]);
-      Qy2 += TMath::Sin(2. * phi0[i]);
-      Qx4 += TMath::Cos(4. * phi0[i]);
-      Qy4 += TMath::Sin(4. * phi0[i]);   
-      M++;
-    }
+      hv2MCpt[icent][ipt]->Fill(0.5, v2, 1); // differential v2 from MC toy
+    }  
+    // RFP
+    // if (eta[i] < 0.){
+    Qx2 += TMath::Cos(2. * phi0[i]);
+    Qy2 += TMath::Sin(2. * phi0[i]);
+    Qx4 += TMath::Cos(4. * phi0[i]);
+    Qy4 += TMath::Sin(4. * phi0[i]);   
+    M++;
+    // }
 
     // POI
-    if (eta[i] > 0.)
-    // if (TMath::Abs(eta[i]) < 1.)
-    {
-      hv2MCpt[icent][ipt]->Fill(0.5, v2, 1);
-      px2[ipt] += TMath::Cos(2. * phi0[i]);
-      py2[ipt] += TMath::Sin(2. * phi0[i]); 
-      mp[ipt]++;
-    }
+    // if (eta[i] > 0.){
+    px2[ipt] += TMath::Cos(2. * phi0[i]);
+    py2[ipt] += TMath::Sin(2. * phi0[i]); 
+    mp[ipt]++;
+    // }
+
+    // POI + RFP
+    qx2[ipt] += TMath::Cos(2. * phi0[i]);
+    qy2[ipt] += TMath::Sin(2. * phi0[i]);
+    mq[ipt]++;
 
   } // end of track loop
-  if (M >= 2.)
-  { // <2> definition condition
+  if (M >= 2.){ // <2> definition condition
     Q2 = TComplex(Qx2, Qy2);
-    w2 = M * (M - 1.);                 // w(<2>)
+    w2 = M*(M-1);                      // w(<2>)
     cor22 = CalCor22(Q2, M, w2);       // <2>
     hv22[icent]->Fill(0.5, cor22, w2); // <<2>>
 
@@ -342,13 +344,12 @@ void hVana::Ana_event()
     hcos2phi1 -> Fill(0.5+icent,Qx2/M,M);
     hsin2phi1 -> Fill(0.5+icent,Qy2/M,M);
   } // end of <2> definition condition
-  for (int ipt = 0; ipt < npt; ipt++)
-  {
+  for (int ipt = 0; ipt < npt; ipt++){
     if (mp[ipt] == 0 || M < 1) continue;
     Q2 = TComplex(Qx2, Qy2);
     p2[ipt] = TComplex(px2[ipt], py2[ipt]);
     q2[ipt] = TComplex(qx2[ipt], qy2[ipt]);
-    wred2[ipt] = mp[ipt] * M - mq[ipt];                                        // w(<2'>)
+    wred2[ipt] = mp[ipt]*M-mq[ipt];                                            // w(<2'>)
     if (wred2[ipt]==0) continue;
     redCor22[ipt] = CalRedCor22(Q2, p2[ipt], M, mp[ipt], mq[ipt], wred2[ipt]); // <2'>
     hv22pt[icent][ipt]->Fill(0.5, redCor22[ipt], wred2[ipt]);                  // <<2'>>
@@ -361,10 +362,9 @@ void hVana::Ana_event()
     hsin2psi1[ipt] -> Fill(0.5+icent,py2[ipt]/mp[ipt],mp[ipt]);
   }
   
-  if (M >= 4.)
-  { // <4> definition condition
+  if (M >= 4.){ // <4> definition condition
     Q4 = TComplex(Qx4, Qy4);
-    w4 = M * (M - 1.) * (M - 2.) * (M - 3.);  // w(<4>)
+    w4 = M*(M-1)*(M-2)*(M-3);                 // w(<4>)
     cor24 = CalCor24(Q2, Q4, M, w4);          // <4>
     hv24[icent]->Fill(0.5, cor24, w4);        // <<4>>
 
@@ -374,8 +374,8 @@ void hVana::Ana_event()
     // Non-uniform acceptance correction
     Double_t cos2phi12=(Q2 * Q2 - Q4).Re();
     Double_t sin2phi12=(Q2 * Q2 - Q4).Im();
-    Double_t cos2phi123=((Q2 * Qstar(Q2) * Qstar(Q2) - Q2 * Qstar(Q4)).Re()) - 2. * (M - 1.) * (Qstar(Q2).Re());
-    Double_t sin2phi123=((Q2 * Qstar(Q2) * Qstar(Q2) - Q2 * Qstar(Q4)).Im()) - 2. * (M - 1.) * (Qstar(Q2).Im());
+    Double_t cos2phi123=((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Re())-2.*(M-1)*(Qstar(Q2).Re());
+    Double_t sin2phi123=((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Im())-2.*(M-1)*(Qstar(Q2).Im());
     Double_t sumMMm1=M*(M-1);
     Double_t sumMMm1Mm2=M*(M-1)*(M-2);
     hcos2phi12  -> Fill( 0.5+icent, cos2phi12/sumMMm1, sumMMm1);
@@ -383,8 +383,7 @@ void hVana::Ana_event()
     hcos2phi123 -> Fill( 0.5+icent, cos2phi123/sumMMm1Mm2, sumMMm1Mm2);
     hsin2phi123 -> Fill( 0.5+icent, sin2phi123/sumMMm1Mm2, sumMMm1Mm2);
   } // end of <4> definition condition
-  for (int ipt = 0; ipt < npt; ipt++)
-  {
+  for (int ipt = 0; ipt < npt; ipt++){
     if (mp[ipt] == 0 || M < 3) continue;
     Q4 = TComplex(Qx4, Qy4);
     q4[ipt] = TComplex(qx4[ipt], qy4[ipt]);
@@ -406,14 +405,7 @@ void hVana::Ana_event()
     hsin2psi1pphi23[ipt] -> Fill(0.5+icent,(((p2[ipt]*(Q2.Rho2()-M)).Im())-((q4[ipt]*Qstar(Q2)+mq[ipt]*Q2-2.*q2[ipt]).Im()))/((mp[ipt]*M-2*mq[ipt])*(M-1)),(mp[ipt]*M-2*mq[ipt])*(M-1));
     hcos2psi1mphi23[ipt] -> Fill(0.5+icent,(((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Re()) - ((2. * mq[ipt] * Qstar(Q2) - 2. * Qstar(q2[ipt])).Re()))/((mp[ipt]*M-2*mq[ipt])*(M-1)),((mp[ipt]*M-2*mq[ipt])*(M-1)));
     hsin2psi1mphi23[ipt] -> Fill(0.5+icent,(((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Im()) - ((2. * mq[ipt] * Qstar(Q2) - 2. * Qstar(q2[ipt])).Im()))/((mp[ipt]*M-2*mq[ipt])*(M-1)),((mp[ipt]*M-2*mq[ipt])*(M-1)));
-    // cos2psi1phi2[icent][ipt] += (p2[ipt] * Q2).Re();
-    // sin2psi1phi2[icent][ipt] += (p2[ipt] * Q2).Im();
-    // cos2psi1pphi23[icent][ipt] += ((p2[ipt] * (Q2.Rho2() - M)).Re());
-    // sin2psi1pphi23[icent][ipt] += ((p2[ipt] * (Q2.Rho2() - M)).Im());
-    // cos2psi1mphi23[icent][ipt] += ((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Re());
-    // sin2psi1mphi23[icent][ipt] += ((p2[ipt] * Qstar(Q2) * Qstar(Q2) - p2[ipt] * Qstar(Q4)).Im());
   }
-  
 }
 
 /*
@@ -430,10 +422,9 @@ void hVana::Ana_event()
    /mnt/pool/2/lbavinh/EventGenerator/OUT/Acceptance/runlist.list
 */
 
-void loop_a_list_of_trees()
-{
+void loop_a_list_of_trees(){
   hVana *ana = new hVana();
-  ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC_Pure_1mil.root");
+  ana->Booking("/weekly/povarov/lbavinh/.root");
 
   ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/Pure/runlist.list"); // tree runlist
   char filename[200];

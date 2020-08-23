@@ -42,17 +42,19 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
 
   static const int ncent = 8; // 0-80%
-  static const int bin_cent[ncent] = {5, 15, 25, 35, 45, 55, 65, 75};
+  static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 
   static const int npt = 8; // 0.5 - 3.6 GeV/c - number of pT bins
   static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.4, 3.};
 
-  static const double maxpt = 3.; // max pt
+  static const double maxpt = 3.0; // max pt
   static const double minpt = 0.1; // min pt
 
-  static const float mineta = -1.5; // min pt
-  static const float maxeta = 1.5; // min pt
+  static const float mineta = -1.8; // min pt
+  static const float maxeta =  1.8; // min pt
   static const float etagap = 0.05; // min pt
+  static const int nhitsmin = 16; // minimum nhits of reconstructed tracks
+
 
   static const int neta = 2; // [eta-,eta+]
 
@@ -125,6 +127,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     // sprintf(title, "v_{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
     // hv2MC[icent] = new TProfile(name, title, 1, 0., 1.);
     // hv2MC[icent]->Sumw2();
+
     sprintf(name, "hv22EP_%i", icent);
     hv22EP[icent] = new TProfile(name,name, 1,0.,1.);
     hv22EP[icent]->Sumw2();
@@ -281,7 +284,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
     for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
       auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
-      if (recoTrack->GetNhits()<=32 ) continue;
+      if (recoTrack->GetNhits()<=nhitsmin ) continue;
       float pt  = recoTrack->GetPt();
       float eta = recoTrack->GetEta();
       // if (abs(recoTrack->GetDCAx()) > 0.2) continue; //трек не проходит по DCAx
@@ -399,7 +402,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     Double_t fEP[2]; // [eta-,eta+]
     Double_t fQv[2];
     for (int ieta=0; ieta<neta; ieta++){
-      if( multQv[ieta]>5 ){ // multiplicity > 5
+      if( multQv[ieta]>=4. ){ // multiplicity > 3
         fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
         fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
         fEP[ieta] /= 2.0;
@@ -427,7 +430,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
     for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
       auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
-      if (recoTrack->GetNhits()<=32 ) continue;
+      if (recoTrack->GetNhits()<=nhitsmin ) continue;
       float pt  = recoTrack->GetPt();
       float eta = recoTrack->GetEta();
       // if (recoTrack->GetDCAx() > 2.*fDCAx->Eval(pt, eta)) continue; //трек не проходит по DCAx

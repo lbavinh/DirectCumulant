@@ -33,9 +33,12 @@ static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 static const float maxpt = 2.8; // max pt
 static const float minpt = 0.2; // min pt
 
-static const float mineta = -3.; // min pt
-static const float maxeta = 3.; // min pt
-static const float etagap = 0.1; // min pt
+// static const float maxptRF = 4.0; // max pt
+// static const float minptRF = 0.2; // min pt
+
+static const float mineta = -2.5; // min pt
+static const float maxeta = 2.5; // min pt
+static const float etagap = 0.15; // min pt
 
 static const int neta = 2; // [eta-,eta+]
 
@@ -268,7 +271,7 @@ void FlowANA::Ana_event(){
     float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
     float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
     float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-    if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || charge[i]==0 || TMath::Abs(eta)<etagap/2.) continue; // track selection
+    if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || charge[i]==0 || TMath::Abs(eta)<etagap) continue; // track selection
     float phi = TMath::ATan2( momy[i], momx[i] );
     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
@@ -286,12 +289,27 @@ void FlowANA::Ana_event(){
 
     Double_t v2 = TMath::Cos(2.*phi);
 
-    hv2MC[fcent]->Fill(0.5, v2, 1);      
-    Qx2+=TMath::Cos(2.*phi);
-    Qy2+=TMath::Sin(2.*phi);
-    Qx4+=TMath::Cos(4.*phi);
-    Qy4+=TMath::Sin(4.*phi);
-    M++;
+    hv2MC[fcent]->Fill(0.5, v2, 1);
+
+    // if (pt <= maxptRF && pt >= minptRF){ // pt cut for reference flow
+      Qx2+=TMath::Cos(2.*phi);
+      Qy2+=TMath::Sin(2.*phi);
+      Qx4+=TMath::Cos(4.*phi);
+      Qy4+=TMath::Sin(4.*phi);
+      M++;
+
+      // Sub eta event method, TPC plane
+      int fEta = -1;
+      if (eta > mineta && eta <-etagap) fEta = 0; // TPC East
+      if (eta > etagap && eta < maxeta) fEta = 1; // TPC West
+
+      if ( fEta>-1 ){
+        sumQxy[fEta][0] += 1. * cos( (2.0) * phi );
+        sumQxy[fEta][1] += 1. * sin( (2.0) * phi );
+        multQv[fEta]++;
+      } // end of eta selection
+
+    // }
 
     hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
     hPT[ipt]->Fill(0.5+fcent, pt, 1);
@@ -306,16 +324,7 @@ void FlowANA::Ana_event(){
     mq[ipt]++;
 
 
-    // Sub eta event method, TPC plane
-    int fEta = -1;
-    if (eta >mineta && eta <-etagap/2.) fEta = 0; // TPC East
-    if (eta >etagap/2. && eta < maxeta) fEta = 1; // TPC West
 
-		if ( fEta>-1 ){
-      sumQxy[fEta][0] += 1. * cos( (2.0) * phi );
-      sumQxy[fEta][1] += 1. * sin( (2.0) * phi );
-			multQv[fEta]++;
-		} // end of eta selection
   } // end of track loop
   // ================================== Direct Cumulants ================================== // 
   if (M >= 2.)
@@ -372,7 +381,8 @@ void FlowANA::Ana_event(){
   Double_t fEP[2]; // [eta-,eta+]
   Double_t fQv[2];
   for (int ieta=0; ieta<neta; ieta++){
-    if( multQv[ieta]>5 ){ // multiplicity > 5
+    // if( multQv[ieta]>=4 ){ // multiplicity > 5
+    if( multQv[0] + multQv[1] >= 4. ){
       fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
       fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
       fEP[ieta] /= 2.0;
@@ -405,7 +415,7 @@ void FlowANA::Ana_event(){
       float pt  = sqrt( TMath::Power(momx[itrk], 2.0 ) + TMath::Power(momy[itrk], 2.0 ) );
       float the = TMath::ATan2( pt, momz[itrk] );//atan2(pt/pz)
       float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-      if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || charge[itrk]==0 || TMath::Abs(eta)<etagap/2.) continue; // track selection
+      if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || charge[itrk]==0 || TMath::Abs(eta)<etagap) continue; // track selection
       float phi = TMath::ATan2( momy[itrk], momx[itrk] );
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
@@ -418,22 +428,19 @@ void FlowANA::Ana_event(){
 
       float v2=-999.0;
       
-      if(eta>etagap/2.){ // eta+
+      if(eta>etagap){ // eta+
         // v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
         v2 = cos(2.0 * (phi-psi1) );
       }
 
-      if(eta<-etagap/2.){ // eta-
+      if(eta<-etagap){ // eta-
         // v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
         v2 = cos(2.0 * (phi-psi2) );
       }
-      // if(fabs(eta[itrk])<1.0){ // eliminate spectators
+
       hv2EP[ipt]->Fill(0.5+fcent,v2);
-      // if (eta < -0.1) { // Reference flow
-        hv22EP->Fill(0.5+fcent,v2);
-      // }
+      hv22EP->Fill(0.5+fcent,v2);
       
-      // } // end of |eta| < 1.0
     }// end of the track loop
  	}// end of centrality selection 
 } // end of Ana_event();
@@ -445,3 +452,4 @@ void test_loop(){
   ana->Ana_end();
   cout << "Histfile written. Congratz!" << endl;
 }
+// root -l -b -q calculateFlow.C+'("/weekly/povarov/lbavinh/UrQMD/chain/chain550.root","test.root")'

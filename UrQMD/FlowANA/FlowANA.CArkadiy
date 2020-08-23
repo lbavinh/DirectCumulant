@@ -106,9 +106,6 @@ book_hist(outfile);
  gRandom->SetSeed( (unsigned int)time(NULL) ); 
 }
 
-
-
-
 void FlowANA::loop_a_file(char *file) {
   TFile *treefile = TFile::Open(file);
   TTree *tree = (TTree*)treefile->Get("mctree"); // put the name of the TTree
@@ -338,12 +335,6 @@ hpt[icent][ipt][id] = new TH1F( Form("hpt_%d_%d_%d",icent,ipt,id), Form("hpt_%d_
 	
 
 }
-
-
-
-
-
-
 
 // Analysis for each event !!!!  
 

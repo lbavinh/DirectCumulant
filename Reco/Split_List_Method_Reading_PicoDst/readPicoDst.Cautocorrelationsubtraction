@@ -42,16 +42,16 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
 
   static const int ncent = 8; // 0-80%
-  static const int bin_cent[ncent] = {5, 15, 25, 35, 45, 55, 65, 75};
+  static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 
   static const int npt = 8; // 0.5 - 3.6 GeV/c - number of pT bins
   static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.4, 3.};
 
-  static const double maxpt = 3.; // max pt
+  static const double maxpt = 3.0; // max pt
   static const double minpt = 0.1; // min pt
 
-  static const float mineta = -2.; // min pt
-  static const float maxeta = 2.; // min pt
+  static const float mineta = -1.8; // min pt
+  static const float maxeta =  1.8; // min pt
   static const float etagap = 0.05; // min pt
   static const int nhitsmin = 16; // minimum nhits of reconstructed tracks
 
@@ -392,7 +392,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     Double_t fEP[2]; // [eta-,eta+]
     Double_t fQv[2];
     for (int ieta=0; ieta<neta; ieta++){
-      if( multQv[ieta]>=4 ){ // multiplicity > 5
+      if( multQv[ieta]>=4. ){ // multiplicity > 3
         fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
         fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
         fEP[ieta] /= 2.0;
@@ -433,7 +433,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       float phi = recoTrack->GetPhi();
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
-      Int_t ipt = 0;
+      Int_t ipt = -1;
       for(int j=0; j<npt;j++){
         if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
       }

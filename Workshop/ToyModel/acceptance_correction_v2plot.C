@@ -758,7 +758,7 @@ void acceptance_correction_v2plot(){
   TLatex lV2PT[8];
   for (int icent=0; icent<8; icent++){
     sprintf(hname,"Centrality %i-%i%%",icent*10,(icent+1)*10);
-    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.89, 1.11, 0., maxpt, 0, 0.25, 0.18, 0.65, 0.5, 0.89, hname);
+    cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.89, 1.11, 0., 2.2, -0.01, 0.25, 0.18, 0.65, 0.5, 0.89, hname);
     cV2PT[icent] -> SetName(hname);
   }
   sprintf(hname,"./Graphics/%s/DFCent30-40.png",analysis);

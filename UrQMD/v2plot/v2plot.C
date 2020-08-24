@@ -660,5 +660,5 @@ void v2plot(){
   sprintf(outFile,"../CompareResult/Vinh.root");
   v2plot_differential_flow(inFile,outFile);
   sprintf(outFile,"../CompareResult/Vinh_RF.root");
-  v2plot_integrated_flow(inFile,outFile);
+  // v2plot_integrated_flow(inFile,outFile);
 }

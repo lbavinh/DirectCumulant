@@ -6,7 +6,7 @@ void Drawv2ptMC(){
   gr -> SetMarkerStyle(20);
   gr -> SetMarkerSize(1.8);
   double xmin=0;
-  double xmax=3.5;
+  double xmax=2.2;
   double ymin=0;
   double ymax=0.255;
   TCanvas *c = new TCanvas("c","canvas",200,10,800,600);

@@ -108,6 +108,12 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   pt->AddText(strCent.Data());
   pt->Draw();
   padUp->Modified();
+
+  TLine lineZero;
+	lineZero.SetLineStyle(2);
+  lineZero.SetLineWidth(2.);
+  lineZero.SetLineColor(kAzure+2);
+  lineZero.DrawLine(x_low,0.00,x_high,0.00);
   //==============================================
   //Draw grN/gr1 ratio in the bottom pad
   padDown->cd();

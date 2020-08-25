@@ -40,7 +40,7 @@ void Compare(){
   char *ch[3]={"v2{#eta sub-event}","v2{2QC}","v2{4QC}"};
   for (int i=0; i<3; i++){
       sprintf(name,"Centrality 10-40%%");
-      can[0][i] = (TCanvas*) DrawTGraph(grReco[0][i],grUrQMD[0][i],ch[i],0.69,1.31,0.,2.8,-0.01,0.2,0.18,0.72,0.42,0.89,name);
+      can[0][i] = (TCanvas*) DrawTGraph(grReco[0][i],grUrQMD[0][i],ch[i],0.69,1.31,0.,2.5,-0.01,0.2,0.18,0.72,0.42,0.89,name);
       sprintf(name,"%s_Cent10-40.png",ch[i]);
       can[0][i] -> SetName(name);
       can[0][i] -> SaveAs(name);

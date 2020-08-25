@@ -56,19 +56,25 @@ struct term{
 
 };
 
-static const double maxpt = 3.0; // max pt
+// static const double maxpt = 3.0; // max pt
+// static const double minpt = 0.1; // min pt
+// static const int npt = 8; // 0.5 - 3.6 GeV/c - number of pT bins
+// static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.4, 3.};
+
+static const int npt = 7; // 0.5 - 3.6 GeV/c - number of pT bins
+static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.5};
+static const double maxpt = 2.5; // max pt
 static const double minpt = 0.1; // min pt
+
 
 static const int ncent = 8; // 0-80 %
 static const double bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 static const double bin_centE[ncent] = {0};
-static const int npt = 8; // 0.5 - 3.6 GeV/c - number of pT bins
-static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.4, 3.};
+
 
 void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString outFileName="../CompareResult/Vinh.root"){
-  bool bDrawPlots = 1;
+  bool bDrawPlots1040 = 1;
   bool drawDistributions = 0;
-  bool cent1040 = 1;
   // Temporary variables
   char hname[800]; // histogram hname
   double stats[6]; // stats of TProfile
@@ -182,7 +188,7 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
   // inFile -> Close();
 
   //==========================================================================================================================
-  if (cent1040){
+  if (bDrawPlots1040){
   // Add
   for (int icent=2; icent<4; icent++){ // loop over centrality classes
     hv22EP[1] -> Add(hv22EP[icent]);
@@ -418,17 +424,14 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
     grDifFl[3][icent] -> SetMarkerColor(kRed+1);
     grDifFl[3][icent] -> SetMarkerStyle(25);
     // 2QC differential flow
-    grDifFl[1][icent] = new TGraphErrors(npt,pt[icent],v22dif,ept[icent],v22difE);
+    grDifFl[0][icent] = new TGraphErrors(npt,pt[icent],v22dif,ept[icent],v22difE);
+    grDifFl[0][icent] -> SetMarkerColor(kRed);
+    grDifFl[0][icent] -> SetMarkerStyle(25);
+    // 4QC differential flow
+    grDifFl[1][icent] = new TGraphErrors(npt,pt[icent],v24dif,ept[icent],v24difE);
     grDifFl[1][icent] -> SetMarkerColor(kGreen+1);
     grDifFl[1][icent] -> SetMarkerStyle(20);
-    // 4QC differential flow
-    grDifFl[2][icent] = new TGraphErrors(npt,pt[icent],v24dif,ept[icent],v24difE);
-    grDifFl[2][icent] -> SetMarkerColor(kAzure+2);
-    grDifFl[2][icent] -> SetMarkerStyle(22);
-    for (int i=1; i<4; i++){
-      grDifFl[i][icent] -> SetMarkerSize(1.3);
-      grDifFl[i][icent] -> SetDrawOption("P");
-    }
+
   } // end of loop over centrality classes
   //==========================================================================================================================
 
@@ -450,19 +453,22 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
       double dres2 = HRes[icent]->GetBinError(1);
 
       // ev2EP[ipt] = sqrt(dv2obs*dv2obs/res2/res2 + v2obs*v2obs/(4*pow(res2,6)*dres2*dres2));
-      ev2EP[ipt] = hv2EP[icent][ipt]->GetBinError(1);
+      ev2EP[ipt] = hv2EP[icent][ipt]->GetBinError(1) / res2;
     }
     // Event plane differential flow
-    grDifFl[0][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
-    grDifFl[0][icent] -> SetMarkerColor(kRed);
-    grDifFl[0][icent] -> SetMarkerStyle(25);
-    grDifFl[0][icent] -> SetMarkerSize(1.3);
-    grDifFl[0][icent] -> SetDrawOption("P");
+    grDifFl[2][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
+    grDifFl[2][icent] -> SetMarkerColor(kAzure+2);
+    grDifFl[2][icent] -> SetMarkerStyle(22);
+
+    for (int i=0; i<4; i++){
+    grDifFl[i][icent] -> SetMarkerSize(1.3);
+    grDifFl[i][icent] -> SetDrawOption("P");
+  }
   }
 
   //==========================================================================================================================
 
-  const char *grTitleDF[4]={"[1] v_{2}{#eta sub-event};p_{T}, GeV/c;v_{2}","[2] v_{2}{2,QC};p_{T}, GeV/c;v_{2}","[3] v_{2}{4,QC};p_{T}, GeV/c;v_{2}","v_{2}{MC};p_{T}, GeV/c;v_{2}"};
+  const char *grTitleDF[4]={"[1] v_{2}{2,QC};p_{T}, GeV/c;v_{2}","[2] v_{2}{4,QC};p_{T}, GeV/c;v_{2}","[3] v_{2}{#eta sub-event};p_{T}, GeV/c;v_{2}","v_{2}{MC};p_{T}, GeV/c;v_{2}"};
   
   outFile -> cd();
 
@@ -475,7 +481,24 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
   }
   outFile -> Close();
 
-  if (!bDrawPlots) return;
+  if (!bDrawPlots1040) {
+    std::vector<TGraphErrors*> vgrv2pt[5];
+    for (int icent=0; icent<5; icent++){
+      for (int i=0; i<3; i++){
+        vgrv2pt[icent].push_back(grDifFl[i][icent]);
+      }  
+    }
+    TCanvas *cV2PT[5];
+    for (int icent=0; icent<5; icent++){
+    
+      sprintf(hname,"Centrality %i-%i%%",icent*10,(icent+1)*10);
+      cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[1],"",0.77, 1.23, 0., maxpt, -0.01, 0.2, 0.18, 0.56, 0.5, 0.8, hname);
+      cV2PT[icent] -> SetName(hname);
+      sprintf(hname,"../Graphics/DFCent%i-%i.png",icent*10,(icent+1)*10);
+      cV2PT[icent] -> SaveAs(hname);
+    }
+    return;
+  }
 
 
   //=============================================
@@ -483,21 +506,21 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
   for (int icent=0; icent<2; icent++){
     for (int i=0; i<3; i++){
       vgrv2pt[icent].push_back(grDifFl[i][icent]);
-    }  
+    }
   }
-  TCanvas *cV2PT[2];
+  TCanvas *cV2PT;
   // cV2PT[0] = (TCanvas*) DrawTGraph(vgrv2pt[0],"",0.65, 1.35, 0., maxpt, 0, 0.2, 0.18, 0.65, 0.5, 0.89, "Centrality 0-10%");
   // cV2PT[0] -> SetName("Cent10-40");
   // cV2PT[0] -> SaveAs("../Graphics/DFCent0-10.png");
 
-  cV2PT[1] = (TCanvas*) DrawTGraph(vgrv2pt[1],"",0.77, 1.23, 0., maxpt, -0.01, 0.2, 0.18, 0.65, 0.5, 0.89, "Centrality 10-40%");
-  cV2PT[1] -> SetName("Cent10-40");
-  cV2PT[1] -> SaveAs("../Graphics/DFCent10-40.png");
+  cV2PT = (TCanvas*) DrawTGraph(vgrv2pt[1],"",0.77, 1.23, 0., maxpt, -0.01, 0.2, 0.18, 0.56, 0.5, 0.8, "Centrality 10-40%");
+  cV2PT -> SetName("Cent10-40");
+  cV2PT -> SaveAs("../Graphics/DFCent10-40.png");
 
-  // double ymin = TMath::MinElement(4,v2[1])*0.98;
-  // double ymax = TMath::MaxElement(4,v2[1])*1.02;
-  double ymin = 0.025;
-  double ymax = 0.035;
+  double ymin = TMath::MinElement(4,v2[1])*0.98;
+  double ymax = TMath::MaxElement(4,v2[1])*1.02;
+  // double ymin = 0.025;
+  // double ymax = 0.035;
   TCanvas *c1040 = new TCanvas("c1040","c1040",200,10,800,600);
   TH2F *h1040 = new TH2F("h1040","Reference flow, 10-40% centrality",4,0,4,10,ymin,ymax);
   h1040 = new TH2F("","",3,1,4,10,ymin,ymax);
@@ -516,7 +539,7 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
   TPaveText *ptext1 = new TPaveText(0.2,0.74,0.6,0.89,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
   ptext1->SetBorderSize(0);
   ptext1->SetFillColor(0);
-  ptext1->AddText("UrQMD, GEANT4, Au+Au, #sqrt{s_{NN}}=7.7 GeV");
+  ptext1->AddText("UrQMD, GEANT, Au+Au, #sqrt{s_{NN}}=7.7 GeV");
   ptext1->AddText("10-40% centrality");
   ptext1->Draw();
   TLine line[3];
@@ -615,15 +638,15 @@ void v2plot_integrated_flow(TString inFileName, TString outFileName){
     eV24.push_back( sqrt( 1./pow(v24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) ) );
   }
   TGraphErrors *grIntFlowVsCent[3];       // v2(cent); 4 = {2QC, 4QC, EP, MC}
-  grIntFlowVsCent[0] = new TGraphErrors(ncent,bin_cent,&vV2EP[0],bin_centE,&eV2EP[0]);
+  grIntFlowVsCent[0] = new TGraphErrors(ncent,bin_cent,&vV22[0],bin_centE,&eV22[0]);
   grIntFlowVsCent[0] -> SetMarkerColor(kRed);
   grIntFlowVsCent[0] -> SetMarkerStyle(25);  
 
-  grIntFlowVsCent[1] = new TGraphErrors(ncent,bin_cent,&vV22[0],bin_centE,&eV22[0]);
+  grIntFlowVsCent[1] = new TGraphErrors(ncent,bin_cent,&vV24[0],bin_centE,&eV24[0]);
   grIntFlowVsCent[1]->SetMarkerColor(kGreen+1);
   grIntFlowVsCent[1]->SetMarkerStyle(20);
 
-  grIntFlowVsCent[2] = new TGraphErrors(ncent,bin_cent,&vV24[0],bin_centE,&eV24[0]);
+  grIntFlowVsCent[2] = new TGraphErrors(ncent,bin_cent,&vV2EP[0],bin_centE,&eV2EP[0]);
   grIntFlowVsCent[2] -> SetMarkerColor(kAzure+2);
   grIntFlowVsCent[2] -> SetMarkerStyle(22);
 
@@ -631,7 +654,7 @@ void v2plot_integrated_flow(TString inFileName, TString outFileName){
     grIntFlowVsCent[i]->SetMarkerSize(1.5);
     grIntFlowVsCent[i]->SetDrawOption("P");
   }
-  const char *grTitle[3]={"[1] v_{2}{#eta sub-event};cent, %;v_{2}","[2] v_{2}{2,QC};cent, %;v_{2}","[3] v_{2}{4,QC};cent, %;v_{2}"};
+  const char *grTitle[3]={"[1] v_{2}{2,QC};cent, %;v_{2}","[2] v_{2}{4,QC};cent, %;v_{2}","[3] v_{2}{#eta sub-event};cent, %;v_{2}"};
 
   outFile -> cd();
   for (int i=0; i<3; i++){
@@ -648,7 +671,7 @@ void v2plot_integrated_flow(TString inFileName, TString outFileName){
   }
 
   TCanvas *can;
-  can = (TCanvas*) DrawTGraph(vgr,"",0.79, 1.04, 0, 60, -0.005, 0.1 , 0.18, 0.65, 0.5, 0.89);
+  can = (TCanvas*) DrawTGraph(vgr,"",0.78, 1.22, 0, 60, -0.005, 0.1 , 0.18, 0.56, 0.5, 0.8); // DCA<0.5: 0.88, 1.12 // wo DCA: 0.76, 1.03
   sprintf(hname,"v2 vs cent");
   can -> SetName(hname);
   sprintf(hname,"../Graphics/v2centratio.png");

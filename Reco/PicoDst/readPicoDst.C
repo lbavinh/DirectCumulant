@@ -43,17 +43,17 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5, 15, 25, 35, 45, 55, 65, 75};
 
-  static const int npt = 8; // 0.5 - 3.6 GeV/c - number of pT bins
-  static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.4, 3.};
+  static const int npt = 7; // 0.5 - 3.6 GeV/c - number of pT bins
+  static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.5};
 
-  static const double maxpt = 3.; // max pt
+  static const double maxpt = 2.5; // max pt
   static const double minpt = 0.1; // min pt
 
-  static const float mineta = -2.; // min pt
-  static const float maxeta = 2.; // min pt
+  static const float mineta = -2.2; // min pt
+  static const float maxeta =  2.2; // min pt
   static const float etagap = 0.05; // min pt
   static const int nhitsmin = 16; // minimum nhits of reconstructed tracks
-
+  static const float DCAcut = 0.5;
   static const int neta = 2; // [eta-,eta+]
 
   static const int max_nh = 1500;
@@ -125,6 +125,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     // sprintf(title, "v_{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
     // hv2MC[icent] = new TProfile(name, title, 1, 0., 1.);
     // hv2MC[icent]->Sumw2();
+
     sprintf(name, "hv22EP_%i", icent);
     hv22EP[icent] = new TProfile(name,name, 1,0.,1.);
     hv22EP[icent]->Sumw2();
@@ -204,21 +205,33 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
 
   // Configure input information
-  TChain *chain = new TChain("picodst");
-  chain->Add(inputFileName.Data());
-
+  // TChain *chain = new TChain("picodst");
+  // chain->Add(inputFileName.Data());
+  TFile *treefile = TFile::Open(inputFileName.Data());
+  TTree *tree = (TTree *)treefile->Get("picodst");
+  if (!tree){
+    cout << "picodst is not found in " << inputFileName.Data() << endl;
+    treefile->Close();
+    return;
+  }
+  cout << inputFileName.Data() << " is opened" << endl;
   PicoDstMCEvent *mcEvent = nullptr;
   TClonesArray *recoTracks = nullptr;
+  TClonesArray *mcTracks = nullptr;
 
-  chain->SetBranchAddress("mcevent.", &mcEvent);
-  chain->SetBranchAddress("recotracks",&recoTracks);
-
+  // chain->SetBranchAddress("mcevent.", &mcEvent);
+  // chain->SetBranchAddress("recotracks",&recoTracks);
+  tree->SetBranchAddress("mcevent.", &mcEvent);
+  tree->SetBranchAddress("recotracks",&recoTracks);
+  tree->SetBranchAddress("mctracks",&mcTracks);
   // Start event loop
-  int n_entries = chain->GetEntries();
+  // int n_entries = chain->GetEntries();
+  int n_entries = tree->GetEntriesFast();
   for (int iEv=0; iEv<n_entries; iEv++)
   {
     if (iEv%1000==0) std::cout << "Event [" << iEv << "/" << n_entries << "]" << std::endl;
-    chain->GetEntry(iEv);
+    // chain->GetEntry(iEv);
+    tree->GetEntry(iEv);
     hEvt -> Fill(1);
     // Read MC event
     float bimp = mcEvent->GetB();
@@ -275,12 +288,14 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
     for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
       auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
+      auto mcTrack = (PicoDstMCTrack*) mcTracks->UncheckedAt(recoTrack->GetMcId());
+      if (mcTrack->GetMotherId() != -1) continue;
       if (recoTrack->GetNhits()<=nhitsmin ) continue;
       float pt  = recoTrack->GetPt();
       float eta = recoTrack->GetEta();
-      // if (abs(recoTrack->GetDCAx()) > 0.2) continue; //трек не проходит по DCAx
-      // if (abs(recoTrack->GetDCAy()) > 0.2) continue; //трек не проходит по DCAy
-      // if (abs(recoTrack->GetDCAz()) > 0.2) continue; //трек не проходит по DCAz
+      // if (abs(recoTrack->GetDCAx()) > DCAcut) continue; //трек не проходит по DCAx
+      // if (abs(recoTrack->GetDCAy()) > DCAcut) continue; //трек не проходит по DCAy
+      // if (abs(recoTrack->GetDCAz()) > DCAcut) continue; //трек не проходит по DCAz
       if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || TMath::Abs(eta)<etagap) continue; // track selection
       float phi = recoTrack->GetPhi();
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
@@ -421,15 +436,17 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
     for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
       auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
+      auto mcTrack = (PicoDstMCTrack*) mcTracks->UncheckedAt(recoTrack->GetMcId());
+      if (mcTrack->GetMotherId() != -1) continue;
       if (recoTrack->GetNhits()<=nhitsmin ) continue;
       float pt  = recoTrack->GetPt();
       float eta = recoTrack->GetEta();
       // if (recoTrack->GetDCAx() > 2.*fDCAx->Eval(pt, eta)) continue; //трек не проходит по DCAx
       // if (recoTrack->GetDCAy() > 2.*fDCAy->Eval(pt, eta)) continue; //трек не проходит по DCAy
       // if (recoTrack->GetDCAz() > 2.*fDCAz->Eval(pt, eta)) continue; //трек не проходит по DCAz
-      // if (abs(recoTrack->GetDCAx()) > 0.2) continue; //трек не проходит по DCAx
-      // if (abs(recoTrack->GetDCAy()) > 0.2) continue; //трек не проходит по DCAy
-      // if (abs(recoTrack->GetDCAz()) > 0.2) continue; //трек не проходит по DCAz
+      // if (abs(recoTrack->GetDCAx()) > DCAcut) continue; //трек не проходит по DCAx
+      // if (abs(recoTrack->GetDCAy()) > DCAcut) continue; //трек не проходит по DCAy
+      // if (abs(recoTrack->GetDCAz()) > DCAcut) continue; //трек не проходит по DCAz
       if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || TMath::Abs(eta)<etagap) continue; // track selection
       float phi = recoTrack->GetPhi();
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
@@ -503,3 +520,4 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 }
 // source /weekly/parfenov/Soft/PicoDst/build/setPicoDst.sh 
 // root -l -b -q readPicoDst.C+'("/weekly/parfenov/mpd_winter2019/mpd_prod/7.7gev/picodst/picodst_1106385_22.root","test.root")'
+// root -l -b -q readPicoDst.C+'("/weekly/parfenov/mpd_winter2019/mpd_prod/7.7gev/merged_new/picodst_merged_600.root","test.root")'

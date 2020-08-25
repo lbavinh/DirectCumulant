@@ -96,21 +96,22 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   leg_pt->Draw();
 
   //==============================================
-  TPaveText *pt = new TPaveText(leg_x_high+0.01,0.74,0.89,0.89,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
+  TPaveText *pt = new TPaveText(leg_x_high+0.01,0.74,0.85,0.85,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
   pt->SetBorderSize(0);
   pt->SetFillColor(0);
   char hname[400];
+  pt->SetTextSize(0.05);
   pt->AddText("UrQMD, Au+Au @ #sqrt{s_{NN}}=7.7 GeV");
 
   pt->AddText(strCent.Data());
   pt->Draw();
   padUp->Modified();
-  
+
   TLine lineZero;
 	lineZero.SetLineStyle(2);
   lineZero.SetLineWidth(2.);
   lineZero.SetLineColor(kAzure+2);
-  lineZero.DrawLine(x_low,0.00,x_high,0.00);
+  // lineZero.DrawLine(x_low,0.00,x_high,0.00);
   //==============================================
   //Draw grN/gr1 ratio in the bottom pad
   padDown->cd();
@@ -232,15 +233,15 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
 
     // lineOne.SetLineColor(kRed);
     lineOne.DrawLine(x_low,1.,  x_high,1.);
-    line95.DrawLine( x_low,.95, x_high,.95);
-    line105.DrawLine(x_low,1.05,x_high,1.05);
+    // line95.DrawLine( x_low,.95, x_high,.95);
+    // line105.DrawLine(x_low,1.05,x_high,1.05);
     line90.DrawLine( x_low,.9, x_high,.9);
     line110.DrawLine(x_low,1.1,x_high,1.1);
     // line80.DrawLine( x_low,.8, x_high,.8);
     // line85.DrawLine( x_low,.85, x_high,.85);
-    line120.DrawLine(x_low,1.2,x_high,1.2);
+    // line120.DrawLine(x_low,1.2,x_high,1.2);
     // line70.DrawLine( x_low,.7, x_high,.7);
-    line130.DrawLine(x_low,1.3,x_high,1.3);
+    // line130.DrawLine(x_low,1.3,x_high,1.3);
   }
 
   return canv;

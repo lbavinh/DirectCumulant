@@ -29,14 +29,14 @@ using namespace std;
 static const int ncent = 8; // 0-80%
 static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 
-static const int npt = 8; // 0.5 - 3.6 GeV/c - number of pT bins
-static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.4, 3.};
+static const int npt = 7; // 0.5 - 3.6 GeV/c - number of pT bins
+static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.5};
 
-static const double maxpt = 3.0; // max pt
+static const double maxpt = 2.5; // max pt
 static const double minpt = 0.1; // min pt
 
-static const float mineta = -1.8; // min pt
-static const float maxeta =  1.8; // min pt
+static const float mineta = -2.2; // min pt
+static const float maxeta =  2.2; // min pt
 static const float etagap = 0.05; // min pt
 
 static const int neta = 2; // [eta-,eta+]

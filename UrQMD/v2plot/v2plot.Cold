@@ -291,11 +291,11 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
     double res2 = sqrt(HRes[icent]->GetBinContent(1));
     double v2obs = hv22EP[icent]->GetBinContent(1);
     v2EPint = v2obs / res2;
-    // v2EPint = hv22EP[icent]->GetBinContent(1);
     double dv2obs = hv22EP[icent]->GetBinError(1);
     double dres2 = HRes[icent]->GetBinError(1);
+
+    // v2EPintE = sqrt(dv2obs*dv2obs/res2/res2 + v2obs*v2obs/(4*pow(res2,6)*dres2*dres2));
     v2EPintE = hv22EP[icent]->GetBinError(1)/res2;
-    // v2EPintE = hv22EP[icent]->GetBinError(1);
     //=============================================
     // Reference flow comparison: MC, 2QC, 4QC, eta sub-event
     v2[icent][0] = v2MCint;
@@ -443,21 +443,18 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
   for (int icent=0; icent<ncent; icent++){
     double v2EP[npt]={0}, ev2EP[npt]={0};
     for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
+      // v2EP[ipt] = hv2EP[ipt]->GetBinContent(icent+1);
+      // ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
+
       double res2 = sqrt(HRes[icent]->GetBinContent(1));
       double v2obs = hv2EP[icent][ipt]->GetBinContent(1);
       v2EP[ipt] = v2obs / res2;
-      
-      // v2EP[ipt] = hv2EP[icent][ipt]->GetBinContent(1);
       double dv2obs = hv2EP[icent][ipt]->GetBinError(1);
       double dres2 = HRes[icent]->GetBinError(1);
 
+      // ev2EP[ipt] = sqrt(dv2obs*dv2obs/res2/res2 + v2obs*v2obs/(4*pow(res2,6)*dres2*dres2));
       ev2EP[ipt] = hv2EP[icent][ipt]->GetBinError(1) / res2;
-      // ev2EP[ipt] = hv2EP[icent][ipt]->GetBinError(1);
     }
-    // for (int ipt=0;ipt<npt;ipt++){
-    //   cout << v2EP[ipt] <<" ";
-    // }
-    // cout << endl;
     // Event plane differential flow
     grDifFl[2][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
     grDifFl[2][icent] -> SetMarkerColor(kAzure+2);
@@ -542,7 +539,7 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
   TPaveText *ptext1 = new TPaveText(0.2,0.74,0.6,0.89,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
   ptext1->SetBorderSize(0);
   ptext1->SetFillColor(0);
-  ptext1->AddText("UrQMD, GEANT, Au+Au, #sqrt{s_{NN}}=7.7 GeV");
+  ptext1->AddText("UrQMD, Au+Au, #sqrt{s_{NN}}=7.7 GeV");
   ptext1->AddText("10-40% centrality");
   ptext1->Draw();
   TLine line[3];
@@ -629,8 +626,6 @@ void v2plot_integrated_flow(TString inFileName, TString outFileName){
     // EP
     vV2EP.push_back( hv22EP[icent]->GetBinContent(1) / sqrt( HRes[icent]->GetBinContent(1) ) );
     eV2EP.push_back( hv22EP[icent]->GetBinError(1)   / sqrt( HRes[icent]->GetBinContent(1) ) );
-    // vV2EP.push_back( hv22EP[icent]->GetBinContent(1));
-    // eV2EP.push_back( hv22EP[icent]->GetBinError(1)  );    
     // 2QC
     term cor2 = term(hv22[icent]);
     vV22.push_back(sqrt(cor2.mVal));

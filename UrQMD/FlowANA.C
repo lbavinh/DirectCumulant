@@ -109,8 +109,7 @@ void FlowANA::Booking(TString outFile){
   for (int icent = 0; icent < ncent; icent++)
   { // loop over centrality classes
     // sprintf(name, "hv2MC_%i", icent);
-    // sprintf(title, "v_{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
-    // hv2MC[icent] = new TProfile(name, title, 1, 0., 1.);
+    // hv2MC[icent] = new TProfile(name, name, 1, 0., 1.);
     // hv2MC[icent]->Sumw2();
 
     sprintf(name, "hv22EP_%i", icent);
@@ -121,26 +120,22 @@ void FlowANA::Booking(TString outFile){
     HRes[icent]->Sumw2();
 
     sprintf(name, "hv22_%i", icent);
-    sprintf(title, "v_{2}{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
-    hv22[icent] = new TProfile(name, title, 1, 0., 1.);
+    hv22[icent] = new TProfile(name, name, 1, 0., 1.);
     hv22[icent]->Sumw2();
 
     sprintf(name, "hv24_%i", icent);
-    sprintf(title, "v_{2}{4}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
-    hv24[icent] = new TProfile(name, title, 1, 0., 1.);
+    hv24[icent] = new TProfile(name, name, 1, 0., 1.);
     hv24[icent]->Sumw2();
 
     sprintf(name, "hcov24_%i", icent);
-    sprintf(title, "<2>#upoint<4> distr, cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
-    hcov24[icent] = new TProfile(name, title, 1, 0., 1.);
+    hcov24[icent] = new TProfile(name, name, 1, 0., 1.);
     hcov24[icent]->Sumw2();
 
     for (int kpt = 0; kpt < npt; kpt++)
     { // loop over pt bin
     
       // sprintf(name, "hv2MCpt_%i_%i", icent, kpt);
-      // sprintf(title, "v_{2}{MC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      // hv2MCpt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      // hv2MCpt[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       // hv2MCpt[icent][kpt]->Sumw2();
 
       sprintf(name,"hv2EP_%i_%i", icent, kpt);
@@ -151,38 +146,31 @@ void FlowANA::Booking(TString outFile){
       hPT[icent][kpt]->Sumw2();
 
       sprintf(name, "hv22pt_%i_%i", icent, kpt);
-      sprintf(title, "v_{2}{2,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hv22pt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hv22pt[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       hv22pt[icent][kpt]->Sumw2();
 
       sprintf(name, "hv24pt_%i_%i", icent, kpt);
-      sprintf(title, "v_{2}{4,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hv24pt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hv24pt[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       hv24pt[icent][kpt]->Sumw2();
 
       sprintf(name, "hcov22prime_%i_%i", icent, kpt);
-      sprintf(title, "<2>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hcov22prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hcov22prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       hcov22prime[icent][kpt]->Sumw2();
 
       sprintf(name, "hcov24prime_%i_%i", icent, kpt);
-      sprintf(title, "<2>#upoint<4'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hcov24prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hcov24prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       hcov24prime[icent][kpt]->Sumw2();
 
       sprintf(name, "hcov42prime_%i_%i", icent, kpt);
-      sprintf(title, "<4>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hcov42prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hcov42prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       hcov42prime[icent][kpt]->Sumw2();
 
       sprintf(name, "hcov44prime_%i_%i", icent, kpt);
-      sprintf(title, "<4>#upoint<4'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hcov44prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hcov44prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       hcov44prime[icent][kpt]->Sumw2();
 
       sprintf(name, "hcov2prime4prime_%i_%i", icent, kpt);
-      sprintf(title, "<4'>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hcov2prime4prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
+      hcov2prime4prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       hcov2prime4prime[icent][kpt]->Sumw2();
     } // end of loop over pt bin
   } // end of loop over centrality classes

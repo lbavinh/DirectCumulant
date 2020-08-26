@@ -119,90 +119,44 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     H_Qv[ieta] = new TH1F(name,name, 100, 0, 10 );
   }
 
-  for (int icent = 0; icent < ncent; icent++)
-  { // loop over centrality classes
+  for (int icent = 0; icent < ncent; icent++){ // loop over centrality classes
     // sprintf(name, "hv2MC_%i", icent);
-    // sprintf(title, "v_{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
-    // hv2MC[icent] = new TProfile(name, title, 1, 0., 1.);
-    // hv2MC[icent]->Sumw2();
-
+    // hv2MC[icent] = new TProfile(name, name, 1, 0., 1.);
     sprintf(name, "hv22EP_%i", icent);
     hv22EP[icent] = new TProfile(name,name, 1,0.,1.);
-    hv22EP[icent]->Sumw2();
     sprintf(name, "HRes_%i", icent);
     HRes[icent] = new TProfile(name,name, 1,0.,1.);
-    HRes[icent]->Sumw2();
-
     sprintf(name, "hv22_%i", icent);
-    sprintf(title, "v_{2}{2}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
-    hv22[icent] = new TProfile(name, title, 1, 0., 1.);
-    hv22[icent]->Sumw2();
-
+    hv22[icent] = new TProfile(name, name, 1, 0., 1.);
     sprintf(name, "hv24_%i", icent);
-    sprintf(title, "v_{2}{4}(cent), cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
-    hv24[icent] = new TProfile(name, title, 1, 0., 1.);
-    hv24[icent]->Sumw2();
-
+    hv24[icent] = new TProfile(name, name, 1, 0., 1.);
     sprintf(name, "hcov24_%i", icent);
-    sprintf(title, "<2>#upoint<4> distr, cent=%i-%i%%", bin_cent[icent] - 5, bin_cent[icent] + 5);
-    hcov24[icent] = new TProfile(name, title, 1, 0., 1.);
-    hcov24[icent]->Sumw2();
-
-    for (int kpt = 0; kpt < npt; kpt++)
-    { // loop over pt bin
-    
+    hcov24[icent] = new TProfile(name, name, 1, 0., 1.);
+    for (int kpt = 0; kpt < npt; kpt++){ // loop over pt bin
       // sprintf(name, "hv2MCpt_%i_%i", icent, kpt);
-      // sprintf(title, "v_{2}{MC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      // hv2MCpt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
-      // hv2MCpt[icent][kpt]->Sumw2();
-
+      // hv2MCpt[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       sprintf(name,"hv2EP_%i_%i", icent, kpt);
-      hv2EP[icent][kpt] = new TProfile(name,name, ncent,0.,ncent);
-      hv2EP[icent][kpt]->Sumw2();
+      hv2EP[icent][kpt] = new TProfile(name,name, 1,0.,1.);
       sprintf(name, "hPT_%i_%i", icent, kpt);
-      hPT[icent][kpt] = new TProfile(name, name, ncent,0.,ncent);
-      hPT[icent][kpt]->Sumw2();
-
+      hPT[icent][kpt] = new TProfile(name, name, 1,0.,1.);
       sprintf(name, "hv22pt_%i_%i", icent, kpt);
-      sprintf(title, "v_{2}{2,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hv22pt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
-      hv22pt[icent][kpt]->Sumw2();
-
+      hv22pt[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       sprintf(name, "hv24pt_%i_%i", icent, kpt);
-      sprintf(title, "v_{2}{4,QC}(p_{T}), cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hv24pt[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
-      hv24pt[icent][kpt]->Sumw2();
-
+      hv24pt[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       sprintf(name, "hcov22prime_%i_%i", icent, kpt);
-      sprintf(title, "<2>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hcov22prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
-      hcov22prime[icent][kpt]->Sumw2();
-
+      hcov22prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       sprintf(name, "hcov24prime_%i_%i", icent, kpt);
-      sprintf(title, "<2>#upoint<4'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hcov24prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
-      hcov24prime[icent][kpt]->Sumw2();
-
+      hcov24prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       sprintf(name, "hcov42prime_%i_%i", icent, kpt);
-      sprintf(title, "<4>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hcov42prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
-      hcov42prime[icent][kpt]->Sumw2();
-
+      hcov42prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       sprintf(name, "hcov44prime_%i_%i", icent, kpt);
-      sprintf(title, "<4>#upoint<4'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hcov44prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
-      hcov44prime[icent][kpt]->Sumw2();
-
+      hcov44prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       sprintf(name, "hcov2prime4prime_%i_%i", icent, kpt);
-      sprintf(title, "<4'>#upoint<2'> distr, cent:%i-%i%%, %2.1f<pt<%2.1f GeV/c", bin_cent[icent] - 5, bin_cent[icent] + 5, bin_pT[kpt], bin_pT[kpt + 1]);
-      hcov2prime4prime[icent][kpt] = new TProfile(name, title, 1, 0., 1.);
-      hcov2prime4prime[icent][kpt]->Sumw2();
+      hcov2prime4prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
     } // end of loop over pt bin
   } // end of loop over centrality classes
 
   cout << "Histograms have been initialized" << endl;
-
-
 
   // Configure input information
   // TChain *chain = new TChain("picodst");
@@ -224,6 +178,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   tree->SetBranchAddress("mcevent.", &mcEvent);
   tree->SetBranchAddress("recotracks",&recoTracks);
   tree->SetBranchAddress("mctracks",&mcTracks);
+
   // Start event loop
   // int n_entries = chain->GetEntries();
   int n_entries = tree->GetEntriesFast();
@@ -408,7 +363,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     Double_t fEP[2]; // [eta-,eta+]
     Double_t fQv[2];
     for (int ieta=0; ieta<neta; ieta++){
-      if( multQv[ieta]>=4 ){ // multiplicity > 5
+      if( multQv[ieta]>=4. ){ // multiplicity > 5
         fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
         fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
         fEP[ieta] /= 2.0;
@@ -434,6 +389,8 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
     HRes[fcent] -> Fill(0.5,cos(dPsi));
 
+    float res2[ncent] = {0.205352,0.326948,0.344818,0.318183,0.264808,0.19769,0.148519,0.128865};
+
     for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
       auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
       auto mcTrack = (PicoDstMCTrack*) mcTracks->UncheckedAt(recoTrack->GetMcId());
@@ -458,12 +415,12 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       // ==================================== Eta Sub-event ==================================== //
       float v2=-999.0;
       if(eta>etagap){ // eta+
-        // v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
-        v2 = cos(2.0 * (phi-psi1) );
+        v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
+        // v2 = cos(2.0 * (phi-psi1) );
       }
       if(eta<-etagap){ // eta-
-        // v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
-        v2 = cos(2.0 * (phi-psi2) );
+        v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
+        // v2 = cos(2.0 * (phi-psi2) );
       }
       hv2EP[fcent][ipt]->Fill(0.5,v2);
       // if (eta < -0.1) { // Reference flow

@@ -1,9 +1,6 @@
-#include "Func_StatErrCalc.C"
 #include "DrawTGraph.C"
-// #include <vector>
-// #include <cmath>
-// using namespace std; 
 
+TFile *outFile = new TFile("../CompareResult/Vinh.root","recreate");
 double Covariance(TProfile *const &hcovXY, TProfile *const &hX, TProfile *const &hY){
   double statsXY[6], statsX[6], statsY[6];
   double meanXY, meanX, meanY, sumWX, sumWY;
@@ -22,7 +19,6 @@ double Covariance(TProfile *const &hcovXY, TProfile *const &hX, TProfile *const 
   double mVal = (meanXY-meanX*meanY)/(sumWX*sumWY/mSumWXY-1.); // Cov(x,y)/(sumWX*sumWY/sumWXY)
   return mVal;
 }
-
 
 struct term{
   term(){
@@ -72,7 +68,8 @@ static const double bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 static const double bin_centE[ncent] = {0};
 
 
-void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString outFileName="../CompareResult/Vinh.root"){
+void v2plot_differential_flow(){
+  TFile *inFile = new TFile("../ROOTFile/sum.root","read");
   bool bDrawPlots1040 = 1;
   bool drawDistributions = 0;
   // Temporary variables
@@ -80,9 +77,6 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
   double stats[6]; // stats of TProfile
   // char analysis[20]={"pure"};
 
-  TFile *inFile, *outFile;
-  inFile = new TFile("../ROOTFile/sum.root","read");
-  outFile = new TFile("../CompareResult/Vinh.root","recreate");
   
   if (drawDistributions){
     TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
@@ -138,11 +132,8 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
   TProfile *hv2EP[ncent][npt];	// elliptic flow from EP method
   TProfile *hv22EP[ncent];        // elliptic flow cent: 10-40% from EP method
   TProfile *HRes[ncent];
-
   // OUTPUT
-
-  TGraph *grshade[ncent];
-  TGraphErrors *grDifFl[4][ncent];    // v2(pt); 4 = {MC, 2QC, 4QC, EP}
+  TGraphErrors *grDifFl[3][ncent];    // v2(pt); 4 = {MC, 2QC, 4QC, EP}
   TGraphErrors *grRefFl[ncent];       // 
   
   // Get TProfile histograms from ROOTFile
@@ -152,8 +143,6 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
     hv22EP[icent] = (TProfile*)inFile->Get(hname);
     sprintf(hname,"HRes_%i",icent);
     HRes[icent] = (TProfile*)inFile->Get(hname);
-    // sprintf(hname,"hv2MC_%i",icent);
-    // hv2MC[icent] = (TProfile*)inFile->Get(hname);
     sprintf(hname,"hv22_%i",icent);
     hv22[icent] = (TProfile*)inFile->Get(hname);
     sprintf(hname,"hv24_%i",icent);
@@ -166,9 +155,6 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
       hv2EP[icent][ipt]=(TProfile*)inFile->Get(hname);
       sprintf(hname,"hPT_%i_%i",icent,ipt);
       hPT[icent][ipt]=(TProfile*)inFile->Get(hname);
-
-      // sprintf(hname,"hv2MCpt_%i_%i",icent,ipt);
-      // hv2MCpt[icent][ipt]=(TProfile*)inFile->Get(hname);
       sprintf(hname,"hv22pt_%i_%i",icent,ipt);
       hv22pt[icent][ipt]=(TProfile*)inFile->Get(hname);
       sprintf(hname,"hv24pt_%i_%i",icent,ipt);
@@ -185,7 +171,6 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
       hcov2prime4prime[icent][ipt]=(TProfile*)inFile->Get(hname);
     } // end of loop over pt bin
   } // end of loop over centrality classes
-  // inFile -> Close();
 
   //==========================================================================================================================
   if (bDrawPlots1040){
@@ -223,251 +208,103 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
   }
   //==========================================================================================================================
   
-  // reference flow comparison
-  double v2[ncent][4];
-  double ev2[ncent][4];
-  double x[4]={0.5,1.5,2.5,3.5};
-  double ex[4]={0};
-
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    // Reference flow calculation
-
-    double v2MCint;  // The Monte Carlo estimate for integrated v2 obtained using the known reaction plane event-by-event, v_{2}{MC}
-    double v2MCintE; // Standard error of integrated v_{2}{MC}
-
-    double v22int;  // Integrated elliptic flow obtained with direct cumulants of 2nd order, v_{2}{2,QC}
-    double v22intE; // Standard error of integrated v_{2}{2,QC}
-    double cor2;    // The average all-event 2-particle correlation of RFP, <<2>>
-    double cor2E;   // stat. err. of 2-particle correlations, s(<<2>>)
-
-    double v24int;  // Integrated elliptic flow obtained with direct cumulants of 4th order, v_{2}{4,QC}
-    double v24intE; // Standard error of integrated v_{2}{4,QC}
-    double cor4;    // The average all-event 4-particle correlation of RFP, <<4>>
-    double cor4E;   // error of <<4>>
-
-    double sumw2cor2;    // sumw2 of <2>
-    double sumwcor2;     // sumw of <2>
-    double sumw2cor4;    // sumw2 of <4>
-    double sumwcor4;     // sumw of <4>
-
-    double sumwcor24;    // sum(w<2>,w<4>)
-    double cov24;        // Cov(<2>,<4>)
-
-    double v2EPint;
-    double v2EPintE;
-    //=============================================
-    //v2{MC}
-    // v2MCint  = hv2MC[icent] -> GetBinContent(1);
-    // v2MCintE = hv2MC[icent] -> GetBinError(1);
-    //=============================================
-    // v2{2,QC}
-    // estimate of the 2-particle reference flow (C.22)
-    cor2 = hv22[icent] -> GetBinContent(1);  // <<2>>
-    v22int = Vn2(cor2);
-    // statistical error of the 2-particle reference flow estimate (C.24)
-    cor2E = sx(hv22[icent]);
-    hv22[icent] -> GetStats(stats);
-    sumwcor2 = stats[0];
-    sumw2cor2 = stats[1];
-    v22intE = Evn2(cor2,cor2E,sumwcor2,sumw2cor2);
-    //=============================================
-    // v2{4,QC}
-    // estimate of the 4-particle reference flow (C.27)
-    cor4 = hv24[icent]->GetBinContent(1);  // <<4>>
-    v24int = Vn4(cor2,cor4);
-    // statistical error of the 4-particle reference flow estimate (C.28)
-    cor4E = sx(hv24[icent]);
-    hv24[icent] -> GetStats(stats);
-    sumwcor4 = stats[0];
-    sumw2cor4 = stats[1];
-    // calculate covariance of <2> and <4>
-    cov24 = Cov(hcov24[icent],hv22[icent],hv24[icent]);
-    sumwcor24 = Sumwxwy(hcov24[icent]);
-    v24intE = Evn4(cor2,cor2E,sumwcor2,sumw2cor2,
-                  cor4,cor4E,sumwcor4,sumw2cor4,
-                  cov24,sumwcor24);
-    //=============================================
-    // v2{#eta sub-event}
-    double res2 = sqrt(HRes[icent]->GetBinContent(1));
-    double v2obs = hv22EP[icent]->GetBinContent(1);
-    v2EPint = v2obs / res2;
-    double dv2obs = hv22EP[icent]->GetBinError(1);
-    double dres2 = HRes[icent]->GetBinError(1);
-
-    // v2EPintE = sqrt(dv2obs*dv2obs/res2/res2 + v2obs*v2obs/(4*pow(res2,6)*dres2*dres2));
-    v2EPintE = hv22EP[icent]->GetBinError(1)/res2;
-    //=============================================
-    // Reference flow comparison: MC, 2QC, 4QC, eta sub-event
-    v2[icent][0] = v2MCint;
-    v2[icent][1] = v22int;
-    v2[icent][2] = v24int;
-    v2[icent][3] = v2EPint;
-
-    ev2[icent][0] = v2MCintE;
-    ev2[icent][1] = v22intE;
-    ev2[icent][2] = v24intE;
-    ev2[icent][3] = v2EPintE;
-
-    grRefFl[icent] = new TGraphErrors(4,x,v2[icent],ex,ev2[icent]);
+    double v2[3], ev2[3];
+    double x[3]={0.5,1.5,2.5};
+    double ex[3]={0};
+    vector <double> vV2EPDif, vV22Dif, vV24Dif, vPt;
+    vector <double> eV2EPDif, eV22Dif, eV24Dif, ePt;
+    double v2EP = hv22EP[icent]->GetBinContent(1)/sqrt(HRes[icent]->GetBinContent(1));
+    double ev2EP = hv22EP[icent]->GetBinError(1)/sqrt(HRes[icent]->GetBinContent(1));
+    // 2QC
+    term cor2 = term(hv22[icent]);
+    double v22 = sqrt(cor2.mVal);
+    double ev22 = sqrt(1./(4.*cor2.mVal)*cor2.mMSE);
+    // 4QC
+    term cor4 = term(hv24[icent]);
+    double cov24 = Covariance(hcov24[icent],hv22[icent],hv24[icent]);
+    double v24 = pow(2*pow(cor2.mVal,2)-cor4.mVal,0.25);
+    double ev24 = sqrt( 1./pow(v24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) );
+    for (int i=0;i<3;i++){
+      v2[0] = v22; ev2[0] = ev22;
+      v2[1] = v24; ev2[1] = ev24;
+      v2[2] = v2EP;   ev2[2] = ev2EP;
+    }
+    grRefFl[icent] = new TGraphErrors(3,x,v2,ex,ev2);
     grRefFl[icent]->SetMarkerColor(kRed);
     grRefFl[icent]->SetMarkerStyle(20);
-    grRefFl[icent]->SetMarkerSize(1.3);
+    grRefFl[icent]->SetMarkerSize(1.5);
     grRefFl[icent]->SetDrawOption("P");
-    // Set a shade between error of v2MC
-    grshade[icent] = new TGraph(10);
-    for (int i=0; i<5; i++) {
-      grshade[icent]->SetPoint(i,i+0.005,v2[icent][0]+ev2[icent][0]);
-      grshade[icent]->SetPoint(5+i,4+0.005-i,v2[icent][0]-ev2[icent][0]);
-    }
-    grshade[icent] -> SetFillStyle(1001);
-    grshade[icent] -> SetFillColor(18);
-    grshade[icent] -> SetDrawOption("f");
-
-    //==========================================================================================================================
 
     // Differential flow calculation
-
-
-    double v2MCpt[npt]; // v2 in given pT bin
-    double ev2MCpt[npt]; // standard error of v2 in given pT bin
-  
-    double cor2Red[npt];         // Differential 2nd order cumulant d_{2}{2} = <<2'>>
-    double cor2RedE[npt];        // Error of <<2'>>
-    double v22dif[npt];      // Differential elliptic flow v'_{2}{2} extracted from 2nd order cumulants
-                            // v'_{2}{2} = d_{2}{2} / sqrt( c_{2}{2} )
-    double v22difE[npt];     // Error of v'_{2}{2}
-    
-    double cor4Red[npt];    // Reduced average all-event 4-particle correlation <<4'>>
-    double cor4RedE[npt];   // Error of <<4'>>
-    double v24dif[npt];      // Differential elliptic flow v'_{2}{4} extracted from 4th order cumulants
-                            // v'_{2}{4} = -d_{2}{4} / pow( -c_{2}{4} , 3/4 )
-    double v24difE[npt];     // Error of v'_{2}{4}
-
-    double sumwcor22prime[npt];        // sum(w(<2>)*w(<2'>))
-    double cov22prime[npt];            // Cov(<2>,<2'>)
-    double sumwcor24prime[npt];        // sum(w(<2>)*w(<4'>))
-    double cov24prime[npt];            // Cov(<2>,<4'>)
-    double sumwcor42prime[npt];        // sum(w(<4>)*w(<2'>))
-    double cov42prime[npt];            // Cov(<4>,<2'>)
-    double sumwcor44prime[npt];        // sum(w(<4>)*w(<4'>))
-    double cov44prime[npt];            // Cov(<4>,<4'>)
-    double sumwcor2prime4prime[npt];   // sum(w(<2'>)*w(<4'>))
-    double cov2prime4prime[npt];       // Cov(<2'>,<4'>)
-
-    double sumw2cor2red[npt]; // sumw2 of <2'>
-    double sumwcor2red[npt];  // sumw of <2'>    
-    double sumw2cor4red[npt]; // sumw2 of <4'>
-    double sumwcor4red[npt];  // sumw of <4'>
-
     for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
-      
-      // Differential flow v2MC
-
-      // v2MCpt[ipt]  = hv2MCpt[icent][ipt] -> GetBinContent(1);
-      // ev2MCpt[ipt] = hv2MCpt[icent][ipt] -> GetBinError(1);
-
-      // 2-particle correlations
-      // estimate of the 2-particle differential flow (C.41)
-      cor2Red[ipt] = hv22pt[icent][ipt]->GetBinContent(1);
-      v22dif[ipt] = Vn2Dif(cor2Red[ipt],cor2);
-
-      // statistical error of the 2-particle differential flow estimate (C.42)
-      cor2RedE[ipt] = sx(hv22pt[icent][ipt]);
-      hv22pt[icent][ipt] -> GetStats(stats);
-      sumwcor2red[ipt] = stats[0];
-      sumw2cor2red[ipt] = stats[1];
-
-      // calculate covariance of <2> and <2'>
-      cov22prime[ipt] = Cov(hcov22prime[icent][ipt],hv22[icent],hv22pt[icent][ipt]);
-      sumwcor22prime[ipt] = Sumwxwy(hcov22prime[icent][ipt]);
-      v22difE[ipt] = Evn2dif(cor2, cor2E, sumwcor2, sumw2cor2,
-                             cor2Red[ipt], cor2RedE[ipt], sumwcor2red[ipt],sumw2cor2red[ipt],
-                             cov22prime[ipt], sumwcor22prime[ipt]);
-
-      // 4-particle correlations
-      // estimate of the 4-particle differential flow (C.45)
-      cor4Red[ipt] = hv24pt[icent][ipt]->GetBinContent(1);
-      v24dif[ipt] = Vn4Dif(cor2Red[ipt], cor2, cor4Red[ipt], cor4);
-      // statistical error of the 4-particle differential flow estimate (C.46)
-      cor4RedE[ipt] = sx(hv24pt[icent][ipt]);
-      hv24pt[icent][ipt] -> GetStats(stats);
-      sumwcor4red[ipt] = stats[0];
-      sumw2cor4red[ipt] = stats[1];
-
-      // calculate covariance of <2> and <4'>
-      cov24prime[ipt] = Cov(hcov24prime[icent][ipt],hv22[icent],hv24pt[icent][ipt]);
-      sumwcor24prime[ipt] = Sumwxwy(hcov24prime[icent][ipt]);
-
-      // calculate covariance of <4> and <2'>
-      cov42prime[ipt] = Cov(hcov42prime[icent][ipt],hv24[icent],hv22pt[icent][ipt]);
-      sumwcor42prime[ipt] = Sumwxwy(hcov42prime[icent][ipt]);
-
-      // calculate covariance of <4> and <4'>
-      cov44prime[ipt] = Cov(hcov44prime[icent][ipt],hv24[icent],hv24pt[icent][ipt]);
-      sumwcor44prime[ipt] = Sumwxwy(hcov44prime[icent][ipt]);
-
-      // calculate covariance of <2'> and <4'>
-      cov2prime4prime[ipt] = Cov(hcov2prime4prime[icent][ipt],hv22pt[icent][ipt],hv24pt[icent][ipt]);
-      sumwcor2prime4prime[ipt] = Sumwxwy(hcov2prime4prime[icent][ipt]);
-      v24difE[ipt] = Evn4dif(cor2, cor2E, sumwcor2, sumw2cor2,
-                          cor2Red[ipt], cor2RedE[ipt], sumwcor2red[ipt], sumw2cor2red[ipt],
-                          cor4, cor4E, sumwcor4, sumw2cor4,
-                          cor4Red[ipt], cor4RedE[ipt], sumwcor4red[ipt], sumw2cor4red[ipt],
-                          cov24, sumwcor24, cov22prime[ipt], sumwcor22prime[ipt],
-                          cov2prime4prime[ipt], sumwcor2prime4prime[ipt], cov44prime[ipt], sumwcor44prime[ipt],
-                          cov24prime[ipt], sumwcor24prime[ipt], cov42prime[ipt], sumwcor42prime[ipt]);
-
+      vPt.push_back(hPT[icent][ipt] -> GetBinContent(1));
+      ePt.push_back(0);
+      // v2EP
+      double res2 = sqrt(HRes[icent]->GetBinContent(1));
+      double v2obs = hv2EP[icent][ipt]->GetBinContent(1);
+      double v2EPDif = v2obs / res2;
+      double ev2EP = hv2EP[icent][ipt]->GetBinError(1) / res2;
+      vV2EPDif.push_back(v2EPDif);
+      eV2EPDif.push_back(ev2EP);
+      // v22
+      term cor2red = term(hv22pt[icent][ipt]);
+      double v22Dif = cor2red.mVal/v22;
+      double cov22prime = Covariance(hcov22prime[icent][ipt],hv22[icent],hv22pt[icent][ipt]);
+      double ev22Dif = sqrt(0.25*pow(cor2.mVal,-3)*(pow(cor2red.mVal,2)*cor2.mMSE
+                          + 4*pow(cor2.mVal,2)*cor2red.mMSE - 4*cor2.mVal*cor2red.mVal*cov22prime));
+      vV22Dif.push_back(v22Dif);
+      eV22Dif.push_back(ev22Dif);
+      // v24
+      term cor4red = term(hv24pt[icent][ipt]);
+      double cov24prime = Covariance(hcov24prime[icent][ipt],hv22[icent],hv24pt[icent][ipt]);
+      double cov42prime = Covariance(hcov42prime[icent][ipt],hv24[icent],hv22pt[icent][ipt]);
+      double cov44prime = Covariance(hcov44prime[icent][ipt],hv24[icent],hv24pt[icent][ipt]);
+      double cov2prime4prime = Covariance(hcov2prime4prime[icent][ipt],hv22pt[icent][ipt],hv24pt[icent][ipt]);
+      double v24Dif = (2.*cor2.mVal*cor2red.mVal-cor4red.mVal)*pow(v24,-3);
+      double ev24Dif = sqrt( pow(v24,-14)
+          * (pow(2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal,2.)
+          * cor2.mMSE
+          + 9./16*pow(2.*cor2.mVal*cor2red.mVal-cor4red.mVal,2.)*cor4.mMSE
+          + 4*pow(cor2.mVal,2)*pow(v24,8)*cor2red.mMSE
+          + pow(v24,8)*cor4red.mMSE
+          - 1.5*(2*cor2.mVal*cor2red.mVal-cor4red.mVal)
+          * (2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal)
+          * cov24
+          - 4*cor2.mVal*pow(v24,4)
+          * (2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal)
+          * cov22prime
+          + 2*pow(v24,4)
+          * (2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal)
+          * cov24prime
+          + 3*cor2.mVal*pow(v24,4)*(2*cor2.mVal*cor2red.mVal-cor4red.mVal)
+          * cov42prime
+          - 1.5*pow(v24,4)*(2*cor2.mVal*cor2red.mVal-cor4red.mVal)
+          * cov44prime
+          - 4*cor2.mVal*pow(v24,8)*cov2prime4prime));
+      vV24Dif.push_back(v24Dif);
+      eV24Dif.push_back(ev24Dif);
     } // end of loop for all pT bin
-
-    // Monte-Carlo differential flow
-    grDifFl[3][icent] = new TGraphErrors(npt,pt[icent],v2MCpt,ept[icent],ev2MCpt);
-    grDifFl[3][icent] -> SetMarkerColor(kRed+1);
-    grDifFl[3][icent] -> SetMarkerStyle(25);
     // 2QC differential flow
-    grDifFl[0][icent] = new TGraphErrors(npt,pt[icent],v22dif,ept[icent],v22difE);
+    grDifFl[0][icent] = new TGraphErrors(npt,&vPt[0],&vV22Dif[0],&ePt[0],&eV22Dif[0]);
     grDifFl[0][icent] -> SetMarkerColor(kRed);
     grDifFl[0][icent] -> SetMarkerStyle(25);
     // 4QC differential flow
-    grDifFl[1][icent] = new TGraphErrors(npt,pt[icent],v24dif,ept[icent],v24difE);
+    grDifFl[1][icent] = new TGraphErrors(npt,&vPt[0],&vV24Dif[0],&ePt[0],&eV24Dif[0]);
     grDifFl[1][icent] -> SetMarkerColor(kGreen+1);
     grDifFl[1][icent] -> SetMarkerStyle(20);
-
-  } // end of loop over centrality classes
-  //==========================================================================================================================
-
-  //==========================================================================================================================
-
-  const char *ch[4]  = {"v_{2}{MC}","v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta sub-event}"};
-
-  // Elliptic flow from eta sub-event method
-  for (int icent=0; icent<ncent; icent++){
-    double v2EP[npt]={0}, ev2EP[npt]={0};
-    for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
-      // v2EP[ipt] = hv2EP[ipt]->GetBinContent(icent+1);
-      // ev2EP[ipt] = hv2EP[ipt]->GetBinError(icent+1);
-
-      double res2 = sqrt(HRes[icent]->GetBinContent(1));
-      double v2obs = hv2EP[icent][ipt]->GetBinContent(1);
-      v2EP[ipt] = v2obs / res2;
-      double dv2obs = hv2EP[icent][ipt]->GetBinError(1);
-      double dres2 = HRes[icent]->GetBinError(1);
-
-      // ev2EP[ipt] = sqrt(dv2obs*dv2obs/res2/res2 + v2obs*v2obs/(4*pow(res2,6)*dres2*dres2));
-      ev2EP[ipt] = hv2EP[icent][ipt]->GetBinError(1) / res2;
-    }
-    // Event plane differential flow
-    grDifFl[2][icent] = new TGraphErrors(npt,pt[icent],v2EP,ept[icent],ev2EP);
+    // EP differential flow
+    grDifFl[2][icent] = new TGraphErrors(npt,&vPt[0],&vV2EPDif[0],&ePt[0],&eV2EPDif[0]);
     grDifFl[2][icent] -> SetMarkerColor(kAzure+2);
     grDifFl[2][icent] -> SetMarkerStyle(22);
-
-    for (int i=0; i<4; i++){
-    grDifFl[i][icent] -> SetMarkerSize(1.3);
-    grDifFl[i][icent] -> SetDrawOption("P");
-  }
-  }
+    for (int i=0; i<3; i++){
+      grDifFl[i][icent] -> SetMarkerSize(1.5);
+      grDifFl[i][icent] -> SetDrawOption("P");
+    }
+  } // end of loop over centrality classes
 
   //==========================================================================================================================
-
+  
   const char *grTitleDF[4]={"[1] v_{2}{2,QC};p_{T}, GeV/c;v_{2}","[2] v_{2}{4,QC};p_{T}, GeV/c;v_{2}","[3] v_{2}{#eta sub-event};p_{T}, GeV/c;v_{2}","v_{2}{MC};p_{T}, GeV/c;v_{2}"};
   
   outFile -> cd();
@@ -479,7 +316,6 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
       grDifFl[i][icent] -> Write(hname);
     }
   }
-  outFile -> Close();
 
   if (!bDrawPlots1040) {
     std::vector<TGraphErrors*> vgrv2pt[5];
@@ -492,7 +328,7 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
     for (int icent=0; icent<5; icent++){
     
       sprintf(hname,"Centrality %i-%i%%",icent*10,(icent+1)*10);
-      cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[1],"",0.77, 1.23, 0., maxpt, -0.01, 0.2, 0.18, 0.56, 0.5, 0.8, hname);
+      cV2PT[icent] = (TCanvas*) DrawTGraph(vgrv2pt[icent],"",0.77, 1.23, 0., maxpt, -0.01, 0.2, 0.18, 0.56, 0.5, 0.8, hname);
       cV2PT[icent] -> SetName(hname);
       sprintf(hname,"../Graphics/DFCent%i-%i.png",icent*10,(icent+1)*10);
       cV2PT[icent] -> SaveAs(hname);
@@ -513,21 +349,21 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
   // cV2PT[0] -> SetName("Cent10-40");
   // cV2PT[0] -> SaveAs("../Graphics/DFCent0-10.png");
 
-  cV2PT = (TCanvas*) DrawTGraph(vgrv2pt[1],"",0.77, 1.23, 0., maxpt, -0.01, 0.2, 0.18, 0.56, 0.5, 0.8, "Centrality 10-40%");
+  cV2PT = (TCanvas*) DrawTGraph(vgrv2pt[1],"",0.77,1.23,    0.,maxpt,-0.01,0.2,     0.18,0.56,0.5,0.8,"Centrality 10-40%");
   cV2PT -> SetName("Cent10-40");
   cV2PT -> SaveAs("../Graphics/DFCent10-40.png");
 
-  double ymin = TMath::MinElement(4,v2[1])*0.98;
-  double ymax = TMath::MaxElement(4,v2[1])*1.02;
-  // double ymin = 0.025;
-  // double ymax = 0.035;
-  TCanvas *c1040 = new TCanvas("c1040","c1040",200,10,800,600);
-  TH2F *h1040 = new TH2F("h1040","Reference flow, 10-40% centrality",4,0,4,10,ymin,ymax);
-  h1040 = new TH2F("","",3,1,4,10,ymin,ymax);
+
+  double ymin = 0.01;
+  double ymax = 0.05;
+  TCanvas *c1040 = new TCanvas("c1040","c1040",200,10,550,550);
+  TH2F *h1040 = new TH2F("h1040","Reference flow, 10-40% centrality",3,0,3,10,ymin,ymax);
+  h1040 = new TH2F("","",3,0,3,10,ymin,ymax);
   h1040->SetYTitle("v_{2}");
   h1040->SetCanExtend(TH1::kAllAxes);
   TAxis* a = h1040 -> GetXaxis();
-  for (int j=1; j<4; j++) h1040->Fill(ch[j],(ymin+ymax)/2.,1);
+  const char *ch[3]  = {"v_{2}{2,QC}","v_{2}{4,QC}","v_{2}{#eta-sub,EP}"};
+  for (int j=0; j<3; j++) h1040->Fill(ch[j],(ymin+ymax)/2.,1);
   h1040->GetXaxis()->SetLabelSize(0.05);
   a->SetNdivisions(300); // 3 division, 0 sub-division
   h1040->Draw();
@@ -542,23 +378,13 @@ void v2plot_differential_flow(TString inFileName="../ROOTFile/sum.root", TString
   ptext1->AddText("UrQMD, GEANT, Au+Au, #sqrt{s_{NN}}=7.7 GeV");
   ptext1->AddText("10-40% centrality");
   ptext1->Draw();
-  TLine line[3];
-  for (int i=0;i<3;i++){
-    line[i].SetLineWidth(2.);
-    line[i].SetLineStyle(2);
-  }
-  line[0].DrawLine(1.,v2[1][1],4.,v2[1][1]);
-  line[1].DrawLine(1.,v2[1][2],4.,v2[1][2]);
-  line[2].DrawLine(1.,v2[1][3],4.,v2[1][3]);
   c1040 -> SaveAs("../Graphics/RFCent10-40.png");
-
 
 }
 
-void v2plot_integrated_flow(TString inFileName, TString outFileName){
+void v2plot_integrated_flow(){
   char hname[400];
-  TFile *inFile = new TFile(inFileName.Data(),"read");
-  TFile *outFile = new TFile(outFileName.Data(),"recreate");
+  TFile *inFile = new TFile("../ROOTFile/sum.root","read");
   // Input histograms
   TProfile *hv22[ncent];        // profile <<2>> from 2nd Q-Cumulants
   TProfile *hv24[ncent];        // profile <<4>> from 4th Q-Cumulants
@@ -626,6 +452,8 @@ void v2plot_integrated_flow(TString inFileName, TString outFileName){
     // EP
     vV2EP.push_back( hv22EP[icent]->GetBinContent(1) / sqrt( HRes[icent]->GetBinContent(1) ) );
     eV2EP.push_back( hv22EP[icent]->GetBinError(1)   / sqrt( HRes[icent]->GetBinContent(1) ) );
+    // vV2EP.push_back( hv22EP[icent]->GetBinContent(1));
+    // eV2EP.push_back( hv22EP[icent]->GetBinError(1)  );    
     // 2QC
     term cor2 = term(hv22[icent]);
     vV22.push_back(sqrt(cor2.mVal));
@@ -662,7 +490,6 @@ void v2plot_integrated_flow(TString inFileName, TString outFileName){
     grIntFlowVsCent[i] -> SetTitle(grTitle[i]);
     grIntFlowVsCent[i] -> Write(hname);
   }
-  outFile -> Close();  
 
 
   std::vector<TGraphErrors*> vgr;
@@ -671,17 +498,13 @@ void v2plot_integrated_flow(TString inFileName, TString outFileName){
   }
 
   TCanvas *can;
-  can = (TCanvas*) DrawTGraph(vgr,"",0.78, 1.22, 0, 60, -0.005, 0.1 , 0.18, 0.56, 0.5, 0.8); // DCA<0.5: 0.88, 1.12 // wo DCA: 0.76, 1.03
+  can = (TCanvas*) DrawTGraph(vgr,"",0.78,1.22,   0,60,-0.005,0.1,    0.18,0.56,0.5,0.8,""); // DCA<0.5: 0.88, 1.12 // wo DCA: 0.76, 1.03
   sprintf(hname,"v2 vs cent");
   can -> SetName(hname);
   sprintf(hname,"../Graphics/v2centratio.png");
   can -> SaveAs(hname);
 }
 void v2plot(){
-  char inFile[400], outFile[400];
-  sprintf(inFile,"../ROOTFile/sum.root");
-  sprintf(outFile,"../CompareResult/Vinh.root");
-  v2plot_differential_flow(inFile,outFile);
-  sprintf(outFile,"../CompareResult/Vinh_RF.root");
-  v2plot_integrated_flow(inFile,outFile);
+  v2plot_differential_flow();
+  v2plot_integrated_flow();
 }

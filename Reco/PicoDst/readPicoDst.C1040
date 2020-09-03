@@ -40,8 +40,8 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   fDCAz = (TF2 *)inputDCAfile->Get("f_sigma2");
 
 
-  static const int ncent = 8; // 0-80%
-  static const int bin_cent[ncent] = {5, 15, 25, 35, 45, 55, 65, 75};
+  static const int ncent = 2; // 0-40%
+  static const int bin_cent[ncent] = {5,25};
 
   static const int npt = 7; // 0.5 - 3.6 GeV/c - number of pT bins
   static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.5};
@@ -49,8 +49,8 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   static const double maxpt = 2.5; // max pt
   static const double minpt = 0.1; // min pt
 
-  static const float mineta = -1.8; // min pt
-  static const float maxeta =  1.8; // min pt
+  static const float mineta = -2.2; // min pt
+  static const float maxeta =  2.2; // min pt
   static const float etagap = 0.05; // min pt
   static const int nhitsmin = 16; // minimum nhits of reconstructed tracks
   static const float DCAcut = 0.5;
@@ -95,7 +95,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   TH1F *H_EP[neta];		  // reaction plane
   TH1F *H_Qv[neta];     // sub-event <Q> - probably
   TProfile *HRes[ncent];		// resolution
-  TProfile *hcounter[ncent][npt];
+
   char name[800];
   char title[800];
   // d_outfile = new TFile(outputFileName.Data(), "recreate");
@@ -153,8 +153,6 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       hcov44prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
       sprintf(name, "hcov2prime4prime_%i_%i", icent, kpt);
       hcov2prime4prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
-      sprintf(name, "hcounter_%i_%i", icent, kpt);
-      hcounter[icent][kpt] = new TProfile(name,name,3,0.,3.);
     } // end of loop over pt bin
   } // end of loop over centrality classes
 
@@ -268,7 +266,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
         if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
       }
 
-      
+      hPT[fcent][ipt]->Fill(0.5, pt, 1);
       // Double_t v2 = TMath::Cos(2.*phi);
       // hv2MC[fcent]->Fill(0.5, v2, 1);
       // hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
@@ -312,7 +310,6 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
     // ================================== Direct Cumulants ================================== //
     for (int ieta=0;ieta<neta;ieta++){ // reverse POI & RFP selection
-      if (M[ieta] < 4) continue; // test
       if (M[ieta] >= 2.){ // <2> definition condition
         Q2[ieta] = TComplex(Qx2[ieta], Qy2[ieta]);
         w2[ieta] = M[ieta]*(M[ieta]-1);                            // w(<2>)
@@ -329,7 +326,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
         if (wred2[ieta][ipt]==0) continue;
         redCor22[ieta][ipt] = CalRedCor22(Q2[ieta], p2[ieta][ipt], M[ieta], mp[ieta][ipt], mq[ieta][ipt], wred2[ieta][ipt]); // <2'>
         hv22pt[fcent][ipt]->Fill(0.5, redCor22[ieta][ipt], wred2[ieta][ipt]);                  // <<2'>>
-        hcounter[fcent][ipt]->Fill(0.5,1,mp[ieta][ipt]);
+
         // TProfile for covariance calculation in statistic error
         hcov22prime[fcent][ipt]->Fill(0.5, cor22[ieta] * redCor22[ieta][ipt], w2[ieta] * wred2[ieta][ipt]); // <2>*<2'>
       }
@@ -351,7 +348,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
         if (wred4[ieta][ipt]==0) continue;
         redCor24[ieta][ipt] = CalRedCor24(Q2[ieta], Q4[ieta], p2[ieta][ipt], q2[ieta][ipt], q4[ieta][ipt], M[ieta], mp[ieta][ipt], mq[ieta][ipt], wred4[ieta][ipt]); // <4'>
         hv24pt[fcent][ipt]->Fill(0.5, redCor24[ieta][ipt], wred4[ieta][ipt]);                                        // <<4'>>
-        hcounter[fcent][ipt]->Fill(1.5,1,mp[ieta][ipt]);
+
         // TProfile for covariance calculation in statistic error
         hcov24prime[fcent][ipt]->Fill(0.5, cor22[ieta] * redCor24[ieta][ipt], w2[ieta] * wred4[ieta][ipt]);
         hcov42prime[fcent][ipt]->Fill(0.5, cor24[ieta] * redCor22[ieta][ipt], w4[ieta] * wred2[ieta][ipt]);
@@ -366,7 +363,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     Double_t fEP[2]; // [eta-,eta+]
     Double_t fQv[2];
     for (int ieta=0; ieta<neta; ieta++){
-      if( multQv[ieta]>=4 ){ // multiplicity > 3
+      if( multQv[ieta]>=4. ){ // multiplicity > 5
         fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
         fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
         fEP[ieta] /= 2.0;
@@ -392,7 +389,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
     HRes[fcent] -> Fill(0.5,cos(dPsi));
 
-    float res2[ncent] = {0.205352,0.326948,0.344818,0.318183,0.264808,0.19769,0.148519,0.128865};
+    // float res2[ncent] = {0.205352,0.326948,0.344818,0.318183,0.264808,0.19769,0.148519,0.128865};
 
     for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
       auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
@@ -415,7 +412,6 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       for(int j=0; j<npt;j++){
         if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
       }
-      hPT[fcent][ipt]->Fill(0.5, pt, 1);
       // ==================================== Eta Sub-event ==================================== //
       float v2=-999.0;
       if(eta>etagap){ // eta+
@@ -429,7 +425,6 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       hv2EP[fcent][ipt]->Fill(0.5,v2);
       // if (eta < -0.1) { // Reference flow
       hv22EP[fcent]->Fill(0.5,v2);
-      hcounter[fcent][ipt]->Fill(2.5,1);
       // }
     } // end of track loop
 
@@ -464,8 +459,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       hcov44prime[icent][ipt]->Write();
       hcov2prime4prime[icent][ipt]->Write();
       hPT[icent][ipt]->Write();
-      hv2EP[icent][ipt]->Write();
-      hcounter[icent][ipt]->Write();
+      hv2EP[icent][ipt]->Write();  
     }
   }
   for (int ieta=0;ieta<neta;ieta++){

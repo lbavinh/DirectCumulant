@@ -1,5 +1,5 @@
-#define mpdsim_reduced_cxx
-#include "mpdsim_reduced.h"
+#define mpdsim_MCtracks_cxx
+#include "mpdsim_MCtracks.h"
 #include "function.C"
 #include "TH1.h"
 #include "TH1I.h"
@@ -35,7 +35,7 @@ using namespace std;
   static const float etagap = 0.05; // min pt
 
 
-  static const int nhitsmin = 0; // minimum nhits of reconstructed tracks
+  static const int nhitsmin = 16; // minimum nhits of reconstructed tracks
   static const float DCAcut = 0.5;
 
 static const int neta = 2; // [eta-,eta+]
@@ -84,7 +84,7 @@ TProfile *hcounter[ncent][npt][npid];
 TFile *inputDCAfile;
 TF2 *fDCAx, *fDCAy, *fDCAz;
 
-void mpdsim_reduced::Booking(TString outFile){
+void mpdsim_MCtracks::Booking(TString outFile){
   inputDCAfile = new TFile("/weekly/parfenov/mpd_winter2019/mpd_prod/7.7gev/prod_picodst/dca/dca_fit.root","read");
   // inputDCAfile = new TFile("dca_fit.root","read");
   
@@ -143,7 +143,7 @@ void mpdsim_reduced::Booking(TString outFile){
 
 }
 
-void mpdsim_reduced::Loop_a_file(TString file){
+void mpdsim_MCtracks::Loop_a_file(TString file){
   TFile *treefile = TFile::Open(file.Data());
   TTree *tree = (TTree *)treefile->Get("mpdsim_reduced");
   if (tree == 0)
@@ -159,14 +159,14 @@ void mpdsim_reduced::Loop_a_file(TString file){
   cout << file << " file processed" << endl;
 }
 
-void mpdsim_reduced::Ana_end(){
+void mpdsim_MCtracks::Ana_end(){
   d_outfile -> cd();
   d_outfile -> Write();
   d_outfile -> Close();
   cout << "Histfile has been written" << endl;
 }
 
-void mpdsim_reduced::Loop()
+void mpdsim_MCtracks::Loop()
 {
    if (fChain == 0) return;
 
@@ -183,17 +183,17 @@ void mpdsim_reduced::Loop()
    }
 }
 
-void mpdsim_reduced::Ana_event(){
+void mpdsim_MCtracks::Ana_event(){
   hEvt -> Fill(1);
   float rp = 0;
   // rp = gRandom->Uniform(0, 2.*TMath::Pi());
   int fcent = -1;
   for (int i = 0; i < ncent; i++) if (CentB(b_mc) == bin_cent[i]) fcent = i;
   if (fcent<0) return;
-  hMult -> Fill(n_tracks_mpd);
+  hMult -> Fill(n_tracks_mc);
   hRP -> Fill(rp);
   hBimp -> Fill(b_mc);
-  hBimpvsMult -> Fill(n_tracks_mpd,b_mc);
+  hBimpvsMult -> Fill(n_tracks_mc,b_mc);
   // notation as (26) in DOI:10.1103/PhysRevC.83.044913
   // Q-vector of RFP
   Double_t Qx2[neta]={0.}, Qy2[neta]={0.}, Qx4[neta]={0.}, Qy4[neta]={0.};
@@ -220,19 +220,22 @@ void mpdsim_reduced::Ana_event(){
   Double_t sumQxy[neta][2]={{0.}};  // [eta-,eta+][x,y]
   Double_t multQv[neta]={0};       // [eta+,eta-]
 
-  for(int i=0;i<n_tracks_mpd;i++) { // track loop
+  for(int iTrk=0;iTrk<n_tracks_mc;iTrk++) { // track loop
 
-    if (n_hits_mpd[i]<=nhitsmin || mother_ID_mc[i]!=-1) continue;
-    float pt  = TMath::Abs(signed_pt_mpd[i]);
-    float eta = eta_mpd[i];
-    
-    // if (DCA_x_mpd[i] > 2.*fDCAx->Eval(pt, eta)) continue; //трек не проходит по DCAx
-    // if (DCA_y_mpd[i] > 2.*fDCAy->Eval(pt, eta)) continue; //трек не проходит по DCAy
-    // if (DCA_z_mpd[i] > 2.*fDCAz->Eval(pt, eta)) continue; //трек не проходит по DCAz
+    // if (n_hits_mpd[iTrk]<=nhitsmin ) continue;
+    // float pt  = TMath::Abs(signed_pt_mpd[iTrk]);
+    // float eta = eta_mpd[iTrk];
+    // if (DCA_x_mpd[iTrk] > 2.*fDCAx->Eval(pt, eta)) continue; //трек не проходит по DCAx
+    // if (DCA_y_mpd[iTrk] > 2.*fDCAy->Eval(pt, eta)) continue; //трек не проходит по DCAy
+    // if (DCA_z_mpd[iTrk] > 2.*fDCAz->Eval(pt, eta)) continue; //трек не проходит по DCAz
 
+    if (mother_ID_mc[iTrk]!=-1) continue;
+    float pt  = sqrt( TMath::Power(px_mc[iTrk], 2.0 ) + TMath::Power(py_mc[iTrk], 2.0 ) );
+    float the = TMath::ATan2( pt, pz_mc[iTrk] );//atan2(pt/pz)
+    float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
     if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || TMath::Abs(eta)<etagap) continue; // track selection
-    // float phi = TMath::ATan2( momy[i], momx[i] );
-    float phi = phi_mpd[i];
+    float phi = TMath::ATan2( py_mc[iTrk], px_mc[iTrk] );
+    // float phi = phi_mpd[iTrk];
     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
     hPhi -> Fill(phi);
@@ -247,11 +250,14 @@ void mpdsim_reduced::Ana_event(){
       if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
     }
     int fId=-1;
-    if (TOF_flag_mpd[i]!=0 && TOF_flag_mpd[i]!=4){
-      if (pid_tpc_prob_pion_mpd[i]>0.9)   fId=1; // pion
-      if (pid_tpc_prob_kaon_mpd[i]>0.9)   fId=2; // kaon
-      if (pid_tpc_prob_proton_mpd[i]>0.9) fId=3; // proton
-    }
+    if(PDG_code_mc[iTrk]==211)  fId=1; // kaon
+    if(PDG_code_mc[iTrk]==321)  fId=2; // kaon
+    if(PDG_code_mc[iTrk]==2212) fId=3; // proton
+    // if (TOF_flag_mpd[iTrk]!=0 && TOF_flag_mpd[iTrk]!=4){
+    //   if (pid_tpc_prob_pion_mpd[iTrk]>0.9)   fId=1; // pion
+    //   if (pid_tpc_prob_kaon_mpd[iTrk]>0.9)   fId=2; // kaon
+    //   if (pid_tpc_prob_proton_mpd[iTrk]>0.9) fId=3; // proton
+    // }
 
     // Double_t v2 = TMath::Cos(2.*phi);
     // hv2MC[fcent]->Fill(0.5, v2, 1);
@@ -390,19 +396,22 @@ void mpdsim_reduced::Ana_event(){
   dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
   HRes[fcent] -> Fill(0.5,cos(dPsi));
 
-  for(int i=0;i<n_tracks_mpd;i++) { // track loop
+  for(int iTrk=0;iTrk<n_tracks_mc;iTrk++) { // track loop
 
-    if (n_hits_mpd[i]<=nhitsmin || mother_ID_mc[i]!=-1) continue;
-    float pt  = TMath::Abs(signed_pt_mpd[i]);
-    float eta = eta_mpd[i];
+    // if (n_hits_mpd[iTrk]<=nhitsmin ) continue;
+    // float pt  = TMath::Abs(signed_pt_mpd[iTrk]);
+    // float eta = eta_mpd[iTrk];
     
-    // if (DCA_x_mpd[i] > 2.*fDCAx->Eval(pt, eta)) continue; //трек не проходит по DCAx
-    // if (DCA_y_mpd[i] > 2.*fDCAy->Eval(pt, eta)) continue; //трек не проходит по DCAy
-    // if (DCA_z_mpd[i] > 2.*fDCAz->Eval(pt, eta)) continue; //трек не проходит по DCAz
-
+    // if (DCA_x_mpd[iTrk] > 2.*fDCAx->Eval(pt, eta)) continue; //трек не проходит по DCAx
+    // if (DCA_y_mpd[iTrk] > 2.*fDCAy->Eval(pt, eta)) continue; //трек не проходит по DCAy
+    // if (DCA_z_mpd[iTrk] > 2.*fDCAz->Eval(pt, eta)) continue; //трек не проходит по DCAz
+    if (mother_ID_mc[iTrk]!=-1) continue;
+    float pt  = sqrt( TMath::Power(px_mc[iTrk], 2.0 ) + TMath::Power(py_mc[iTrk], 2.0 ) );
+    float the = TMath::ATan2( pt, pz_mc[iTrk] );//atan2(pt/pz)
+    float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
     if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || TMath::Abs(eta)<etagap) continue; // track selection
-    // float phi = TMath::ATan2( momy[i], momx[i] );
-    float phi = phi_mpd[i];
+    float phi = TMath::ATan2( py_mc[iTrk], px_mc[iTrk] );
+    // float phi = phi_mpd[iTrk];
     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
     Int_t ipt = 0;
@@ -411,11 +420,14 @@ void mpdsim_reduced::Ana_event(){
     }
 
     int fId=-1;
-    if (TOF_flag_mpd[i]!=0 && TOF_flag_mpd[i]!=4){
-      if (pid_tpc_prob_pion_mpd[i]>0.9)   fId=1; // pion
-      if (pid_tpc_prob_kaon_mpd[i]>0.9)   fId=2; // kaon
-      if (pid_tpc_prob_proton_mpd[i]>0.9) fId=3; // proton
-    }
+    if(PDG_code_mc[iTrk]==211)  fId=1; // kaon
+    if(PDG_code_mc[iTrk]==321)  fId=2; // kaon
+    if(PDG_code_mc[iTrk]==2212) fId=3; // proton
+    // if (TOF_flag_mpd[iTrk]!=0 && TOF_flag_mpd[iTrk]!=4){
+    //   if (pid_tpc_prob_pion_mpd[iTrk]>0.9)   fId=1; // pion
+    //   if (pid_tpc_prob_kaon_mpd[iTrk]>0.9)   fId=2; // kaon
+    //   if (pid_tpc_prob_proton_mpd[iTrk]>0.9) fId=3; // proton
+    // }
     hPT[fcent][ipt][0]->Fill(0.5, pt, 1);
     if (fId>0) hPT[fcent][ipt][fId]->Fill(0.5, pt, 1);
     // ==================================== Eta Sub-event ==================================== //
@@ -441,11 +453,11 @@ void mpdsim_reduced::Ana_event(){
 } // end of Ana_event();
 
 void loop_test(){
-  mpdsim_reduced *ana = new mpdsim_reduced();
+  mpdsim_MCtracks *ana = new mpdsim_MCtracks();
   ana->Booking("test.root");
   ana->Loop_a_file("/weekly/parfenov/mpd_winter2019/mpd_prod/7.7gev/mpd_reduced/picodst_1103519_1.root");
   ana->Ana_end();
   cout << "Histfile written. Congratz!" << endl;
 }
-// root -l -b -q calculateFlow.C+'("/weekly/parfenov/mpd_winter2019/mpd_prod/7.7gev/mpd_reduced/picodst_1103519_1.root","test.root")'
-// root -l -b -q calculateFlow.C+'("/weekly/povarov/lbavinh/Reco/chain/chain0.root","test.root")'
+// root -l -b -q calculateFlow_MCtracks.C+'("/weekly/parfenov/mpd_winter2019/mpd_prod/7.7gev/mpd_reduced/picodst_1103519_1.root","test.root")'
+// root -l -b -q calculateFlow_MCtracks.C+'("/weekly/povarov/lbavinh/Reco/chain/chain0.root","test.root")'

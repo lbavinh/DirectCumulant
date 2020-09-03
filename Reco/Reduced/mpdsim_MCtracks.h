@@ -5,8 +5,8 @@
 // found on file: /nica/mpd21/parfenov/mpd_winter2019/mpd_prod/picoDst_7.7gev_7M/picodst_997681_9.root
 //////////////////////////////////////////////////////////
 
-#ifndef mpdsim_reduced_h
-#define mpdsim_reduced_h
+#ifndef mpdsim_MCtracks_h
+#define mpdsim_MCtracks_h
 
 #include <TROOT.h>
 #include <TChain.h>
@@ -17,7 +17,7 @@
 // Header file for the classes stored in the TTree if any.
 static const int MAXMC = 2000;
 static const int MAXNT = 1500;
-class mpdsim_reduced {
+class mpdsim_MCtracks {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
@@ -126,8 +126,8 @@ public :
    TBranch        *b_centrality_tpc_mpd;   //!
    TBranch        *b_id_from_mc_mpd;   //!
 
-   mpdsim_reduced(TTree *tree=0);
-   virtual ~mpdsim_reduced();
+   mpdsim_MCtracks(TTree *tree=0);
+   virtual ~mpdsim_MCtracks();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
@@ -145,8 +145,8 @@ public :
 
 #endif
 
-#ifdef mpdsim_reduced_cxx
-mpdsim_reduced::mpdsim_reduced(TTree *tree) : fChain(0) 
+#ifdef mpdsim_MCtracks_cxx
+mpdsim_MCtracks::mpdsim_MCtracks(TTree *tree) : fChain(0) 
 {
 // // if parameter tree is not specified (or zero), connect the file
 // // used to generate this class and read the Tree.
@@ -161,19 +161,19 @@ mpdsim_reduced::mpdsim_reduced(TTree *tree) : fChain(0)
 //    Init(tree);
 }
 
-mpdsim_reduced::~mpdsim_reduced()
+mpdsim_MCtracks::~mpdsim_MCtracks()
 {
    if (!fChain) return;
    delete fChain->GetCurrentFile();
 }
 
-Int_t mpdsim_reduced::GetEntry(Long64_t entry)
+Int_t mpdsim_MCtracks::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
    if (!fChain) return 0;
    return fChain->GetEntry(entry);
 }
-Long64_t mpdsim_reduced::LoadTree(Long64_t entry)
+Long64_t mpdsim_MCtracks::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
    if (!fChain) return -5;
@@ -186,7 +186,7 @@ Long64_t mpdsim_reduced::LoadTree(Long64_t entry)
    return centry;
 }
 
-void mpdsim_reduced::Init(TTree *tree)
+void mpdsim_MCtracks::Init(TTree *tree)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -254,7 +254,7 @@ void mpdsim_reduced::Init(TTree *tree)
    Notify();
 }
 
-Bool_t mpdsim_reduced::Notify()
+Bool_t mpdsim_MCtracks::Notify()
 {
    // The Notify() function is called when a new file is opened. This
    // can be either for a new TTree in a TChain or when when a new TTree
@@ -265,14 +265,14 @@ Bool_t mpdsim_reduced::Notify()
    return kTRUE;
 }
 
-void mpdsim_reduced::Show(Long64_t entry)
+void mpdsim_MCtracks::Show(Long64_t entry)
 {
 // Print contents of entry.
 // If entry is not specified, print current entry
    if (!fChain) return;
    fChain->Show(entry);
 }
-Int_t mpdsim_reduced::Cut(Long64_t entry)
+Int_t mpdsim_MCtracks::Cut(Long64_t entry)
 {
 // This function may be called from Loop.
 // returns  1 if entry is accepted.

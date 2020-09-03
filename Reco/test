@@ -1,0 +1,49 @@
+// cent 10-20%, 0.1<pT<0.3 GeV/c
+hPT_1_0->GetBinEntries(1)
+hv2EP_1_0->GetBinEntries(1)
+hv22pt_1_0->GetBinEntries(1)
+hv24pt_1_0->GetBinEntries(1)
+hv22pt_1_0->GetBinEffectiveEntries(1)
+hv24pt_1_0->GetBinEffectiveEntries(1)
+
+//==========================================
+// cent 10-20%, 0.3<pT<0.6 GeV/c
+hPT_1_1->GetBinEntries(1)
+hv2EP_1_1->GetBinEntries(1)
+hv22pt_1_1->GetBinEntries(1)
+hv24pt_1_1->GetBinEntries(1)
+hv22pt_1_1->GetBinEffectiveEntries(1)
+hv24pt_1_1->GetBinEffectiveEntries(1)
+
+Double_t stats[6];
+hv24pt_1_1 -> GetStats(stats);
+cout << "sum(w) = " << stats[0] << endl;
+
+hcounter_1_0->GetBinEntries(1)
+hcounter_1_0->GetBinEntries(2)
+hcounter_1_0->GetBinEntries(3)
+
+hcounter_1_6->GetBinEntries(1)
+hcounter_1_6->GetBinEntries(2)
+hcounter_1_6->GetBinEntries(3)
+
+hPT_7_6->GetBinEntries(1)
+hcounter_7_6->GetBinEntries(1)
+hcounter_7_6->GetBinEntries(2)
+hcounter_7_6->GetBinEntries(3)
+
+hcounter_5_6->GetBinEntries(1)
+hcounter_5_6->GetBinEntries(2)
+hcounter_5_6->GetBinEntries(3)
+
+hcounter_4_6->GetBinEntries(1)
+hcounter_4_6->GetBinEntries(2)
+hcounter_4_6->GetBinEntries(3)
+
+hcounter_7_6_0->GetBinEntries(1)
+hcounter_7_6_0->GetBinEntries(2)
+hcounter_7_6_0->GetBinEntries(3)
+
+hcounter_1_1_3->GetBinEntries(1)
+hcounter_1_1_3->GetBinEntries(2)
+hcounter_1_1_3->GetBinEntries(3)

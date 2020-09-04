@@ -159,13 +159,13 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   }
   cout << inputFileName.Data() << " is opened" << endl;
   PicoDstMCEvent *mcEvent = nullptr;
-  TClonesArray *recoTracks = nullptr;
+  // TClonesArray *recoTracks = nullptr;
   TClonesArray *mcTracks = nullptr;
 
   // chain->SetBranchAddress("mcevent.", &mcEvent);
   // chain->SetBranchAddress("recotracks",&recoTracks);
   tree->SetBranchAddress("mcevent.", &mcEvent);
-  tree->SetBranchAddress("recotracks",&recoTracks);
+  // tree->SetBranchAddress("recotracks",&recoTracks);
   tree->SetBranchAddress("mctracks",&mcTracks);
 
   // Start event loop
@@ -183,14 +183,15 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     for (int i = 0; i < ncent; i++) if (CentB(bimp) == bin_cent[i]) fcent = i;
     if (fcent < 0) continue;
     hBimp -> Fill(bimp);
-    Int_t reco_mult = recoTracks->GetEntriesFast();
+    // Int_t reco_mult = recoTracks->GetEntriesFast();
+    Int_t mc_num_particles = mcTracks->GetEntriesFast();
 
     
     // rp = gRandom->Uniform(0, 2.*TMath::Pi());
 
-    hMult -> Fill(reco_mult);
+    hMult -> Fill(mc_num_particles);
 
-    hBimpvsMult -> Fill(reco_mult,bimp);
+    hBimpvsMult -> Fill(mc_num_particles,bimp);
     // notation as (26) in DOI:10.1103/PhysRevC.83.044913
     // Q-vector of RFP
     Double_t Qx2[neta]={0.}, Qy2[neta]={0.}, Qx4[neta]={0.}, Qy4[neta]={0.};
@@ -230,18 +231,19 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     //   //recoTrack->GetNhits()
     // }
 
-    for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
-      auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
-      auto mcTrack = (PicoDstMCTrack*) mcTracks->UncheckedAt(recoTrack->GetMcId());
+    for (int iTr=0; iTr<mc_num_particles; iTr++) { // track loop
+      // auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
+      // auto mcTrack = (PicoDstMCTrack*) mcTracks->UncheckedAt(recoTrack->GetMcId());
+      auto mcTrack = (PicoDstMCTrack*) mcTracks->UncheckedAt(iTr);
       if (mcTrack->GetMotherId() != -1) continue;
-      if (recoTrack->GetNhits()<=nhitsmin ) continue;
-      float pt  = recoTrack->GetPt();
-      float eta = recoTrack->GetEta();
+      // if (recoTrack->GetNhits()<=nhitsmin ) continue;
+      float pt  = mcTrack->GetPt();
+      float eta = mcTrack->GetEta();
       // if (abs(recoTrack->GetDCAx()) > DCAcut) continue; //трек не проходит по DCAx
       // if (abs(recoTrack->GetDCAy()) > DCAcut) continue; //трек не проходит по DCAy
       // if (abs(recoTrack->GetDCAz()) > DCAcut) continue; //трек не проходит по DCAz
       if (pt < minpt || pt > maxpt || abs(eta)>eta_cut || abs(eta)<eta_gap) continue; // track selection
-      float phi = recoTrack->GetPhi();
+      float phi = mcTrack->GetPhi();
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
       hPt -> Fill(pt);
@@ -420,13 +422,13 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
     float res2[ncent] = {0.205352,0.326948,0.344818,0.318183,0.264808,0.19769,0.148519,0.128865};
 
-    for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
-      auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
-      auto mcTrack = (PicoDstMCTrack*) mcTracks->UncheckedAt(recoTrack->GetMcId());
+    for (int iTr=0; iTr<mc_num_particles; iTr++) { // track loop
+      // auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
+      auto mcTrack = (PicoDstMCTrack*) mcTracks->UncheckedAt(iTr);
       if (mcTrack->GetMotherId() != -1) continue;
-      if (recoTrack->GetNhits()<=nhitsmin ) continue;
-      float pt  = recoTrack->GetPt();
-      float eta = recoTrack->GetEta();
+      // if (recoTrack->GetNhits()<=nhitsmin ) continue;
+      float pt  = mcTrack->GetPt();
+      float eta = mcTrack->GetEta();
       // if (recoTrack->GetDCAx() > 2.*fDCAx->Eval(pt, eta)) continue; //трек не проходит по DCAx
       // if (recoTrack->GetDCAy() > 2.*fDCAy->Eval(pt, eta)) continue; //трек не проходит по DCAy
       // if (recoTrack->GetDCAz() > 2.*fDCAz->Eval(pt, eta)) continue; //трек не проходит по DCAz
@@ -434,7 +436,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       // if (abs(recoTrack->GetDCAy()) > DCAcut) continue; //трек не проходит по DCAy
       // if (abs(recoTrack->GetDCAz()) > DCAcut) continue; //трек не проходит по DCAz
       if (pt < minpt || pt > maxpt || abs(eta)>eta_cut || abs(eta)<eta_gap) continue; // track selection      
-      float phi = recoTrack->GetPhi();
+      float phi = mcTrack->GetPhi();
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
       Int_t ipt = -1;

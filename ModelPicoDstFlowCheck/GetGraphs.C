@@ -6,12 +6,12 @@ const double beam_energy = 7.7; // sqrt(sNN) in GeV
 const std::vector<std::pair<float, float>> centRange = {{0., 10.}, {10., 20.}, {20., 30.}, {30., 40.}, {40., 50.}, {10., 40.}, {40., 80.}, {0., 60.}, {10., 60}};
 const int n_cent_bins = centRange.size();
 
-// const std::vector<double> pt_binning = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.5, 1.8, 2.5, 3.};
-const std::vector<double> pt_binning = {0.2, 0.6, 1., 1.5, 2.5, 3.}; // for kaons specifically
+const std::vector<double> pt_binning = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.5, 1.8, 2.5, 3.};
+// const std::vector<double> pt_binning = {0.2, 0.6, 1., 1.5, 2.5, 3.}; // for kaons specifically
 const int n_pt_bins = pt_binning.size() - 1;
 
-// const std::pair<double,double> ratio_y_region = {0.84, 1.16};
-const std::pair<double,double> ratio_y_region = {0.64, 1.36}; // for kaons specifically
+const std::pair<double,double> ratio_y_region = {0.84, 1.16};
+// const std::pair<double,double> ratio_y_region = {0.64, 1.36}; // for kaons specifically
 
 void GetGraphs(TString iFileModel, TString iFileReco, TString oFile)
 {

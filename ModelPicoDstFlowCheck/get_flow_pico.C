@@ -349,12 +349,12 @@ void get_flow_pico(TString inputFileName, TString outputFileName)
       }
       //float charge = recoTrack->GetCharge();
 
-      //if (recoTrack->GetPidProbPion() > PidProb_cut && charge > 0)   pidID = 1;
-      //if (recoTrack->GetPidProbKaon() > PidProb_cut && charge > 0)   pidID = 2;
-      //if (recoTrack->GetPidProbProton() > PidProb_cut && charge > 0) pidID = 3;
-      //if (recoTrack->GetPidProbPion() > PidProb_cut && charge < 0)   pidID = 5;
-      //if (recoTrack->GetPidProbKaon() > PidProb_cut && charge < 0)   pidID = 6;
-      //if (recoTrack->GetPidProbProton() > PidProb_cut && charge < 0) pidID = 7;
+      //if (recoTrack->GetPidProbPion() > PidProb_cut && charge > 0)   pidID = 1; 
+      //if (recoTrack->GetPidProbKaon() > PidProb_cut && charge > 0)   pidID = 2; 
+      //if (recoTrack->GetPidProbProton() > PidProb_cut && charge > 0) pidID = 3; 
+      //if (recoTrack->GetPidProbPion() > PidProb_cut && charge < 0)   pidID = 5; 
+      //if (recoTrack->GetPidProbKaon() > PidProb_cut && charge < 0)   pidID = 6; 
+      //if (recoTrack->GetPidProbProton() > PidProb_cut && charge < 0) pidID = 7; 
 
       if (charge > 0)
         pv2recoTPC[0]->Fill(pt, cent, v2TPC);

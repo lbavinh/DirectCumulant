@@ -11,7 +11,9 @@
 #include "TVector3.h"
 #include "TVectorD.h"
 #include "TRandom3.h"
-
+#include <TDatabasePDG.h>
+#include <TVector3.h>
+#include <TStopwatch.h>
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -22,22 +24,21 @@ using namespace std;
 // static const int ndet = 3;
 // static const int ncent = 6;
 // static const int nth = 3;
-// static const int npid = 4;
+static const int npid = 8; // h+, pions+, kaons+, protons+, h-, pions-, kaons-, protons-
 
 
 
 static const int ncent = 8; // 0-80%
 static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 
-static const int npt = 7; // 0.5 - 3.6 GeV/c - number of pT bins
-static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.5};
+static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
+static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.};
 
-static const double maxpt = 2.5; // max pt
-static const double minpt = 0.1; // min pt
+static const double maxpt = 3.; // max pt
+static const double minpt = 0.2; // min pt
 
-static const float mineta = -1.8; // min pt
-static const float maxeta =  1.8; // min pt
-static const float etagap = 0.05; // min pt
+static const float eta_cut =  1.5; // min pt
+static const float eta_gap = 0.05; // min pt
 
 static const int neta = 2; // [eta-,eta+]
 
@@ -55,36 +56,37 @@ TH1I *hMult;       // emitted multiplicity
 TH2F *hBimpvsMult; // 2-D histogram impact parameter (y) vs mult (x)
 
 // TProfile for reference flow (RF)
-// TProfile *hv2MC[ncent]; // profile for MC integrated v2
+// TProfile *hv2MC[ncent][npid]; // profile for MC integrated v2
 TProfile *hv22[ncent];  // profile <<2>> from 2nd Q-Cumulants
 TProfile *hv24[ncent];  // profile <<4>> from 4th Q-Cumulants
 // TProfile for differential flow (DF)
-TProfile *hPT[ncent][npt];     // profile pt
+TProfile *hPT[ncent][npt][npid];     // profile pt
 // TProfile *hv2MCpt[ncent][npt]; // profile v2pt from MC toy
-TProfile *hv22pt[ncent][npt];  // profile <<2'>> from 2nd Q-Cumulants
-TProfile *hv24pt[ncent][npt];  // profile <<4'>> from 4th Q-Cumulants
+TProfile *hv22pt[ncent][npt][npid];  // profile <<2'>> from 2nd Q-Cumulants
+TProfile *hv24pt[ncent][npt][npid];  // profile <<4'>> from 4th Q-Cumulants
 
 // TProfile for covariance calculation according to (C.12), Appendix C
 // in Bilandzic, A. (2012). Anisotropic flow measurements in ALICE at the large hadron collider.
 TProfile *hcov24[ncent];                // <2>*<4>
-TProfile *hcov22prime[ncent][npt];      // <2>*<2'>
-TProfile *hcov24prime[ncent][npt];      // <2>*<4'>
-TProfile *hcov42prime[ncent][npt];      // <2>*<4'>
-TProfile *hcov44prime[ncent][npt];      // <4>*<4'>
-TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
+TProfile *hcov22prime[ncent][npt][npid];      // <2>*<2'>
+TProfile *hcov24prime[ncent][npt][npid];      // <2>*<4'>
+TProfile *hcov42prime[ncent][npt][npid];      // <2>*<4'>
+TProfile *hcov44prime[ncent][npt][npid];      // <4>*<4'>
+TProfile *hcov2prime4prime[ncent][npt][npid]; // <2'>*<4'>
 
-TProfile *hv2EP[ncent][npt];	// elliptic flow from EP method
-TProfile *hv22EP[ncent];      // integrated elliptic flow from EP method
+TProfile *hv2EP[ncent][npt][npid];	// elliptic flow from EP method
+TProfile *hv22EP[ncent][npid];      // integrated flow from EP method
 
 TH1F *H_Qw[neta];     // sub-event multiplicity
 TH1F *H_EP[neta];		  // reaction plane
 TH1F *H_Qv[neta];     // sub-event <Q> - probably
 TProfile *HRes[ncent];		// resolution
-TProfile *hcounter[ncent][npt];
+TProfile *hcounter[ncent][npt][npid];
+
 void FlowANA::Booking(TString outFile){
   char name[800];
   char title[800];
-  d_outfile = new TFile(outFile.Data(), "recreate");
+  d_outfile = new TFile(outFile.Data(),"recreate");
   cout << outFile.Data() << " has been initialized" << endl;
   hEvt  = new TH1I("hEvt","Event number",1,0,1);
   hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
@@ -96,52 +98,37 @@ void FlowANA::Booking(TString outFile){
   hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -10, 10);
 
-  for( int ieta=0; ieta<neta; ieta++ ){
-    (void)sprintf(name,"H_Qw_%d",ieta);
-    H_Qw[ieta] = new TH1F(name,name, 100, 0, 1000 );    
-    (void)sprintf(name,"H_EP_%d",ieta);
-    H_EP[ieta] = new TH1F(name,name, 100, -TMath::Pi()/2.-0.1, TMath::Pi()/2.+0.1 );
-    (void)sprintf(name,"H_Qv_%d",ieta);
-    H_Qv[ieta] = new TH1F(name,name, 100, 0, 10 );
+  for( int ieta=0;ieta<neta;ieta++){
+    H_Qw[ieta] = new TH1F(Form("H_Qw_%d",ieta),Form("H_Qw_%d",ieta), 100, 0, 1000 );    
+    H_EP[ieta] = new TH1F(Form("H_EP_%d",ieta),Form("H_EP_%d",ieta), 100, -TMath::Pi()/2.-0.1, TMath::Pi()/2.+0.1 );
+    H_Qv[ieta] = new TH1F(Form("H_Qv_%d",ieta),Form("H_Qv_%d",ieta), 100, 0, 10 );
   }
 
-  for (int icent = 0; icent < ncent; icent++){ // loop over centrality classes
-    // sprintf(name, "hv2MC_%i", icent);
-    // hv2MC[icent] = new TProfile(name, name, 1, 0., 1.);
-    sprintf(name, "hv22EP_%i", icent);
-    hv22EP[icent] = new TProfile(name,name, 1,0.,1.);
-    sprintf(name, "HRes_%i", icent);
-    HRes[icent] = new TProfile(name,name, 1,0.,1.);
-    sprintf(name, "hv22_%i", icent);
-    hv22[icent] = new TProfile(name, name, 1, 0., 1.);
-    sprintf(name, "hv24_%i", icent);
-    hv24[icent] = new TProfile(name, name, 1, 0., 1.);
-    sprintf(name, "hcov24_%i", icent);
-    hcov24[icent] = new TProfile(name, name, 1, 0., 1.);
-    for (int kpt = 0; kpt < npt; kpt++){ // loop over pt bin
-      // sprintf(name, "hv2MCpt_%i_%i", icent, kpt);
-      // hv2MCpt[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
-      sprintf(name,"hv2EP_%i_%i", icent, kpt);
-      hv2EP[icent][kpt] = new TProfile(name,name, 1,0.,1.);
-      sprintf(name, "hPT_%i_%i", icent, kpt);
-      hPT[icent][kpt] = new TProfile(name, name, 1,0.,1.);
-      sprintf(name, "hv22pt_%i_%i", icent, kpt);
-      hv22pt[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
-      sprintf(name, "hv24pt_%i_%i", icent, kpt);
-      hv24pt[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
-      sprintf(name, "hcov22prime_%i_%i", icent, kpt);
-      hcov22prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
-      sprintf(name, "hcov24prime_%i_%i", icent, kpt);
-      hcov24prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
-      sprintf(name, "hcov42prime_%i_%i", icent, kpt);
-      hcov42prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
-      sprintf(name, "hcov44prime_%i_%i", icent, kpt);
-      hcov44prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
-      sprintf(name, "hcov2prime4prime_%i_%i", icent, kpt);
-      hcov2prime4prime[icent][kpt] = new TProfile(name, name, 1, 0., 1.);
-      sprintf(name, "hcounter_%i_%i", icent, kpt);
-      hcounter[icent][kpt] = new TProfile(name,name,3,0.,3.);
-    } // end of loop over pt bin
+  for (int icent=0;icent<ncent;icent++){ // loop over centrality classes
+    HRes[icent] = new TProfile(Form("HRes_%i",icent),Form("HRes_%i",icent),1,0.,1.);
+    hv22[icent] = new TProfile(Form("hv22_%i",icent),Form("hv22_%i",icent),1,0.,1.);
+    hv24[icent] = new TProfile(Form("hv24_%i",icent),Form("hv24_%i",icent),1,0.,1.);
+    hcov24[icent] = new TProfile(Form("hcov24_%i",icent),Form("hcov24_%i",icent),1,0.,1.);
+    for (int id=0;id<npid;id++){
+      // hv2MC[icent][id] = new TProfile(Form("hv2MC_%i_%i",icent,id),Form("hv2MC_%i_%i",icent,id),1,0.,1.);
+      hv22EP[icent][id] = new TProfile(Form("hv22EP_%i_%i",icent,id),Form("hv22EP_%i_%i",icent,id),1,0.,1.);
+      // hv22[icent][id] = new TProfile(Form("hv22_%i_%i",icent,id),Form("hv22_%i_%i",icent,id),1,0.,1.);
+      // hv24[icent][id] = new TProfile(Form("hv24_%i_%i",icent,id),Form("hv24_%i_%i",icent,id),1,0.,1.);
+      // hcov24[icent][id] = new TProfile(Form("hcov24_%i_%i",icent,id),Form("hcov24_%i_%i",icent,id),1,0.,1.);
+      for (int ipt = 0; ipt < npt; ipt++){ // loop over pt bin
+        // hv2MCpt[icent][ipt] = new TProfile(Form("hv2MCpt_%i_%i_%i",icent,ipt,id),Form("hv2MCpt_%i_%i_%i",icent,ipt,id),1,0.,1.);
+        hv2EP[icent][ipt][id] = new TProfile(Form("hv2EP_%i_%i_%i",icent,ipt,id),Form("hv2EP_%i_%i_%i",icent,ipt,id),1,0.,1.);
+        hPT[icent][ipt][id] = new TProfile(Form("hPT_%i_%i_%i",icent,ipt,id),Form("hPT_%i_%i_%i",icent,ipt,id),1,0.,1.);
+        hv22pt[icent][ipt][id] = new TProfile(Form("hv22pt_%i_%i_%i",icent,ipt,id),Form("hv22pt_%i_%i_%i",icent,ipt,id),1,0.,1.);
+        hv24pt[icent][ipt][id] = new TProfile(Form("hv24pt_%i_%i_%i",icent,ipt,id),Form("hv24pt_%i_%i_%i",icent,ipt,id),1,0.,1.);
+        hcov22prime[icent][ipt][id] = new TProfile(Form("hcov22prime_%i_%i_%i",icent,ipt,id),Form("hcov22prime_%i_%i_%i",icent,ipt,id),1,0.,1.);
+        hcov24prime[icent][ipt][id] = new TProfile(Form("hcov24prime_%i_%i_%i",icent,ipt,id),Form("hcov24prime_%i_%i_%i",icent,ipt,id),1,0.,1.);
+        hcov42prime[icent][ipt][id] = new TProfile(Form("hcov42prime_%i_%i_%i",icent,ipt,id),Form("hcov42prime_%i_%i_%i",icent,ipt,id),1,0.,1.);
+        hcov44prime[icent][ipt][id] = new TProfile(Form("hcov44prime_%i_%i_%i",icent,ipt,id),Form("hcov44prime_%i_%i_%i",icent,ipt,id),1,0.,1.);
+        hcov2prime4prime[icent][ipt][id] = new TProfile(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id),Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id),1,0.,1.);
+        hcounter[icent][ipt][id] = new TProfile(Form("hcounter_%i_%i_%i",icent,ipt,id),Form("hcounter_%i_%i_%i",icent,ipt,id),3,0.,3.);
+      } // end of loop over pt bin
+    }
   } // end of loop over centrality classes
 
   cout << "Histograms have been initialized" << endl;
@@ -149,6 +136,8 @@ void FlowANA::Booking(TString outFile){
 }
 
 void FlowANA::Loop_a_file(TString file){
+  TStopwatch timer;
+  timer.Start();
   TFile *treefile = TFile::Open(file.Data());
   TTree *tree = (TTree *)treefile->Get("mctree");
   if (tree == 0)
@@ -159,11 +148,11 @@ void FlowANA::Loop_a_file(TString file){
   }
   cout << file << " is opened" << endl;
   Init(tree);
-  // CalRes();
-  // FinishCalRes();
   Loop();
   treefile->Close();
   cout << file << " file processed" << endl;
+  timer.Stop();
+  timer.Print();
 }
 
 void FlowANA::Ana_end(){
@@ -186,7 +175,7 @@ void FlowANA::Loop()
       nb = fChain->GetEntry(jentry);   nbytes += nb;
       // if (Cut(ientry) < 0) continue;
       Ana_event();
-      if (jentry%100000==0) std::cout << "Event [" << jentry << "/" << nentries << "]" << std::endl;
+      if (jentry%100000==0) cout << jentry << endl;
    }
 }
 
@@ -205,51 +194,59 @@ void FlowANA::Ana_event(){
   Double_t Qx2[neta]={0.}, Qy2[neta]={0.}, Qx4[neta]={0.}, Qy4[neta]={0.};
   TComplex Q2[neta]={0.}, Q4[neta]={0.};
   // p-vector of POI
-  Double_t px2[neta][npt]={{0.}}, py2[neta][npt]={{0.}};
-  TComplex p2[neta][npt]={{0.}}, p4[neta][npt]={{0.}}, q2[neta][npt]={{0.}}, q4[neta][npt]={{0.}};
+  Double_t px2[neta][npt][npid]={{{0.}}}, py2[neta][npt][npid]={{{0.}}};
+  TComplex p2[neta][npt][npid]={{{0.}}}, p4[neta][npt][npid]={{{0.}}}, q2[neta][npt][npid]={{{0.}}}, q4[neta][npt][npid]={{{0.}}};
   // q-vector of particles marked as POI and RFP, which is used for 
   // autocorrelation substraction
-  Double_t qx2[neta][npt]={{0.}}, qy2[neta][npt]={{0.}}, qx4[neta][npt]={{0.}}, qy4[neta][npt]={{0.}};
+  Double_t qx2[neta][npt][npid]={{{0.}}}, qy2[neta][npt][npid]={{{0.}}}, qx4[neta][npt][npid]={{{0.}}}, qy4[neta][npt][npid]={{{0.}}};
   // Total number of RFP in given event
   Double_t M[neta] = {0.};
   // numbers of POI (mp) and particles marked both POI and RFP (mq)
-  Double_t mq[neta][npt]={{0.}},mp[neta][npt]={{0.}};
+  Double_t mq[neta][npt][npid]={{{0.}}},mp[neta][npt][npid]={{{0.}}};
   // average reduced single-event 2- and 4-particle correlations : <2'> & <4'>
-  Double_t redCor22[neta][npt]={{0.}}, redCor24[neta][npt]={{0.}};
+  Double_t redCor22[neta][npt][npid]={{{0.}}}, redCor24[neta][npt][npid]={{{0.}}};
   // event weights for correlation calculation
   Double_t w2[neta]={0.},w4[neta]={0.};
   // event weights for reduced correlation calculation
-  Double_t wred2[neta][npt]={{0.}},wred4[neta][npt]={{0.}};
+  Double_t wred2[neta][npt][npid]={{{0.}}},wred4[neta][npt][npid]={{{0.}}};
   // Average single-event 2- and 4- particle correlations : <2> & <4>
   Double_t cor22[neta] = {0.}, cor24[neta] = {0.};
 
-  Double_t sumQxy[neta][2]={{0}};  // [eta-,eta+][x,y]
+  Double_t sumQxy[neta][2]={{0.}};  // [eta-,eta+][x,y]
   Double_t multQv[neta]={0};       // [eta+,eta-]
+  Double_t wQv[neta]={0};
 
-  for(int i=0;i<nh;i++) { // track loop
-    float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
-    float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
-    float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-    if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || charge[i]==0 || TMath::Abs(eta)<etagap) continue; // track selection
-    float phi = TMath::ATan2( momy[i], momx[i] );
+  for(int iTrk=0;iTrk<nh;iTrk++) { // track loop
+    TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
+    float pt  = vect.Pt();
+    float eta = vect.Eta();
+    float phi = vect.Phi();
+    if (pt < minpt || pt > maxpt || abs(eta)>eta_cut || abs(eta)<eta_gap) continue; // track selection
+    auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+    if (!particle) continue;
+    float charge = 1./3.*particle->Charge();
+    if (charge == 0) continue;
     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
-
-    hPhi -> Fill(phi);
-    // float phil = phi+rp;
-    // while (phil>2.*TMath::Pi()) phil-=2.*TMath::Pi(); /* To make sure that phil is between 0 and 2 Pi */
-    // hPhil -> Fill(phil);
-    hEta -> Fill(eta);
-    Int_t ipt = 0;
     hPt -> Fill(pt);
+    hEta -> Fill(eta);
+    hPhi -> Fill(phi);
+    Int_t ipt = -1;
     for(int j=0; j<npt;j++){
       if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
     }
 
+    int fId=-1;
+    if(pdg[iTrk]==211)  fId=1; // pion+
+    if(pdg[iTrk]==321)  fId=2; // kaon+
+    if(pdg[iTrk]==2212) fId=3; // proton
+    if(pdg[iTrk]==-211)  fId=5; // pion-
+    if(pdg[iTrk]==-321)  fId=6; // kaon-
+    if(pdg[iTrk]==-2212) fId=7; // anti-proton
     
     // Double_t v2 = TMath::Cos(2.*phi);
     // hv2MC[fcent]->Fill(0.5, v2, 1);
     // hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
-    if(eta<-etagap){
+    if(eta<0){
       // RFP selection
       Qx2[0]+=TMath::Cos(2.*phi);
       Qy2[0]+=TMath::Sin(2.*phi);
@@ -257,39 +254,64 @@ void FlowANA::Ana_event(){
       Qy4[0]+=TMath::Sin(4.*phi);
       M[0]++;
       // POI selection
-      px2[1][ipt]+=TMath::Cos(2.*phi);
-      py2[1][ipt]+=TMath::Sin(2.*phi);
-      mp[1][ipt]++;
+      if (charge>0){
+        px2[1][ipt][0]+=TMath::Cos(2.*phi);
+        py2[1][ipt][0]+=TMath::Sin(2.*phi);
+        mp[1][ipt][0]++;
+      }
+      if (charge<0){
+        px2[1][ipt][4]+=TMath::Cos(2.*phi);
+        py2[1][ipt][4]+=TMath::Sin(2.*phi);
+        mp[1][ipt][4]++;
+      }
+      if (fId>0){
+        px2[1][ipt][fId]+=TMath::Cos(2.*phi);
+        py2[1][ipt][fId]+=TMath::Sin(2.*phi);
+        mp[1][ipt][fId]++;
+      }
+    }
 
-    } // end of RFP selection
-
-    if(eta>etagap){ 
+    if(eta>0){ 
       Qx2[1]+=TMath::Cos(2.*phi);
       Qy2[1]+=TMath::Sin(2.*phi);
       Qx4[1]+=TMath::Cos(4.*phi);
       Qy4[1]+=TMath::Sin(4.*phi);
       M[1]++;
 
-      px2[0][ipt]+=TMath::Cos(2.*phi);
-      py2[0][ipt]+=TMath::Sin(2.*phi);
-      mp[0][ipt]++;
-    } // end of POI selection
+      // POI selection
+      if (charge>0){
+        px2[0][ipt][0]+=TMath::Cos(2.*phi);
+        py2[0][ipt][0]+=TMath::Sin(2.*phi);
+        mp[0][ipt][0]++;
+      }
+      if (charge<0){
+        px2[0][ipt][4]+=TMath::Cos(2.*phi);
+        py2[0][ipt][4]+=TMath::Sin(2.*phi);
+        mp[0][ipt][4]++;
+      }
+      if (fId>0){
+        px2[0][ipt][fId]+=TMath::Cos(2.*phi);
+        py2[0][ipt][fId]+=TMath::Sin(2.*phi);
+        mp[0][ipt][fId]++;
+      }
+    }
 
     // Sub eta event method, TPC plane
     int fEta = -1;
-    if (eta > mineta && eta <-etagap) fEta = 0; // TPC East
-    if (eta > etagap && eta < maxeta) fEta = 1; // TPC West
+    if (eta < 0) fEta = 0; // TPC East
+    if (eta > 0) fEta = 1; // TPC West
 
 		if ( fEta>-1 ){
-      sumQxy[fEta][0] += 1. * cos( (2.0) * phi );
-      sumQxy[fEta][1] += 1. * sin( (2.0) * phi );
+      sumQxy[fEta][0] += pt*cos(2.*phi);
+      sumQxy[fEta][1] += pt*sin(2.*phi);
+      wQv[fEta]       += pt;
 			multQv[fEta]++;
 		} // end of eta selection
   } // end of track loop
 
   // ================================== Direct Cumulants ================================== //
   for (int ieta=0;ieta<neta;ieta++){ // reverse POI & RFP selection
-    if (M[ieta] < 4) continue; // test
+    // if (M[ieta] < 4) continue; // test
     if (M[ieta] >= 2.){ // <2> definition condition
       Q2[ieta] = TComplex(Qx2[ieta], Qy2[ieta]);
       w2[ieta] = M[ieta]*(M[ieta]-1);                            // w(<2>)
@@ -298,17 +320,19 @@ void FlowANA::Ana_event(){
 
     } // end of <2> definition condition
     for (int ipt = 0; ipt < npt; ipt++){ // <2'>
-      if (mp[ieta][ipt] == 0 || M[ieta]<1) continue;
-      Q2[ieta] = TComplex(Qx2[ieta], Qy2[ieta]);
-      p2[ieta][ipt] = TComplex(px2[ieta][ipt], py2[ieta][ipt]);
-      q2[ieta][ipt] = TComplex(qx2[ieta][ipt], qy2[ieta][ipt]);
-      wred2[ieta][ipt] = mp[ieta][ipt]*M[ieta]-mq[ieta][ipt];                                        // w(<2'>)
-      if (wred2[ieta][ipt]==0) continue;
-      redCor22[ieta][ipt] = CalRedCor22(Q2[ieta], p2[ieta][ipt], M[ieta], mp[ieta][ipt], mq[ieta][ipt], wred2[ieta][ipt]); // <2'>
-      hv22pt[fcent][ipt]->Fill(0.5, redCor22[ieta][ipt], wred2[ieta][ipt]);                  // <<2'>>
-      hcounter[fcent][ipt]->Fill(0.5,1,mp[ieta][ipt]);
-      // TProfile for covariance calculation in statistic error
-      hcov22prime[fcent][ipt]->Fill(0.5, cor22[ieta] * redCor22[ieta][ipt], w2[ieta] * wred2[ieta][ipt]); // <2>*<2'>
+      for (int id=0;id<npid;id++){
+        if (mp[ieta][ipt] == 0 || M[ieta]<1) continue;
+        Q2[ieta] = TComplex(Qx2[ieta], Qy2[ieta]);
+        p2[ieta][ipt][id] = TComplex(px2[ieta][ipt][id], py2[ieta][ipt][id]);
+        q2[ieta][ipt][id] = TComplex(qx2[ieta][ipt][id], qy2[ieta][ipt][id]);
+        wred2[ieta][ipt][id] = mp[ieta][ipt][id]*M[ieta]-mq[ieta][ipt][id];                                                                        // w(<2'>)
+        if (wred2[ieta][ipt][id]==0) continue;
+        redCor22[ieta][ipt][id] = CalRedCor22(Q2[ieta], p2[ieta][ipt][id], M[ieta], mp[ieta][ipt][id], mq[ieta][ipt][id], wred2[ieta][ipt][id]);   // <2'>
+        hv22pt[fcent][ipt][id]->Fill(0.5, redCor22[ieta][ipt][id], wred2[ieta][ipt][id]);                                                                      // <<2'>>
+        hcounter[fcent][ipt][id]->Fill(0.5,1,mp[ieta][ipt][id]);
+        // TProfile for covariance calculation in statistic error
+        hcov22prime[fcent][ipt][id]->Fill(0.5, cor22[ieta]*redCor22[ieta][ipt][id], w2[ieta]*wred2[ieta][ipt][id]); // <2>*<2'>
+      }
     }
 
     if (M[ieta] >= 4.){ // <4> definition condition
@@ -318,32 +342,37 @@ void FlowANA::Ana_event(){
       hv24[fcent]->Fill(0.5, cor24[ieta], w4[ieta]);    // <<4>>
 
       // TProfile for covariance calculation in statistic error
-      hcov24[fcent]->Fill(0.5, cor22[ieta] * cor24[ieta], w2[ieta] * w4[ieta]); // <2>*<4>
+      hcov24[fcent]->Fill(0.5,cor22[ieta]*cor24[ieta],w2[ieta]*w4[ieta]); // <2>*<4>
     } // end of <4> definition condition
     for (int ipt = 0; ipt < npt; ipt++){ // <4'>
-      if (mp[ieta][ipt] == 0 || M[ieta]<3) continue;
-      Q4[ieta] = TComplex(Qx4[ieta], Qy4[ieta]);   
-      q4[ieta][ipt] = TComplex(qx4[ieta][ipt], qy4[ieta][ipt]);
-      wred4[ieta][ipt] = (mp[ieta][ipt]*M[ieta]-3*mq[ieta][ipt])*(M[ieta]-1)*(M[ieta]-2);                                 // w(<4'>)
-      if (wred4[ieta][ipt]==0) continue;
-      redCor24[ieta][ipt] = CalRedCor24(Q2[ieta], Q4[ieta], p2[ieta][ipt], q2[ieta][ipt], q4[ieta][ipt], M[ieta], mp[ieta][ipt], mq[ieta][ipt], wred4[ieta][ipt]); // <4'>
-      hv24pt[fcent][ipt]->Fill(0.5, redCor24[ieta][ipt], wred4[ieta][ipt]);                                        // <<4'>>
-      hcounter[fcent][ipt]->Fill(1.5,1,mp[ieta][ipt]);
-      // TProfile for covariance calculation in statistic error
-      hcov24prime[fcent][ipt]->Fill(0.5, cor22[ieta] * redCor24[ieta][ipt], w2[ieta] * wred4[ieta][ipt]);
-      hcov42prime[fcent][ipt]->Fill(0.5, cor24[ieta] * redCor22[ieta][ipt], w4[ieta] * wred2[ieta][ipt]);
-      hcov44prime[fcent][ipt]->Fill(0.5, cor24[ieta] * redCor24[ieta][ipt], w4[ieta] * wred4[ieta][ipt]);
-      hcov2prime4prime[fcent][ipt]->Fill(0.5, redCor22[ieta][ipt] * redCor24[ieta][ipt], wred2[ieta][ipt] * wred4[ieta][ipt]);
+      for (int id=0;id<npid;id++){
+        if (mp[ieta][ipt] == 0 || M[ieta]<3) continue;
+        Q4[ieta] = TComplex(Qx4[ieta], Qy4[ieta]);   
+        q4[ieta][ipt][id] = TComplex(qx4[ieta][ipt][id], qy4[ieta][ipt][id]);
+        wred4[ieta][ipt][id] = (mp[ieta][ipt][id]*M[ieta]-3*mq[ieta][ipt][id])*(M[ieta]-1)*(M[ieta]-2);                                 // w(<4'>)
+        if (wred4[ieta][ipt][id]==0) continue;
+        redCor24[ieta][ipt][id] = CalRedCor24(Q2[ieta], Q4[ieta], p2[ieta][ipt][id], q2[ieta][ipt][id], q4[ieta][ipt][id], M[ieta], mp[ieta][ipt][id], mq[ieta][ipt][id], wred4[ieta][ipt][id]); // <4'>
+        hv24pt[fcent][ipt][id]->Fill(0.5, redCor24[ieta][ipt][id], wred4[ieta][ipt][id]);                                        // <<4'>>
+        hcounter[fcent][ipt][id]->Fill(1.5,1,mp[ieta][ipt][id]);
+        // TProfile for covariance calculation in statistic error
+        hcov24prime[fcent][ipt][id]->Fill(0.5, cor22[ieta] * redCor24[ieta][ipt][id], w2[ieta] * wred4[ieta][ipt][id]);
+        hcov42prime[fcent][ipt][id]->Fill(0.5, cor24[ieta] * redCor22[ieta][ipt][id], w4[ieta] * wred2[ieta][ipt][id]);
+        hcov44prime[fcent][ipt][id]->Fill(0.5, cor24[ieta] * redCor24[ieta][ipt][id], w4[ieta] * wred4[ieta][ipt][id]);
+        hcov2prime4prime[fcent][ipt][id]->Fill(0.5, redCor22[ieta][ipt][id] * redCor24[ieta][ipt][id], wred2[ieta][ipt][id] * wred4[ieta][ipt][id]);
+      }
     }
   } // end of reverse selection
 
 
   // ==================================== Eta Sub-event ==================================== //
 
-  Double_t fEP[2]; // [eta-,eta+]
-  Double_t fQv[2];
+  Double_t fEP[2]={0}; // [eta-,eta+]
+  Double_t fQv[2]={0};
   for (int ieta=0; ieta<neta; ieta++){
-    if( multQv[ieta]>=4 ){ // multiplicity > 3
+    if( multQv[ieta]>2 ){ // multiplicity > 2
+      for (int i=0;i<2;i++){
+        sumQxy[ieta][i] /= wQv[ieta];
+      }
       fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
       fEP[ieta] = TMath::ATan2( sin( 2.0*fEP[ieta] ), cos( 2.0*fEP[ieta] ) ); // what for?
       fEP[ieta] /= 2.0;
@@ -361,42 +390,65 @@ void FlowANA::Ana_event(){
   Double_t psi1, psi2, fq1, fq2;
   psi1 = fEP[0];
   psi2 = fEP[1];
-  fq1 = fQv[0];
-  fq2 = fQv[1];
   if (psi1<-9000 || psi2<-9000) return;
-  if (fq1<0 || fq2<0) return;
   Double_t dPsi = 2. *(psi1 - psi2);
   dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
   HRes[fcent] -> Fill(0.5,cos(dPsi));
 
-  for(int i=0;i<nh;i++) { // track loop
-    float pt  = sqrt( TMath::Power(momx[i], 2.0 ) + TMath::Power(momy[i], 2.0 ) );
-    float the = TMath::ATan2( pt, momz[i] );//atan2(pt/pz)
-    float eta = -TMath::Log( TMath::Tan( 0.5 * the ) );
-    if (pt < minpt || pt > maxpt || eta>maxeta || eta<mineta || charge[i]==0 || TMath::Abs(eta)<etagap) continue; // track selection
-    float phi = TMath::ATan2( momy[i], momx[i] );
+  for(int iTrk=0;iTrk<nh;iTrk++) { // track loop
+    TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
+    float pt  = vect.Pt();
+    float eta = vect.Eta();
+    float phi = vect.Phi();
+    if (pt < minpt || pt > maxpt || abs(eta)>eta_cut || abs(eta)<eta_gap) continue; // track selection
+    auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+    if (!particle) continue;
+    float charge = 1./3.*particle->Charge();
+    if (charge == 0) continue;
     if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
-    Int_t ipt = 0;
+    Int_t ipt = -1;
     for(int j=0; j<npt;j++){
       if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
     }
-    hPT[fcent][ipt]->Fill(0.5, pt, 1);
+
+    int fId=-1;
+    if(pdg[iTrk]==211)  fId=1; // pion+
+    if(pdg[iTrk]==321)  fId=2; // kaon+
+    if(pdg[iTrk]==2212) fId=3; // proton
+    if(pdg[iTrk]==-211)  fId=5; // pion-
+    if(pdg[iTrk]==-321)  fId=6; // kaon-
+    if(pdg[iTrk]==-2212) fId=7; // anti-proton
+    
     // ==================================== Eta Sub-event ==================================== //
     float v2=-999.0;
-    if(eta>etagap){ // eta+
+    if(eta>0){ // eta+
       // v2 = cos(2.0 * (phi-psi1) )/res2[fcent];
       v2 = cos(2.0 * (phi-psi1) );
     }
-    if(eta<-etagap){ // eta-
+    if(eta<0){ // eta-
       // v2 = cos(2.0 * (phi-psi2) )/res2[fcent];
       v2 = cos(2.0 * (phi-psi2) );
     }
-    hv2EP[fcent][ipt]->Fill(0.5,v2);
-    // if (eta < -0.1) { // Reference flow
-    hv22EP[fcent]->Fill(0.5,v2);
-    hcounter[fcent][ipt]->Fill(2.5,1);
-    // }
+    if (charge>0){
+      hPT[fcent][ipt][0]->Fill(0.5, pt, 1);
+      hv2EP[fcent][ipt][0]->Fill(0.5,v2);
+      hv22EP[fcent][0]->Fill(0.5,v2);
+      hcounter[fcent][ipt][0]->Fill(2.5,1);
+    }
+    if (charge<0){
+      hPT[fcent][ipt][4]->Fill(0.5, pt, 1);
+      hv2EP[fcent][ipt][4]->Fill(0.5,v2);
+      hv22EP[fcent][4]->Fill(0.5,v2);
+      hcounter[fcent][ipt][4]->Fill(2.5,1);
+    }
+    
+    if (fId>0) {
+      hPT[fcent][ipt][fId]->Fill(0.5, pt, 1);
+      hv2EP[fcent][ipt][fId]->Fill(0.5,v2);
+      hv22EP[fcent][fId]->Fill(0.5,v2);
+      hcounter[fcent][ipt][fId]->Fill(2.5,1);
+    }
   } // end of track loop
 } // end of Ana_event();
 

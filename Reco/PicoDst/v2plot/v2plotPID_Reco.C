@@ -229,12 +229,14 @@ void v2plot_differential_flow(){
       vector <double> eV2EPDif, eV22Dif, eV24Dif, ePt;
       // Differential flow calculation
       for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
-        vPt.push_back(hPT[icent][ipt][id] -> GetBinContent(1));
+        // vPt.push_back(hPT[icent][ipt][id] -> GetBinContent(1));
+        vPt.push_back((bin_pT[ipt]+bin_pT[ipt+1])/2.);
         ePt.push_back(0);
         // v2EP
         double res2 = sqrt(HRes[icent]->GetBinContent(1));
         double v2obs = hv2EP[icent][ipt][id]->GetBinContent(1);
         double v2EPDif = v2obs / res2;
+        // double v2EPDif = v2obs;
         double ev2EP = hv2EP[icent][ipt][id]->GetBinError(1) / res2;
         vV2EPDif.push_back(v2EPDif);
         eV2EPDif.push_back(ev2EP);
@@ -413,7 +415,8 @@ void v2plot_differential_flow(){
       vV22Dif1040.push_back(prV22dif1040[ipt][id]->GetBinContent(1));
       vV24Dif1040.push_back(prV24dif1040[ipt][id]->GetBinContent(1));
       vV2EPDif1040.push_back(prV2EPdif1040[ipt][id]->GetBinContent(1));
-      vPT.push_back(pt1040[ipt][id]->GetBinContent(1));
+      // vPT.push_back(pt1040[ipt][id]->GetBinContent(1));
+      vPT.push_back((bin_pT[ipt]+bin_pT[ipt+1])/2.);
     }
     grDifFl1040[0][id] = new TGraphErrors(npt,&vPT[0],&vV22Dif1040[0],&ePT[0],eV22Dif1040[id]);
     grDifFl1040[0][id] -> SetMarkerColor(kRed);

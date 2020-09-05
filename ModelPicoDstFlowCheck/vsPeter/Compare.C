@@ -22,7 +22,7 @@ void Compare(){
     }
   }
 
-  inputPeter = new TFile("PeterPID.root","read");
+  inputPeter = new TFile("PeterPID_charged.root","read");
   
   for (int id=0;id<npid;id++){
     
@@ -63,13 +63,13 @@ void Compare(){
     for (int id=0;id<npid;id++){
       sprintf(name,"%s, centrality 10-40%%",pidFancyNames.at(id).Data());
       can[0][i][id] = (TCanvas*) DrawTGraph(grVinh[0][i][id],grPeter[0][i][id],method[i],0.69,1.31,0.,2.5,-0.01,0.2,0.18,0.72,0.42,0.89,name);
-      sprintf(name,"%s_%s_Cent10-40.png",method[i],pidNames.at(id).Data());
+      sprintf(name,"%s_%s_Cent10-40.png",pidNames.at(id).Data(),method[i]);
       can[0][i][id] -> SetName(name);
-      // can[0][i][id] -> SaveAs(name);
+      can[0][i][id] -> SaveAs(name);
       for (int icent=1;icent<4;icent++){
         sprintf(name,"%s, centrality %i-%i%%",pidFancyNames.at(id).Data(),icent*10,(icent+1)*10);
         can[icent][i][id] = (TCanvas*) DrawTGraph(grVinh[icent][i][id],grPeter[icent][i][id],method[i],0.69,1.31,0.,2.5,-0.01,0.2,0.18,0.72,0.42,0.89,name);
-        sprintf(name,"%s_%s_Cent%i-%i.png",method[i],pidNames.at(id).Data(),icent*10,(icent+1)*10);
+        sprintf(name,"%s_%s_Cent%i-%i.png",pidNames.at(id).Data(),method[i],icent*10,(icent+1)*10);
         can[icent][i][id] -> SetName(name);
         can[icent][i][id] -> SaveAs(name);
       }

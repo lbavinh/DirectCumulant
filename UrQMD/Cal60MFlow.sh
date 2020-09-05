@@ -2,22 +2,22 @@
 
 #
 # Specify working directory
-#$ -wd /weekly/$USER/lbavinh/PicoDst/
-# Tell SGE that we will work in the working directory
+#$ -wd /weekly/$USER/lbavinh/UrQMD/
+# Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
 #$ -N Flow
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job
-#$ -l h_rt=01:30:00
+#$ -l h_rt=06:30:00
 # Set soft time limit - set up the same as a hard limit
-#$ -l s_rt=01:30:00
+#$ -l s_rt=06:30:00
 # Specify job array range (how many jobs will be created
-#$ -t 1-633
+#$ -t 1-397
 # Specify directory where output and error logs from SGE will be stored
-#$ -o /weekly/$USER/lbavinh/PicoDst/OUT/log/
-#$ -e /weekly/$USER/lbavinh/PicoDst/OUT/log/
+#$ -o /weekly/$USER/lbavinh/UrQMD/OUT/log/
+#$ -e /weekly/$USER/lbavinh/UrQMD/OUT/log/
 #
 
 # ${JOB_ID} - Id of the job array (one for all jobs)
@@ -26,9 +26,8 @@
 #     of N jobs with ${JOB_ID}_1, ${JOB_ID}_2, ..., ${JOB_ID}_N
 
 #Main directory
-export MAIN_DIR=/weekly/$USER/lbavinh/PicoDst
-#export FILELIST=${MAIN_DIR}/runlist_PicoDst.list
-export FILELIST=${MAIN_DIR}/runlist_PicoDst_merged.list
+export MAIN_DIR=/weekly/$USER/lbavinh/UrQMD
+export FILELIST=${MAIN_DIR}/chain60/runlist.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
@@ -43,18 +42,18 @@ mkdir -p $OUT_LOG
 mkdir -p $TMP
 touch $LOG
 
-cp $MAIN_DIR/readPicoDst.C $TMP
+cp $MAIN_DIR/calculateFlow.C $TMP
 
 # Set correct environment variables (needed version of root)
 source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh
-source /weekly/parfenov/Soft/PicoDst/build/setPicoDst.sh 
+
 echo "Input arguments (Job Id = ${JOB_ID}, Task ID = ${SGE_TASK_ID}):" &>> $LOG
 echo "Main directory:           ${MAIN_DIR}" &>> $LOG
 echo "Input file:    $IN_FILE"  &>> $LOG
 echo "Output file:   $OUT_FILE" &>> $LOG
 echo "---------------" &>> $LOG
 echo "Run elliptic flow calculation..." &>> $LOG
-root -l -b -q $TMP/readPicoDst.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
+root -l -b -q $TMP/calculateFlow.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
 
 echo "---------------" &>> $LOG
 echo "Cleaning temporary directory..." &>> $LOG

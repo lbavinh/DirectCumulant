@@ -22,7 +22,7 @@
 
 // R__LOAD_LIBRARY(libPicoDst.so)
 
-const std::vector<float> vResMcTpc   = {0.295164, 0.450308, 0.470348, 0.432475, 0.366723, 0.298105, 0.260313, 0.266459};
+const std::vector<float> vResMcTpc   = {0.226827, 0.347749, 0.369009, 0.336583, 0.281697, 0.224447, 0.18955, 0.186935};
 const std::vector<float> vResRecoTpc = {0.211611, 0.329277, 0.350632, 0.319347, 0.269741, 0.21128, 0.181021, 0.176676};
 
 void get_flow_pico(TString inputFileName, TString outputFileName)
@@ -104,6 +104,12 @@ void get_flow_pico(TString inputFileName, TString outputFileName)
       if (pt > pt_max_cut) continue;
       if (abs(eta) > eta_cut) continue;
       if (abs(eta) < eta_gap) continue;
+
+      // PID-related cut (or to cut out neutral particles)
+      auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(mcTrack->GetPdg());
+      if (!particle) continue;
+      float charge = 1./3.*particle->Charge();
+      if (charge == 0) continue;
 
       // Mc-specific track cuts
       if (mcTrack->GetMotherId() != motherId_cut) continue;

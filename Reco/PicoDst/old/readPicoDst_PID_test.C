@@ -103,11 +103,11 @@ const std::vector<int> pdgCodes = {999, 211, 321, 2212, -999, -211, -321, -2212}
 // PID - reco tracks
 const float PidProb_cut = 0.9;
 
-// const std::vector<float> vResMcTpc   = {0.226827, 0.347749, 0.369009, 0.336583, 0.281697, 0.224447, 0.18955, 0.186935}; // Peter's res
-// const std::vector<float> vResRecoTpc = {0.211611, 0.329277, 0.350632, 0.319347, 0.269741, 0.21128, 0.181021, 0.176676}; // Peter's res
-const std::vector<float> vResMcTpc   = {0.226443,0.348428,0.36861,0.337042,0.281881,0.225086,0.190239,0.187385}; // my res
+const std::vector<float> vResMcTpc   = {0.226827, 0.347749, 0.369009, 0.336583, 0.281697, 0.224447, 0.18955, 0.186935}; // Peter's res
+const std::vector<float> vResRecoTpc = {0.211611, 0.329277, 0.350632, 0.319347, 0.269741, 0.21128, 0.181021, 0.176676}; // Peter's res
+// const std::vector<float> vResMcTpc   = {0.226443,0.348428,0.36861,0.337042,0.281881,0.225086,0.190239,0.187385}; // my res
 // const std::vector<float> vResRecoTpc = {0.212417,0.329986,0.349994,0.319957,0.270354,0.211854,0.181174,0.178446}; // my res 
-const std::vector<float> vResRecoTpc = {0.211611,0.329277,0.350632,0.319347,0.269741,0.21128,0.181021,0.176676}; // my res 
+// const std::vector<float> vResRecoTpc = {0.211611,0.329277,0.350632,0.319347,0.269741,0.21128,0.181021,0.176676}; // my res 
 static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
 static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.};
 static const int npid = 8; // h+, pions+, kaons+, protons+, h-, pions-, kaons-, protons-
@@ -187,11 +187,13 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   TProfile *hcov44prime[ncent][npt][npid];      // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt][npid]; // <2'>*<4'>
 
-  TProfile *hv2EP[ncent][npt][npid];	// elliptic flow from EP method
+  // TProfile *hv2EP[ncent][npt][npid];	// elliptic flow from EP method
+  TProfile2D *hv2EP[npid];
   TProfile *hv2EPMC[ncent][npt][npid];	// elliptic flow from EP method
   TProfile *hv22EP[ncent][npid];      // integrated flow from EP method
 
-  TProfile *HRes[ncent];		// resolution
+  // TProfile *HRes[ncent];		// resolution
+  TProfile *HRes;
   TProfile *HResMC[ncent];		// resolution
   TProfile *hcounter[ncent][npt][npid];
 
@@ -208,11 +210,15 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   hPhi = new TH1F("hPhi", "Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})", 300, 0., 7.);
   hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -10, 10);
+  HRes = new TProfile("HRes","HRes",ncent,0.,ncent);
+  for (int id=0;id<npid;id++){
+    hv2EP[id] = new TProfile2D(Form("hv2EP_%i",id),Form("hv2EP_%i",id),NptBins,ptBinMin,ptBinMax,NcentBins,centBinMin,centBinMax);
+  }
 
 
 
   for (int icent=0;icent<ncent;icent++){ // loop over centrality classes
-    HRes[icent] = new TProfile(Form("HRes_%i",icent),Form("HRes_%i",icent),1,0.,1.);
+    // HRes[icent] = new TProfile(Form("HRes_%i",icent),Form("HRes_%i",icent),1,0.,1.);
     HResMC[icent] = new TProfile(Form("HResMC_%i",icent),Form("HResMC_%i",icent),1,0.,1.);
     hv22[icent] = new TProfile(Form("hv22_%i",icent),Form("hv22_%i",icent),1,0.,1.);
     hv24[icent] = new TProfile(Form("hv24_%i",icent),Form("hv24_%i",icent),1,0.,1.);
@@ -225,7 +231,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       // hcov24[icent][id] = new TProfile(Form("hcov24_%i_%i",icent,id),Form("hcov24_%i_%i",icent,id),1,0.,1.);
       for (int ipt = 0; ipt < npt; ipt++){ // loop over pt bin
         // hv2MCpt[icent][ipt] = new TProfile(Form("hv2MCpt_%i_%i_%i",icent,ipt,id),Form("hv2MCpt_%i_%i_%i",icent,ipt,id),1,0.,1.);
-        hv2EP[icent][ipt][id] = new TProfile(Form("hv2EP_%i_%i_%i",icent,ipt,id),Form("hv2EP_%i_%i_%i",icent,ipt,id),1,0.,1.);
+        // hv2EP[icent][ipt][id] = new TProfile(Form("hv2EP_%i_%i_%i",icent,ipt,id),Form("hv2EP_%i_%i_%i",icent,ipt,id),1,0.,1.);
         hv2EPMC[icent][ipt][id] = new TProfile(Form("hv2EPMC_%i_%i_%i",icent,ipt,id),Form("hv2EPMC_%i_%i_%i",icent,ipt,id),1,0.,1.);
         hPT[icent][ipt][id] = new TProfile(Form("hPT_%i_%i_%i",icent,ipt,id),Form("hPT_%i_%i_%i",icent,ipt,id),1,0.,1.);
         hv22pt[icent][ipt][id] = new TProfile(Form("hv22pt_%i_%i_%i",icent,ipt,id),Form("hv22pt_%i_%i_%i",icent,ipt,id),1,0.,1.);
@@ -250,7 +256,8 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     chain->GetEntry(iEv);
 
     // Get centrality
-    int cent = GetCentBin(CentB(mcEvent->GetB()));
+    // int cent = GetCentBin(CentB(mcEvent->GetB()));
+    float cent = CentB(mcEvent->GetB());
     if (cent == -1) continue;
 
     Int_t mc_num_particles = mcTracks->GetEntriesFast();
@@ -402,11 +409,11 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
     if (PsiEP_L_mc != -999. && PsiEP_R_mc != -999.)
     {
-      HResMC[cent]->Fill(0.5, res_mc);
+      HResMC[GetCentBin(cent)]->Fill(0.5, res_mc);
     }
     if (PsiEP_L_reco != -999. && PsiEP_R_reco != -999.)
     {
-      HRes[cent]->Fill(0.5, res_reco);
+      HRes->Fill(GetCentBin(cent)+0.5, res_reco);
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -415,10 +422,10 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     //
     ////////////////////////////////////////////////////////////////////
     
-    // float res_v2TPC_mc = vResMcTpc.at(GetCentBin(cent));
-    // float res_v2TPC_reco = vResRecoTpc.at(GetCentBin(cent));
-    float res_v2TPC_mc = vResMcTpc.at(cent);
-    float res_v2TPC_reco = vResRecoTpc.at(cent);
+    float res_v2TPC_mc = vResMcTpc.at(GetCentBin(cent));
+    float res_v2TPC_reco = vResRecoTpc.at(GetCentBin(cent));
+    // float res_v2TPC_mc = vResMcTpc.at(cent);
+    // float res_v2TPC_reco = vResRecoTpc.at(cent);
     // Read MC tracks
     for (int iTr=0; iTr<mc_num_particles; iTr++)
     {
@@ -469,15 +476,15 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       for(int j=0; j<npt;j++) {if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;}
       if (charge > 0)
         // pv2mcTPC[0]->Fill(pt, cent, v2TPC);
-        hv2EPMC[cent][ipt][0]->Fill(0.5,v2TPC);
+        hv2EPMC[GetCentBin(cent)][ipt][0]->Fill(0.5,v2TPC);
 
       if (charge < 0)
         // pv2mcTPC[4]->Fill(pt, cent, v2TPC);
-        hv2EPMC[cent][ipt][4]->Fill(0.5,v2TPC);
+        hv2EPMC[GetCentBin(cent)][ipt][4]->Fill(0.5,v2TPC);
       if (pidID == -1) continue;
 
       // pv2mcTPC[pidID]->Fill(pt, cent, v2TPC);
-      hv2EPMC[cent][ipt][pidID]->Fill(0.5,v2TPC);
+      hv2EPMC[GetCentBin(cent)][ipt][pidID]->Fill(0.5,v2TPC);
 
     } // end mc tracks loop
 
@@ -545,21 +552,24 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       for(int j=0; j<npt;j++) {if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;}
       if (charge > 0)
         // pv2mcTPC[0]->Fill(pt, cent, v2TPC);
-        hPT[cent][ipt][0]->Fill(0.5,pt);
-        hv2EP[cent][ipt][0]->Fill(0.5,v2TPC);
-        hv22EP[cent][0]->Fill(0.5,v2TPC);
+        hPT[GetCentBin(cent)][ipt][0]->Fill(0.5,pt);
+        // hv2EP[cent][ipt][0]->Fill(0.5,v2TPC);
+        hv2EP[0]->Fill(pt, cent, v2TPC);
+        hv22EP[GetCentBin(cent)][0]->Fill(0.5,v2TPC);
 
       if (charge < 0)
         // pv2mcTPC[4]->Fill(pt, cent, v2TPC);
-        hPT[cent][ipt][4]->Fill(0.5,pt);
-        hv2EP[cent][ipt][4]->Fill(0.5,v2TPC);
-        hv22EP[cent][4]->Fill(0.5,v2TPC);
+        hPT[GetCentBin(cent)][ipt][4]->Fill(0.5,pt);
+        // hv2EP[cent][ipt][4]->Fill(0.5,v2TPC);
+        hv2EP[4]->Fill(pt, cent, v2TPC);
+        hv22EP[GetCentBin(cent)][4]->Fill(0.5,v2TPC);
       if (pidID == -1) continue;
 
       // pv2mcTPC[pidID]->Fill(pt, cent, v2TPC);
-      hPT[cent][ipt][pidID]->Fill(0.5,pt);
-      hv2EP[cent][ipt][pidID]->Fill(0.5,v2TPC);
-      hv22EP[cent][pidID]->Fill(0.5,v2TPC);
+      hPT[GetCentBin(cent)][ipt][pidID]->Fill(0.5,pt);
+      // hv2EP[cent][ipt][pidID]->Fill(0.5,v2TPC);
+      hv2EP[pidID]->Fill(pt, cent, v2TPC);
+      hv22EP[GetCentBin(cent)][pidID]->Fill(0.5,v2TPC);
 
     } // end reco tracks loop
 
@@ -599,8 +609,13 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   hMult->Write();
   hBimpvsMult->Write();
 
+  HRes->Write();
+  for (int id=0;id<npid;id++){
+    hv2EP[id]->Write();
+  }
+
   for (int icent=0;icent<ncent;icent++){
-    HRes[icent]->Write();
+    // HRes[icent]->Write();
     HResMC[icent]->Write();
     
     hv22[icent]->Write();
@@ -618,7 +633,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
         hcov44prime[icent][ipt][id]->Write();
         hcov2prime4prime[icent][ipt][id]->Write();
         hPT[icent][ipt][id]->Write();
-        hv2EP[icent][ipt][id]->Write();
+        // hv2EP[icent][ipt][id]->Write();
         hv2EPMC[icent][ipt][id]->Write();
         hcounter[icent][ipt][id]->Write();          
       }

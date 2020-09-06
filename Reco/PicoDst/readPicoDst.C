@@ -25,6 +25,12 @@
 
 #include "function.C"
 // R__LOAD_LIBRARY(libPicoDst.so)
+const int NcentBins     = 8;
+const double centBinMin = 0.;
+const double centBinMax = 80.;
+const int NptBins       = 300;
+const double ptBinMin   = 0.;
+const double ptBinMax   = 3.;
 
 
 void readPicoDst(TString inputFileName, TString outputFileName)
@@ -58,7 +64,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   static const float DCAcut = 0.5;
   static const int neta = 2; // [eta-,eta+]
 
-  static const int max_nh = 1700;
+static const int max_nh = 1700;
 
 
   TH1I *hEvt;        // Event number 
@@ -116,7 +122,8 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -10, 10);
   HRes = new TProfile("HRes","HRes",ncent,0.,ncent);
   for (int id=0;id<npid;id++){
-    hv2EP[id] = new TProfile2D(Form("hv2EP_%i",id),Form("hv2EP_%i",id),npt,0.,npt,ncent,0.,ncent);
+    // hv2EP[id] = new TProfile2D(Form("hv2EP_%i",id),Form("hv2EP_%i",id),npt,0.,npt,ncent,0.,ncent);
+    hv2EP[id] = new TProfile2D(Form("hv2EP_%i",id),Form("hv2EP_%i",id),NptBins,ptBinMin,ptBinMax,NcentBins,centBinMin,centBinMax);  
   }
   
   for( int ieta=0;ieta<neta;ieta++){
@@ -186,6 +193,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     int fcent = -1;
     for (int i = 0; i < ncent; i++) if (CentB(bimp) == bin_cent[i]) fcent = i;
     if (fcent < 0) continue;
+    float cent = CentB(mcEvent->GetB());
     hBimp -> Fill(bimp);
     Int_t reco_mult = recoTracks->GetEntriesFast();
 
@@ -425,7 +433,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       auto mcTrack = (PicoDstMCTrack*) mcTracks->UncheckedAt(recoTrack->GetMcId());
       if (!mcTrack) continue;
       if (mcTrack->GetMotherId() != -1) continue;
-      if (recoTrack->GetNhits()<Nhits_cut) continue;
+      if (recoTrack->GetNhits() < Nhits_cut) continue;
       float pt  = recoTrack->GetPt();
       float eta = recoTrack->GetEta();
       float phi = recoTrack->GetPhi();
@@ -454,7 +462,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       if(mcTrack->GetPdg()==-321)  fId=6; // kaon-
       if(mcTrack->GetPdg()==-2212) fId=7; // anti-proton
       // ==================================== Eta Sub-event ==================================== //
-      float v2=-999.0;
+      float v2=0.;
       if(eta>0){ // eta+
         v2 = cos(2.0 * (phi-psiEP_L) )/res2[fcent];
         // v2 = cos(2.0 * (phi-psiEP_L) );
@@ -466,22 +474,25 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       if (charge>0){
         hPT[fcent][ipt][0]->Fill(0.5, pt, 1);
         // hv2EP[fcent][ipt][0]->Fill(0.5,v2);
-        hv2EP[0]->Fill(0.5+ipt,0.5+fcent,v2);
+        // hv2EP[0]->Fill(0.5+ipt,0.5+fcent,v2);
+        hv2EP[0]->Fill(pt, cent, v2);
         hv22EP[fcent][0]->Fill(0.5,v2);
         hcounter[fcent][ipt][0]->Fill(2.5,1);
       }
       if (charge<0){
-        hPT[fcent][ipt][4]->Fill(0.5, pt, 1);
+        hPT[fcent][ipt][4]->Fill(0.5,pt);
         // hv2EP[fcent][ipt][4]->Fill(0.5,v2);
-        hv2EP[4]->Fill(0.5+ipt,0.5+fcent,v2);
+        // hv2EP[4]->Fill(0.5+ipt,0.5+fcent,v2);
+        hv2EP[4]->Fill(pt, cent, v2);
         hv22EP[fcent][4]->Fill(0.5,v2);
         hcounter[fcent][ipt][4]->Fill(2.5,1);
       }
       
       if (fId>0) {
-        hPT[fcent][ipt][fId]->Fill(0.5, pt, 1);
+        hPT[fcent][ipt][fId]->Fill(0.5,pt);
         // hv2EP[fcent][ipt][fId]->Fill(0.5,v2);
-        hv2EP[fId]->Fill(0.5+ipt,0.5+fcent,v2);
+        // hv2EP[fId]->Fill(0.5+ipt,0.5+fcent,v2);
+        hv2EP[0]->Fill(pt, cent, v2);
         hv22EP[fcent][fId]->Fill(0.5,v2);
         hcounter[fcent][ipt][fId]->Fill(2.5,1);
       }

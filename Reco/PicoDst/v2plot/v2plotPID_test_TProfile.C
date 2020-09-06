@@ -85,7 +85,7 @@ TProfile *prV22dif1040[npt][npid], *prV24dif1040[npt][npid], *prV2EPdif1040[npt]
 
 void v2plot_differential_flow(){
   // TFile *inFile = new TFile("../ROOTFile/PID_test_TProfile.root","read");
-  TFile *inFile = new TFile("../ROOTFile/PID_PeterCode.root","read");
+  TFile *inFile = new TFile("../ROOTFile/PID_test_TProfile.root","read");
 
 
   // Temporary variables
@@ -121,7 +121,7 @@ void v2plot_differential_flow(){
   for (int id=0;id<npid;id++){
     for (int icent=0;icent<ncent;icent++){
       pv2EP[icent][id] = (TProfile*)(hv2EP[id])->ProfileX(Form("%s_cent_%i",hv2EP[id]->GetName(),icent),icent+1,icent+2);
-      pv2EP[icent][id] = (TProfile *)pv2EP[icent][id]->Rebin(n_pt_bins, Form("rebinned_%s", pv2EP[icent][id]->GetName()), &pt_binning[0]);
+      // pv2EP[icent][id] = (TProfile *)pv2EP[icent][id]->Rebin(n_pt_bins, Form("rebinned_%s", pv2EP[icent][id]->GetName()), &pt_binning[0]);
     }
   }
 
@@ -576,7 +576,7 @@ void v2plot_integrated_flow(){
   } // end of loop over particle ID
 }
 */
-void v2plotPID_Peter(){
+void v2plotPID_test_TProfile(){
   v2plot_differential_flow();
   // v2plot_integrated_flow();
 }

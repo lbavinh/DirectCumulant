@@ -12,7 +12,8 @@ void Compare(){
   inputVinh[0] = new TFile("VinhPID_UrQMD.root","read");
   inputVinh[1] = new TFile("VinhPID_GEANT.root","read");
   // inputVinh[2] = new TFile("VinhPID_Reco.root","read");
-  inputVinh[2] = new TFile("PeterPID_test.root","read");
+  // inputVinh[2] = new TFile("PeterPID_test.root","read");
+  inputVinh[2] = new TFile("VinhPID_test_TProfile.root","read");
 
   for (int i=0; i<nmethod; i++){
     for (int id=0;id<npid;id++){
@@ -27,8 +28,8 @@ void Compare(){
 
   inputDim[0][0] = new TFile("urqmdPOS.root","read");
   inputDim[0][1] = new TFile("urqmdNEG.root","read");
-  inputDim[1][0] = new TFile("picoPOS.root","read");
-  inputDim[1][1] = new TFile("picoNEG.root","read");
+  inputDim[1][0] = new TFile("geantPOS.root","read");
+  inputDim[1][1] = new TFile("geantNEG.root","read");
   inputDim[2][0] = new TFile("picoPOS.root","read");
   inputDim[2][1] = new TFile("picoNEG.root","read");
 

@@ -1,6 +1,6 @@
 #include "DrawTGraph.C"
 
-TFile *outFile = new TFile("../CompareResult/PeterPID_test.root","recreate");
+TFile *outFile = new TFile("../CompareResult/VinhPID_test_TProfile.root","recreate");
 bool bDrawPlots1040 = 0;
 bool drawDistributions = 0;
 bool bSaveCanvas = 0;
@@ -79,7 +79,7 @@ TProfile *prV22int[ncent][npid], *prV24int[ncent][npid], *prV2EPint[ncent][npid]
 TProfile *prV22dif1040[npt][npid], *prV24dif1040[npt][npid], *prV2EPdif1040[npt][npid], *pt1040[npt][npid]; // TProfile for differential flow of 10-40% centrality bin
 
 void v2plot_differential_flow(){
-  TFile *inFile = new TFile("../ROOTFile/PID_Peter_2ndIteration.root","read");
+  TFile *inFile = new TFile("../ROOTFile/PID_test_TProfile.root","read");
 
 
   // Temporary variables
@@ -99,22 +99,31 @@ void v2plot_differential_flow(){
   TProfile *hcov42prime[ncent][npt][npid]; // <2>*<4'>
   TProfile *hcov44prime[ncent][npt][npid]; // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt][npid]; // <2'>*<4'>
-  TProfile *hv2EP[ncent][npt][npid];	  // elliptic flow from EP method
-  TProfile *HRes[ncent];
+  // TProfile *hv2EP[ncent][npt][npid];	  // elliptic flow from EP method
+  TProfile2D *hv2EP[npid];	  // elliptic flow from EP method
+  // TProfile *HRes[ncent];
+  TProfile *pv2EP[ncent][npid];	  // elliptic flow from EP method
   // OUTPUT
   TGraphErrors *grDifFl[3][ncent][npid];    // v2(pt); 3 = {2QC, 4QC, EP}
   TGraphErrors *grDifFl1040[3][npid];
   
   // Get TProfile histograms from ROOTFile
 
+  for (int id=0;id<npid;id++){
+    hv2EP[id]= (TProfile2D*)inFile->Get(Form("hv2EP_%i",id));
+    for (int icent=0;icent<ncent;icent++){
+      pv2EP[icent][id] = (TProfile*)hv2EP[id]->ProfileX(Form("cent_%i_%i",icent,id),icent,icent+1.);
+    }
+  }
+
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
+    // HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
     hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
     hv24[icent] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
     hcov24[icent] = (TProfile*)inFile->Get(Form("hcov24_%i",icent));
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid;id++){
-        hv2EP[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2EP_%i_%i_%i",icent,ipt,id));
+        // hv2EP[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2EP_%i_%i_%i",icent,ipt,id));
         hPT[icent][ipt][id]=(TProfile*)inFile->Get(Form("hPT_%i_%i_%i",icent,ipt,id));
         hv22pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22pt_%i_%i_%i",icent,ipt,id));
         hv24pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv24pt_%i_%i_%i",icent,ipt,id));
@@ -128,28 +137,28 @@ void v2plot_differential_flow(){
   } // end of loop over centrality classes
 
   //==========================================================================================================================
-  if (bDrawPlots1040){
-    // Add
-    for (int icent=2; icent<4; icent++){ // loop over centrality classes
-      HRes[1] -> Add(HRes[icent]);
-      hv22[1] -> Add(hv22[icent]);
-      hv24[1] -> Add(hv24[icent]);
-      hcov24[1] -> Add(hcov24[icent]);
-      for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-        for (int id=0;id<npid;id++){ // loop over pid
-          hv2EP[1][ipt][id]-> Add(hv2EP[icent][ipt][id]);
-          hPT[1][ipt][id]-> Add(hPT[icent][ipt][id]);
-          hv22pt[1][ipt][id]-> Add(hv22pt[icent][ipt][id]);
-          hv24pt[1][ipt][id]-> Add(hv24pt[icent][ipt][id]);
-          hcov22prime[1][ipt][id]-> Add(hcov22prime[icent][ipt][id]);
-          hcov24prime[1][ipt][id]-> Add(hcov24prime[icent][ipt][id]);
-          hcov42prime[1][ipt][id]-> Add(hcov42prime[icent][ipt][id]);
-          hcov44prime[1][ipt][id]-> Add(hcov44prime[icent][ipt][id]);
-          hcov2prime4prime[1][ipt][id]-> Add(hcov2prime4prime[icent][ipt][id]);
-        }
-      } // end of loop over pt bin
-    }
-  }
+  // if (bDrawPlots1040){
+  //   // Add
+  //   for (int icent=2; icent<4; icent++){ // loop over centrality classes
+  //     HRes[1] -> Add(HRes[icent]);
+  //     hv22[1] -> Add(hv22[icent]);
+  //     hv24[1] -> Add(hv24[icent]);
+  //     hcov24[1] -> Add(hcov24[icent]);
+  //     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+  //       for (int id=0;id<npid;id++){ // loop over pid
+  //         hv2EP[1][ipt][id]-> Add(hv2EP[icent][ipt][id]);
+  //         hPT[1][ipt][id]-> Add(hPT[icent][ipt][id]);
+  //         hv22pt[1][ipt][id]-> Add(hv22pt[icent][ipt][id]);
+  //         hv24pt[1][ipt][id]-> Add(hv24pt[icent][ipt][id]);
+  //         hcov22prime[1][ipt][id]-> Add(hcov22prime[icent][ipt][id]);
+  //         hcov24prime[1][ipt][id]-> Add(hcov24prime[icent][ipt][id]);
+  //         hcov42prime[1][ipt][id]-> Add(hcov42prime[icent][ipt][id]);
+  //         hcov44prime[1][ipt][id]-> Add(hcov44prime[icent][ipt][id]);
+  //         hcov2prime4prime[1][ipt][id]-> Add(hcov2prime4prime[icent][ipt][id]);
+  //       }
+  //     } // end of loop over pt bin
+  //   }
+  // }
   //==========================================================================================================================
   /*
   // Filling pT bin
@@ -202,11 +211,14 @@ void v2plot_differential_flow(){
         vPt.push_back((bin_pT[ipt]+bin_pT[ipt+1])/2.);
         ePt.push_back(0);
         // v2EP
-        double res2 = sqrt(HRes[icent]->GetBinContent(1));
-        double v2obs = hv2EP[icent][ipt][id]->GetBinContent(1);
+        // double res2 = sqrt(HRes[icent]->GetBinContent(1));
+        // double v2obs = hv2EP[icent][ipt][id]->GetBinContent(1);
+        double v2obs = pv2EP[icent][id]->GetBinContent(1+ipt);
+        
         // double v2EPDif = v2obs / res2;
         double v2EPDif = v2obs;
-        double ev2EP = hv2EP[icent][ipt][id]->GetBinError(1);
+        // double ev2EP = hv2EP[icent][ipt][id]->GetBinError(1);
+        double ev2EP = pv2EP[icent][id]->GetBinError(1+ipt);
         vV2EPDif.push_back(v2EPDif);
         eV2EPDif.push_back(ev2EP);
         
@@ -418,7 +430,7 @@ void v2plot_differential_flow(){
     cV2PT1040[id] -> SaveAs(Form("../Graphics/%sDFCent10-40.png",pidNames.at(id).Data()));
   }
 }
-
+/*
 void v2plot_integrated_flow(){
   if (bDrawPlots1040) return;
   char hname[400];
@@ -437,11 +449,11 @@ void v2plot_integrated_flow(){
   TProfile *hcov2prime4prime[ncent][npt][npid]; // <2'>*<4'>
   TProfile *hv2EP[ncent][npt][npid];	// elliptic flow from EP method
   TProfile *hv22EP[ncent][npid];      
-  TProfile *HRes[ncent];
+  // TProfile *HRes[ncent];
   // Get histograms
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // hv22EP[icent] = (TProfile*)inFile->Get(Form("hv22EP_%i",icent));
-    HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
+    // HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
     // hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
     // hv24[icent] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
     // hcov24[icent] = (TProfile*)inFile->Get(Form("hcov24_%i",icent));
@@ -554,7 +566,8 @@ void v2plot_integrated_flow(){
     can[id] -> SaveAs(Form("../Graphics/%sV2vsCent.png",pidNames.at(id).Data()));
   } // end of loop over particle ID
 }
+*/
 void v2plotPID_Peter(){
   v2plot_differential_flow();
-  v2plot_integrated_flow();
+  // v2plot_integrated_flow();
 }

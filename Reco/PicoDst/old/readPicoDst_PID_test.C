@@ -106,8 +106,8 @@ const float PidProb_cut = 0.9;
 // const std::vector<float> vResMcTpc   = {0.226827, 0.347749, 0.369009, 0.336583, 0.281697, 0.224447, 0.18955, 0.186935}; // Peter's res
 // const std::vector<float> vResRecoTpc = {0.211611, 0.329277, 0.350632, 0.319347, 0.269741, 0.21128, 0.181021, 0.176676}; // Peter's res
 const std::vector<float> vResMcTpc   = {0.226443,0.348428,0.36861,0.337042,0.281881,0.225086,0.190239,0.187385}; // my res
-const std::vector<float> vResRecoTpc = {0.212417,0.329986,0.349994,0.319957,0.270354,0.211854,0.181174,0.178446}; // my res 
-
+// const std::vector<float> vResRecoTpc = {0.212417,0.329986,0.349994,0.319957,0.270354,0.211854,0.181174,0.178446}; // my res 
+const std::vector<float> vResRecoTpc = {0.211611,0.329277,0.350632,0.319347,0.269741,0.21128,0.181021,0.176676}; // my res 
 static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
 static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.};
 static const int npid = 8; // h+, pions+, kaons+, protons+, h-, pions-, kaons-, protons-

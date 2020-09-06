@@ -11,7 +11,8 @@ void res2() {
   // TFile *file = new TFile("sum.root","read");
   // TFile *file = new TFile("./OUT/res2.root","read");
   // TFile *file = new TFile("./OUT/sum.root","read");
-  TFile *file = new TFile("./ROOTFile/PID.root","read");
+  TFile *file = new TFile("./OUT/PID_test_TProfile.root","read");
+  // TFile *file = new TFile("test.root","read");
   float res2EW[ncent]; // 8 - number of cent bins
 
 
@@ -20,10 +21,12 @@ void res2() {
   float ecent[ncent];   // errors of centrality bin
   TProfile *h3;
   char hname1[800];
+  sprintf(hname1,"HRes");
+  h3 = (TProfile*)file->Get(hname1);
   for (int ic = 0; ic < ncent; ic++) {
-    sprintf(hname1,"HRes_%i",ic);
-    h3 = (TProfile*)file->Get(hname1);
-    res2EW[ic] = sqrt(h3->GetBinContent(1));
+    // sprintf(hname1,"HRes_%i",ic);
+    // h3 = (TProfile*)file->Get(hname1);
+    res2EW[ic] = sqrt(h3->GetBinContent(1+ic));
     eres[ic] = 0.01;
     ecent[ic] = 0.03;
 

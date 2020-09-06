@@ -1,6 +1,6 @@
 #include "DrawTGraph.C"
 
-TFile *outFile = new TFile("../CompareResult/VinhPID.root","recreate");
+TFile *outFile = new TFile("../CompareResult/VinhPID_test_TProfile_pt_filled.root","recreate");
 bool bDrawPlots1040 = 0;
 bool drawDistributions = 0;
 bool bSaveCanvas = 0;
@@ -60,62 +60,38 @@ struct term{
 // static const int npt = 8; // 0.5 - 3.6 GeV/c - number of pT bins
 // static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.4, 3.};
 
-static const int npid = 4; // charged hadrons, pions, kaons, protons
+static const int npid = 8; // charged hadrons, pions, kaons, protons
 static const int nmethod = 3; // 2QC, 4QC, EP
 
-static const int npt = 7; // 0.5 - 3.6 GeV/c - number of pT bins
-static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.5};
+static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
+static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.};
 static const double maxpt = 2.5; // max pt
-static const double minpt = 0.1; // min pt
+static const double minpt = 0.2; // min pt
 
 static const int ncent = 8; // 0-80 %
 static const double bin_cent[ncent] = {5,15,25,35,45,55,65,75};
+static const double Bin_cent[ncent+1]={0.,10.,20.,30.,40.,50.,60.,70.,80.};
 static const double bin_centE[ncent] = {0};
 
-const char *particle[4]={"Charged hadrons","Pions","Kaons","Protons"};
+const std::vector<double> pt_binning = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.5, 1.8, 2.5, 3.};
+// const std::vector<double> pt_binning = {0.2, 0.6, 1., 1.5, 2.5, 3.}; // for kaons specifically
+const int n_pt_bins = pt_binning.size() - 1;
+
+const std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton_pos", "hadron_neg", "pion_neg", "kaon_neg", "proton_neg"};
+const std::vector<TString> pidFancyNames = {"h+", "#pi+", "K+", "p", "h-", "#pi-", "K-", "#bar{p}"};
 
 TProfile *prV22int[ncent][npid], *prV24int[ncent][npid], *prV2EPint[ncent][npid]; // TProfile for integrated flow 
 TProfile *prV22dif1040[npt][npid], *prV24dif1040[npt][npid], *prV2EPdif1040[npt][npid], *pt1040[npt][npid]; // TProfile for differential flow of 10-40% centrality bin
 
 void v2plot_differential_flow(){
-  TFile *inFile = new TFile("../ROOTFile/PID.root","read");
+  TFile *inFile = new TFile("../ROOTFile/PID_test_TProfile_pt_filled.root","read");
+  // TFile *inFile = new TFile("../ROOTFile/PID_PeterCode.root","read");
 
 
   // Temporary variables
   char hname[800]; // histogram hname
   double stats[6]; // stats of TProfile
   // char analysis[20]={"pure"};
-
-  if (drawDistributions){
-    TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
-
-    TH1I *hMult = (TH1I*)inFile->Get("hMult");
-    hMult -> Draw();
-    sprintf(hname,"../Graphics/mult.png");
-    cTemp -> Draw();
-    cTemp -> SaveAs(hname);
-
-    TH1I *hEvt = (TH1I*)inFile->Get("hEvt");
-    hEvt -> Draw();
-    sprintf(hname,"../Graphics/evt.png");
-    cTemp -> Draw();
-    cTemp -> SaveAs(hname);
-
-    TH1F *hEta = (TH1F*)inFile->Get("hEta");
-    hEta -> Draw();
-    sprintf(hname,"../Graphics/eta.png");
-    cTemp -> SaveAs(hname);  
-
-    TH1F *hPhi = (TH1F*)inFile->Get("hPhi");
-    hPhi -> Draw();
-    sprintf(hname,"../Graphics/phi.png");
-    cTemp -> SaveAs(hname);
-
-    TH1F *hPt = (TH1F*)inFile->Get("hPt");
-    hPt -> Draw();
-    sprintf(hname,"../Graphics/pt.png");
-    cTemp -> SaveAs(hname);
-  }
 
   // Input hist
   TProfile *hv22[ncent];        // profile <<2>> from 2nd Q-Cumulants
@@ -129,22 +105,34 @@ void v2plot_differential_flow(){
   TProfile *hcov42prime[ncent][npt][npid]; // <2>*<4'>
   TProfile *hcov44prime[ncent][npt][npid]; // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt][npid]; // <2'>*<4'>
-  TProfile *hv2EP[ncent][npt][npid];	  // elliptic flow from EP method
-  TProfile *HRes[ncent];
+  // TProfile *hv2EP[ncent][npt][npid];	  // elliptic flow from EP method
+  TProfile2D *hv2EP[npid];	  // elliptic flow from EP method
+  // TProfile *HRes[ncent];
+  TProfile *pv2EP[ncent][npid];	  // elliptic flow from EP method
   // OUTPUT
   TGraphErrors *grDifFl[3][ncent][npid];    // v2(pt); 3 = {2QC, 4QC, EP}
   TGraphErrors *grDifFl1040[3][npid];
   
   // Get TProfile histograms from ROOTFile
 
+  for (int id=0;id<npid;id++){
+    hv2EP[id]= (TProfile2D*)inFile->Get(Form("hv2EP_%i",id));
+  }
+  for (int id=0;id<npid;id++){
+    for (int icent=0;icent<ncent;icent++){
+      pv2EP[icent][id] = (TProfile*)(hv2EP[id])->ProfileX(Form("%s_cent_%i",hv2EP[id]->GetName(),icent),icent+1,icent+1);
+      pv2EP[icent][id] = (TProfile *)pv2EP[icent][id]->Rebin(n_pt_bins, Form("rebinned_%s", pv2EP[icent][id]->GetName()), &pt_binning[0]);
+    }
+  }
+
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
+    // HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
     hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
     hv24[icent] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
     hcov24[icent] = (TProfile*)inFile->Get(Form("hcov24_%i",icent));
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid;id++){
-        hv2EP[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2EP_%i_%i_%i",icent,ipt,id));
+        // hv2EP[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2EP_%i_%i_%i",icent,ipt,id));
         hPT[icent][ipt][id]=(TProfile*)inFile->Get(Form("hPT_%i_%i_%i",icent,ipt,id));
         hv22pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22pt_%i_%i_%i",icent,ipt,id));
         hv24pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv24pt_%i_%i_%i",icent,ipt,id));
@@ -158,28 +146,28 @@ void v2plot_differential_flow(){
   } // end of loop over centrality classes
 
   //==========================================================================================================================
-  if (bDrawPlots1040){
-    // Add
-    for (int icent=2; icent<4; icent++){ // loop over centrality classes
-      HRes[1] -> Add(HRes[icent]);
-      hv22[1] -> Add(hv22[icent]);
-      hv24[1] -> Add(hv24[icent]);
-      hcov24[1] -> Add(hcov24[icent]);
-      for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-        for (int id=0;id<npid;id++){ // loop over pid
-          hv2EP[1][ipt][id]-> Add(hv2EP[icent][ipt][id]);
-          hPT[1][ipt][id]-> Add(hPT[icent][ipt][id]);
-          hv22pt[1][ipt][id]-> Add(hv22pt[icent][ipt][id]);
-          hv24pt[1][ipt][id]-> Add(hv24pt[icent][ipt][id]);
-          hcov22prime[1][ipt][id]-> Add(hcov22prime[icent][ipt][id]);
-          hcov24prime[1][ipt][id]-> Add(hcov24prime[icent][ipt][id]);
-          hcov42prime[1][ipt][id]-> Add(hcov42prime[icent][ipt][id]);
-          hcov44prime[1][ipt][id]-> Add(hcov44prime[icent][ipt][id]);
-          hcov2prime4prime[1][ipt][id]-> Add(hcov2prime4prime[icent][ipt][id]);
-        }
-      } // end of loop over pt bin
-    }
-  }
+  // if (bDrawPlots1040){
+  //   // Add
+  //   for (int icent=2; icent<4; icent++){ // loop over centrality classes
+  //     HRes[1] -> Add(HRes[icent]);
+  //     hv22[1] -> Add(hv22[icent]);
+  //     hv24[1] -> Add(hv24[icent]);
+  //     hcov24[1] -> Add(hcov24[icent]);
+  //     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+  //       for (int id=0;id<npid;id++){ // loop over pid
+  //         hv2EP[1][ipt][id]-> Add(hv2EP[icent][ipt][id]);
+  //         hPT[1][ipt][id]-> Add(hPT[icent][ipt][id]);
+  //         hv22pt[1][ipt][id]-> Add(hv22pt[icent][ipt][id]);
+  //         hv24pt[1][ipt][id]-> Add(hv24pt[icent][ipt][id]);
+  //         hcov22prime[1][ipt][id]-> Add(hcov22prime[icent][ipt][id]);
+  //         hcov24prime[1][ipt][id]-> Add(hcov24prime[icent][ipt][id]);
+  //         hcov42prime[1][ipt][id]-> Add(hcov42prime[icent][ipt][id]);
+  //         hcov44prime[1][ipt][id]-> Add(hcov44prime[icent][ipt][id]);
+  //         hcov2prime4prime[1][ipt][id]-> Add(hcov2prime4prime[icent][ipt][id]);
+  //       }
+  //     } // end of loop over pt bin
+  //   }
+  // }
   //==========================================================================================================================
   /*
   // Filling pT bin
@@ -228,13 +216,18 @@ void v2plot_differential_flow(){
       vector <double> eV2EPDif, eV22Dif, eV24Dif, ePt;
       // Differential flow calculation
       for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
-        vPt.push_back(hPT[icent][ipt][id] -> GetBinContent(1));
+        // vPt.push_back(hPT[icent][ipt][id] -> GetBinContent(1));
+        vPt.push_back((bin_pT[ipt]+bin_pT[ipt+1])/2.);
         ePt.push_back(0);
         // v2EP
-        double res2 = sqrt(HRes[icent]->GetBinContent(1));
-        double v2obs = hv2EP[icent][ipt][id]->GetBinContent(1);
-        double v2EPDif = v2obs / res2;
-        double ev2EP = hv2EP[icent][ipt][id]->GetBinError(1) / res2;
+        // double res2 = sqrt(HRes[icent]->GetBinContent(1));
+        // double v2obs = hv2EP[icent][ipt][id]->GetBinContent(1);
+        double v2obs = pv2EP[icent][id]->GetBinContent(1+ipt);
+        
+        // double v2EPDif = v2obs / res2;
+        double v2EPDif = v2obs;
+        // double ev2EP = hv2EP[icent][ipt][id]->GetBinError(1);
+        double ev2EP = pv2EP[icent][id]->GetBinError(1+ipt);
         vV2EPDif.push_back(v2EPDif);
         eV2EPDif.push_back(ev2EP);
         
@@ -284,8 +277,8 @@ void v2plot_differential_flow(){
           prV24dif1040[ipt][id]->Fill(0.5,v24Dif,hPT[icent][ipt][id] -> GetBinEntries(1));
           pt1040[ipt][id]->Fill(0.5,hPT[icent][ipt][id] -> GetBinContent(1),hPT[icent][ipt][id] -> GetBinEntries(1));
         }
-        if (icent==1 && bDrawPlots1040) cout << ev22Dif <<", ";
-        // if (icent==1 && bDrawPlots1040) cout << ev24Dif <<", ";
+        // if (icent==1 && bDrawPlots1040) cout << ev22Dif <<", ";
+        if (icent==1 && bDrawPlots1040) cout << ev24Dif <<", ";
         // if (icent==1 && bDrawPlots1040) cout << ev2EP <<", ";
       } // end of loop for all pT bin
       if (icent==1 && bDrawPlots1040) cout << endl;
@@ -333,47 +326,70 @@ void v2plot_differential_flow(){
   TCanvas *cV2PT[ncent][npid];
   for (int icent=0; icent<6; icent++){
     for (int id=0;id<npid;id++){
-      sprintf(hname,"%s, centrality %i-%i%%",particle[id],icent*10,(icent+1)*10);
+      sprintf(hname,"%s, centrality %i-%i%%",pidFancyNames.at(id).Data(),icent*10,(icent+1)*10);
       cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][id],"",0.77, 1.23, 0., maxpt, -0.01, 0.2, 0.18, 0.56, 0.5, 0.8, hname);
       cV2PT[icent][id] -> SetName(hname);
-      sprintf(hname,"../Graphics/%sDFCent%i-%i.png",particle[id],icent*10,(icent+1)*10);
+      sprintf(hname,"../Graphics/%sDFCent%i-%i.png",pidNames.at(id).Data(),icent*10,(icent+1)*10);
       cV2PT[icent][id] -> SaveAs(hname);
     }
   }
 
-  double eV22Dif1040CH[npt]={0.000173659, 0.000182612, 0.000269659, 0.00041098, 0.000660771, 0.000987603, 0.00159836};
-  double eV22Dif1040Pion[npt]={0.000252966, 0.000235454, 0.000410919, 0.000764888, 0.00133974, 0.0022547, 0.00519589};
-  double eV22Dif1040Kaon[npt]={0.00221423, 0.000915783, 0.00105691, 0.00158844, 0.0027663, 0.00491592, 0.0110777};
-  double eV22Dif1040Proton[npt]={0.0040442, 0.000669044, 0.000555492, 0.000682958, 0.00098099, 0.00142631, 0.00270869};
+  double eV22Dif1040CHp[npt]={0.000287985, 0.000346998, 0.000429414, 0.000541804, 0.0007074, 0.000829631, 0.00129287, 0.00174203, 0.00538854};
+  double eV22Dif1040Pionp[npt]={0.000312526, 0.000438508, 0.00066387, 0.000992462, 0.00141259, 0.00178265, 0.00300932, 0.00452045, 0.0161991};
+  double eV22Dif1040Kaonp[npt]={0.00129967, 0.00115888, 0.00132715, 0.00166258, 0.00217445, 0.00264019, 0.00441676, 0.00665323, 0.0244402};
+  double eV22Dif1040Protonp[npt]={0.000982349, 0.000689308, 0.0006369, 0.000698007, 0.000846397, 0.000949636, 0.00142479, 0.0018894, 0.00584226};
+  double eV22Dif1040CHm[npt]={0.000295261, 0.000407241, 0.000607424, 0.000906665, 0.00129327, 0.00162468, 0.00271712, 0.00407054, 0.0146936};
+  double eV22Dif1040Pionm[npt]={0.000299178, 0.000419966, 0.000636206, 0.000955824, 0.00136474, 0.00172153, 0.002902, 0.00436158, 0.0158048};
+  double eV22Dif1040Kaonm[npt]={0.00177733, 0.00161408, 0.00191686, 0.00251957, 0.0034679, 0.00438097, 0.00760223, 0.0117106, 0.0414045};
+  double eV22Dif1040Protonm[npt]={0.0160834, 0.00978732, 0.00805651, 0.00819944, 0.00967801, 0.011032, 0.0186514, 0.0281518, 0.0556309};
 
-  double eV24Dif1040CH[npt]={0.00237311, 0.00275348, 0.00403769, 0.00613365, 0.00878732, 0.0127474, 0.0195124};
-  double eV24Dif1040Pion[npt]={0.00336625, 0.0034261, 0.00579601, 0.0101898, 0.0163529, 0.0265649, 0.0601984};
-  double eV24Dif1040Kaon[npt]={0.0264084, 0.0112381, 0.0128386, 0.0188489, 0.0317938, 0.056217, 0.126206};
-  double eV24Dif1040Proton[npt]={.048703, 0.00828205, 0.00702651, 0.00897594, 0.0123648, 0.0173067, 0.0313899};
+  double eV24Dif1040CHp[npt]={0.00393944, 0.0046574, 0.00580832, 0.00754447, 0.00962995, 0.0111394, 0.0162147, 0.0217968, 0.062402};
+  double eV24Dif1040Pionp[npt]={0.00427627, 0.00589614, 0.00888263, 0.0127643, 0.0176608, 0.021809, 0.0359699, 0.0536001, 0.187989};
+  double eV24Dif1040Kaonp[npt]={0.0159767, 0.014355, 0.0161911, 0.0203085, 0.0262709, 0.0317771, 0.0521675, 0.0777483, 0.278757};
+  double eV24Dif1040Protonp[npt]={0.0122489, 0.00866283, 0.00811008, 0.00931179, 0.0111635, 0.012543, 0.017628, 0.023264, 0.0674229};
+  double eV24Dif1040CHm[npt]={0.00402892, 0.00562555, 0.0079661, 0.0116505, 0.0162427, 0.0198523, 0.0324849, 0.0485143, 0.175717};
+  double eV24Dif1040Pionm[npt]={0.00407939, 0.00576103, 0.00829019, 0.012316, 0.0171313, 0.0210563, 0.0349607, 0.0521695, 0.190774};
+  double eV24Dif1040Kaonm[npt]={0.0217772, 0.0197707, 0.0230765, 0.0296323, 0.0399422, 0.0507466, 0.0842217, 0.128386, 0.443462};
+  double eV24Dif1040Protonm[npt]={0.223339, 0.129618, 0.101039, 0.103635, 0.11948, 0.130162, 0.217291, 0.337854, 0.412331};
 
+  double eV2EPDif1040CHp[npt]={0.000241064, 0.000286511, 0.000350603, 0.000435495, 0.000559585, 0.000651876, 0.00106183, 0.00150943, 0.00523379};
+  double eV2EPDif1040Pionp[npt]={0.000260159, 0.000356126, 0.000529311, 0.000794359, 0.00118338, 0.0015558, 0.00281157, 0.0043393, 0.0158445};
+  double eV2EPDif1040Kaonp[npt]={0.00108166, 0.000949999, 0.00110731, 0.00143954, 0.00196732, 0.00244518, 0.00425293, 0.00648211, 0.0238246};  
+  double eV2EPDif1040Protonp[npt]={0.000795849, 0.000559932, 0.000516356, 0.000558544, 0.000670997, 0.000751035, 0.00119085, 0.00166205, 0.00570161};
+  double eV2EPDif1040CHm[npt]={0.000245449, 0.000331495, 0.000486003, 0.000721979, 0.00106788, 0.00139695, 0.00251906, 0.00389362, 0.0144634};
+  double eV2EPDif1040Pionm[npt]={0.000248607, 0.000341562, 0.000508223, 0.000762961, 0.00113662, 0.00149381, 0.00270315, 0.00417821, 0.0154637};
+  double eV2EPDif1040Kaonm[npt]={0.0015534, 0.00139149, 0.00170338, 0.00233115, 0.00331287, 0.00424726, 0.00752357, 0.0116479, 0.0445369};  
+  double eV2EPDif1040Protonm[npt]={0.0146491, 0.00910568, 0.0075653, 0.0077716, 0.00922676, 0.0106228, 0.0180493, 0.0276428, 0.103005};
 
-  double eV2EPDif1040CH[npt]={0.000152973, 0.000150782, 0.000227103, 0.000346128, 0.000547315, 0.000827443, 0.00144526};
-  double eV2EPDif1040Pion[npt]={0.000224798, 0.000197761, 0.000346805, 0.000635896, 0.00117723, 0.00215636, 0.00526531};
-  double eV2EPDif1040Kaon[npt]={0.00210334, 0.000773732, 0.000900955, 0.00144373, 0.00271955, 0.00502136, 0.0114455};  
-  double eV2EPDif1040Proton[npt]={0.00397096, 0.000570775, 0.000475825, 0.000571837, 0.000823649, 0.00126549, 0.00265609};
-  
   double eV22Dif1040[npid][npt], eV24Dif1040[npid][npt], eV2EPDif1040[npid][npt];
 
   for (int ipt=0;ipt<npt;ipt++){
-    eV22Dif1040[0][ipt] = eV22Dif1040CH[ipt];
-    eV22Dif1040[1][ipt] = eV22Dif1040Pion[ipt];
-    eV22Dif1040[2][ipt] = eV22Dif1040Kaon[ipt];
-    eV22Dif1040[3][ipt] = eV22Dif1040Proton[ipt];
+    eV22Dif1040[0][ipt] = eV22Dif1040CHp[ipt];
+    eV22Dif1040[1][ipt] = eV22Dif1040Pionp[ipt];
+    eV22Dif1040[2][ipt] = eV22Dif1040Kaonp[ipt];
+    eV22Dif1040[3][ipt] = eV22Dif1040Protonp[ipt];
+    eV22Dif1040[4][ipt] = eV22Dif1040CHm[ipt];
+    eV22Dif1040[5][ipt] = eV22Dif1040Pionm[ipt];
+    eV22Dif1040[6][ipt] = eV22Dif1040Kaonm[ipt];
+    eV22Dif1040[7][ipt] = eV22Dif1040Protonm[ipt];    
 
-    eV24Dif1040[0][ipt] = eV24Dif1040CH[ipt];
-    eV24Dif1040[1][ipt] = eV24Dif1040Pion[ipt];
-    eV24Dif1040[2][ipt] = eV24Dif1040Kaon[ipt];
-    eV24Dif1040[3][ipt] = eV24Dif1040Proton[ipt];
+    eV24Dif1040[0][ipt] = eV24Dif1040CHp[ipt];
+    eV24Dif1040[1][ipt] = eV24Dif1040Pionp[ipt];
+    eV24Dif1040[2][ipt] = eV24Dif1040Kaonp[ipt];
+    eV24Dif1040[3][ipt] = eV24Dif1040Protonp[ipt];
+    eV24Dif1040[4][ipt] = eV24Dif1040CHm[ipt];
+    eV24Dif1040[5][ipt] = eV24Dif1040Pionm[ipt];
+    eV24Dif1040[6][ipt] = eV24Dif1040Kaonm[ipt];
+    eV24Dif1040[7][ipt] = eV24Dif1040Protonm[ipt];    
 
-    eV2EPDif1040[0][ipt] = eV2EPDif1040CH[ipt];
-    eV2EPDif1040[1][ipt] = eV2EPDif1040Pion[ipt];
-    eV2EPDif1040[2][ipt] = eV2EPDif1040Kaon[ipt];
-    eV2EPDif1040[3][ipt] = eV2EPDif1040Proton[ipt];
+    eV2EPDif1040[0][ipt] = eV2EPDif1040CHp[ipt];
+    eV2EPDif1040[1][ipt] = eV2EPDif1040Pionp[ipt];
+    eV2EPDif1040[2][ipt] = eV2EPDif1040Kaonp[ipt];
+    eV2EPDif1040[3][ipt] = eV2EPDif1040Protonp[ipt];
+    eV2EPDif1040[4][ipt] = eV2EPDif1040CHm[ipt];
+    eV2EPDif1040[5][ipt] = eV2EPDif1040Pionm[ipt];
+    eV2EPDif1040[6][ipt] = eV2EPDif1040Kaonm[ipt];
+    eV2EPDif1040[7][ipt] = eV2EPDif1040Protonm[ipt];
   }
     
   
@@ -389,7 +405,8 @@ void v2plot_differential_flow(){
       vV22Dif1040.push_back(prV22dif1040[ipt][id]->GetBinContent(1));
       vV24Dif1040.push_back(prV24dif1040[ipt][id]->GetBinContent(1));
       vV2EPDif1040.push_back(prV2EPdif1040[ipt][id]->GetBinContent(1));
-      vPT.push_back(pt1040[ipt][id]->GetBinContent(1));
+      // vPT.push_back(pt1040[ipt][id]->GetBinContent(1));
+      vPT.push_back((bin_pT[ipt]+bin_pT[ipt+1])/2.);
     }
     grDifFl1040[0][id] = new TGraphErrors(npt,&vPT[0],&vV22Dif1040[0],&ePT[0],eV22Dif1040[id]);
     grDifFl1040[0][id] -> SetMarkerColor(kRed);
@@ -416,17 +433,17 @@ void v2plot_differential_flow(){
     }
     
     
-    sprintf(hname,"%s, centrality 10-40%%",particle[id]);
+    sprintf(hname,"%s, centrality 10-40%%",pidFancyNames.at(id).Data());
     cV2PT1040[id] = (TCanvas*) DrawTGraph(vgrv2pt1040,"",0.67,1.33,    0.,maxpt,-0.01,0.2,     0.18,0.56,0.5,0.8,hname);
     cV2PT1040[id] -> SetName(hname);
-    cV2PT1040[id] -> SaveAs(Form("../Graphics/%sDFCent10-40.png",particle[id]));
+    cV2PT1040[id] -> SaveAs(Form("../Graphics/%sDFCent10-40.png",pidNames.at(id).Data()));
   }
 }
-
+/*
 void v2plot_integrated_flow(){
   if (bDrawPlots1040) return;
   char hname[400];
-  TFile *inFile = new TFile("../ROOTFile/PID.root","read");
+  TFile *inFile = new TFile("../ROOTFile/PID_Peter_2ndIteration.root","read");
   // Input histograms
   TProfile *hv22[ncent][npid];        // profile of integrated flow from v2{2}
   TProfile *hv24[ncent][npid];        // profile of integrated flow from v2{4}
@@ -441,11 +458,11 @@ void v2plot_integrated_flow(){
   TProfile *hcov2prime4prime[ncent][npt][npid]; // <2'>*<4'>
   TProfile *hv2EP[ncent][npt][npid];	// elliptic flow from EP method
   TProfile *hv22EP[ncent][npid];      
-  TProfile *HRes[ncent];
+  // TProfile *HRes[ncent];
   // Get histograms
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // hv22EP[icent] = (TProfile*)inFile->Get(Form("hv22EP_%i",icent));
-    HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
+    // HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
     // hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
     // hv24[icent] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
     // hcov24[icent] = (TProfile*)inFile->Get(Form("hcov24_%i",icent));
@@ -487,8 +504,8 @@ void v2plot_integrated_flow(){
     for (int icent=0;icent<ncent;icent++){
 
       // EP
-      vV2EP.push_back( hv22EP[icent][id]->GetBinContent(1) / sqrt( HRes[icent]->GetBinContent(1) ) );
-      eV2EP.push_back( hv22EP[icent][id]->GetBinError(1)   / sqrt( HRes[icent]->GetBinContent(1) ) );
+      vV2EP.push_back( hv22EP[icent][id]->GetBinContent(1) );
+      eV2EP.push_back( hv22EP[icent][id]->GetBinError(1) );
       // vV2EP.push_back( hv22EP[icent]->GetBinContent(1));
       // eV2EP.push_back( hv22EP[icent]->GetBinError(1)  );    
       // 2QC
@@ -553,12 +570,13 @@ void v2plot_integrated_flow(){
     }
 
     
-    can[id] = (TCanvas*) DrawTGraph(vgr,"",0.48,1.22,   0,60,-0.005,0.1,    0.18,0.56,0.5,0.8,particle[id]); // DCA<0.5: 0.88, 1.12 // wo DCA: 0.76, 1.03
-    can[id] -> SetName(particle[id]);
-    can[id] -> SaveAs(Form("../Graphics/%sV2vsCent.png",particle[id]));
+    can[id] = (TCanvas*) DrawTGraph(vgr,"",0.48,1.22,   0,60,-0.005,0.1,    0.18,0.56,0.5,0.8,pidFancyNames.at(id).Data()); // DCA<0.5: 0.88, 1.12 // wo DCA: 0.76, 1.03
+    can[id] -> SetName(pidNames.at(id).Data());
+    can[id] -> SaveAs(Form("../Graphics/%sV2vsCent.png",pidNames.at(id).Data()));
   } // end of loop over particle ID
 }
-void v2plotPID(){
+*/
+void v2plotPID_Peter(){
   v2plot_differential_flow();
-  v2plot_integrated_flow();
+  // v2plot_integrated_flow();
 }

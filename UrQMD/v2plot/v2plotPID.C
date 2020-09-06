@@ -206,6 +206,10 @@ void v2plot_differential_flow(){
       pt1040[ipt][id]=new TProfile(hname,hname,1,0.,1.);
     }
   }
+  // const std::vector<TString> errVectorNames = {"double eV22Dif1040CHp[npt]=", "double eV22Dif1040Pionp[npt]=", "double eV22Dif1040Kaonp[npt]=", "double eV22Dif1040Protonp[npt]=", "double eV22Dif1040CHm[npt]=", "double eV22Dif1040Pionm[npt]=", "double eV22Dif1040Kaonm[npt]=", "double eV22Dif1040Protonm[npt]="};
+  // const std::vector<TString> errVectorNames = {"double eV24Dif1040CHp[npt]=", "double eV24Dif1040Pionp[npt]=", "double eV24Dif1040Kaonp[npt]=", "double eV24Dif1040Protonp[npt]=", "double eV24Dif1040CHm[npt]=", "double eV24Dif1040Pionm[npt]=", "double eV24Dif1040Kaonm[npt]=", "double eV24Dif1040Protonm[npt]="};
+  const std::vector<TString> errVectorNames = {"double eV2EPDif1040CHp[npt]=", "double eV2EPDif1040Pionp[npt]=", "double eV2EPDif1040Kaonp[npt]=", "double eV2EPDif1040Protonp[npt]=", "double eV2EPDif1040CHm[npt]=", "double eV2EPDif1040Pionm[npt]=", "double eV2EPDif1040Kaonm[npt]=", "double eV2EPDif1040Protonm[npt]="}; 
+  
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // double v2EP = hv22EP[icent]->GetBinContent(1)/sqrt(HRes[icent]->GetBinContent(1));
     // double ev2EP = hv22EP[icent]->GetBinError(1)/sqrt(HRes[icent]->GetBinContent(1));
@@ -224,7 +228,11 @@ void v2plot_differential_flow(){
       sprintf(hname,"prV24int_%i_%i",icent,id);
       prV24int[icent][id]=new TProfile(hname,hname,1,0.,1.);
 
-      if (icent==1 && bDrawPlots1040) cout << "PID: "<< id << endl;
+      if (icent==1 && bDrawPlots1040) {
+        // cout << "PID: "<< pidNames.at(id) << endl;
+        cout << errVectorNames.at(id);
+        cout <<"{";
+      }
       vector <double> vV2EPDif, vV22Dif, vV24Dif, vPt;
       vector <double> eV2EPDif, eV22Dif, eV24Dif, ePt;
       // Differential flow calculation
@@ -236,6 +244,7 @@ void v2plot_differential_flow(){
         double res2 = sqrt(HRes[icent]->GetBinContent(1));
         double v2obs = hv2EP[icent][ipt][id]->GetBinContent(1);
         double v2EPDif = v2obs / res2;
+        // double v2EPDif = v2obs;
         double ev2EP = hv2EP[icent][ipt][id]->GetBinError(1) / res2;
         vV2EPDif.push_back(v2EPDif);
         eV2EPDif.push_back(ev2EP);
@@ -286,11 +295,12 @@ void v2plot_differential_flow(){
           prV24dif1040[ipt][id]->Fill(0.5,v24Dif,hPT[icent][ipt][id] -> GetBinEntries(1));
           pt1040[ipt][id]->Fill(0.5,hPT[icent][ipt][id] -> GetBinContent(1),hPT[icent][ipt][id] -> GetBinEntries(1));
         }
-        if (icent==1 && bDrawPlots1040) cout << ev22Dif <<", ";
-        // if (icent==1 && bDrawPlots1040) cout << ev24Dif <<", ";
-        // if (icent==1 && bDrawPlots1040) cout << ev2EP <<", ";
+        // if (icent==1 && bDrawPlots1040) cout << ev22Dif;
+        // if (icent==1 && bDrawPlots1040) cout << ev24Dif;
+        if (icent==1 && bDrawPlots1040) cout << ev2EP;
+        if (icent==1 && bDrawPlots1040 && ipt != npt-1) cout <<",";
       } // end of loop for all pT bin
-      if (icent==1 && bDrawPlots1040) cout << endl;
+      if (icent==1 && bDrawPlots1040) cout <<"};"<< endl;
       // 2QC differential flow
       grDifFl[0][icent][id] = new TGraphErrors(npt,&vPt[0],&vV22Dif[0],&ePt[0],&eV22Dif[0]);
       grDifFl[0][icent][id] -> SetMarkerColor(kRed);

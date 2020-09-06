@@ -120,7 +120,7 @@ void v2plot_differential_flow(){
   }
   for (int id=0;id<npid;id++){
     for (int icent=0;icent<ncent;icent++){
-      pv2EP[icent][id] = (TProfile*)(hv2EP[id])->ProfileX(Form("%s_cent_%i",hv2EP[id]->GetName(),icent),icent+1,icent+2);
+      pv2EP[icent][id] = (TProfile*)(hv2EP[id])->ProfileX(Form("%s_cent_%i",hv2EP[id]->GetName(),icent),icent+1,icent+1);
       // pv2EP[icent][id] = (TProfile *)pv2EP[icent][id]->Rebin(n_pt_bins, Form("rebinned_%s", pv2EP[icent][id]->GetName()), &pt_binning[0]);
     }
   }

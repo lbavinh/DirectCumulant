@@ -14,7 +14,6 @@
 #include <TProfile.h>
 #include <TComplex.h>
 #include <TDatabasePDG.h>
-#include <TProfile2D.h>
 
 #include <PicoDstMCEvent.h>
 #include <PicoDstRecoEvent.h>
@@ -25,12 +24,6 @@
 
 #include "function.C"
 // R__LOAD_LIBRARY(libPicoDst.so)
-const int NcentBins     = 8;
-const double centBinMin = 0.;
-const double centBinMax = 80.;
-const int NptBins       = 300;
-const double ptBinMin   = 0.;
-const double ptBinMax   = 3.;
 
 
 void readPicoDst(TString inputFileName, TString outputFileName)
@@ -64,7 +57,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   static const float DCAcut = 0.5;
   static const int neta = 2; // [eta-,eta+]
 
-static const int max_nh = 1700;
+  static const int max_nh = 1700;
 
 
   TH1I *hEvt;        // Event number 
@@ -95,17 +88,14 @@ static const int max_nh = 1700;
   TProfile *hcov44prime[ncent][npt][npid];      // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt][npid]; // <2'>*<4'>
 
-  // TProfile *hv2EP[ncent][npt][npid];	// elliptic flow from EP method
-  // TProfile2D *hv2EP[npid];
-  TProfile *hv2EP[ncent][npid];	// elliptic flow from EP method
+  TProfile *hv2EP[ncent][npt][npid];	// elliptic flow from EP method
   TProfile *hv22EP[ncent][npid];      // integrated flow from EP method
 
   TH1F *H_Qw[neta];     // sub-event multiplicity
   TH1F *H_EP[neta];		  // reaction plane
   TH1F *H_Qx[neta][ncent];     //
   TH1F *H_Qy[neta][ncent];
-  // TProfile *HRes[ncent];		// resolution
-  TProfile *HRes;
+  TProfile *HRes[ncent];		// resolution
   TProfile *hcounter[ncent][npt][npid]; // for testing how different are particle entries of each method
 
   char name[800];
@@ -120,12 +110,7 @@ static const int max_nh = 1700;
   hRP = new TH1F("hRP", "Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}", 300, 0., 7.);
   hPhi = new TH1F("hPhi", "Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})", 300, 0., 7.);
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -10, 10);
-  HRes = new TProfile("HRes","HRes",ncent,0.,ncent);
-  // for (int id=0;id<npid;id++){
-    // hv2EP[id] = new TProfile2D(Form("hv2EP_%i",id),Form("hv2EP_%i",id),npt,0.,npt,ncent,0.,ncent);
-    // hv2EP[id] = new TProfile2D(Form("hv2EP_%i",id),Form("hv2EP_%i",id),NptBins,ptBinMin,ptBinMax,NcentBins,centBinMin,centBinMax); 
-  // }
-  
+
   for( int ieta=0;ieta<neta;ieta++){
     H_Qw[ieta] = new TH1F(Form("H_Qw_%d",ieta),Form("H_Qw_%d",ieta), 300, 0, 300 );    
     H_EP[ieta] = new TH1F(Form("H_EP_%d",ieta),Form("H_EP_%d",ieta), 100, -TMath::Pi()/2.-0.1, TMath::Pi()/2.+0.1 );
@@ -135,15 +120,14 @@ static const int max_nh = 1700;
     }
   }
   for (int icent=0;icent<ncent;icent++){ // loop over centrality classes
-    // HRes[icent] = new TProfile(Form("HRes_%i",icent),Form("HRes_%i",icent),1,0.,1.);
+    HRes[icent] = new TProfile(Form("HRes_%i",icent),Form("HRes_%i",icent),1,0.,1.);
     hv22[icent] = new TProfile(Form("hv22_%i",icent),Form("hv22_%i",icent),1,0.,1.);
     hv24[icent] = new TProfile(Form("hv24_%i",icent),Form("hv24_%i",icent),1,0.,1.);
     hcov24[icent] = new TProfile(Form("hcov24_%i",icent),Form("hcov24_%i",icent),1,0.,1.);
     for (int id=0;id<npid;id++){
       hv22EP[icent][id] = new TProfile(Form("hv22EP_%i_%i",icent,id),Form("hv22EP_%i_%i",icent,id),1,0.,1.);
-      hv2EP[icent][id] = new TProfile(Form("hv2EP_%i_%i",icent,id),Form("hv2EP_%i_%i",icent,id),NptBins,ptBinMin,ptBinMax);
       for (int ipt = 0; ipt < npt; ipt++){ // loop over pt bin
-        // hv2EP[icent][ipt][id] = new TProfile(Form("hv2EP_%i_%i_%i",icent,ipt,id),Form("hv2EP_%i_%i_%i",icent,ipt,id),1,0.,1.);
+        hv2EP[icent][ipt][id] = new TProfile(Form("hv2EP_%i_%i_%i",icent,ipt,id),Form("hv2EP_%i_%i_%i",icent,ipt,id),1,0.,1.);
         hPT[icent][ipt][id] = new TProfile(Form("hPT_%i_%i_%i",icent,ipt,id),Form("hPT_%i_%i_%i",icent,ipt,id),1,0.,1.);
         hv22pt[icent][ipt][id] = new TProfile(Form("hv22pt_%i_%i_%i",icent,ipt,id),Form("hv22pt_%i_%i_%i",icent,ipt,id),1,0.,1.);
         hv24pt[icent][ipt][id] = new TProfile(Form("hv24pt_%i_%i_%i",icent,ipt,id),Form("hv24pt_%i_%i_%i",icent,ipt,id),1,0.,1.);
@@ -194,7 +178,6 @@ static const int max_nh = 1700;
     int fcent = -1;
     for (int i = 0; i < ncent; i++) if (CentB(bimp) == bin_cent[i]) fcent = i;
     if (fcent < 0) continue;
-    float cent = CentB(mcEvent->GetB());
     hBimp -> Fill(bimp);
     Int_t reco_mult = recoTracks->GetEntriesFast();
 
@@ -424,10 +407,8 @@ static const int max_nh = 1700;
     if (psiEP_L<-9000 || psiEP_R<-9000) continue;
     float dPsi = 2. *(psiEP_L - psiEP_R);
     // dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
-    // HRes[fcent] -> Fill(0.5,cos(dPsi));
-    HRes->Fill(0.5+fcent,cos(dPsi));
+    HRes[fcent] -> Fill(0.5,cos(dPsi));
 
-    float res2[ncent]={0.211611, 0.329277, 0.350632, 0.319347, 0.269741, 0.21128, 0.181021, 0.176676};
     for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
       auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
       if (!recoTrack) continue;
@@ -463,40 +444,31 @@ static const int max_nh = 1700;
       if(mcTrack->GetPdg()==-321)  fId=6; // kaon-
       if(mcTrack->GetPdg()==-2212) fId=7; // anti-proton
       // ==================================== Eta Sub-event ==================================== //
-      float v2=0.;
+      float v2=-999.0;
       if(eta>0){ // eta+
-        v2 = cos(2.0 * (phi-psiEP_L) )/res2[fcent];
-        // v2 = cos(2.0 * (phi-psiEP_L) );
+        // v2 = cos(2.0 * (phi-psiEP_L) )/res2[fcent];
+        v2 = cos(2.0 * (phi-psiEP_L) );
       }
       if(eta<0){ // eta-
-        v2 = cos(2.0 * (phi-psiEP_R) )/res2[fcent];
-        // v2 = cos(2.0 * (phi-psiEP_R) );
+        // v2 = cos(2.0 * (phi-psiEP_R) )/res2[fcent];
+        v2 = cos(2.0 * (phi-psiEP_R) );
       }
       if (charge>0){
         hPT[fcent][ipt][0]->Fill(0.5, pt, 1);
-        // hv2EP[fcent][ipt][0]->Fill(0.5,v2);
-        // hv2EP[0]->Fill(0.5+ipt,0.5+fcent,v2);
-        // hv2EP[0]->Fill(pt, cent, v2);
-        hv2EP[fcent][0]->Fill(pt, v2);
+        hv2EP[fcent][ipt][0]->Fill(0.5,v2);
         hv22EP[fcent][0]->Fill(0.5,v2);
         hcounter[fcent][ipt][0]->Fill(2.5,1);
       }
       if (charge<0){
-        hPT[fcent][ipt][4]->Fill(0.5,pt);
-        // hv2EP[fcent][ipt][4]->Fill(0.5,v2);
-        // hv2EP[4]->Fill(0.5+ipt,0.5+fcent,v2);
-        // hv2EP[4]->Fill(pt, cent, v2);
-        hv2EP[fcent][4]->Fill(pt, v2);
+        hPT[fcent][ipt][4]->Fill(0.5, pt, 1);
+        hv2EP[fcent][ipt][4]->Fill(0.5,v2);
         hv22EP[fcent][4]->Fill(0.5,v2);
         hcounter[fcent][ipt][4]->Fill(2.5,1);
       }
       
       if (fId>0) {
-        hPT[fcent][ipt][fId]->Fill(0.5,pt);
-        // hv2EP[fcent][ipt][fId]->Fill(0.5,v2);
-        // hv2EP[fId]->Fill(0.5+ipt,0.5+fcent,v2);
-        // hv2EP[fId]->Fill(pt, cent, v2);
-        hv2EP[fcent][fId]->Fill(pt, v2);
+        hPT[fcent][ipt][fId]->Fill(0.5, pt, 1);
+        hv2EP[fcent][ipt][fId]->Fill(0.5,v2);
         hv22EP[fcent][fId]->Fill(0.5,v2);
         hcounter[fcent][ipt][fId]->Fill(2.5,1);
       }
@@ -516,20 +488,14 @@ static const int max_nh = 1700;
   hMult->Write();
   hBimpvsMult->Write();
 
-  HRes->Write();
-  // for (int id=0;id<npid;id++){
-  //   hv2EP[id]->Write();
-  // }
-  
   for (int icent=0;icent<ncent;icent++){
-    // HRes[icent]->Write();
+    HRes[icent]->Write();
     
     hv22[icent]->Write();
     hv24[icent]->Write();
     hcov24[icent]->Write();
     for (int id=0;id<npid;id++){
       hv22EP[icent][id]->Write();
-      hv2EP[icent][id]->Write();
       for (int ipt=0;ipt<npt;ipt++){
       
         hv22pt[icent][ipt][id]->Write();
@@ -540,7 +506,7 @@ static const int max_nh = 1700;
         hcov44prime[icent][ipt][id]->Write();
         hcov2prime4prime[icent][ipt][id]->Write();
         hPT[icent][ipt][id]->Write();
-        // hv2EP[icent][ipt][id]->Write();
+        hv2EP[icent][ipt][id]->Write();
         hcounter[icent][ipt][id]->Write();          
       }
     }

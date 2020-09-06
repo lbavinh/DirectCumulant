@@ -10,7 +10,7 @@ const std::vector<double> pt_binning = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.5, 1.8, 2
 // const std::vector<double> pt_binning = {0.2, 0.6, 1., 1.5, 2.5, 3.}; // for kaons specifically
 const int n_pt_bins = pt_binning.size() - 1;
 
-const std::pair<double,double> ratio_y_region = {0.84, 1.16};
+const std::pair<double, double> ratio_y_region = {0.79, 1.21};
 // const std::pair<double,double> ratio_y_region = {0.64, 1.36}; // for kaons specifically
 
 void GetGraphs(TString iFileModel, TString iFileReco, TString oFile)
@@ -35,8 +35,8 @@ void GetGraphs(TString iFileModel, TString iFileReco, TString oFile)
     for (int icent = 0; icent < n_cent_bins; icent++)
     {
       cent_bins.first = tmp->GetYaxis()->FindBin(centRange.at(icent).first);
-      cent_bins.second = tmp->GetYaxis()->FindBin(centRange.at(icent).second);
-      pv2_model[icent][i] = (TProfile *)tmp->ProfileX(Form("cent_%1.0f_%1.0f_%s", centRange.at(icent).first, centRange.at(icent).second, tmp->GetName()),cent_bins.first, cent_bins.second);
+      cent_bins.second = tmp->GetYaxis()->FindBin(centRange.at(icent).second - 1);
+      pv2_model[icent][i] = (TProfile *)tmp->ProfileX(Form("cent_%1.0f_%1.0f_%s", centRange.at(icent).first, centRange.at(icent).second, tmp->GetName()), cent_bins.first, cent_bins.second);
       pv2_model[icent][i] = (TProfile *)pv2_model[icent][i]->Rebin(n_pt_bins, Form("rebinned_%s", pv2_model[icent][i]->GetName()), &pt_binning[0]);
     }
     delete tmp;
@@ -49,8 +49,8 @@ void GetGraphs(TString iFileModel, TString iFileReco, TString oFile)
     for (int icent = 0; icent < n_cent_bins; icent++)
     {
       cent_bins.first = tmp->GetYaxis()->FindBin(centRange.at(icent).first);
-      cent_bins.second = tmp->GetYaxis()->FindBin(centRange.at(icent).second);
-      pv2_mc[icent][i] = (TProfile *)tmp->ProfileX(Form("cent_%1.0f_%1.0f_%s", centRange.at(icent).first, centRange.at(icent).second, tmp->GetName()),cent_bins.first, cent_bins.second);
+      cent_bins.second = tmp->GetYaxis()->FindBin(centRange.at(icent).second - 1);
+      pv2_mc[icent][i] = (TProfile *)tmp->ProfileX(Form("cent_%1.0f_%1.0f_%s", centRange.at(icent).first, centRange.at(icent).second, tmp->GetName()), cent_bins.first, cent_bins.second);
       pv2_mc[icent][i] = (TProfile *)pv2_mc[icent][i]->Rebin(n_pt_bins, Form("rebinned_%s", pv2_mc[icent][i]->GetName()), &pt_binning[0]);
     }
     delete tmp;
@@ -63,12 +63,22 @@ void GetGraphs(TString iFileModel, TString iFileReco, TString oFile)
     for (int icent = 0; icent < n_cent_bins; icent++)
     {
       cent_bins.first = tmp->GetYaxis()->FindBin(centRange.at(icent).first);
-      cent_bins.second = tmp->GetYaxis()->FindBin(centRange.at(icent).second);
-      pv2_reco[icent][i] = (TProfile *)tmp->ProfileX(Form("cent_%1.0f_%1.0f_%s", centRange.at(icent).first, centRange.at(icent).second, tmp->GetName()),cent_bins.first, cent_bins.second);
+      cent_bins.second = tmp->GetYaxis()->FindBin(centRange.at(icent).second - 1);
+      pv2_reco[icent][i] = (TProfile *)tmp->ProfileX(Form("cent_%1.0f_%1.0f_%s", centRange.at(icent).first, centRange.at(icent).second, tmp->GetName()), cent_bins.first, cent_bins.second);
       pv2_reco[icent][i] = (TProfile *)pv2_reco[icent][i]->Rebin(n_pt_bins, Form("rebinned_%s", pv2_reco[icent][i]->GetName()), &pt_binning[0]);
+      // if (icent == 0 && i == 0)
+      // {
+      //   std::cout << "Cent bins: " << tmp->GetYaxis()->FindBin(centRange.at(0).first) << " " << tmp->GetYaxis()->FindBin(centRange.at(0).second - 1) << std::endl;
+      //   std::cout << "CHECK 1 ::::: " << pv2_reco[icent][i]->GetBinContent(4) << std::endl;
+      // }
     }
     delete tmp;
   }
+
+  // tmp = (TProfile2D *)fiReco->Get(Form("pv2recoTPC_pid%i", 0));
+  // auto prof = (TProfile *)tmp->ProfileX("prof_test", 1, 1);
+  // prof = (TProfile *)prof->Rebin(n_pt_bins, "rebinned_prof_test", &pt_binning[0]);
+  // std::cout << "CHECK 1 ::::: " << prof->GetBinContent(4) << std::endl;
 
   for (int icent = 0; icent < n_cent_bins; icent++)
   {

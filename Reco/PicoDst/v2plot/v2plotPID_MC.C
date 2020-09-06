@@ -206,6 +206,10 @@ void v2plot_differential_flow(){
       pt1040[ipt][id]=new TProfile(hname,hname,1,0.,1.);
     }
   }
+  const std::vector<TString> errVectorNames = {"double eV22Dif1040CHp[npt]=", "double eV22Dif1040Pionp[npt]=", "double eV22Dif1040Kaonp[npt]=", "double eV22Dif1040Protonp[npt]=", "double eV22Dif1040CHm[npt]=", "double eV22Dif1040Pionm[npt]=", "double eV22Dif1040Kaonm[npt]=", "double eV22Dif1040Protonm[npt]="};
+  // const std::vector<TString> errVectorNames = {"double eV24Dif1040CHp[npt]=", "double eV24Dif1040Pionp[npt]=", "double eV24Dif1040Kaonp[npt]=", "double eV24Dif1040Protonp[npt]=", "double eV24Dif1040CHm[npt]=", "double eV24Dif1040Pionm[npt]=", "double eV24Dif1040Kaonm[npt]=", "double eV24Dif1040Protonm[npt]="};
+  // const std::vector<TString> errVectorNames = {"double eV2EPDif1040CHp[npt]=", "double eV2EPDif1040Pionp[npt]=", "double eV2EPDif1040Kaonp[npt]=", "double eV2EPDif1040Protonp[npt]=", "double eV2EPDif1040CHm[npt]=", "double eV2EPDif1040Pionm[npt]=", "double eV2EPDif1040Kaonm[npt]=", "double eV2EPDif1040Protonm[npt]="}; 
+  
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // double v2EP = hv22EP[icent]->GetBinContent(1)/sqrt(HRes[icent]->GetBinContent(1));
     // double ev2EP = hv22EP[icent]->GetBinError(1)/sqrt(HRes[icent]->GetBinContent(1));
@@ -224,7 +228,11 @@ void v2plot_differential_flow(){
       sprintf(hname,"prV24int_%i_%i",icent,id);
       prV24int[icent][id]=new TProfile(hname,hname,1,0.,1.);
 
-      if (icent==1 && bDrawPlots1040) cout << "PID: "<< id << endl;
+      if (icent==1 && bDrawPlots1040) {
+        // cout << "PID: "<< pidNames.at(id) << endl;
+        cout << errVectorNames.at(id);
+        cout <<"{";
+      }
       vector <double> vV2EPDif, vV22Dif, vV24Dif, vPt;
       vector <double> eV2EPDif, eV22Dif, eV24Dif, ePt;
       // Differential flow calculation
@@ -236,6 +244,7 @@ void v2plot_differential_flow(){
         double res2 = sqrt(HRes[icent]->GetBinContent(1));
         double v2obs = hv2EP[icent][ipt][id]->GetBinContent(1);
         double v2EPDif = v2obs / res2;
+        // double v2EPDif = v2obs;
         double ev2EP = hv2EP[icent][ipt][id]->GetBinError(1) / res2;
         vV2EPDif.push_back(v2EPDif);
         eV2EPDif.push_back(ev2EP);
@@ -286,11 +295,12 @@ void v2plot_differential_flow(){
           prV24dif1040[ipt][id]->Fill(0.5,v24Dif,hPT[icent][ipt][id] -> GetBinEntries(1));
           pt1040[ipt][id]->Fill(0.5,hPT[icent][ipt][id] -> GetBinContent(1),hPT[icent][ipt][id] -> GetBinEntries(1));
         }
-        // if (icent==1 && bDrawPlots1040) cout << ev22Dif <<", ";
-        // if (icent==1 && bDrawPlots1040) cout << ev24Dif <<", ";
-        if (icent==1 && bDrawPlots1040) cout << ev2EP <<", ";
+        if (icent==1 && bDrawPlots1040) cout << ev22Dif;
+        // if (icent==1 && bDrawPlots1040) cout << ev24Dif;
+        // if (icent==1 && bDrawPlots1040) cout << ev2EP;
+        if (icent==1 && bDrawPlots1040 && ipt != npt-1) cout <<",";
       } // end of loop for all pT bin
-      if (icent==1 && bDrawPlots1040) cout << endl;
+      if (icent==1 && bDrawPlots1040) cout <<"};"<< endl;
       // 2QC differential flow
       grDifFl[0][icent][id] = new TGraphErrors(npt,&vPt[0],&vV22Dif[0],&ePt[0],&eV22Dif[0]);
       grDifFl[0][icent][id] -> SetMarkerColor(kRed);
@@ -343,14 +353,14 @@ void v2plot_differential_flow(){
     }
   }
 
-  double eV22Dif1040CHp[npt]={0.000185235, 0.000226363, 0.000282115, 0.000356186, 0.000465417, 0.000550147, 0.000881789, 0.00123413, 0.00457083};
-  double eV22Dif1040Pionp[npt]={0.000204153, 0.000292643, 0.000450513, 0.000684836, 0.000985558, 0.00125141, 0.00214556, 0.00338041, 0.0151813};
-  double eV22Dif1040Kaonp[npt]={0.00073752, 0.000715407, 0.000855496, 0.00109645, 0.00145008, 0.00178089, 0.00305426, 0.00483121, 0.0218791};
-  double eV22Dif1040Protonp[npt]={0.000634949, 0.000455329, 0.000424767, 0.00046666, 0.000567821, 0.000642902, 0.000990356, 0.00136589, 0.00507272};
-  double eV22Dif1040CHm[npt]={0.000191061, 0.000266873, 0.000398001, 0.000592149, 0.000839722, 0.00103722, 0.00169146, 0.00252513, 0.0105318};
-  double eV22Dif1040Pionm[npt]={0.000195248, 0.000280122, 0.000431227, 0.000658958, 0.000951365, 0.00120789, 0.00206979, 0.0032517, 0.0147171};
-  double eV22Dif1040Kaonm[npt]={0.00101432, 0.00100659, 0.00124098, 0.00165874, 0.00231218, 0.00294959, 0.00525658, 0.00853739, 0.0391104};
-  double eV22Dif1040Protonm[npt]={0.0104805, 0.00657427, 0.0054511, 0.00560829, 0.00666635, 0.00762439, 0.0131548, 0.0208857, 0.0495235};
+  double eV22Dif1040CHp[npt]={0.000250377,0.000306068,0.000384392,0.000482183,0.000623315,0.000736009,0.00118403,0.00165664,0.00611936};
+  double eV22Dif1040Pionp[npt]={0.000276863,0.000396958,0.000608313,0.000918648,0.00131861,0.00167622,0.00286521,0.00453251,0.0203391};
+  double eV22Dif1040Kaonp[npt]={0.000985973,0.000957384,0.00114458,0.00146777,0.00193861,0.00238393,0.00408208,0.0064655,0.0285735};
+  double eV22Dif1040Protonp[npt]={0.00084814,0.000608063,0.000571673,0.000628057,0.0007586,0.000858042,0.00132879,0.00183264,0.00677315};
+  double eV22Dif1040CHm[npt]={0.000258589,0.000362623,0.000535812,0.000795244,0.00112599,0.00138918,0.00226239,0.00338436,0.0141701};
+  double eV22Dif1040Pionm[npt]={0.00026446,0.000380305,0.000580907,0.00088456,0.00127494,0.00161692,0.00276493,0.00435781,0.019839};
+  double eV22Dif1040Kaonm[npt]={0.00135412,0.00134511,0.0016598,0.00221894,0.00309684,0.00395623,0.00703582,0.011417,0.0396283};
+  double eV22Dif1040Protonm[npt]={0.0139501,0.00877778,0.00729674,0.00748938,0.00891569,0.0102154,0.0176399,0.0276379,0.011604};
 
   double eV24Dif1040CHp[npt]={0.00393944, 0.0046574, 0.00580832, 0.00754447, 0.00962995, 0.0111394, 0.0162147, 0.0217968, 0.062402};
   double eV24Dif1040Pionp[npt]={0.00427627, 0.00589614, 0.00888263, 0.0127643, 0.0176608, 0.021809, 0.0359699, 0.0536001, 0.187989};
@@ -361,14 +371,14 @@ void v2plot_differential_flow(){
   double eV24Dif1040Kaonm[npt]={0.0217772, 0.0197707, 0.0230765, 0.0296323, 0.0399422, 0.0507466, 0.0842217, 0.128386, 0.443462};
   double eV24Dif1040Protonm[npt]={0.223339, 0.129618, 0.101039, 0.103635, 0.11948, 0.130162, 0.217291, 0.337854, 0.412331};
 
-  double eV2EPDif1040CHp[npt]={0.000161293, 0.000195594, 0.000240283, 0.000298656, 0.000384036, 0.000449173, 0.000741543, 0.00109931, 0.00459041};
-  double eV2EPDif1040Pionp[npt]={0.000176707, 0.000248499, 0.000373204, 0.00056342, 0.000843961, 0.00111632, 0.00205447, 0.00334015, 0.0155092};
-  double eV2EPDif1040Kaonp[npt]={0.000612907, 0.000593119, 0.000720817, 0.000959326, 0.00133083, 0.00168202, 0.00301344, 0.00482885, 0.0223522};  
-  double eV2EPDif1040Protonp[npt]={0.000526787, 0.000382957, 0.000356325, 0.000387183, 0.000466803, 0.000526374, 0.000848326, 0.00123846, 0.00509862};
-  double eV2EPDif1040CHm[npt]={0.000165236, 0.00022751, 0.00033214, 0.000485634, 0.000703085, 0.000897212, 0.00158485, 0.00246711, 0.0107277};
-  double eV2EPDif1040Pionm[npt]={0.000168747, 0.000238357, 0.000358429, 0.000541442, 0.000810512, 0.00107183, 0.00197427, 0.00320474, 0.0147567};
-  double eV2EPDif1040Kaonm[npt]={0.00087559, 0.000868708, 0.00111071, 0.00155742, 0.00225262, 0.00292841, 0.00532119, 0.00873549, 0.0416157};  
-  double eV2EPDif1040Protonm[npt]={0.00973861, 0.00625533, 0.00526232, 0.00544926, 0.00651544, 0.00750594, 0.0130715, 0.0210272, 0.0986676};
+  double eV2EPDif1040CHp[npt]={0.000216868,0.000263009,0.000323103,0.000401615,0.000516494,0.00060393,0.000997111,0.00147976,0.00617821};
+  double eV2EPDif1040Pionp[npt]={0.000237602,0.000334177,0.000501853,0.000757703,0.00113487,0.00150182,0.00275872,0.00449628,0.0209408};
+  double eV2EPDif1040Kaonp[npt]={0.000824095,0.000797246,0.00096916,0.00128931,0.00178923,0.00226117,0.00405453,0.00650826,0.0303361};
+  double eV2EPDif1040Protonp[npt]={0.000708095,0.000514948,0.000479147,0.000520681,0.000627859,0.000707674,0.00114087,0.00166724,0.00685769};
+  double eV2EPDif1040CHm[npt]={0.000222178,0.000305923,0.000446643,0.0006531,0.00094523,0.00120708,0.0021318,0.00331945,0.0144208};
+  double eV2EPDif1040Pionm[npt]={0.000226899,0.000320516,0.000481987,0.000728219,0.00108965,0.001442,0.00265372,0.00431378,0.0198313};
+  double eV2EPDif1040Kaonm[npt]={0.00117716,0.00116778,0.00149415,0.00209478,0.00302912,0.00393833,0.00717724,0.0116886,0.0564848};
+  double eV2EPDif1040Protonm[npt]={0.0130691,0.00842116,0.00708112,0.00733731,0.00876258,0.0101419,0.017503,0.0282952,0.136957};
 
   double eV22Dif1040[npid][npt], eV24Dif1040[npid][npt], eV2EPDif1040[npid][npt];
 

@@ -331,8 +331,8 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       if (eta > 0) fEta = 1; // TPC West
 
       if ( fEta>-1 ){
-        sumQxy[fEta][0] += 1. * cos( (2.0) * phi );
-        sumQxy[fEta][1] += 1. * sin( (2.0) * phi );
+        sumQxy[fEta][0] += pt * cos( (2.0) * phi );
+        sumQxy[fEta][1] += pt * sin( (2.0) * phi );
         wQv[fEta]       += pt;
         multQv[fEta]++;
       } // end of eta selection

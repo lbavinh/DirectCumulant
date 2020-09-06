@@ -96,8 +96,8 @@ static const int max_nh = 1700;
   TProfile *hcov2prime4prime[ncent][npt][npid]; // <2'>*<4'>
 
   // TProfile *hv2EP[ncent][npt][npid];	// elliptic flow from EP method
-  TProfile2D *hv2EP[npid];
-  // TProfile *hv2EP[ncent][npt][npid];	// elliptic flow from EP method
+  // TProfile2D *hv2EP[npid];
+  TProfile *hv2EP[ncent][npid];	// elliptic flow from EP method
   TProfile *hv22EP[ncent][npid];      // integrated flow from EP method
 
   TH1F *H_Qw[neta];     // sub-event multiplicity
@@ -121,10 +121,10 @@ static const int max_nh = 1700;
   hPhi = new TH1F("hPhi", "Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})", 300, 0., 7.);
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -10, 10);
   HRes = new TProfile("HRes","HRes",ncent,0.,ncent);
-  for (int id=0;id<npid;id++){
+  // for (int id=0;id<npid;id++){
     // hv2EP[id] = new TProfile2D(Form("hv2EP_%i",id),Form("hv2EP_%i",id),npt,0.,npt,ncent,0.,ncent);
-    hv2EP[id] = new TProfile2D(Form("hv2EP_%i",id),Form("hv2EP_%i",id),NptBins,ptBinMin,ptBinMax,NcentBins,centBinMin,centBinMax);  
-  }
+    // hv2EP[id] = new TProfile2D(Form("hv2EP_%i",id),Form("hv2EP_%i",id),NptBins,ptBinMin,ptBinMax,NcentBins,centBinMin,centBinMax); 
+  // }
   
   for( int ieta=0;ieta<neta;ieta++){
     H_Qw[ieta] = new TH1F(Form("H_Qw_%d",ieta),Form("H_Qw_%d",ieta), 300, 0, 300 );    
@@ -141,6 +141,7 @@ static const int max_nh = 1700;
     hcov24[icent] = new TProfile(Form("hcov24_%i",icent),Form("hcov24_%i",icent),1,0.,1.);
     for (int id=0;id<npid;id++){
       hv22EP[icent][id] = new TProfile(Form("hv22EP_%i_%i",icent,id),Form("hv22EP_%i_%i",icent,id),1,0.,1.);
+      hv2EP[icent][id] = new TProfile(Form("hv2EP_%i_%i",icent,id),Form("hv2EP_%i_%i",icent,id),NptBins,ptBinMin,ptBinMax);
       for (int ipt = 0; ipt < npt; ipt++){ // loop over pt bin
         // hv2EP[icent][ipt][id] = new TProfile(Form("hv2EP_%i_%i_%i",icent,ipt,id),Form("hv2EP_%i_%i_%i",icent,ipt,id),1,0.,1.);
         hPT[icent][ipt][id] = new TProfile(Form("hPT_%i_%i_%i",icent,ipt,id),Form("hPT_%i_%i_%i",icent,ipt,id),1,0.,1.);
@@ -475,7 +476,8 @@ static const int max_nh = 1700;
         hPT[fcent][ipt][0]->Fill(0.5, pt, 1);
         // hv2EP[fcent][ipt][0]->Fill(0.5,v2);
         // hv2EP[0]->Fill(0.5+ipt,0.5+fcent,v2);
-        hv2EP[0]->Fill(pt, cent, v2);
+        // hv2EP[0]->Fill(pt, cent, v2);
+        hv2EP[fcent][0]->Fill(pt, v2);
         hv22EP[fcent][0]->Fill(0.5,v2);
         hcounter[fcent][ipt][0]->Fill(2.5,1);
       }
@@ -483,7 +485,8 @@ static const int max_nh = 1700;
         hPT[fcent][ipt][4]->Fill(0.5,pt);
         // hv2EP[fcent][ipt][4]->Fill(0.5,v2);
         // hv2EP[4]->Fill(0.5+ipt,0.5+fcent,v2);
-        hv2EP[4]->Fill(pt, cent, v2);
+        // hv2EP[4]->Fill(pt, cent, v2);
+        hv2EP[fcent][4]->Fill(pt, v2);
         hv22EP[fcent][4]->Fill(0.5,v2);
         hcounter[fcent][ipt][4]->Fill(2.5,1);
       }
@@ -492,7 +495,8 @@ static const int max_nh = 1700;
         hPT[fcent][ipt][fId]->Fill(0.5,pt);
         // hv2EP[fcent][ipt][fId]->Fill(0.5,v2);
         // hv2EP[fId]->Fill(0.5+ipt,0.5+fcent,v2);
-        hv2EP[0]->Fill(pt, cent, v2);
+        // hv2EP[fId]->Fill(pt, cent, v2);
+        hv2EP[fcent][fId]->Fill(pt, v2);
         hv22EP[fcent][fId]->Fill(0.5,v2);
         hcounter[fcent][ipt][fId]->Fill(2.5,1);
       }
@@ -513,9 +517,9 @@ static const int max_nh = 1700;
   hBimpvsMult->Write();
 
   HRes->Write();
-  for (int id=0;id<npid;id++){
-    hv2EP[id]->Write();
-  }
+  // for (int id=0;id<npid;id++){
+  //   hv2EP[id]->Write();
+  // }
   
   for (int icent=0;icent<ncent;icent++){
     // HRes[icent]->Write();
@@ -525,6 +529,7 @@ static const int max_nh = 1700;
     hcov24[icent]->Write();
     for (int id=0;id<npid;id++){
       hv22EP[icent][id]->Write();
+      hv2EP[icent][id]->Write();
       for (int ipt=0;ipt<npt;ipt++){
       
         hv22pt[icent][ipt][id]->Write();

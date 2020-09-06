@@ -13,7 +13,8 @@ void Compare(){
   inputVinh[1] = new TFile("VinhPID_GEANT.root","read");
   // inputVinh[2] = new TFile("VinhPID_Reco.root","read");
   // inputVinh[2] = new TFile("PeterCode_PID.root","read");
-  inputVinh[2] = new TFile("VinhPID_test_TProfile.root","read");
+  inputVinh[2] = new TFile("VinhPID_test_TProfile_pt_filled.root","read");
+  // inputVinh[2] = new TFile("VinhPID_test_TProfile_filled_binPT.root","read");
 
   for (int i=0; i<nmethod; i++){
     for (int id=0;id<npid;id++){

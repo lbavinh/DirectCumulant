@@ -85,7 +85,7 @@ TProfile *prV22dif1040[npt][npid], *prV24dif1040[npt][npid], *prV2EPdif1040[npt]
 
 void v2plot_differential_flow(){
   // TFile *inFile = new TFile("../ROOTFile/PID_test_TProfile.root","read");
-  TFile *inFile = new TFile("../ROOTFile/PID_test_TProfile.root","read");
+  TFile *inFile = new TFile("../ROOTFile/PID_test_TProfile_filled_binPT.root","read");
 
 
   // Temporary variables

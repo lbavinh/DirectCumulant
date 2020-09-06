@@ -1,6 +1,6 @@
 #include "DrawTGraph.C"
 
-TFile *outFile = new TFile("../CompareResult/VinhPID_test_TProfile.root","recreate");
+TFile *outFile = new TFile("../CompareResult/VinhPID_test_TProfile_pt_filled.root","recreate");
 bool bDrawPlots1040 = 0;
 bool drawDistributions = 0;
 bool bSaveCanvas = 0;
@@ -84,8 +84,8 @@ TProfile *prV22int[ncent][npid], *prV24int[ncent][npid], *prV2EPint[ncent][npid]
 TProfile *prV22dif1040[npt][npid], *prV24dif1040[npt][npid], *prV2EPdif1040[npt][npid], *pt1040[npt][npid]; // TProfile for differential flow of 10-40% centrality bin
 
 void v2plot_differential_flow(){
-  // TFile *inFile = new TFile("../ROOTFile/PID_test_TProfile.root","read");
-  TFile *inFile = new TFile("../ROOTFile/PID_PeterCode.root","read");
+  TFile *inFile = new TFile("../ROOTFile/PID_test_TProfile_pt_filled.root","read");
+  // TFile *inFile = new TFile("../ROOTFile/PID_PeterCode.root","read");
 
 
   // Temporary variables

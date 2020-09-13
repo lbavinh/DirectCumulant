@@ -1,7 +1,7 @@
 #include "DrawTGraph.C"
 
-TFile *outFile = new TFile("../CompareResult/Vinh.root","recreate");
-
+TFile *outFile = new TFile("../Vinh_UrQMD.root","recreate");
+// TString outDirName={"UrQMD_merged"};
 double Covariance(TProfile *const &hcovXY, TProfile *const &hX, TProfile *const &hY){
   double statsXY[6], statsX[6], statsY[6];
   double meanXY, meanX, meanY, sumWX, sumWY;

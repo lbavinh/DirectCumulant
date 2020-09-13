@@ -16,18 +16,12 @@
 # Specify job array range (how many jobs will be created
 #$ -t 1-633
 # Specify directory where output and error logs from SGE will be stored
-#$ -o /weekly/$USER/lbavinh/PicoDst/OUT/log/
-#$ -e /weekly/$USER/lbavinh/PicoDst/OUT/log/
+#$ -o /dev/null
+#$ -e /dev/null
 #
-
-# ${JOB_ID} - Id of the job array (one for all jobs)
-# ${SGE_TASK_ID} - id of the element of the job array
-# SGE option "-t 1-N" tells array range. It will create an array
-#     of N jobs with ${JOB_ID}_1, ${JOB_ID}_2, ..., ${JOB_ID}_N
 
 #Main directory
 export MAIN_DIR=/weekly/$USER/lbavinh/PicoDst
-#export FILELIST=${MAIN_DIR}/runlist_PicoDst.list
 export FILELIST=${MAIN_DIR}/runlist_PicoDst_merged.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}

@@ -96,10 +96,10 @@ void Compare(){
       for (int i=0;i<nmethod;i++){
         grPeter[icent][i][id]->SetMarkerStyle(kOpenSquare);
         grVinh[icent][i][id]->SetMarkerStyle(kFullCircle);
-        // grDim[icent][i][id]->SetMarkerStyle(kFullTriangleUp);
+        grDim[icent][i][id]->SetMarkerStyle(kFullTriangleUp);
       
         grPeter[icent][i][id] -> SetMarkerSize(1.6);
-        // grDim[icent][i][id] -> SetMarkerSize(1.6);
+        grDim[icent][i][id] -> SetMarkerSize(1.6);
         grVinh[icent][i][id] -> SetMarkerSize(1.6);
       }
     }
@@ -123,7 +123,7 @@ void Compare(){
       for (int icent=0;icent<ncent;icent++){
         sprintf(name,"%s, centrality %i-%i%%",pidFancyNames.at(id).Data(),icent*10,(icent+1)*10);
         can[icent][i][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][i][id],method[i],name,0.88,1.12,0.,2.5,-0.01,0.2,0.18,0.6,0.42,0.89);
-        sprintf(name,"%s_%s_Cent%i-%i.png",pidNames.at(id).Data(),method[i],icent*10,(icent+1)*10);
+        sprintf(name,"%s_%s_Cent%i-%i.png",method[i],pidNames.at(id).Data(),icent*10,(icent+1)*10);
         can[icent][i][id] -> SetName(name);
         if (id==0 || id==4) can[icent][i][id] -> SaveAs(name);
       }

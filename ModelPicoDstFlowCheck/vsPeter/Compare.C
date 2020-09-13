@@ -7,6 +7,7 @@ void Compare(){
   TFile *inputVinh[3], *inputPeter;
   TGraphErrors *grVinh[4][nmethod][npid], *grPeter[4][nmethod][npid];
   char name[400];
+  pair <float,float> ratioRange = {0.88,1.12};
 
   inputVinh[0] = new TFile("VinhPID_UrQMD.root","read");
   inputVinh[1] = new TFile("VinhPID_GEANT.root","read");
@@ -62,7 +63,7 @@ void Compare(){
   for (int i=0; i<nmethod; i++){
     for (int id=0;id<npid;id++){
       sprintf(name,"%s, centrality 10-40%%",pidFancyNames.at(id).Data());
-      can[0][i][id] = (TCanvas*) DrawTGraph(grVinh[0][i][id],grPeter[0][i][id],method[i],0.69,1.31,0.,2.5,-0.01,0.2,0.18,0.72,0.42,0.89,name);
+      can[0][i][id] = (TCanvas*) DrawTGraph(grVinh[0][i][id],grPeter[0][i][id],method[i],ratioRange.first,ratioRange.second,0.,2.5,-0.01,0.2,0.18,0.72,0.42,0.89,name);
       sprintf(name,"%s_%s_Cent10-40.png",pidNames.at(id).Data(),method[i]);
       can[0][i][id] -> SetName(name);
       can[0][i][id] -> SaveAs(name);

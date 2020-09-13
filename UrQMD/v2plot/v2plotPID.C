@@ -1,9 +1,11 @@
 #include "DrawTGraph.C"
 
-TFile *outFile = new TFile("../CompareResult/VinhPID_UrQMD.root","recreate");
+TFile *outFile = new TFile("../CompareResult/VinhPID_UrQMD_merged.root","recreate");
+TString outDirName={"UrQMD_merged"};
 bool bDrawPlots1040 = 0;
 bool drawDistributions = 0;
 bool bSaveCanvas = 0;
+bool bMergeCharged = 1;
 double Covariance(TProfile *const &hcovXY, TProfile *const &hX, TProfile *const &hY){
   double statsXY[6], statsX[6], statsY[6];
   double meanXY, meanX, meanY, sumWX, sumWY;
@@ -72,8 +74,8 @@ static const int ncent = 8; // 0-80 %
 static const double bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 static const double bin_centE[ncent] = {0};
 
-const std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton_pos", "hadron_neg", "pion_neg", "kaon_neg", "proton_neg"};
-const std::vector<TString> pidFancyNames = {"h+", "#pi+", "K+", "p", "h-", "#pi-", "K-", "#bar{p}"};
+std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton_pos", "hadron_neg", "pion_neg", "kaon_neg", "proton_neg"};
+std::vector<TString> pidFancyNames = {"h+", "#pi+", "K+", "p", "h-", "#pi-", "K-", "#bar{p}"};
 
 TProfile *prV22int[ncent][npid], *prV24int[ncent][npid], *prV2EPint[ncent][npid]; // TProfile for integrated flow 
 TProfile *prV22dif1040[npt][npid], *prV24dif1040[npt][npid], *prV2EPdif1040[npt][npid], *pt1040[npt][npid]; // TProfile for differential flow of 10-40% centrality bin
@@ -87,34 +89,34 @@ void v2plot_differential_flow(){
   double stats[6]; // stats of TProfile
   // char analysis[20]={"pure"};
 
-  if (drawDistributions){
+   if (drawDistributions){
     TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
 
     TH1I *hMult = (TH1I*)inFile->Get("hMult");
     hMult -> Draw();
-    sprintf(hname,"../Graphics/mult.png");
+    sprintf(hname,"../%s/mult.png",outDirName.Data());
     cTemp -> Draw();
     cTemp -> SaveAs(hname);
 
     TH1I *hEvt = (TH1I*)inFile->Get("hEvt");
     hEvt -> Draw();
-    sprintf(hname,"../Graphics/evt.png");
+    sprintf(hname,"../%s/evt.png",outDirName.Data());
     cTemp -> Draw();
     cTemp -> SaveAs(hname);
 
     TH1F *hEta = (TH1F*)inFile->Get("hEta");
     hEta -> Draw();
-    sprintf(hname,"../Graphics/eta.png");
+    sprintf(hname,"../%s/eta.png",outDirName.Data());
     cTemp -> SaveAs(hname);  
 
     TH1F *hPhi = (TH1F*)inFile->Get("hPhi");
     hPhi -> Draw();
-    sprintf(hname,"../Graphics/phi.png");
+    sprintf(hname,"../%s/phi.png",outDirName.Data());
     cTemp -> SaveAs(hname);
 
     TH1F *hPt = (TH1F*)inFile->Get("hPt");
     hPt -> Draw();
-    sprintf(hname,"../Graphics/pt.png");
+    sprintf(hname,"../%s/pt.png",outDirName.Data());
     cTemp -> SaveAs(hname);
   }
 
@@ -159,6 +161,23 @@ void v2plot_differential_flow(){
   } // end of loop over centrality classes
 
   //==========================================================================================================================
+  if(bMergeCharged){
+    for (int icent=0;icent<ncent;icent++){
+      for (int ipt=0;ipt<npt;ipt++){
+        for (int id=0;id<npid/2;id++){
+          hv2EP[icent][ipt][id] -> Add(hv2EP[icent][ipt][id+4]);
+          hPT[icent][ipt][id] -> Add(hPT[icent][ipt][id+4]);
+          hv22pt[icent][ipt][id] -> Add(hv22pt[icent][ipt][id+4]);
+          hv24pt[icent][ipt][id] -> Add(hv24pt[icent][ipt][id+4]);
+          hcov22prime[icent][ipt][id] -> Add(hcov22prime[icent][ipt][id+4]);
+          hcov24prime[icent][ipt][id] -> Add(hcov24prime[icent][ipt][id+4]);
+          hcov42prime[icent][ipt][id] -> Add(hcov42prime[icent][ipt][id+4]);
+          hcov44prime[icent][ipt][id] -> Add(hcov44prime[icent][ipt][id+4]);
+          hcov2prime4prime[icent][ipt][id] -> Add(hcov2prime4prime[icent][ipt][id+4]);
+        }
+      }
+    }
+  }
   if (bDrawPlots1040){
     // Add
     for (int icent=2; icent<4; icent++){ // loop over centrality classes
@@ -206,10 +225,18 @@ void v2plot_differential_flow(){
       pt1040[ipt][id]=new TProfile(hname,hname,1,0.,1.);
     }
   }
-  // const std::vector<TString> errVectorNames = {"double eV22Dif1040CHp[npt]=", "double eV22Dif1040Pionp[npt]=", "double eV22Dif1040Kaonp[npt]=", "double eV22Dif1040Protonp[npt]=", "double eV22Dif1040CHm[npt]=", "double eV22Dif1040Pionm[npt]=", "double eV22Dif1040Kaonm[npt]=", "double eV22Dif1040Protonm[npt]="};
-  // const std::vector<TString> errVectorNames = {"double eV24Dif1040CHp[npt]=", "double eV24Dif1040Pionp[npt]=", "double eV24Dif1040Kaonp[npt]=", "double eV24Dif1040Protonp[npt]=", "double eV24Dif1040CHm[npt]=", "double eV24Dif1040Pionm[npt]=", "double eV24Dif1040Kaonm[npt]=", "double eV24Dif1040Protonm[npt]="};
-  const std::vector<TString> errVectorNames = {"double eV2EPDif1040CHp[npt]=", "double eV2EPDif1040Pionp[npt]=", "double eV2EPDif1040Kaonp[npt]=", "double eV2EPDif1040Protonp[npt]=", "double eV2EPDif1040CHm[npt]=", "double eV2EPDif1040Pionm[npt]=", "double eV2EPDif1040Kaonm[npt]=", "double eV2EPDif1040Protonm[npt]="}; 
+
+  std::vector<TString> errVectorNames = {"double eV22Dif1040CHp[npt]=", "double eV22Dif1040Pionp[npt]=", "double eV22Dif1040Kaonp[npt]=", "double eV22Dif1040Protonp[npt]=", "double eV22Dif1040CHm[npt]=", "double eV22Dif1040Pionm[npt]=", "double eV22Dif1040Kaonm[npt]=", "double eV22Dif1040Protonm[npt]="};
+  // std::vector<TString> errVectorNames = {"double eV24Dif1040CHp[npt]=", "double eV24Dif1040Pionp[npt]=", "double eV24Dif1040Kaonp[npt]=", "double eV24Dif1040Protonp[npt]=", "double eV24Dif1040CHm[npt]=", "double eV24Dif1040Pionm[npt]=", "double eV24Dif1040Kaonm[npt]=", "double eV24Dif1040Protonm[npt]="};
+  // std::vector<TString> errVectorNames = {"double eV2EPDif1040CHp[npt]=", "double eV2EPDif1040Pionp[npt]=", "double eV2EPDif1040Kaonp[npt]=", "double eV2EPDif1040Protonp[npt]=", "double eV2EPDif1040CHm[npt]=", "double eV2EPDif1040Pionm[npt]=", "double eV2EPDif1040Kaonm[npt]=", "double eV2EPDif1040Protonm[npt]="};
   
+  if (bMergeCharged){
+    errVectorNames.clear();
+    errVectorNames = {"double eV22Dif1040CH[npt]=", "double eV22Dif1040Pion[npt]=", "double eV22Dif1040Kaon[npt]=", "double eV22Dif1040Proton[npt]=", "double eV22Dif1040CHm[npt]=", "double eV22Dif1040Pionm[npt]=", "double eV22Dif1040Kaonm[npt]=", "double eV22Dif1040Protonm[npt]="};
+    // errVectorNames = {"double eV24Dif1040CH[npt]=", "double eV24Dif1040Pion[npt]=", "double eV24Dif1040Kaon[npt]=", "double eV24Dif1040Proton[npt]=", "double eV24Dif1040CHm[npt]=", "double eV24Dif1040Pionm[npt]=", "double eV24Dif1040Kaonm[npt]=", "double eV24Dif1040Protonm[npt]="};
+    // errVectorNames = {"double eV2EPDif1040CH[npt]=", "double eV2EPDif1040Pion[npt]=", "double eV2EPDif1040Kaon[npt]=", "double eV2EPDif1040Proton[npt]=", "double eV2EPDif1040CHm[npt]=", "double eV2EPDif1040Pionm[npt]=", "double eV2EPDif1040Kaonm[npt]=", "double eV2EPDif1040Protonm[npt]="};
+  
+  }
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // double v2EP = hv22EP[icent]->GetBinContent(1)/sqrt(HRes[icent]->GetBinContent(1));
     // double ev2EP = hv22EP[icent]->GetBinError(1)/sqrt(HRes[icent]->GetBinContent(1));
@@ -295,9 +322,9 @@ void v2plot_differential_flow(){
           prV24dif1040[ipt][id]->Fill(0.5,v24Dif,hPT[icent][ipt][id] -> GetBinEntries(1));
           pt1040[ipt][id]->Fill(0.5,hPT[icent][ipt][id] -> GetBinContent(1),hPT[icent][ipt][id] -> GetBinEntries(1));
         }
-        // if (icent==1 && bDrawPlots1040) cout << ev22Dif;
+        if (icent==1 && bDrawPlots1040) cout << ev22Dif;
         // if (icent==1 && bDrawPlots1040) cout << ev24Dif;
-        if (icent==1 && bDrawPlots1040) cout << ev2EP;
+        // if (icent==1 && bDrawPlots1040) cout << ev2EP;
         if (icent==1 && bDrawPlots1040 && ipt != npt-1) cout <<",";
       } // end of loop for all pT bin
       if (icent==1 && bDrawPlots1040) cout <<"};"<< endl;
@@ -345,10 +372,11 @@ void v2plot_differential_flow(){
   TCanvas *cV2PT[ncent][npid];
   for (int icent=0; icent<6; icent++){
     for (int id=0;id<npid;id++){
+      if (bMergeCharged && id>3) continue;
       sprintf(hname,"%s, centrality %i-%i%%",pidFancyNames.at(id).Data(),icent*10,(icent+1)*10);
       cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][id],"",0.77, 1.23, 0., maxpt, -0.01, 0.2, 0.18, 0.56, 0.5, 0.8, hname);
       cV2PT[icent][id] -> SetName(hname);
-      sprintf(hname,"../Graphics/%sDFCent%i-%i.png",pidNames.at(id).Data(),icent*10,(icent+1)*10);
+      sprintf(hname,"../%s/%sDFCent%i-%i.png",outDirName.Data(),pidNames.at(id).Data(),icent*10,(icent+1)*10);
       cV2PT[icent][id] -> SaveAs(hname);
     }
   }
@@ -380,6 +408,21 @@ void v2plot_differential_flow(){
   double eV2EPDif1040Kaonm[npt]={0.000263169, 0.000260995, 0.000333908, 0.000467922, 0.000676894, 0.000879831, 0.00160162, 0.00262157, 0.0127595};  
   double eV2EPDif1040Protonm[npt]={0.00293867, 0.00187841, 0.00158013, 0.0016311, 0.00195147, 0.00226521, 0.00390732, 0.00631698, 0.0303239};
 
+  double eV22Dif1040CH[npt]={0.00020944,0.000271856,0.000368771,0.000499386,0.000660283,0.000776693,0.00118281,0.00160028,0.00495616};
+  double eV22Dif1040Pion[npt]={0.000219863,0.00030988,0.000464254,0.000690287,0.000980167,0.00123415,0.00207583,0.00311184,0.0110423};
+  double eV22Dif1040Kaon[npt]={0.00104553,0.000945038,0.0010939,0.00138516,0.00183229,0.00224646,0.00378721,0.00572383,0.020601};
+  double eV22Dif1040Proton[npt]={0.000969439,0.000682065,0.000631631,0.000692347,0.000838356,0.000940341,0.0014097,0.00186715,0.00571319};
+  
+  double eV24Dif1040CH[npt]={0.00299158,0.0038586,0.00505275,0.00696094,0.00895528,0.0102773,0.014817,0.0199827,0.0571578};
+  double eV24Dif1040Pion[npt]={0.00314042,0.00439564,0.00630872,0.00908756,0.0124071,0.015054,0.0251076,0.0372041,0.129059};
+  double eV24Dif1040Kaon[npt]={0.0127405,0.0116473,0.013185,0.0165857,0.0217438,0.0265339,0.0434773,0.0652912,0.229006};
+  double eV24Dif1040Proton[npt]={0.0119725,0.00850011,0.00797484,0.00919226,0.0109787,0.0123218,0.0173244,0.022727,0.0654446};
+
+  double eV2EPDif1040CH[npt]={0.000166871,0.000210611,0.000276285,0.000362388,0.000481853,0.000574366,0.000950903,0.00136593,0.00472016};
+  double eV2EPDif1040Pion[npt]={0.000174448,0.000239692,0.000356628,0.000535455,0.000797961,0.00104892,0.00189529,0.00292176,0.0105903};
+  double eV2EPDif1040Kaon[npt]={0.000857048,0.000760325,0.000900996,0.00118961,0.00164449,0.00206097,0.00360531,0.00549841,0.0200113};
+  double eV2EPDif1040Proton[npt]={0.000769063,0.000541574,0.000499608,0.000540713,0.00065002,0.000727984,0.00115423,0.00161005,0.00546604};
+
   double eV22Dif1040[npid][npt], eV24Dif1040[npid][npt], eV2EPDif1040[npid][npt];
 
   for (int ipt=0;ipt<npt;ipt++){
@@ -409,16 +452,25 @@ void v2plot_differential_flow(){
     eV2EPDif1040[5][ipt] = eV2EPDif1040Pionm[ipt];
     eV2EPDif1040[6][ipt] = eV2EPDif1040Kaonm[ipt];
     eV2EPDif1040[7][ipt] = eV2EPDif1040Protonm[ipt];
+    if (bMergeCharged){
+    eV22Dif1040[0][ipt] = eV22Dif1040CH[ipt];
+    eV22Dif1040[1][ipt] = eV22Dif1040Pion[ipt];
+    eV22Dif1040[2][ipt] = eV22Dif1040Kaon[ipt];
+    eV22Dif1040[3][ipt] = eV22Dif1040Proton[ipt];
+    eV24Dif1040[0][ipt] = eV24Dif1040CH[ipt];
+    eV24Dif1040[1][ipt] = eV24Dif1040Pion[ipt];
+    eV24Dif1040[2][ipt] = eV24Dif1040Kaon[ipt];
+    eV24Dif1040[3][ipt] = eV24Dif1040Proton[ipt];
+    eV2EPDif1040[0][ipt] = eV2EPDif1040CH[ipt];
+    eV2EPDif1040[1][ipt] = eV2EPDif1040Pion[ipt];
+    eV2EPDif1040[2][ipt] = eV2EPDif1040Kaon[ipt];
+    eV2EPDif1040[3][ipt] = eV2EPDif1040Proton[ipt];
+    }
   }
-    
-  
-
-  // double eV22Dif1040[npt]={4.16021e-05, 4.57347e-05, 6.66802e-05, 0.000102774, 0.00017121, 0.000272493, 0.000500597};
-  // double eV24Dif1040[npt]={0.000514427, 0.000644468, 0.000887692, 0.00131467, 0.00206218, 0.00311487, 0.005409};
-  // double eV2EPDif1040[npt]={3.68069e-05, 3.8137e-05, 5.68007e-05, 8.74456e-05, 0.000142745, 0.000228144, 0.000461732};
   double ePT[npt]={0.};
   TCanvas *cV2PT1040[npid];
   for (int id=0;id<npid;id++){
+    if (bMergeCharged && id>3) continue;
     vector <double> vV22Dif1040, vV24Dif1040, vV2EPDif1040, vPT;
     for (int ipt=0;ipt<npt;ipt++){
       vV22Dif1040.push_back(prV22dif1040[ipt][id]->GetBinContent(1));
@@ -455,7 +507,7 @@ void v2plot_differential_flow(){
     sprintf(hname,"%s, centrality 10-40%%",pidFancyNames.at(id).Data());
     cV2PT1040[id] = (TCanvas*) DrawTGraph(vgrv2pt1040,"",0.67,1.33,    0.,maxpt,-0.01,0.2,     0.18,0.56,0.5,0.8,hname);
     cV2PT1040[id] -> SetName(hname);
-    cV2PT1040[id] -> SaveAs(Form("../Graphics/%sDFCent10-40.png",pidNames.at(id).Data()));
+    cV2PT1040[id] -> SaveAs(Form("../%s/%sDFCent10-40.png",outDirName.Data(),pidNames.at(id).Data()));
   }
 }
 
@@ -514,9 +566,22 @@ void v2plot_integrated_flow(){
       }
     }
   }
+  if (bMergeCharged){
+    for (int icent=0;icent<ncent;icent++){
+      for (int ipt=1;ipt<npt;ipt++){
+        for (int id=0;id<npid/2;id++){
+          hv22EP[icent][id]->Add(hv22EP[icent][id+4]);
+          hv22[icent][id]->Add(hv22[icent][id+4]);
+          hv24[icent][id]->Add(hv24[icent][id+4]);
+          hcov24[icent][id]->Add(hcov24[icent][id+4]);
+        }
+      }
+    }  
+  }
   TGraphErrors *grIntFlowVsCent[nmethod][npid];
   TCanvas *can[npid];
   for (int id=0;id<npid;id++){
+    if (bMergeCharged && id>3) continue;
     std::vector<double> vV2EP, vV22, vV24, vV22int, vV24int;
     std::vector<double> eV2EP, eV22, eV24, eV22int, eV24int;
 
@@ -529,19 +594,19 @@ void v2plot_integrated_flow(){
       // eV2EP.push_back( hv22EP[icent]->GetBinError(1)  );    
       // 2QC
       term cor2 = term(hv22[icent][id]);
-      vV22.push_back(sqrt(cor2.mVal));
+      vV22.push_back(sqrt(cor2.mVal)); // not in used
       eV22.push_back(sqrt(1./(4.*cor2.mVal)*cor2.mMSE));
       // 4QC
       term cor4 = term(hv24[icent][id]);
       double cov24 = Covariance(hcov24[icent][id],hv22[icent][id],hv24[icent][id]);
       double v24 = pow(2*pow(cor2.mVal,2)-cor4.mVal,0.25);
-      vV24.push_back(v24);
+      vV24.push_back(v24); // not in used
       eV24.push_back( sqrt( 1./pow(v24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) ) );
   
       vV22int.push_back(prV22int[icent][id]->GetBinContent(1));
       vV24int.push_back(prV24int[icent][id]->GetBinContent(1));
-      eV22int.push_back(prV22int[icent][id]->GetBinError(1));
-      eV24int.push_back(prV24int[icent][id]->GetBinError(1));
+      eV22int.push_back(prV22int[icent][id]->GetBinError(1)); // not in used
+      eV24int.push_back(prV24int[icent][id]->GetBinError(1)); // not in used
     }
     
     // grIntFlowVsCent[0][id] = new TGraphErrors(ncent,bin_cent,&vV22[0],bin_centE,&eV22[0]);
@@ -568,11 +633,6 @@ void v2plot_integrated_flow(){
       grIntFlowVsCent[i][id] -> SetMarkerSize(1.5);
       grIntFlowVsCent[i][id] -> SetDrawOption("P");
     }
-    // const char *grTitle[5]={"[1] v_{2}{2,QC};cent, %;v_{2}",
-    //                         "[2] v_{2}{4,QC};cent, %;v_{2}",
-    //                         "[3] v_{2}{#eta sub-event};cent, %;v_{2}",
-    //                         "[4] v_{2}{2,QC fix};cent, %;v_{2}",
-    //                         "[5] v_{2}{4,QC fix};cent, %;v_{2}"};
     const char *grTitle[3]={"[1] v_{2}{2,QC};cent, %;v_{2}",
                             "[2] v_{2}{4,QC};cent, %;v_{2}",
                             "[3] v_{2}{#eta sub-event};cent, %;v_{2}",};
@@ -591,10 +651,18 @@ void v2plot_integrated_flow(){
     
     can[id] = (TCanvas*) DrawTGraph(vgr,"",0.48,1.22,   0,60,-0.005,0.1,    0.18,0.56,0.5,0.8,pidFancyNames.at(id).Data()); // DCA<0.5: 0.88, 1.12 // wo DCA: 0.76, 1.03
     can[id] -> SetName(pidNames.at(id).Data());
-    can[id] -> SaveAs(Form("../Graphics/%sV2vsCent.png",pidNames.at(id).Data()));
+    can[id] -> SaveAs(Form("../%s/%sV2vsCent.png",outDirName.Data(),pidNames.at(id).Data()));
   } // end of loop over particle ID
 }
 void v2plotPID(){
+
+  if (bMergeCharged){
+    pidNames.clear();
+    pidFancyNames.clear();
+    pidNames = {"hadron", "pion", "kaon", "proton", "hadron_neg", "pion_neg", "kaon_neg", "proton_neg"};
+    pidFancyNames = {"hadron", "#pi", "K", "p(#bar{p})", "h-", "#pi-", "K-", "#bar{p}"};
+  }
+  gSystem->Exec(Form("mkdir -p ../%s/",outDirName.Data()));
   v2plot_differential_flow();
   v2plot_integrated_flow();
 }

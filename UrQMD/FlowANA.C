@@ -8,8 +8,6 @@
 #include "TStyle.h"
 #include "TCanvas.h"
 #include "TMath.h"
-#include "TVector3.h"
-#include "TVectorD.h"
 #include "TRandom3.h"
 #include <TDatabasePDG.h>
 #include <TVector3.h>

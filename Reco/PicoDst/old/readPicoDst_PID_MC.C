@@ -53,7 +53,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
   static const float eta_cut =  1.5; // min pt
   static const float eta_gap = 0.05; // min pt
-  static const int nhitsmin = 32; // minimum nhits of reconstructed tracks
+  static const int nhitsmin = 16; // minimum nhits of reconstructed tracks
   static const float DCAcut = 0.5;
   static const int neta = 2; // [eta-,eta+]
 

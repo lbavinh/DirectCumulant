@@ -2,7 +2,7 @@
 
 #
 # Specify working directory
-#$ -wd /weekly/$USER/lbavinh/PicoDst/
+#$ -wd /weekly/$USER/lbavinh/readPicoDst/
 # Tell SGE that we will work in the working directory
 #$ -cwd
 # Specify job name
@@ -16,8 +16,8 @@
 # Specify job array range (how many jobs will be created
 #$ -t 1-633
 # Specify directory where output and error logs from SGE will be stored
-#$ -o /weekly/$USER/lbavinh/PicoDst/OUT/log/
-#$ -e /weekly/$USER/lbavinh/PicoDst/OUT/log/
+#$ -o /weekly/$USER/lbavinh/readPicoDst/OUT/log/
+#$ -e /weekly/$USER/lbavinh/readPicoDst/OUT/log/
 #
 
 # ${JOB_ID} - Id of the job array (one for all jobs)
@@ -26,7 +26,7 @@
 #     of N jobs with ${JOB_ID}_1, ${JOB_ID}_2, ..., ${JOB_ID}_N
 
 #Main directory
-export MAIN_DIR=/weekly/$USER/lbavinh/PicoDst
+export MAIN_DIR=/weekly/$USER/lbavinh/readPicoDst
 #export FILELIST=${MAIN_DIR}/runlist_PicoDst.list
 export FILELIST=${MAIN_DIR}/runlist_PicoDst_merged.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
@@ -48,7 +48,7 @@ rsync -vuzP $MAIN_DIR/function.C $TMP/function.C &>> $LOG
 
 # Set correct environment variables (needed version of root)
 source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh
-source /weekly/parfenov/Soft/PicoDst/build/setPicoDst.sh 
+source /weekly/lbavinh/lbavinh/PicoDst/build/setPicoDst.sh
 echo "Input arguments (Job Id = ${JOB_ID}, Task ID = ${SGE_TASK_ID}):" &>> $LOG
 echo "Main directory:           ${MAIN_DIR}" &>> $LOG
 echo "Input file:    $IN_FILE"  &>> $LOG

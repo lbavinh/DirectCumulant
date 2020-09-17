@@ -40,7 +40,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   // fDCAx = (TF2 *)inputDCAfile->Get("f_sigma0");
   // fDCAy = (TF2 *)inputDCAfile->Get("f_sigma1");
   // fDCAz = (TF2 *)inputDCAfile->Get("f_sigma2");
-
+  const int npid = 8; // hadrons+, pions+, kaons+, proton, hadrons-, pions-, kaons-, antiproton
   const int NcentBins     = 8;
   const double centBinMin = 0.;
   const double centBinMax = 80.;
@@ -67,8 +67,10 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   TH1F *hBimp;       // impact parameter
   TH1I *hMult;       // emitted multiplicity
   TH1I *hMult_MC;    // emitted multiplicity
-  TH1F *hPt;         // transverse momentum distr
-  TH1F *hPt_MC;         // transverse momentum distr
+  // TH2F *hPt;         // transverse momentum distr
+  // TH2F *hPt_MC;         // transverse momentum distr
+  TH1F *hPt[npid];         // transverse momentum distr
+  TH1F *hPt_MC[npid];         // transverse momentum distr
   TProfile2D *prResPt;
   char name[800];
   char title[800];
@@ -78,13 +80,19 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
   hMult_MC = new TH1I("hMult_MC", "Multiplicity distr_MC;M;dN/dM", max_nh, 0, max_nh);
   hBimp = new TH1F("hBimp", "Impact parameter;b (fm);dN/db", 200, 0., 20.);
-  hPt = new TH1F("hPt", "Pt-distr;p_{T} (GeV/c); dN_{reco}/dp_{T}", NptBins, ptBinMin, ptBinMax);
-  hPt_MC = new TH1F("hPt_MC", "Pt-distr_MC;p_{T} (GeV/c); dN_{MC}/dp_{T}", NptBins, ptBinMin, ptBinMax);
   hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
   hPhil_MC = new TH1F("hPhil_MC", "Azimuthal angle distr in laboratory coordinate system_MC; #phi; dN/d#phi", 300, 0., 7.);
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 400,-2.,2.);
   hEta_MC = new TH1F("hEta_MC", "Pseudorapidity distr_MC; #eta; dN/d#eta", 400,-2.,2.);
   prResPt = new TProfile2D("prResPt","Pt resolution;p_{T} [GeV/c];cent [%]",NptBins,ptBinMin,ptBinMax,NcentBins,centBinMin,centBinMax);
+
+  // hPt = new TH2F("hPt","Pt-distr;p_{T} [GeV/c];PID;dN_{reco}/dp_{T}", NptBins, ptBinMin, ptBinMax,npid,0.,8.);
+  // hPt_MC = new TH2F("hPt_MC","Pt-distr_MC;p_{T} [GeV/c];PID;dN_{MC}/dp_{T}", NptBins, ptBinMin, ptBinMax,npid,0.,8.);
+  for (int id=0;id<npid;id++){
+    hPt[id] = new TH1F(Form("hPt_%i",id),"Pt-distr;p_{T} [GeV/c];dN_{reco}/dp_{T}", NptBins, ptBinMin, ptBinMax);
+    hPt_MC[id] = new TH1F(Form("hPt_MC_%i",id),"Pt-distr_MC;p_{T} [GeV/c];dN_{MC}/dp_{T}", NptBins, ptBinMin, ptBinMax);
+  }
+
 
   cout << "Histograms have been initialized" << endl;
 
@@ -135,7 +143,17 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       float phi = mcTrack->GetPhi();
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
-      hPt_MC -> Fill(pt);
+      int fId=-1;
+      if(mcTrack->GetPdg()==211)  fId=1; // pion+
+      if(mcTrack->GetPdg()==321)  fId=2; // kaon+
+      if(mcTrack->GetPdg()==2212) fId=3; // proton
+      if(mcTrack->GetPdg()==-211)  fId=5; // pion-
+      if(mcTrack->GetPdg()==-321)  fId=6; // kaon-
+      if(mcTrack->GetPdg()==-2212) fId=7; // anti-proton
+
+      if (charge>0) hPt_MC[0] -> Fill(pt);
+      if (charge<0) hPt_MC[4] -> Fill(pt);
+      if (fId>0) hPt_MC[fId] -> Fill(pt);
       hEta_MC -> Fill(eta);
       hPhil_MC -> Fill(phi);
     } // end of track loop
@@ -148,14 +166,25 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       float eta = recoTrack->GetEta();
       float phi = recoTrack->GetPhi();
       if (pt < minpt || pt > maxpt || abs(eta)>eta_cut || abs(eta)<eta_gap) continue; // Main track cuts
-      // auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(mcTrack->GetPdg());
+      auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(mcTrack->GetPdg());
       // float charge = 1./3.*particle->Charge();
+      float charge = recoTrack->GetCharge();
       // if (charge == 0) continue;
       // Reco-specific track cuts
       if (recoTrack->GetNhits() < Nhits) continue;
       if (mcTrack->GetMotherId() != -1) continue;
       if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
-      hPt -> Fill(pt);
+
+      int fId=-1;
+      if(mcTrack->GetPdg()==211)  fId=1; // pion+
+      if(mcTrack->GetPdg()==321)  fId=2; // kaon+
+      if(mcTrack->GetPdg()==2212) fId=3; // proton
+      if(mcTrack->GetPdg()==-211)  fId=5; // pion-
+      if(mcTrack->GetPdg()==-321)  fId=6; // kaon-
+      if(mcTrack->GetPdg()==-2212) fId=7; // anti-proton     
+      if (charge>0) hPt[0] -> Fill(pt);
+      if (charge<0) hPt[4] -> Fill(pt);
+      if (fId>0) hPt[fId] -> Fill(pt);
       hEta -> Fill(eta);
       hPhil -> Fill(phi);
       float pt_MC  = mcTrack->GetPt();
@@ -173,4 +202,5 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   timer.Stop();
   timer.Print();
 }
+// source /weekly/lbavinh/lbavinh/PicoDst/build/setPicoDst.sh
 // root -l -b -q readPicoDst.C+'("/weekly/parfenov/mpd_winter2019/mpd_prod/7.7gev/merged_new/picodst_merged_600.root","test.root")'

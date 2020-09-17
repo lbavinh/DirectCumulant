@@ -59,7 +59,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
   static const int max_nh = 1700;
 
-
+  TFile *d_outfile; // out file with histograms and profiles
   TH1I *hEvt;        // Event number 
   TH1F *hRP;         // reaction plane distr
   TH1F *hPt;         // transverse momentum distr
@@ -100,8 +100,8 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
   char name[800];
   char title[800];
-  // d_outfile = new TFile(outputFileName.Data(), "recreate");
-  // cout << outputFileName.Data() << " has been initialized" << endl;
+  d_outfile = new TFile(outputFileName.Data(), "recreate");
+  cout << outputFileName.Data() << " has been initialized" << endl;
   hEvt  = new TH1I("hEvt","Event number",1,0,1);
   hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
   hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", max_nh, 0, max_nh, 200, 0., 20.);
@@ -189,26 +189,26 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     hBimpvsMult -> Fill(reco_mult,bimp);
     // notation as (26) in DOI:10.1103/PhysRevC.83.044913
     // Q-vector of RFP
-    Double_t Qx2[neta]={0.}, Qy2[neta]={0.}, Qx4[neta]={0.}, Qy4[neta]={0.};
-    TComplex Q2[neta]={0.}, Q4[neta]={0.};
+    Double_t Qx2=0., Qy2=0., Qx4=0., Qy4=0.;
+    TComplex Q2=0., Q4=0.;
     // p-vector of POI
-    Double_t px2[neta][npt][npid]={{{0.}}}, py2[neta][npt][npid]={{{0.}}};
-    TComplex p2[neta][npt][npid]={{{0.}}}, p4[neta][npt][npid]={{{0.}}}, q2[neta][npt][npid]={{{0.}}}, q4[neta][npt][npid]={{{0.}}};
+    Double_t px2[npt][npid]={{0.}}, py2[npt][npid]={{0.}};
+    TComplex p2[npt][npid]={{0.}}, p4[npt][npid]={{0.}}, q2[npt][npid]={{0.}}, q4[npt][npid]={{0.}};
     // q-vector of particles marked as POI and RFP, which is used for 
     // autocorrelation substraction
-    Double_t qx2[neta][npt][npid]={{{0.}}}, qy2[neta][npt][npid]={{{0.}}}, qx4[neta][npt][npid]={{{0.}}}, qy4[neta][npt][npid]={{{0.}}};
+    Double_t qx2[npt][npid]={{0.}}, qy2[npt][npid]={{0.}}, qx4[npt][npid]={{0.}}, qy4[npt][npid]={{0.}};
     // Total number of RFP in given event
-    Double_t M[neta] = {0.};
+    Double_t M = 0.;
     // numbers of POI (mp) and particles marked both POI and RFP (mq)
-    Double_t mq[neta][npt][npid]={{{0.}}},mp[neta][npt][npid]={{{0.}}};
+    Double_t mq[npt][npid]={{0.}},mp[npt][npid]={{0.}};
     // average reduced single-event 2- and 4-particle correlations : <2'> & <4'>
-    Double_t redCor22[neta][npt][npid]={{{0.}}}, redCor24[neta][npt][npid]={{{0.}}};
+    Double_t redCor22[npt][npid]={{0.}}, redCor24[npt][npid]={{0.}};
     // event weights for correlation calculation
-    Double_t w2[neta]={0.},w4[neta]={0.};
+    Double_t w2=0.,w4=0.;
     // event weights for reduced correlation calculation
-    Double_t wred2[neta][npt][npid]={{{0.}}},wred4[neta][npt][npid]={{{0.}}};
+    Double_t wred2[npt][npid]={{0.}},wred4[npt][npid]={{0.}};
     // Average single-event 2- and 4- particle correlations : <2> & <4>
-    Double_t cor22[neta] = {0.}, cor24[neta] = {0.};
+    Double_t cor22 = 0., cor24 = 0.;
 
     float sumQxy[neta][2]={{0}};  // [eta-,eta+][x,y]
     float multQv[neta]={0};       // [eta+,eta-]
@@ -264,87 +264,44 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       //   if(recoTrack->GetPidProbKaon() > 0.9)  fId=2; // kaon
       //   if(recoTrack->GetPidProbProton() > 0.9) fId=3; // proton
       // }
-      Qx2[0]+=TMath::Cos(2.*phi);
-      Qy2[0]+=TMath::Sin(2.*phi);
-      Qx4[0]+=TMath::Cos(4.*phi);
-      Qy4[0]+=TMath::Sin(4.*phi);
-      M[0]++;
+      Qx2+=TMath::Cos(2.*phi);
+      Qy2+=TMath::Sin(2.*phi);
+      Qx4+=TMath::Cos(4.*phi);
+      Qy4+=TMath::Sin(4.*phi);
+      M++;
+      // POI selection
+      if (charge>0){
+        px2[ipt][0]+=TMath::Cos(2.*phi);
+        py2[ipt][0]+=TMath::Sin(2.*phi);
+        mp[ipt][0]++;
 
-      Qx2[1]+=TMath::Cos(2.*phi);
-      Qy2[1]+=TMath::Sin(2.*phi);
-      Qx4[1]+=TMath::Cos(4.*phi);
-      Qy4[1]+=TMath::Sin(4.*phi);
-      M[1]++;
-      if(eta<0){
-        if (charge>0){
-          px2[0][ipt][0]+=TMath::Cos(2.*phi);
-          py2[0][ipt][0]+=TMath::Sin(2.*phi);
-          mp[0][ipt][0]++;
-
-          qx2[0][ipt][0]+=TMath::Cos(2*phi);
-          qy2[0][ipt][0]+=TMath::Sin(2*phi);
-          qx4[0][ipt][0]+=TMath::Cos(4*phi);
-          qy4[0][ipt][0]+=TMath::Sin(4*phi);
-          mq[0][ipt][0]++;
-        }
-        if (charge<0){
-          px2[0][ipt][4]+=TMath::Cos(2.*phi);
-          py2[0][ipt][4]+=TMath::Sin(2.*phi);
-          mp[0][ipt][4]++;
-
-          qx2[0][ipt][4]+=TMath::Cos(2*phi);
-          qy2[0][ipt][4]+=TMath::Sin(2*phi);
-          qx4[0][ipt][4]+=TMath::Cos(4*phi);
-          qy4[0][ipt][4]+=TMath::Sin(4*phi);
-          mq[0][ipt][4]++;          
-        }
-        if (fId>0){
-          px2[0][ipt][fId]+=TMath::Cos(2.*phi);
-          py2[0][ipt][fId]+=TMath::Sin(2.*phi);
-          mp[0][ipt][fId]++;
-
-          qx2[0][ipt][fId]+=TMath::Cos(2*phi);
-          qy2[0][ipt][fId]+=TMath::Sin(2*phi);
-          qx4[0][ipt][fId]+=TMath::Cos(4*phi);
-          qy4[0][ipt][fId]+=TMath::Sin(4*phi);
-          mq[0][ipt][fId]++;          
-        }
+        qx2[ipt][0]+=TMath::Cos(2.*phi);
+        qy2[ipt][0]+=TMath::Sin(2.*phi);
+        qx4[ipt][0]+=TMath::Cos(4.*phi);
+        qy4[ipt][0]+=TMath::Sin(4.*phi);
+        mq[ipt][0]++;
       }
+      if (charge<0){
+        px2[ipt][4]+=TMath::Cos(2.*phi);
+        py2[ipt][4]+=TMath::Sin(2.*phi);
+        mp[ipt][4]++;
 
-      if(eta>0){ 
-        if (charge>0){
-          px2[1][ipt][0]+=TMath::Cos(2.*phi);
-          py2[1][ipt][0]+=TMath::Sin(2.*phi);
-          mp[1][ipt][0]++;
+        qx2[ipt][4]+=TMath::Cos(2*phi);
+        qy2[ipt][4]+=TMath::Sin(2*phi);
+        qx4[ipt][4]+=TMath::Cos(4*phi);
+        qy4[ipt][4]+=TMath::Sin(4*phi);
+        mq[ipt][4]++;
+      }
+      if (fId>0){
+        px2[ipt][fId]+=TMath::Cos(2.*phi);
+        py2[ipt][fId]+=TMath::Sin(2.*phi);
+        mp[ipt][fId]++;
 
-          qx2[1][ipt][0]+=TMath::Cos(2*phi);
-          qy2[1][ipt][0]+=TMath::Sin(2*phi);
-          qx4[1][ipt][0]+=TMath::Cos(4*phi);
-          qy4[1][ipt][0]+=TMath::Sin(4*phi);
-          mq[1][ipt][0]++;          
-        }
-        if (charge<0){
-          px2[1][ipt][4]+=TMath::Cos(2.*phi);
-          py2[1][ipt][4]+=TMath::Sin(2.*phi);
-          mp[1][ipt][4]++;
-
-          qx2[1][ipt][4]+=TMath::Cos(2*phi);
-          qy2[1][ipt][4]+=TMath::Sin(2*phi);
-          qx4[1][ipt][4]+=TMath::Cos(4*phi);
-          qy4[1][ipt][4]+=TMath::Sin(4*phi);
-          mq[1][ipt][4]++;  
-        }
-        if (fId>0){
-          px2[1][ipt][fId]+=TMath::Cos(2.*phi);
-          py2[1][ipt][fId]+=TMath::Sin(2.*phi);
-          mp[1][ipt][fId]++;
-
-          qx2[1][ipt][fId]+=TMath::Cos(2*phi);
-          qy2[1][ipt][fId]+=TMath::Sin(2*phi);
-          qx4[1][ipt][fId]+=TMath::Cos(4*phi);
-          qy4[1][ipt][fId]+=TMath::Sin(4*phi);
-          mq[1][ipt][fId]++;   
-        }
+        qx2[ipt][fId]+=TMath::Cos(2*phi);
+        qy2[ipt][fId]+=TMath::Sin(2*phi);
+        qx4[ipt][fId]+=TMath::Cos(4*phi);
+        qy4[ipt][fId]+=TMath::Sin(4*phi);
+        mq[ipt][fId]++;
       }
 
       // Sub eta event method, TPC plane
@@ -361,60 +318,44 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     } // end of track loop
 
     // ================================== Direct Cumulants ================================== //
-    for (int ieta=0;ieta<neta;ieta++){ // reverse POI & RFP selection
-      if (M[ieta] < 4) continue; // test
-      if (M[ieta] >= 2.){ // <2> definition condition
-        Q2[ieta] = TComplex(Qx2[ieta], Qy2[ieta]);
-        w2[ieta] = M[ieta]*(M[ieta]-1);                            // w(<2>)
-        cor22[ieta] = CalCor22(Q2[ieta], M[ieta], w2[ieta]);       // <2>
-        hv22[fcent]->Fill(0.5, cor22[ieta], w2[ieta]);             // <<2>>
+  Q2 = TComplex(Qx2, Qy2);
+  w2 = M*(M-1);                         // w(<2>)
+  Q4 = TComplex(Qx4, Qy4);
+  w4 = M*(M-1)*(M-2)*(M-3);             // w(<4>)
+  if (w2 != 0 && w4 != 0){
+    cor22 = CalCor22(Q2, M, w2);        // <2>
+    cor24 = CalCor24(Q2, Q4, M, w4);    // <4>
+    hv22[fcent]->Fill(0.5, cor22, w2);  // <<2>>
+    hv24[fcent]->Fill(0.5, cor24, w4);  // <<4>>
 
-      } // end of <2> definition condition
-      for (int ipt = 0; ipt < npt; ipt++){ // <2'>
-        for (int id=0;id<npid;id++){
-          if (mp[ieta][ipt] == 0 || M[ieta]<1) continue;
-          Q2[ieta] = TComplex(Qx2[ieta], Qy2[ieta]);
-          p2[ieta][ipt][id] = TComplex(px2[ieta][ipt][id], py2[ieta][ipt][id]);
-          q2[ieta][ipt][id] = TComplex(qx2[ieta][ipt][id], qy2[ieta][ipt][id]);
-          wred2[ieta][ipt][id] = mp[ieta][ipt][id]*M[ieta]-mq[ieta][ipt][id];                                                                        // w(<2'>)
-          if (wred2[ieta][ipt][id]==0) continue;
-          redCor22[ieta][ipt][id] = CalRedCor22(Q2[ieta], p2[ieta][ipt][id], M[ieta], mp[ieta][ipt][id], mq[ieta][ipt][id], wred2[ieta][ipt][id]);   // <2'>
-          hv22pt[fcent][ipt][id]->Fill(0.5, redCor22[ieta][ipt][id], wred2[ieta][ipt][id]);                                                                      // <<2'>>
-          hcounter[fcent][ipt][id]->Fill(0.5,1,mp[ieta][ipt][id]);
-          // TProfile for covariance calculation in statistic error
-          hcov22prime[fcent][ipt][id]->Fill(0.5, cor22[ieta]*redCor22[ieta][ipt][id], w2[ieta]*wred2[ieta][ipt][id]); // <2>*<2'>
-        }
-      }
-
-      if (M[ieta] >= 4.){ // <4> definition condition
-        Q4[ieta] = TComplex(Qx4[ieta], Qy4[ieta]);
-        w4[ieta] = M[ieta]*(M[ieta]-1)*(M[ieta]-2)*(M[ieta]-3); // w(<4>)
-        cor24[ieta] = CalCor24(Q2[ieta], Q4[ieta], M[ieta], w4[ieta]);      // <4>
-        hv24[fcent]->Fill(0.5, cor24[ieta], w4[ieta]);    // <<4>>
+    // TProfile for covariance calculation in statistic error
+    hcov24[fcent]->Fill(0.5, cor22 * cor24, w2 * w4); // <2>*<4>
+    for (int ipt = 0; ipt < npt; ipt++){
+      for (int id=0;id<npid;id++){
+        if (mp[ipt][id] == 0) continue;
+        p2[ipt][id] = TComplex(px2[ipt][id], py2[ipt][id]);
+        q2[ipt][id] = TComplex(qx2[ipt][id], qy2[ipt][id]);
+        wred2[ipt][id] = mp[ipt][id]*M-mq[ipt][id];                                                                                   // w(<2'>)
+        if (wred2[ipt][id]==0) continue;
+        q4[ipt][id] = TComplex(qx4[ipt][id], qy4[ipt][id]);
+        wred4[ipt][id] = (mp[ipt][id]*M-3*mq[ipt][id])*(M-1)*(M-2);                                                                   // w(<4'>)
+        if (wred4[ipt][id]==0) continue;
+        redCor22[ipt][id] = CalRedCor22(Q2, p2[ipt][id], M, mp[ipt][id], mq[ipt][id], wred2[ipt][id]);                                // <2'>
+        hv22pt[fcent][ipt][id]->Fill(0.5, redCor22[ipt][id], wred2[ipt][id]);                                                         // <<2'>>
+        redCor24[ipt][id] = CalRedCor24(Q2, Q4, p2[ipt][id], q2[ipt][id], q4[ipt][id], M, mp[ipt][id], mq[ipt][id], wred4[ipt][id]);  // <4'>
+        hv24pt[fcent][ipt][id]->Fill(0.5, redCor24[ipt][id], wred4[ipt][id]);                                                         // <<4'>>
 
         // TProfile for covariance calculation in statistic error
-        hcov24[fcent]->Fill(0.5,cor22[ieta]*cor24[ieta],w2[ieta]*w4[ieta]); // <2>*<4>
-      } // end of <4> definition condition
-      for (int ipt = 0; ipt < npt; ipt++){ // <4'>
-        for (int id=0;id<npid;id++){
-          if (mp[ieta][ipt] == 0 || M[ieta]<3) continue;
-          Q4[ieta] = TComplex(Qx4[ieta], Qy4[ieta]);   
-          q4[ieta][ipt][id] = TComplex(qx4[ieta][ipt][id], qy4[ieta][ipt][id]);
-          wred4[ieta][ipt][id] = (mp[ieta][ipt][id]*M[ieta]-3*mq[ieta][ipt][id])*(M[ieta]-1)*(M[ieta]-2);                                 // w(<4'>)
-          if (wred4[ieta][ipt][id]==0) continue;
-          redCor24[ieta][ipt][id] = CalRedCor24(Q2[ieta], Q4[ieta], p2[ieta][ipt][id], q2[ieta][ipt][id], q4[ieta][ipt][id], M[ieta], mp[ieta][ipt][id], mq[ieta][ipt][id], wred4[ieta][ipt][id]); // <4'>
-          hv24pt[fcent][ipt][id]->Fill(0.5, redCor24[ieta][ipt][id], wred4[ieta][ipt][id]);                                        // <<4'>>
-          hcounter[fcent][ipt][id]->Fill(1.5,1,mp[ieta][ipt][id]);
-          // TProfile for covariance calculation in statistic error
-          hcov24prime[fcent][ipt][id]->Fill(0.5, cor22[ieta] * redCor24[ieta][ipt][id], w2[ieta] * wred4[ieta][ipt][id]);
-          hcov42prime[fcent][ipt][id]->Fill(0.5, cor24[ieta] * redCor22[ieta][ipt][id], w4[ieta] * wred2[ieta][ipt][id]);
-          hcov44prime[fcent][ipt][id]->Fill(0.5, cor24[ieta] * redCor24[ieta][ipt][id], w4[ieta] * wred4[ieta][ipt][id]);
-          hcov2prime4prime[fcent][ipt][id]->Fill(0.5, redCor22[ieta][ipt][id] * redCor24[ieta][ipt][id], wred2[ieta][ipt][id] * wred4[ieta][ipt][id]);
-        }
+        hcov22prime[fcent][ipt][id]->Fill(0.5, cor22 * redCor22[ipt][id], w2 * wred2[ipt][id]);     // <2>*<2'>
+        hcov24prime[fcent][ipt][id]->Fill(0.5, cor22 * redCor24[ipt][id], w2 * wred4[ipt][id]);
+        hcov42prime[fcent][ipt][id]->Fill(0.5, cor24 * redCor22[ipt][id], w4 * wred2[ipt][id]);
+        hcov44prime[fcent][ipt][id]->Fill(0.5, cor24 * redCor24[ipt][id], w4 * wred4[ipt][id]);
+        hcov2prime4prime[fcent][ipt][id]->Fill(0.5, redCor22[ipt][id] * redCor24[ipt][id], wred2[ipt][id] * wred4[ipt][id]);
+
+        hcounter[fcent][ipt][id]->Fill(0.5,1,mp[ipt][id]);
       }
-    } // end of reverse selection
-
-
+    }
+  }
     // ==================================== Eta Sub-event ==================================== //
 
     float fEP[2]; // [eta-,eta+]
@@ -508,51 +449,9 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     } // end of track loop
   } // end event loop
   // Write histograms to out file
-  TFile *d_outfile; // out file with histograms and profiles
-  d_outfile = new TFile(outputFileName.Data(),"recreate");
-  d_outfile -> cd();
-  
-  hEvt->Write();
-  hRP->Write();
-  hPt->Write();
-  hPhi->Write();
-  hEta->Write();
-  hBimp->Write();
-  hMult->Write();
-  hBimpvsMult->Write();
 
-  for (int icent=0;icent<ncent;icent++){
-    HRes[icent]->Write();
-    
-    hv22[icent]->Write();
-    hv24[icent]->Write();
-    hcov24[icent]->Write();
-    for (int id=0;id<npid;id++){
-      hv22EP[icent][id]->Write();
-      for (int ipt=0;ipt<npt;ipt++){
-      
-        hv22pt[icent][ipt][id]->Write();
-        hv24pt[icent][ipt][id]->Write();
-        hcov22prime[icent][ipt][id]->Write();
-        hcov24prime[icent][ipt][id]->Write();
-        hcov42prime[icent][ipt][id]->Write();
-        hcov44prime[icent][ipt][id]->Write();
-        hcov2prime4prime[icent][ipt][id]->Write();
-        hPT[icent][ipt][id]->Write();
-        hv2EP[icent][ipt][id]->Write();
-        hcounter[icent][ipt][id]->Write();          
-      }
-    }
-  }
-  for (int ieta=0;ieta<neta;ieta++){
-    H_Qw[ieta]->Write();
-    H_EP[ieta]->Write();
-    for (int icent=0;icent<ncent;icent++){
-      H_Qx[ieta][icent]->Write();
-      H_Qy[ieta][icent]->Write();
-    }
-  }
-  // d_outfile -> Write();
+  d_outfile -> cd();
+  d_outfile -> Write();
   d_outfile -> Close();
   cout << "Histfile has been written" << endl;
 

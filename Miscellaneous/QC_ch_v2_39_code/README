@@ -1,0 +1,20 @@
+Overview:
+	The Q-Cumulants method for measuring v2 is implimented in the class StMyDCumulantsMaker. Because this method is also called the direct cumulants methods, I named it DCumulantsMaker. This maker works in the STAR standard framework and relies on the data format of LBL produced picoDst. Use mini bias dataset as input, this maker calculates v2 of multiple particle species of all centrality bins within one pass through the data.
+
+How to run:
+	1. The main shell script is run_readPico.csh, which takes one picoDst file list as an argument and executes the root script readPicoDst.C. For example, we have a picoDst file list named test.list, then executing
+		./run_readPico.csh test.list
+will generate an output file test.list.hist.root, which contains all the cumulants needed to calculate v2.
+
+	2. The other root macro makeFlow.C will take test.list.hist.root as an argument to calculate v2 correspondingly. The differential v2(pt, eta) measurement will be stored in the output file named test.list.flow.root. The flow.root file contains histogram groups. Each group has three TH3D histograms, v22Hist, v24Hist and yield. The three TH3D have the same axis settings, x-axis for particle species, y-axis for pt binning and z-axis for eta bining. In current implementation, I calculate v2 for charged particle, pi+ and pi- simultaneously.  In this case, x-axis-bin-1 for charged particle, x-axis-bin-2 for pi+ and x-axis-bin-3 for pi-. For instance, v22Hist->GetBinContent(1, i, j) returns the v2 of charged particle in a certain pt and eta bin labeled i and j respectively. However, v22Hist->GetBinContent(2, i, j) returns the v2 of pi+ in the same pt and eta bin. One need to rebin over pt and eta direction with the help of particle yield, which is stored in the histogram named yield.
+
+	3. Code in the directory of ana can help the rebin process. The root script ana/getV2.C takes test.list.flow.root as an argument and calculates v2(pt) for charged particles with a desired pt binning.
+
+
+Dec 12, 2011
+
+Hongwei Ke
+Institute of Particle Physics
+Central China Normal University
+
+EMail: kehw@rcf.rhic.bnl.gov

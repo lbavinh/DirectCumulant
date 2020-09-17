@@ -1,5 +1,5 @@
 #include "DrawTGraph.C"
-void Compare(int meth = 0){ // 0: v22; 1:v24; 2: v2EP
+void Compare(int meth = 1){ // 0: v22; 1:v24; 2: v2EP
   static const int npid = 4; // charged hadrons, pions, kaons, protons
   static const int nmethod = 4; // UrQMD, GEANT, Reco, Reco AC
   static const float maxpt = 2.5;
@@ -12,11 +12,11 @@ void Compare(int meth = 0){ // 0: v22; 1:v24; 2: v2EP
   TFile *inputVinh[nmethod];
   TGraphErrors *grVinh[ncent][nmethod][npid];
   char name[400];
-  TString method[nmethod]={"[1] UrQMD","[2] GEANT","[3] Reco","[4] Reco corrected"};
+  TString method[nmethod]={"[1] UrQMD","[2] GEANT","[3] Reco (Nhits>32)","[4] Reco (Nhits>16)"};
   inputVinh[0] = new TFile("VinhPID_UrQMD_merged.root","read");
   inputVinh[1] = new TFile("VinhPID_GEANT_merged.root","read");
   inputVinh[2] = new TFile("VinhPID_Reco_merged.root","read");
-  inputVinh[3] = new TFile("VinhPID_Reco_AC_merged.root","read");
+  inputVinh[3] = new TFile("VinhPID_Reco_merged_Nhits16.root","read");
   for (int i=0; i<nmethod; i++){
     for (int id=0;id<npid;id++){
       for (int icent=0;icent<ncent-2;icent++){
@@ -34,7 +34,7 @@ void Compare(int meth = 0){ // 0: v22; 1:v24; 2: v2EP
       grVinh[icent][0][id]->SetMarkerStyle(kOpenSquare);
       grVinh[icent][1][id]->SetMarkerStyle(kFullCircle);
       grVinh[icent][2][id]->SetMarkerStyle(kFullTriangleUp);
-      grVinh[icent][3][id]->SetMarkerStyle(kOpenCircle);
+      grVinh[icent][3][id]->SetMarkerStyle(kFullCircle); // kOpenCircle
       for (int i=0;i<nmethod;i++){
         grVinh[icent][i][id] -> SetMarkerSize(1.6);
       }
@@ -62,8 +62,8 @@ void Compare(int meth = 0){ // 0: v22; 1:v24; 2: v2EP
     }
   }
   TString dirName;
-  if (meth==0) dirName = "merged_2QC_AC";
-  if (meth==1) dirName = "merged_4QC_AC";
+  if (meth==0) dirName = "merged_2QC";
+  if (meth==1) dirName = "merged_4QC";
   if (meth==2) dirName = "merged_EP";
 
   gSystem->Exec(Form("mkdir -p ./%s/",dirName.Data()));
@@ -78,7 +78,8 @@ void Compare(int meth = 0){ // 0: v22; 1:v24; 2: v2EP
       can[icent][id] -> SaveAs(name);
     }
     sprintf(name,"%s, centrality 10-40%%",pidFancyNames.at(id).Data());
-    can[5][id] = (TCanvas*) DrawTGraph(vgrv2pt1040[id],"",ratioRange.at(id).first,ratioRange.at(id).second,    0.,maxpt,-0.01,0.2,     0.18,0.56,0.5,0.8,name);
+    // can[5][id] = (TCanvas*) DrawTGraph(vgrv2pt1040[id],"",ratioRange.at(id).first,ratioRange.at(id).second,    0.,maxpt,-0.01,0.2,     0.18,0.56,0.5,0.8,name);
+    can[5][id] = (TCanvas*) DrawTGraph(vgrv2pt1040[id],"",0.66,1.34,    0.,maxpt,-0.01,0.2,     0.18,0.56,0.5,0.8,name);    
     sprintf(name,"./%s/%s_Cent10-40.png",dirName.Data(),pidNames.at(id).Data());
     can[5][id] -> SetName(name);
     can[5][id] -> SaveAs(name);

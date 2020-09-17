@@ -1,7 +1,7 @@
 #include "DrawTGraph.C"
 
-TFile *outFile = new TFile("../CompareResult/VinhPID_Reco_merged.root","recreate");
-TString outDirName={"Reco_merged"};
+TFile *outFile = new TFile("../CompareResult/VinhPID_Reco_merged_Nhits16.root","recreate");
+TString outDirName={"Reco_merged_Nhits16"};
 bool bDrawPlots1040 = 0;
 bool drawDistributions = 0;
 bool bSaveCanvas = 0;
@@ -81,7 +81,7 @@ TProfile *prV22int[ncent][npid], *prV24int[ncent][npid], *prV2EPint[ncent][npid]
 TProfile *prV22dif1040[npt][npid], *prV24dif1040[npt][npid], *prV2EPdif1040[npt][npid], *pt1040[npt][npid]; // TProfile for differential flow of 10-40% centrality bin
 
 void v2plot_differential_flow(){
-  TFile *inFile = new TFile("../ROOTFile/PID.root","read");
+  TFile *inFile = new TFile("../ROOTFile/PID_Nhits_16.root","read");
 
 
   // Temporary variables
@@ -232,9 +232,9 @@ void v2plot_differential_flow(){
   
   if (bMergeCharged){
     errVectorNames.clear();
-    errVectorNames = {"double eV22Dif1040CH[npt]=", "double eV22Dif1040Pion[npt]=", "double eV22Dif1040Kaon[npt]=", "double eV22Dif1040Proton[npt]=", "double eV22Dif1040CHm[npt]=", "double eV22Dif1040Pionm[npt]=", "double eV22Dif1040Kaonm[npt]=", "double eV22Dif1040Protonm[npt]="};
+    // errVectorNames = {"double eV22Dif1040CH[npt]=", "double eV22Dif1040Pion[npt]=", "double eV22Dif1040Kaon[npt]=", "double eV22Dif1040Proton[npt]=", "double eV22Dif1040CHm[npt]=", "double eV22Dif1040Pionm[npt]=", "double eV22Dif1040Kaonm[npt]=", "double eV22Dif1040Protonm[npt]="};
     // errVectorNames = {"double eV24Dif1040CH[npt]=", "double eV24Dif1040Pion[npt]=", "double eV24Dif1040Kaon[npt]=", "double eV24Dif1040Proton[npt]=", "double eV24Dif1040CHm[npt]=", "double eV24Dif1040Pionm[npt]=", "double eV24Dif1040Kaonm[npt]=", "double eV24Dif1040Protonm[npt]="};
-    // errVectorNames = {"double eV2EPDif1040CH[npt]=", "double eV2EPDif1040Pion[npt]=", "double eV2EPDif1040Kaon[npt]=", "double eV2EPDif1040Proton[npt]=", "double eV2EPDif1040CHm[npt]=", "double eV2EPDif1040Pionm[npt]=", "double eV2EPDif1040Kaonm[npt]=", "double eV2EPDif1040Protonm[npt]="};
+    errVectorNames = {"double eV2EPDif1040CH[npt]=", "double eV2EPDif1040Pion[npt]=", "double eV2EPDif1040Kaon[npt]=", "double eV2EPDif1040Proton[npt]=", "double eV2EPDif1040CHm[npt]=", "double eV2EPDif1040Pionm[npt]=", "double eV2EPDif1040Kaonm[npt]=", "double eV2EPDif1040Protonm[npt]="};
   
   }
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
@@ -322,9 +322,9 @@ void v2plot_differential_flow(){
           prV24dif1040[ipt][id]->Fill(0.5,v24Dif,hPT[icent][ipt][id] -> GetBinEntries(1));
           pt1040[ipt][id]->Fill(0.5,hPT[icent][ipt][id] -> GetBinContent(1),hPT[icent][ipt][id] -> GetBinEntries(1));
         }
-        if (icent==1 && bDrawPlots1040) cout << ev22Dif;
+        // if (icent==1 && bDrawPlots1040) cout << ev22Dif;
         // if (icent==1 && bDrawPlots1040) cout << ev24Dif;
-        // if (icent==1 && bDrawPlots1040) cout << ev2EP;
+        if (icent==1 && bDrawPlots1040) cout << ev2EP;
         if (icent==1 && bDrawPlots1040 && ipt != npt-1) cout <<",";
       } // end of loop for all pT bin
       if (icent==1 && bDrawPlots1040) cout <<"};"<< endl;
@@ -408,20 +408,20 @@ void v2plot_differential_flow(){
   double eV2EPDif1040Kaonm[npt]={0.00150009,0.00134963,0.00165382,0.00226585,0.00322049,0.00412867,0.00733204,0.0112874,0.0420852};
   double eV2EPDif1040Protonm[npt]={0.0141952,0.00886018,0.00735405,0.0075635,0.00900402,0.010338,0.0174838,0.0267754,0.0995876};
 
-  double eV22Dif1040CH[npt]={0.00020944,0.000271856,0.000368771,0.000499386,0.000660283,0.000776693,0.00118281,0.00160028,0.00495616};
-  double eV22Dif1040Pion[npt]={0.000219863,0.00030988,0.000464254,0.000690287,0.000980167,0.00123415,0.00207583,0.00311184,0.0110423};
-  double eV22Dif1040Kaon[npt]={0.00104553,0.000945038,0.0010939,0.00138516,0.00183229,0.00224646,0.00378721,0.00572383,0.020601};
-  double eV22Dif1040Proton[npt]={0.000969439,0.000682065,0.000631631,0.000692347,0.000838356,0.000940341,0.0014097,0.00186715,0.00571319};
+double eV22Dif1040CH[npt]={0.000200438,0.000261606,0.00035717,0.000486496,0.000645787,0.000759052,0.00115191,0.00151723,0.00401781};
+double eV22Dif1040Pion[npt]={0.000211066,0.000299632,0.000452661,0.000678099,0.000966121,0.00121317,0.00201316,0.00286769,0.00794318};
+double eV22Dif1040Kaon[npt]={0.000970966,0.000904645,0.0010621,0.00135227,0.00178972,0.00218748,0.00363449,0.00517217,0.0143925};
+double eV22Dif1040Proton[npt]={0.000920152,0.000649799,0.00060756,0.000671519,0.000817528,0.000917724,0.00137651,0.00178859,0.00485408};
   
-  double eV24Dif1040CH[npt]={0.00299158,0.0038586,0.00505275,0.00696094,0.00895528,0.0102773,0.014817,0.0199827,0.0571578};
-  double eV24Dif1040Pion[npt]={0.00314042,0.00439564,0.00630872,0.00908756,0.0124071,0.015054,0.0251076,0.0372041,0.129059};
-  double eV24Dif1040Kaon[npt]={0.0127405,0.0116473,0.013185,0.0165857,0.0217438,0.0265339,0.0434773,0.0652912,0.229006};
-  double eV24Dif1040Proton[npt]={0.0119725,0.00850011,0.00797484,0.00919226,0.0109787,0.0123218,0.0173244,0.022727,0.0654446};
+double eV24Dif1040CH[npt]={0.00302796,0.00394183,0.005171,0.00702529,0.00908323,0.0102606,0.0146211,0.0195439,0.0482425};
+double eV24Dif1040Pion[npt]={0.00318768,0.0044713,0.00639086,0.00914754,0.0125988,0.0152602,0.0245289,0.0351499,0.0959914};
+double eV24Dif1040Kaon[npt]={0.0121754,0.0114689,0.0132791,0.016635,0.0219757,0.0263798,0.0425737,0.0596733,0.165821};
+double eV24Dif1040Proton[npt]={0.0116493,0.00835422,0.00793388,0.00923632,0.0110059,0.0121949,0.017291,0.0225708,0.0577416};
 
-  double eV2EPDif1040CH[npt]={0.000166871,0.000210611,0.000276285,0.000362388,0.000481853,0.000574366,0.000950903,0.00136593,0.00472016};
-  double eV2EPDif1040Pion[npt]={0.000174448,0.000239692,0.000356628,0.000535455,0.000797961,0.00104892,0.00189529,0.00292176,0.0105903};
-  double eV2EPDif1040Kaon[npt]={0.000857048,0.000760325,0.000900996,0.00118961,0.00164449,0.00206097,0.00360531,0.00549841,0.0200113};
-  double eV2EPDif1040Proton[npt]={0.000769063,0.000541574,0.000499608,0.000540713,0.00065002,0.000727984,0.00115423,0.00161005,0.00546604};
+double eV2EPDif1040CH[npt]={0.000169366,0.00021581,0.00028393,0.000373241,0.000496798,0.000591335,0.000971519,0.00135018,0.00398601};
+double eV2EPDif1040Pion[npt]={0.000177669,0.000247163,0.000369272,0.000555153,0.000826613,0.00108179,0.00192842,0.00281997,0.00803223};
+double eV2EPDif1040Kaon[npt]={0.000824163,0.000759027,0.000913833,0.00121519,0.00168373,0.00210451,0.00362917,0.00521749,0.0147108};
+double eV2EPDif1040Proton[npt]={0.000764599,0.000544998,0.000508076,0.000554148,0.000668826,0.000749637,0.0011829,0.00160942,0.0048326};
 
   double eV22Dif1040[npid][npt], eV24Dif1040[npid][npt], eV2EPDif1040[npid][npt];
 
@@ -514,7 +514,7 @@ void v2plot_differential_flow(){
 void v2plot_integrated_flow(){
   if (bDrawPlots1040) return;
   char hname[400];
-  TFile *inFile = new TFile("../ROOTFile/PID.root","read");
+  TFile *inFile = new TFile("../ROOTFile/PID_Nhits_16.root","read");
   // Input histograms
   TProfile *hv22[ncent][npid];        // profile of integrated flow from v2{2}
   TProfile *hv24[ncent][npid];        // profile of integrated flow from v2{4}

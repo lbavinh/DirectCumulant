@@ -53,7 +53,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
   static const float eta_cut =  1.5; // min pt
   static const float eta_gap = 0.05; // min pt
-  static const int Nhits_cut = 32; // minimum nhits of reconstructed tracks
+  static const int Nhits_cut = 16; // minimum nhits of reconstructed tracks
   static const float DCAcut = 0.5;
   static const int neta = 2; // [eta-,eta+]
 
@@ -425,7 +425,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       // if (abs(recoTrack->GetDCAx()) > DCAcut) continue; //трек не проходит по DCAx
       // if (abs(recoTrack->GetDCAy()) > DCAcut) continue; //трек не проходит по DCAy
       // if (abs(recoTrack->GetDCAz()) > DCAcut) continue; //трек не проходит по DCAz
-      if (pt < minpt || pt > maxpt || abs(eta)>eta_cut || abs(eta)<eta_gap) continue; // track selection      
+      if (pt < minpt || pt > maxpt || abs(eta)>eta_cut || abs(eta)<eta_gap) continue; // main track cuts
       
       // if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 

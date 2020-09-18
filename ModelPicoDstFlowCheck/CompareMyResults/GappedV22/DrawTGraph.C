@@ -4,7 +4,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
                     Double_t x_low=0.0, Double_t x_high=1.0,
                     Double_t y_low=0.0, Double_t y_high=1.0,
                     Double_t leg_x_low=0.22, Double_t leg_y_low=0.55,
-                    Double_t leg_x_high=0.55, Double_t leg_y_high=0.89,TString strModel="", TString strCent="", bool drawLeg=1)
+                    Double_t leg_x_high=0.55, Double_t leg_y_high=0.89, TString strCent="")
 {
   // Setting up global variables for the plot
   gROOT->SetStyle("Pub");
@@ -93,7 +93,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     leg_pt->AddEntry(vgr.at(i),Form("%s",vgr.at(i)->GetTitle()),"p");
   }
 
-  if (drawLeg) leg_pt->Draw();
+  leg_pt->Draw();
 
   //==============================================
   TPaveText *pt = new TPaveText(leg_x_high+0.01,0.74,0.85,0.85,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
@@ -101,7 +101,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   pt->SetFillColor(0);
   char hname[400];
   pt->SetTextSize(0.05);
-  pt->AddText(strModel.Data());
+  pt->AddText("UrQMD, Au+Au @ #sqrt{s_{NN}}=7.7 GeV");
 
   pt->AddText(strCent.Data());
   pt->Draw();
@@ -171,7 +171,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     vgrRatio.at(igr)->GetYaxis()->SetTitleSize(0.12);
 
     // vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("%s/%s",vgr.at(igr+1)->GetTitle(),vgr.at(0)->GetTitle()));
-    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("#frac{v_{2}}{ v_{2}[MC] }"));
+    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("#frac{[2,3]}{[1]}"));
     vgrRatio.at(igr)->GetYaxis()->SetTitleOffset(0.65);
     vgrRatio.at(igr)->GetXaxis()->SetTitle(Form("%s",vgr.at(0)->GetXaxis()->GetTitle()));
     vgrRatio.at(igr)->GetYaxis()->SetNdivisions(504);
@@ -183,7 +183,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     vgrRatio.at(igr)->SetMarkerSize(1.6);
     vgrRatio.at(igr)->SetLineColor(vgr.at(igr+1)->GetMarkerStyle());
     vgrRatio.at(igr)->SetMarkerColor(vgr.at(igr+1)->GetMarkerStyle());
-    // vgrRatio.at(igr)->SetLineWidth(1.);
+
     // grRatio->GetXaxis()->SetLimits(0.95*vx_gr1[0],1.05*vx_gr1[n1bins-1]);
     if (igr==0)
     {

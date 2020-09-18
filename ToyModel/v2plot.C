@@ -1,7 +1,7 @@
 #include "DrawTGraph.C"
 
 TFile *outFile = new TFile("Graphics.root","recreate");
-TString outDirName={"ToyModel/0.2"};
+TString outDirName={"ToyModel/1.0"};
 bool bDrawPlots1040 = 0;
 bool drawDistributions = 0;
 bool bSaveCanvas = 0;
@@ -75,7 +75,7 @@ static const double bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 static const double bin_centE[ncent] = {0};
 
 std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton_pos", "hadron_neg", "pion_neg", "kaon_neg", "proton_neg"};
-std::vector<TString> pidFancyNames = {"", "#pi+", "K+", "p", "h-", "#pi-", "K-", "#bar{p}"};
+std::vector<TString> pidFancyNames = {"with non-flow", "#pi+", "K+", "p", "h-", "#pi-", "K-", "#bar{p}"};
 
 TProfile *prV22int[ncent][npid], *prV24int[ncent][npid], *prV2EPint[ncent][npid], *prV22intGap[ncent][npid]; // TProfile for integrated flow 
 TProfile *prV22dif1040[npt][npid], *prV24dif1040[npt][npid], *prV2EPdif1040[npt][npid], *prV22dif1040Gap[npt][npid], *prV2MCdif1040[npt][npid], *pt1040[npt][npid]; // TProfile for differential flow of 10-40% centrality bin
@@ -276,7 +276,8 @@ void v2plot_differential_flow(){
     // 2QC Gapped
     term cor2Gap = term(hv22Gap[icent]);
     double v22Gap = sqrt(cor2Gap.mVal);
-    double ev22Gap = sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE);    
+    double ev22Gap = sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE);
+    cout <<"v2MC "<<hv2MC[icent]->GetBinContent(1)<< " v22 " << v22 << " v22Gap " <<v22Gap << endl;
     for (int id=0;id<npid;id++){
       sprintf(hname,"prV22int_%i_%i",icent,id);
       prV22int[icent][id]=new TProfile(hname,hname,1,0.,1.);
@@ -348,7 +349,7 @@ void v2plot_differential_flow(){
 
         // v22 Gapped
         term cor2redGap = term(hv22ptGap[icent][ipt][id]);
-        double v22DifGap = cor2redGap.mVal/v22;
+        double v22DifGap = cor2redGap.mVal/v22Gap;
         double cov22primeGap = Covariance(hcov22primeGap[icent][ipt][id],hv22Gap[icent],hv22ptGap[icent][ipt][id]);
         double ev22DifGap = sqrt(0.25*pow(cor2Gap.mVal,-3)*(pow(cor2redGap.mVal,2)*cor2Gap.mMSE
                             + 4*pow(cor2Gap.mVal,2)*cor2redGap.mMSE - 4*cor2Gap.mVal*cor2redGap.mVal*cov22primeGap));
@@ -383,15 +384,15 @@ void v2plot_differential_flow(){
       // 4QC differential flow
       grDifFl[1][icent][id] = new TGraphErrors(npt,&vPt[0],&vV24Dif[0],&ePt[0],&eV24Dif[0]);
       grDifFl[1][icent][id] -> SetMarkerColor(kGreen+1);
-      grDifFl[1][icent][id] -> SetMarkerStyle(20);
+      grDifFl[1][icent][id] -> SetMarkerStyle(kFullCircle);
       // EP differential flow
       grDifFl[2][icent][id] = new TGraphErrors(npt,&vPt[0],&vV2EPDif[0],&ePt[0],&eV2EPDif[0]);
       grDifFl[2][icent][id] -> SetMarkerColor(kAzure+2);
-      grDifFl[2][icent][id] -> SetMarkerStyle(22);
+      grDifFl[2][icent][id] -> SetMarkerStyle(kFullTriangleDown);// 22
       // v2 Gap
       grDifFl[3][icent][id] = new TGraphErrors(npt,&vPt[0],&vV22DifGap[0],&ePt[0],&eV22DifGap[0]);
       grDifFl[3][icent][id] -> SetMarkerColor(kYellow+2);
-      grDifFl[3][icent][id] -> SetMarkerStyle(22);
+      grDifFl[3][icent][id] -> SetMarkerStyle(kFullTriangleUp);
       // MC
       grDifFl[4][icent][id] = new TGraphErrors(npt,&vPt[0],&vV2MCDif[0],&ePt[0],&eV2MCDif[0]);
       grDifFl[4][icent][id] -> SetMarkerColor(kBlack);
@@ -408,8 +409,8 @@ void v2plot_differential_flow(){
   if (bDrawPlots1040) return;
   const char *grTitleDF[nmethod]={"[1] v_{2}{2,QC};p_{T}, GeV/c;v_{2}",
                                   "[2] v_{2}{4,QC};p_{T}, GeV/c;v_{2}",
-                                  "[3] v_{2}{#eta sub-event,|#Delta#eta|>0.2};p_{T}, GeV/c;v_{2}",
-                                  "[4] v_{2}{2,|#Delta#eta|>0.2};p_{T}, GeV/c;v_{2}",
+                                  "[3] v_{2}{#eta sub-event,|#Delta#eta|>0.1};p_{T}, GeV/c;v_{2}",
+                                  "[4] v_{2}{2,|#Delta#eta|>1};p_{T}, GeV/c;v_{2}",
                                   "[5] v_{2}{MC};p_{T}, GeV/c;v_{2}"};
   
   outFile -> cd();
@@ -436,8 +437,14 @@ void v2plot_differential_flow(){
   for (int icent=0; icent<6; icent++){
     for (int id=0;id<npid;id++){
       if (bMergeCharged && id>3) continue;
-      sprintf(hname,"%s, centrality %i-%i%%",pidFancyNames.at(id).Data(),icent*10,(icent+1)*10);
-      cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][id],"",0.77, 1.23, 0., maxpt, -0.01, 0.2, 0.18, 0.56, 0.5, 0.8, hname);
+      
+      if (icent==0) {
+        sprintf(hname,"%s, centrality %i-%i%%",pidFancyNames.at(id).Data(),icent*10,(icent+1)*10);
+        cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][id],"",0.89, 1.11, 0., maxpt, -0.01, 0.2, 0.18, 0.56, 0.7, 0.85,"MC Toy Model", hname);
+      }else{
+        sprintf(hname,"centrality %i-%i%%",icent*10,(icent+1)*10);
+        cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][id],"",0.89, 1.11, 0., maxpt, -0.01, 0.2, 0.18, 0.56, 0.5, 0.8,"", hname,0);
+      }
       cV2PT[icent][id] -> SetName(hname);
       sprintf(hname,"../%s/%sDFCent%i-%i.png",outDirName.Data(),pidNames.at(id).Data(),icent*10,(icent+1)*10);
       cV2PT[icent][id] -> SaveAs(hname);
@@ -579,7 +586,7 @@ double eV2EPDif1040Proton[npt]={0.000764599,0.000544998,0.000508076,0.000554148,
     
     
     sprintf(hname,"%s, centrality 10-40%%",pidFancyNames.at(id).Data());
-    cV2PT1040[id] = (TCanvas*) DrawTGraph(vgrv2pt1040,"",0.67,1.33,    0.,maxpt,-0.01,0.2,     0.18,0.56,0.5,0.8,hname);
+    cV2PT1040[id] = (TCanvas*) DrawTGraph(vgrv2pt1040,"",0.67,1.33,    0.,maxpt,-0.01,0.2,     0.18,0.56,0.5,0.8,"MC Toy Model",hname);
     cV2PT1040[id] -> SetName(hname);
     cV2PT1040[id] -> SaveAs(Form("../%s/%sDFCent10-40.png",outDirName.Data(),pidNames.at(id).Data()));
   }
@@ -705,15 +712,15 @@ void v2plot_integrated_flow(){
 
     grIntFlowVsCent[1][id] = new TGraphErrors(ncent,bin_cent,&vV24int[0],bin_centE,&eV24[0]);
     grIntFlowVsCent[1][id] -> SetMarkerColor(kGreen+1);
-    grIntFlowVsCent[1][id] -> SetMarkerStyle(20);
+    grIntFlowVsCent[1][id] -> SetMarkerStyle(kFullCircle);
 
     grIntFlowVsCent[2][id] = new TGraphErrors(ncent,bin_cent,&vV2EP[0],bin_centE,&eV2EP[0]);
     grIntFlowVsCent[2][id] -> SetMarkerColor(kAzure+2);
-    grIntFlowVsCent[2][id] -> SetMarkerStyle(22);
+    grIntFlowVsCent[2][id] -> SetMarkerStyle(kFullTriangleDown);
 
     grIntFlowVsCent[3][id] = new TGraphErrors(ncent,bin_cent,&vV22Gap[0],bin_centE,&eV22Gap[0]);
     grIntFlowVsCent[3][id] -> SetMarkerColor(kYellow+2);
-    grIntFlowVsCent[3][id] -> SetMarkerStyle(22);
+    grIntFlowVsCent[3][id] -> SetMarkerStyle(kFullTriangleUp);
 
     grIntFlowVsCent[4][id] = new TGraphErrors(ncent,bin_cent,&vV2MC[0],bin_centE,&eV2MC[0]);
     grIntFlowVsCent[4][id] -> SetMarkerColor(kBlack+2);
@@ -725,8 +732,8 @@ void v2plot_integrated_flow(){
     }
     const char *grTitle[nmethod]={"[1] v_{2}{2,QC};cent, %;v_{2}",
                                   "[2] v_{2}{4,QC};cent, %;v_{2}",
-                                  "[3] v_{2}{#eta sub-event,|#Delta#eta|>0.2};cent, %;v_{2}",
-                                  "[4] v_{2}{2,|#Delta#eta|>0.2};cent, %;v_{2}",
+                                  "[3] v_{2}{#eta sub-event,|#Delta#eta|>0.1};cent, %;v_{2}",
+                                  "[4] v_{2}{2,|#Delta#eta|>1};cent, %;v_{2}",
                                   "[5] v_{2}{MC};cent, %;v_{2}"};
     outFile -> cd();
     for (int imeth=0; imeth<nmethod; imeth++){
@@ -743,7 +750,7 @@ void v2plot_integrated_flow(){
     }
 
     
-    can[id] = (TCanvas*) DrawTGraph(vgr,"",0.48,1.22,   0,60,-0.005,0.1,    0.18,0.56,0.5,0.8,pidFancyNames.at(id).Data()); // DCA<0.5: 0.88, 1.12 // wo DCA: 0.76, 1.03
+    can[id] = (TCanvas*) DrawTGraph(vgr,"",0.89,1.11,   0,60,-0.005,0.1,    0.18,0.56,0.5,0.8,"MC Toy Model",pidFancyNames.at(id).Data()); // DCA<0.5: 0.88, 1.12 // wo DCA: 0.76, 1.03
     can[id] -> SetName(pidNames.at(id).Data());
     can[id] -> SaveAs(Form("../%s/%sV2vsCent.png",outDirName.Data(),pidNames.at(id).Data()));
   } // end of loop over particle ID

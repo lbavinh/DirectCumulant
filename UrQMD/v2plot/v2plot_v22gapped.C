@@ -1,7 +1,9 @@
-#include "DrawTGraph.C"
+#include "DrawTGraphImp.C"
 
-TFile *outFile = new TFile("../CompareResult/VinhPID_UrQMD_merged.root","recreate");
-TString outDirName={"UrQMD_merged"};
+TFile *outFile = new TFile("../CompareResult/VinhPID_UrQMD_merged_v22gapped.root","recreate");
+TString outDirName={"UrQMD_merged_v22gapped"};
+char inFileName[400]={"../ROOTFile/PID_UrQMD_gapped.root"};
+char level[400]={"UrQMD, Au+Au @ #sqrt{s_{NN}}=7.7 GeV"};
 bool bDrawPlots1040 = 0;
 bool drawDistributions = 0;
 bool bSaveCanvas = 0;
@@ -63,7 +65,7 @@ struct term{
 // static const double bin_pT[npt+1]={0.1, 0.3, 0.6, 0.9, 1.2, 1.5, 1.9, 2.4, 3.};
 
 static const int npid = 8; // charged hadrons, pions, kaons, protons
-static const int nmethod = 3; // 2QC, 4QC, EP
+static const int nmethod = 4; // 2QC, 4QC, EP, 2QC-gapped
 
 static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
 static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.};
@@ -73,15 +75,20 @@ static const double minpt = 0.2; // min pt
 static const int ncent = 8; // 0-80 %
 static const double bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 static const double bin_centE[ncent] = {0};
-
+static const float eta_gap = 0.05; // min pt
 std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton_pos", "hadron_neg", "pion_neg", "kaon_neg", "proton_neg"};
 std::vector<TString> pidFancyNames = {"h+", "#pi+", "K+", "p", "h-", "#pi-", "K-", "#bar{p}"};
+vector <Double_t> coordinateLeg = {0.18,0.63,0.45,0.889};
+vector<pair<Double_t,Double_t>> rangeRatio = {{0.79,1.21},{0.79,1.21},{0.79,1.21},{0.79,1.21},{0.79,1.21},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11}};
+pair<Double_t,Double_t> rangeRatioRF ={0.65,1.11};
+int marker[nmethod]={21,20,22,25}; // 2QC, 4QC, EP, 2QC-gapped
 
-TProfile *prV22int[ncent][npid], *prV24int[ncent][npid], *prV2EPint[ncent][npid]; // TProfile for integrated flow 
-TProfile *prV22dif1040[npt][npid], *prV24dif1040[npt][npid], *prV2EPdif1040[npt][npid], *pt1040[npt][npid]; // TProfile for differential flow of 10-40% centrality bin
+int excludeMethod = 0; // 2QC
+TProfile *prV22int[ncent][npid], *prV24int[ncent][npid], *prV2EPint[ncent][npid], *prV22intGap[ncent][npid]; // TProfile for integrated flow 
+TProfile *prV22dif1040[npt][npid], *prV24dif1040[npt][npid], *prV2EPdif1040[npt][npid], *prV22dif1040Gap[npt][npid], *pt1040[npt][npid]; // TProfile for differential flow of 10-40% centrality bin
 
 void v2plot_differential_flow(){
-  TFile *inFile = new TFile("../ROOTFile/PID.root","read");
+  TFile *inFile = new TFile(inFileName,"read");
 
 
   // Temporary variables
@@ -89,7 +96,7 @@ void v2plot_differential_flow(){
   double stats[6]; // stats of TProfile
   // char analysis[20]={"pure"};
 
-   if (drawDistributions){
+  if (drawDistributions){
     TCanvas *cTemp = new TCanvas("cTemp","cTemp",200,10,800,450);
 
     TH1I *hMult = (TH1I*)inFile->Get("hMult");
@@ -134,10 +141,16 @@ void v2plot_differential_flow(){
   TProfile *hcov2prime4prime[ncent][npt][npid]; // <2'>*<4'>
   TProfile *hv2EP[ncent][npt][npid];	  // elliptic flow from EP method
   TProfile *HRes[ncent];
-  
+  // v22 with eta-gap
+  TProfile *hv22Gap[ncent];
+  TProfile *hv22ptGap[ncent][npt][npid];
+  TProfile *hcov22primeGap[ncent][npt][npid];
+  // TProfile *hv2MC[ncent];
+  // TProfile *hv2MCpt[ncent][npt][npid];
+
   // OUTPUT
-  TGraphErrors *grDifFl[3][ncent][npid];    // v2(pt); 3 = {2QC, 4QC, EP}
-  TGraphErrors *grDifFl1040[3][npid];
+  TGraphErrors *grDifFl[nmethod][ncent][npid];    // v2(pt); 3 = {2QC, 4QC, EP, gapped 2QC}
+  TGraphErrors *grDifFl1040[nmethod][npid];
   
   // Get TProfile histograms from ROOTFile
 
@@ -146,6 +159,8 @@ void v2plot_differential_flow(){
     hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
     hv24[icent] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
     hcov24[icent] = (TProfile*)inFile->Get(Form("hcov24_%i",icent));
+    hv22Gap[icent] = (TProfile*)inFile->Get(Form("hv22Gap_%i",icent));
+    // hv2MC[icent] = (TProfile*)inFile->Get(Form("hv2MC_%i",icent));
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid;id++){
         hv2EP[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2EP_%i_%i_%i",icent,ipt,id));
@@ -157,6 +172,9 @@ void v2plot_differential_flow(){
         hcov42prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov42prime_%i_%i_%i",icent,ipt,id));
         hcov44prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov44prime_%i_%i_%i",icent,ipt,id));
         hcov2prime4prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
+        hv22ptGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22ptGap_%i_%i_%i",icent,ipt,id));
+        hcov22primeGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov22primeGap_%i_%i_%i",icent,ipt,id));
+        // hv2MCpt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2MCpt_%i_%i_%i",icent,ipt,id));      
       }
     } // end of loop over pt bin
   } // end of loop over centrality classes
@@ -175,6 +193,9 @@ void v2plot_differential_flow(){
           hcov42prime[icent][ipt][id] -> Add(hcov42prime[icent][ipt][id+4]);
           hcov44prime[icent][ipt][id] -> Add(hcov44prime[icent][ipt][id+4]);
           hcov2prime4prime[icent][ipt][id] -> Add(hcov2prime4prime[icent][ipt][id+4]);
+          hv22ptGap[icent][ipt][id] -> Add(hv22ptGap[icent][ipt][id+4]);
+          hcov22primeGap[icent][ipt][id] -> Add(hcov22primeGap[icent][ipt][id+4]);
+          // hv2MCpt[icent][ipt][id] -> Add(hv2MCpt[icent][ipt][id+4]);
         }
       }
     }
@@ -186,6 +207,7 @@ void v2plot_differential_flow(){
       hv22[1] -> Add(hv22[icent]);
       hv24[1] -> Add(hv24[icent]);
       hcov24[1] -> Add(hcov24[icent]);
+      hv22Gap[1]-> Add(hv22Gap[icent]);
       for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
         for (int id=0;id<npid;id++){ // loop over pid
           hv2EP[1][ipt][id]-> Add(hv2EP[icent][ipt][id]);
@@ -197,6 +219,9 @@ void v2plot_differential_flow(){
           hcov42prime[1][ipt][id]-> Add(hcov42prime[icent][ipt][id]);
           hcov44prime[1][ipt][id]-> Add(hcov44prime[icent][ipt][id]);
           hcov2prime4prime[1][ipt][id]-> Add(hcov2prime4prime[icent][ipt][id]);
+          hPT[1][ipt][id]-> Add(hPT[icent][ipt][id]);
+          hv22ptGap[1][ipt][id]->Add(hv22ptGap[icent][ipt][id]);
+          hcov22primeGap[1][ipt][id]->Add(hcov22primeGap[icent][ipt][id]);
         }
       } // end of loop over pt bin
     }
@@ -222,6 +247,10 @@ void v2plot_differential_flow(){
       prV24dif1040[ipt][id]=new TProfile(hname,hname,1,0.,1.);
       sprintf(hname,"prV2EPdif1040_%i_%i",ipt,id);
       prV2EPdif1040[ipt][id]=new TProfile(hname,hname,1,0.,1.);
+      sprintf(hname,"prV22dif1040Gap_%i_%i",ipt,id);
+      prV22dif1040Gap[ipt][id]=new TProfile(hname,hname,1,0.,1.);
+      // sprintf(hname,"prV2MCdif1040Gap_%i_%i",ipt,id);
+      // prV2MCdif1040[ipt][id]=new TProfile(hname,hname,1,0.,1.);
       sprintf(hname,"pt1040_%i_%i",ipt,id);
       pt1040[ipt][id]=new TProfile(hname,hname,1,0.,1.);
     }
@@ -233,10 +262,10 @@ void v2plot_differential_flow(){
   
   if (bMergeCharged){
     errVectorNames.clear();
-    errVectorNames = {"double eV22Dif1040CH[npt]=", "double eV22Dif1040Pion[npt]=", "double eV22Dif1040Kaon[npt]=", "double eV22Dif1040Proton[npt]=", "double eV22Dif1040CHm[npt]=", "double eV22Dif1040Pionm[npt]=", "double eV22Dif1040Kaonm[npt]=", "double eV22Dif1040Protonm[npt]="};
+    // errVectorNames = {"double eV22Dif1040CH[npt]=", "double eV22Dif1040Pion[npt]=", "double eV22Dif1040Kaon[npt]=", "double eV22Dif1040Proton[npt]=", "double eV22Dif1040CHm[npt]=", "double eV22Dif1040Pionm[npt]=", "double eV22Dif1040Kaonm[npt]=", "double eV22Dif1040Protonm[npt]="};
     // errVectorNames = {"double eV24Dif1040CH[npt]=", "double eV24Dif1040Pion[npt]=", "double eV24Dif1040Kaon[npt]=", "double eV24Dif1040Proton[npt]=", "double eV24Dif1040CHm[npt]=", "double eV24Dif1040Pionm[npt]=", "double eV24Dif1040Kaonm[npt]=", "double eV24Dif1040Protonm[npt]="};
-    // errVectorNames = {"double eV2EPDif1040CH[npt]=", "double eV2EPDif1040Pion[npt]=", "double eV2EPDif1040Kaon[npt]=", "double eV2EPDif1040Proton[npt]=", "double eV2EPDif1040CHm[npt]=", "double eV2EPDif1040Pionm[npt]=", "double eV2EPDif1040Kaonm[npt]=", "double eV2EPDif1040Protonm[npt]="};
-  
+    errVectorNames = {"double eV2EPDif1040CH[npt]=", "double eV2EPDif1040Pion[npt]=", "double eV2EPDif1040Kaon[npt]=", "double eV2EPDif1040Proton[npt]=", "double eV2EPDif1040CHm[npt]=", "double eV2EPDif1040Pionm[npt]=", "double eV2EPDif1040Kaonm[npt]=", "double eV2EPDif1040Protonm[npt]="};
+    // errVectorNames = {"double eV22Dif1040CHGap[npt]=", "double eV22Dif1040PionGap[npt]=", "double eV22Dif1040KaonGap[npt]=", "double eV22Dif1040ProtonGap[npt]=", "double eV22Dif1040CHmGap[npt]=", "double eV22Dif1040PionmGap[npt]=", "double eV22Dif1040KaonmGap[npt]=", "double eV22Dif1040ProtonmGap[npt]="};
   }
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // double v2EP = hv22EP[icent]->GetBinContent(1)/sqrt(HRes[icent]->GetBinContent(1));
@@ -250,12 +279,19 @@ void v2plot_differential_flow(){
     double cov24 = Covariance(hcov24[icent],hv22[icent],hv24[icent]);
     double v24 = pow(2*pow(cor2.mVal,2)-cor4.mVal,0.25);
     double ev24 = sqrt( 1./pow(v24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) );
+    
+    // 2QC Gapped
+    term cor2Gap = term(hv22Gap[icent]);
+    double v22Gap = sqrt(cor2Gap.mVal);
+    double ev22Gap = sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE);
+    // cout <<"v2MC "<<hv2MC[icent]->GetBinContent(1)<< " v22 " << v22 << " v22Gap " <<v22Gap << endl;
     for (int id=0;id<npid;id++){
       sprintf(hname,"prV22int_%i_%i",icent,id);
       prV22int[icent][id]=new TProfile(hname,hname,1,0.,1.);
       sprintf(hname,"prV24int_%i_%i",icent,id);
       prV24int[icent][id]=new TProfile(hname,hname,1,0.,1.);
-
+      sprintf(hname,"prV22intGap_%i_%i",icent,id);
+      prV22intGap[icent][id]=new TProfile(hname,hname,1,0.,1.);
       if (icent==1 && bDrawPlots1040) {
         // cout << "PID: "<< pidNames.at(id) << endl;
         cout << errVectorNames.at(id);
@@ -263,6 +299,8 @@ void v2plot_differential_flow(){
       }
       vector <double> vV2EPDif, vV22Dif, vV24Dif, vPt;
       vector <double> eV2EPDif, eV22Dif, eV24Dif, ePt;
+      vector <double> vV22DifGap, vV2MCDif;
+      vector <double> eV22DifGap, eV2MCDif;      
       // Differential flow calculation
       for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
         // vPt.push_back(hPT[icent][ipt][id] -> GetBinContent(1));
@@ -315,33 +353,60 @@ void v2plot_differential_flow(){
             - 4*cor2.mVal*pow(v24,8)*cov2prime4prime));
         vV24Dif.push_back(v24Dif);
         eV24Dif.push_back(ev24Dif);
+
+        // v22 Gapped
+        term cor2redGap = term(hv22ptGap[icent][ipt][id]);
+        double v22DifGap = cor2redGap.mVal/v22Gap;
+        double cov22primeGap = Covariance(hcov22primeGap[icent][ipt][id],hv22Gap[icent],hv22ptGap[icent][ipt][id]);
+        double ev22DifGap = sqrt(0.25*pow(cor2Gap.mVal,-3)*(pow(cor2redGap.mVal,2)*cor2Gap.mMSE
+                            + 4*pow(cor2Gap.mVal,2)*cor2redGap.mMSE - 4*cor2Gap.mVal*cor2redGap.mVal*cov22primeGap));
+        vV22DifGap.push_back(v22DifGap);
+        eV22DifGap.push_back(ev22DifGap);
+
+        // MC
+        // vV2MCDif.push_back(hv2MCpt[icent][ipt][id]->GetBinContent(1));
+        // eV2MCDif.push_back(hv2MCpt[icent][ipt][id]->GetBinError(1));
+
         prV22int[icent][id] -> Fill(0.5,v22Dif,hPT[icent][ipt][id] -> GetBinEntries(1));
         prV24int[icent][id] -> Fill(0.5,v24Dif,hPT[icent][ipt][id] -> GetBinEntries(1));
-        if (icent>=1 && icent <=3) {
+        prV22intGap[icent][id] -> Fill(0.5,v22DifGap,hPT[icent][ipt][id] -> GetBinEntries(1));
+        if (icent>=1 && icent <=3) { // 10-40%
           prV2EPdif1040[ipt][id]->Fill(0.5,v2EPDif,hPT[icent][ipt][id] -> GetBinEntries(1));
           prV22dif1040[ipt][id]->Fill(0.5,v22Dif,hPT[icent][ipt][id] -> GetBinEntries(1));
           prV24dif1040[ipt][id]->Fill(0.5,v24Dif,hPT[icent][ipt][id] -> GetBinEntries(1));
+          prV22dif1040Gap[ipt][id]->Fill(0.5,v22DifGap,hPT[icent][ipt][id] -> GetBinEntries(1));
+          // prV2MCdif1040[ipt][id]->Fill(0.5,hv2MCpt[icent][ipt][id]->GetBinContent(1),hPT[icent][ipt][id] -> GetBinEntries(1));
           pt1040[ipt][id]->Fill(0.5,hPT[icent][ipt][id] -> GetBinContent(1),hPT[icent][ipt][id] -> GetBinEntries(1));
         }
-        if (icent==1 && bDrawPlots1040) cout << ev22Dif;
+        // if (icent==1 && bDrawPlots1040) cout << ev22Dif;
         // if (icent==1 && bDrawPlots1040) cout << ev24Dif;
-        // if (icent==1 && bDrawPlots1040) cout << ev2EP;
+        if (icent==1 && bDrawPlots1040) cout << ev2EP;
+        // if (icent==1 && bDrawPlots1040) cout << ev22DifGap;
         if (icent==1 && bDrawPlots1040 && ipt != npt-1) cout <<",";
       } // end of loop for all pT bin
       if (icent==1 && bDrawPlots1040) cout <<"};"<< endl;
       // 2QC differential flow
       grDifFl[0][icent][id] = new TGraphErrors(npt,&vPt[0],&vV22Dif[0],&ePt[0],&eV22Dif[0]);
       grDifFl[0][icent][id] -> SetMarkerColor(kRed);
-      grDifFl[0][icent][id] -> SetMarkerStyle(25);
+      grDifFl[0][icent][id] -> SetMarkerStyle(marker[0]);//25
       // 4QC differential flow
       grDifFl[1][icent][id] = new TGraphErrors(npt,&vPt[0],&vV24Dif[0],&ePt[0],&eV24Dif[0]);
       grDifFl[1][icent][id] -> SetMarkerColor(kGreen+1);
-      grDifFl[1][icent][id] -> SetMarkerStyle(20);
+      grDifFl[1][icent][id] -> SetMarkerStyle(marker[1]);
       // EP differential flow
       grDifFl[2][icent][id] = new TGraphErrors(npt,&vPt[0],&vV2EPDif[0],&ePt[0],&eV2EPDif[0]);
       grDifFl[2][icent][id] -> SetMarkerColor(kAzure+2);
-      grDifFl[2][icent][id] -> SetMarkerStyle(22);
-      for (int i=0; i<3; i++){
+      grDifFl[2][icent][id] -> SetMarkerStyle(marker[2]);// 22
+      // v2 Gap
+      grDifFl[3][icent][id] = new TGraphErrors(npt,&vPt[0],&vV22DifGap[0],&ePt[0],&eV22DifGap[0]);
+      grDifFl[3][icent][id] -> SetMarkerColor(kYellow+2);
+      grDifFl[3][icent][id] -> SetMarkerStyle(marker[3]);
+      // MC
+      // grDifFl[4][icent][id] = new TGraphErrors(npt,&vPt[0],&vV2MCDif[0],&ePt[0],&eV2MCDif[0]);
+      // grDifFl[4][icent][id] -> SetMarkerColor(kBlack);
+      // grDifFl[4][icent][id] -> SetMarkerStyle(kOpenSquare);
+
+      for (int i=0; i<nmethod; i++){
         grDifFl[i][icent][id] -> SetMarkerSize(1.5);
         grDifFl[i][icent][id] -> SetDrawOption("P");
       }
@@ -350,10 +415,15 @@ void v2plot_differential_flow(){
 
   //==========================================================================================================================
   if (bDrawPlots1040) return;
-  const char *grTitleDF[4]={"[1] v_{2}{2,QC};p_{T}, GeV/c;v_{2}","[2] v_{2}{4,QC};p_{T}, GeV/c;v_{2}","[3] v_{2}{#eta sub-event};p_{T}, GeV/c;v_{2}","v_{2}{MC};p_{T}, GeV/c;v_{2}"};
-  
+  char nameV22Gap[400], nameV2EP[400];
+
+  sprintf(nameV22Gap,"v_{2}{2,|#Delta#eta|>%1.1f};p_{T} [GeV/c];v_{2}",eta_gap*2.);
+  sprintf(nameV2EP,"v_{2}{EP,|#Delta#eta|>%1.1f};p_{T} [GeV/c];v_{2}",eta_gap*2.);
+  const char *grTitleDF[nmethod]={"v_{2}{2,QC};p_{T} [GeV/c];v_{2}",
+                                  "v_{2}{4,QC};p_{T} [GeV/c];v_{2}",
+                                  nameV2EP,nameV22Gap};
   outFile -> cd();
-  for (int imethod=0; imethod<3; imethod++){
+  for (int imethod=0; imethod<nmethod; imethod++){
     for (int icent=0;icent<ncent;icent++){
       for (int id=0;id<npid;id++){
         grDifFl[imethod][icent][id] -> SetTitle(grTitleDF[imethod]);
@@ -365,7 +435,9 @@ void v2plot_differential_flow(){
   std::vector<TGraphErrors*> vgrv2pt[ncent][npid];
   for (int icent=0; icent<ncent; icent++){
     for (int id=0;id<npid;id++){
-      for (int i=0; i<3; i++){
+      vgrv2pt[icent][id].push_back(grDifFl[3][icent][id]); // v2{gapped 2QC}
+      for (int i=0; i<nmethod-1; i++){
+        if (i==excludeMethod) continue;
         vgrv2pt[icent][id].push_back(grDifFl[i][icent][id]);
       }
     }
@@ -374,14 +446,24 @@ void v2plot_differential_flow(){
   for (int icent=0; icent<6; icent++){
     for (int id=0;id<npid;id++){
       if (bMergeCharged && id>3) continue;
-      sprintf(hname,"%s, centrality %i-%i%%",pidFancyNames.at(id).Data(),icent*10,(icent+1)*10);
-      cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][id],"",0.77, 1.23, 0., maxpt, -0.01, 0.2, 0.18, 0.56, 0.5, 0.8, hname);
+      
+      if (icent==0) {
+        sprintf(hname,"%s, centrality %i-%i%%",pidFancyNames.at(id).Data(),icent*10,(icent+1)*10);
+        cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][id],"",rangeRatio.at(icent).first, rangeRatio.at(icent).second, 0., maxpt, -0.01, 0.2,
+                                                 coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                                 level, hname);
+      }else{
+        sprintf(hname,"centrality %i-%i%%",icent*10,(icent+1)*10);
+        cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][id],"",rangeRatio.at(icent).first, rangeRatio.at(icent).second, 0., maxpt, -0.01, 0.2,
+                                                 coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                                 "", hname,0);
+      }
       cV2PT[icent][id] -> SetName(hname);
       sprintf(hname,"../%s/%sDFCent%i-%i.png",outDirName.Data(),pidNames.at(id).Data(),icent*10,(icent+1)*10);
       cV2PT[icent][id] -> SaveAs(hname);
     }
   }
-
+  // if (!bDrawPlots1040) return;
   double eV22Dif1040CHp[npt]={5.58468e-05, 6.83005e-05, 8.47418e-05, 0.000107256, 0.00014065, 0.000165928, 0.000265933, 0.000372447, 0.0013789};
   double eV22Dif1040Pionp[npt]={6.14907e-05, 8.81336e-05, 0.000135798, 0.000206561, 0.000297485, 0.000377763, 0.000646703, 0.00102302, 0.00464327};
   double eV22Dif1040Kaonp[npt]={0.000222522, 0.000215971, 0.000258275, 0.000330884, 0.000437841, 0.000536884, 0.000918446, 0.00145504, 0.0066119};
@@ -409,22 +491,37 @@ void v2plot_differential_flow(){
   double eV2EPDif1040Kaonm[npt]={0.000263169, 0.000260995, 0.000333908, 0.000467922, 0.000676894, 0.000879831, 0.00160162, 0.00262157, 0.0127595};  
   double eV2EPDif1040Protonm[npt]={0.00293867, 0.00187841, 0.00158013, 0.0016311, 0.00195147, 0.00226521, 0.00390732, 0.00631698, 0.0303239};
 
-  double eV22Dif1040CH[npt]={0.00020944,0.000271856,0.000368771,0.000499386,0.000660283,0.000776693,0.00118281,0.00160028,0.00495616};
-  double eV22Dif1040Pion[npt]={0.000219863,0.00030988,0.000464254,0.000690287,0.000980167,0.00123415,0.00207583,0.00311184,0.0110423};
-  double eV22Dif1040Kaon[npt]={0.00104553,0.000945038,0.0010939,0.00138516,0.00183229,0.00224646,0.00378721,0.00572383,0.020601};
-  double eV22Dif1040Proton[npt]={0.000969439,0.000682065,0.000631631,0.000692347,0.000838356,0.000940341,0.0014097,0.00186715,0.00571319};
-  
-  double eV24Dif1040CH[npt]={0.00299158,0.0038586,0.00505275,0.00696094,0.00895528,0.0102773,0.014817,0.0199827,0.0571578};
-  double eV24Dif1040Pion[npt]={0.00314042,0.00439564,0.00630872,0.00908756,0.0124071,0.015054,0.0251076,0.0372041,0.129059};
-  double eV24Dif1040Kaon[npt]={0.0127405,0.0116473,0.013185,0.0165857,0.0217438,0.0265339,0.0434773,0.0652912,0.229006};
-  double eV24Dif1040Proton[npt]={0.0119725,0.00850011,0.00797484,0.00919226,0.0109787,0.0123218,0.0173244,0.022727,0.0654446};
+  double eV22Dif1040CHpGap[npt]={5.58468e-05, 6.83005e-05, 8.47418e-05, 0.000107256, 0.00014065, 0.000165928, 0.000265933, 0.000372447, 0.0013789};
+  double eV22Dif1040PionpGap[npt]={6.14907e-05, 8.81336e-05, 0.000135798, 0.000206561, 0.000297485, 0.000377763, 0.000646703, 0.00102302, 0.00464327};
+  double eV22Dif1040KaonpGap[npt]={0.000222522, 0.000215971, 0.000258275, 0.000330884, 0.000437841, 0.000536884, 0.000918446, 0.00145504, 0.0066119};
+  double eV22Dif1040ProtonpGap[npt]={0.000191845, 0.000137659, 0.000127958, 0.000140746, 0.000171742, 0.000194016, 0.000298718, 0.00041219, 0.00152904};
+  double eV22Dif1040CHmGap[npt]={5.74489e-05, 8.04163e-05, 0.000120001, 0.000178569, 0.000253357, 0.000313076, 0.000509567, 0.000762301, 0.00321054};
+  double eV22Dif1040PionmGap[npt]={5.87069e-05, 8.44084e-05, 0.000130074, 0.000198689, 0.000287141, 0.000364884, 0.000622898, 0.000983142, 0.00444374};
+  double eV22Dif1040KaonmGap[npt]={0.000306082, 0.00030374, 0.000374575, 0.000501035, 0.000698238, 0.000890904, 0.00158858, 0.00257665, 0.0124118};
+  double eV22Dif1040ProtonmGap[npt]={0.00315768, 0.00198368, 0.00164869, 0.0016872, 0.00200516, 0.00230595, 0.00395323, 0.00637175, 0.0249276};
 
-  double eV2EPDif1040CH[npt]={0.000166871,0.000210611,0.000276285,0.000362388,0.000481853,0.000574366,0.000950903,0.00136593,0.00472016};
-  double eV2EPDif1040Pion[npt]={0.000174448,0.000239692,0.000356628,0.000535455,0.000797961,0.00104892,0.00189529,0.00292176,0.0105903};
-  double eV2EPDif1040Kaon[npt]={0.000857048,0.000760325,0.000900996,0.00118961,0.00164449,0.00206097,0.00360531,0.00549841,0.0200113};
-  double eV2EPDif1040Proton[npt]={0.000769063,0.000541574,0.000499608,0.000540713,0.00065002,0.000727984,0.00115423,0.00161005,0.00546604};
+  double eV22Dif1040CH[npt]={4.5774e-05,6.06004e-05,8.56952e-05,0.000120323,0.000166238,0.000200085,0.000319093,0.000448787,0.00160105};
+  double eV22Dif1040Pion[npt]={4.84483e-05,7.01311e-05,0.000110782,0.000175444,0.00026673,0.000345038,0.000583224,0.000902661,0.00397261};
+  double eV22Dif1040Kaon[npt]={0.000239596,0.000233165,0.000284672,0.000370904,0.000493335,0.00060421,0.00101692,0.00159534,0.0072678};
+  double eV22Dif1040Proton[npt]={0.000242033,0.000172963,0.000160879,0.000175474,0.0002136,0.000242452,0.000390152,0.000545279,0.00193511};
+  
+  double eV24Dif1040CH[npt]={0.000378773,0.000486965,0.000637167,0.000853379,0.00114452,0.0013583,0.002071,0.0028102,0.00922169};
+  double eV24Dif1040Pion[npt]={0.000399575,0.000559719,0.000800464,0.00118639,0.00172462,0.00218243,0.00353376,0.00530556,0.0230974};
+  double eV24Dif1040Kaon[npt]={0.00152762,0.00148622,0.00180008,0.00230029,0.00299125,0.00361072,0.00589947,0.00904917,0.0406086};
+  double eV24Dif1040Proton[npt]={0.00155696,0.00113006,0.00106449,0.00117658,0.00143094,0.00161798,0.00250754,0.00338731,0.0111231};
+
+  double eV2EPDif1040CH[npt]={6.16212e-05,7.91923e-05,0.000103949,0.000135843,0.000180029,0.000214454,0.000358431,0.000536635,0.00225292};
+  double eV2EPDif1040Pion[npt]={6.51546e-05,9.18556e-05,0.000138035,0.00020847,0.000312354,0.000413174,0.00075939,0.0012364,0.00569695};
+  double eV2EPDif1040Kaon[npt]={0.000268052,0.000261471,0.000322899,0.000436225,0.000611919,0.000778121,0.00139727,0.00225611,0.0105601};
+  double eV2EPDif1040Proton[npt]={0.000280877,0.000204047,0.00018981,0.000206212,0.000248669,0.000280301,0.000451851,0.00066078,0.00271967};
+
+  double eV22Dif1040CHGap[npt]={5.41083e-05,7.62925e-05,0.000112774,0.000159819,0.000217294,0.000258097,0.000405764,0.000571135,0.00216068};
+  double eV22Dif1040PionGap[npt]={5.82716e-05,9.09954e-05,0.000151083,0.000237833,0.00034768,0.000443739,0.000762885,0.00120679,0.00545513};
+  double eV22Dif1040KaonGap[npt]={0.000310721,0.000303109,0.000364745,0.000471518,0.000632243,0.000783509,0.00135561,0.00215694,0.00994949};
+  double eV22Dif1040ProtonGap[npt]={0.000326346,0.000233217,0.000214936,0.000235197,0.000287211,0.000324616,0.000503851,0.000697858,0.00260753};
 
   double eV22Dif1040[npid][npt], eV24Dif1040[npid][npt], eV2EPDif1040[npid][npt];
+  double eV22Dif1040Gap[npid][npt];
 
   for (int ipt=0;ipt<npt;ipt++){
     eV22Dif1040[0][ipt] = eV22Dif1040CHp[ipt];
@@ -453,6 +550,16 @@ void v2plot_differential_flow(){
     eV2EPDif1040[5][ipt] = eV2EPDif1040Pionm[ipt];
     eV2EPDif1040[6][ipt] = eV2EPDif1040Kaonm[ipt];
     eV2EPDif1040[7][ipt] = eV2EPDif1040Protonm[ipt];
+
+    eV22Dif1040Gap[0][ipt] = eV22Dif1040CHpGap[ipt];
+    eV22Dif1040Gap[1][ipt] = eV22Dif1040PionpGap[ipt];
+    eV22Dif1040Gap[2][ipt] = eV22Dif1040KaonpGap[ipt];
+    eV22Dif1040Gap[3][ipt] = eV22Dif1040ProtonpGap[ipt];
+    eV22Dif1040Gap[4][ipt] = eV22Dif1040CHmGap[ipt];
+    eV22Dif1040Gap[5][ipt] = eV22Dif1040PionmGap[ipt];
+    eV22Dif1040Gap[6][ipt] = eV22Dif1040KaonmGap[ipt];
+    eV22Dif1040Gap[7][ipt] = eV22Dif1040ProtonmGap[ipt];   
+
     if (bMergeCharged){
     eV22Dif1040[0][ipt] = eV22Dif1040CH[ipt];
     eV22Dif1040[1][ipt] = eV22Dif1040Pion[ipt];
@@ -466,6 +573,10 @@ void v2plot_differential_flow(){
     eV2EPDif1040[1][ipt] = eV2EPDif1040Pion[ipt];
     eV2EPDif1040[2][ipt] = eV2EPDif1040Kaon[ipt];
     eV2EPDif1040[3][ipt] = eV2EPDif1040Proton[ipt];
+    eV22Dif1040Gap[0][ipt] = eV22Dif1040CHGap[ipt];
+    eV22Dif1040Gap[1][ipt] = eV22Dif1040PionGap[ipt];
+    eV22Dif1040Gap[2][ipt] = eV22Dif1040KaonGap[ipt];
+    eV22Dif1040Gap[3][ipt] = eV22Dif1040ProtonGap[ipt];
     }
   }
   double ePT[npt]={0.};
@@ -473,40 +584,58 @@ void v2plot_differential_flow(){
   for (int id=0;id<npid;id++){
     if (bMergeCharged && id>3) continue;
     vector <double> vV22Dif1040, vV24Dif1040, vV2EPDif1040, vPT;
+    vector <double> vV22Dif1040Gap, vVMCDif1040Gap;
     for (int ipt=0;ipt<npt;ipt++){
       vV22Dif1040.push_back(prV22dif1040[ipt][id]->GetBinContent(1));
       vV24Dif1040.push_back(prV24dif1040[ipt][id]->GetBinContent(1));
       vV2EPDif1040.push_back(prV2EPdif1040[ipt][id]->GetBinContent(1));
+      vV22Dif1040Gap.push_back(prV22dif1040Gap[ipt][id]->GetBinContent(1));
+      // vVMCDif1040Gap.push_back(prV2MCdif1040[ipt][id]->GetBinContent(1));
       // vPT.push_back(pt1040[ipt][id]->GetBinContent(1));
       vPT.push_back((bin_pT[ipt]+bin_pT[ipt+1])/2.);
     }
     grDifFl1040[0][id] = new TGraphErrors(npt,&vPT[0],&vV22Dif1040[0],&ePT[0],eV22Dif1040[id]);
     grDifFl1040[0][id] -> SetMarkerColor(kRed);
-    grDifFl1040[0][id] -> SetMarkerStyle(25);
+    grDifFl1040[0][id] -> SetMarkerStyle(marker[0]);
     // 4QC differential flow
     grDifFl1040[1][id] = new TGraphErrors(npt,&vPT[0],&vV24Dif1040[0],&ePT[0],eV24Dif1040[id]);
     grDifFl1040[1][id] -> SetMarkerColor(kGreen+1);
-    grDifFl1040[1][id] -> SetMarkerStyle(20);
+    grDifFl1040[1][id] -> SetMarkerStyle(marker[1]);
     // EP differential flow
     grDifFl1040[2][id] = new TGraphErrors(npt,&vPT[0],&vV2EPDif1040[0],&ePT[0],eV2EPDif1040[id]);
     grDifFl1040[2][id] -> SetMarkerColor(kAzure+2);
-    grDifFl1040[2][id] -> SetMarkerStyle(22);
-    for (int i=0; i<3; i++){
+    grDifFl1040[2][id] -> SetMarkerStyle(marker[2]);
+    // v2 gapped
+    grDifFl1040[3][id] = new TGraphErrors(npt,&vPT[0],&vV22Dif1040Gap[0],&ePT[0],&ePT[0]);
+    grDifFl1040[3][id] -> SetMarkerColor(kAzure+2);
+    grDifFl1040[3][id] -> SetMarkerStyle(marker[3]);
+    // MC
+    // grDifFl1040[4][id] = new TGraphErrors(npt,&vPT[0],&vVMCDif1040Gap[0],&ePT[0],&ePT[0]);
+    // grDifFl1040[4][id] -> SetMarkerColor(kAzure+2);
+    // grDifFl1040[4][id] -> SetMarkerStyle(22);    
+    for (int i=0; i<nmethod; i++){
       grDifFl1040[i][id] -> SetMarkerSize(1.5);
       grDifFl1040[i][id] -> SetDrawOption("P");
       grDifFl1040[i][id] -> SetLineWidth(1);
     }
 
     std::vector<TGraphErrors*> vgrv2pt1040;
-    for (int imeth=0; imeth<3; imeth++){
+    for (int imeth=0; imeth<nmethod; imeth++){
       grDifFl1040[imeth][id] -> SetTitle(grTitleDF[imeth]);
-      vgrv2pt1040.push_back(grDifFl1040[imeth][id]);
       grDifFl1040[imeth][id] -> Write(Form("gr_cent10-40_%i_%i",imeth,id));
+    }
+    vgrv2pt1040.push_back(grDifFl1040[3][id]);
+    for (int imeth=0;imeth<nmethod-1;imeth++){
+      if (imeth==excludeMethod) continue;
+      vgrv2pt1040.push_back(grDifFl1040[imeth][id]);
     }
     
     
     sprintf(hname,"%s, centrality 10-40%%",pidFancyNames.at(id).Data());
-    cV2PT1040[id] = (TCanvas*) DrawTGraph(vgrv2pt1040,"",0.67,1.33,    0.,maxpt,-0.01,0.2,     0.18,0.56,0.5,0.8,hname);
+
+    cV2PT1040[id] = (TCanvas*) DrawTGraph(vgrv2pt1040,"",0.89, 1.11, 0., maxpt, -0.01, 0.2,
+                                          coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                          level, hname);
     cV2PT1040[id] -> SetName(hname);
     cV2PT1040[id] -> SaveAs(Form("../%s/%sDFCent10-40.png",outDirName.Data(),pidNames.at(id).Data()));
   }
@@ -515,7 +644,7 @@ void v2plot_differential_flow(){
 void v2plot_integrated_flow(){
   if (bDrawPlots1040) return;
   char hname[400];
-  TFile *inFile = new TFile("../ROOTFile/PID.root","read");
+  TFile *inFile = new TFile(inFileName,"read");
   // Input histograms
   TProfile *hv22[ncent][npid];        // profile of integrated flow from v2{2}
   TProfile *hv24[ncent][npid];        // profile of integrated flow from v2{4}
@@ -531,9 +660,13 @@ void v2plot_integrated_flow(){
   TProfile *hv2EP[ncent][npt][npid];	// elliptic flow from EP method
   TProfile *hv22EP[ncent][npid];      
   TProfile *HRes[ncent];
+  // TProfile *hv2MC[ncent]; // profile for MC integrated v2
+  TProfile *hv22Gap[ncent][npid];
+  TProfile *hv22ptGap[ncent][npt][npid];
   // Get histograms
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // hv22EP[icent] = (TProfile*)inFile->Get(Form("hv22EP_%i",icent));
+    // hv2MC[icent] = (TProfile*)inFile->Get(Form("hv2MC_%i",icent));
     HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
     // hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
     // hv24[icent] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
@@ -549,6 +682,7 @@ void v2plot_integrated_flow(){
         // hcov42prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov42prime_%i_%i_%i",icent,ipt,id));
         // hcov44prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov44prime_%i_%i_%i",icent,ipt,id));
         hcov2prime4prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
+        hv22ptGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22ptGap_%i_%i_%i",icent,ipt,id));
       }
     } // end of loop over pt bin
   } // end of loop over centrality classes
@@ -564,6 +698,7 @@ void v2plot_integrated_flow(){
         hv22[icent][id]->Add(hv22pt[icent][ipt][id]);
         hv24[icent][id]->Add(hv24pt[icent][ipt][id]);
         hcov24[icent][id]->Add(hcov2prime4prime[icent][ipt][id]);
+        hv22Gap[icent][id]->Add(hv22ptGap[icent][ipt][id]);
       }
     }
   }
@@ -583,8 +718,9 @@ void v2plot_integrated_flow(){
   TCanvas *can[npid];
   for (int id=0;id<npid;id++){
     if (bMergeCharged && id>3) continue;
-    std::vector<double> vV2EP, vV22, vV24, vV22int, vV24int;
-    std::vector<double> eV2EP, eV22, eV24, eV22int, eV24int;
+    std::vector<double> vV2EP, vV22, vV24, vV22int, vV24int, vV22Gap;
+    std::vector<double> eV2EP, eV22, eV24, eV22int, eV24int, eV22Gap;
+    // std::vector<double> vV2MC, eV2MC;
 
     for (int icent=0;icent<ncent;icent++){
 
@@ -608,35 +744,45 @@ void v2plot_integrated_flow(){
       vV24int.push_back(prV24int[icent][id]->GetBinContent(1));
       eV22int.push_back(prV22int[icent][id]->GetBinError(1)); // not in used
       eV24int.push_back(prV24int[icent][id]->GetBinError(1)); // not in used
+      // 2QC-gapped
+      vV22Gap.push_back(prV22intGap[icent][id]->GetBinContent(1));
+      term cor2Gap = term(hv22Gap[icent][id]);
+      eV22Gap.push_back(sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE));
+      // MC
+      // vV2MC.push_back(hv2MC[icent]->GetBinContent(1));
+      // eV2MC.push_back(hv2MC[icent]->GetBinError(1));
+
+
     }
     
-    // grIntFlowVsCent[0][id] = new TGraphErrors(ncent,bin_cent,&vV22[0],bin_centE,&eV22[0]);
-    // grIntFlowVsCent[0][id] -> SetMarkerColor(kRed);
-    // grIntFlowVsCent[0][id] -> SetMarkerStyle(25);  
-
-    // grIntFlowVsCent[1][id] = new TGraphErrors(ncent,bin_cent,&vV24[0],bin_centE,&eV24[0]);
-    // grIntFlowVsCent[1][id]->SetMarkerColor(kGreen+1);
-    // grIntFlowVsCent[1][id]->SetMarkerStyle(20);
-
-    grIntFlowVsCent[2][id] = new TGraphErrors(ncent,bin_cent,&vV2EP[0],bin_centE,&eV2EP[0]);
-    grIntFlowVsCent[2][id] -> SetMarkerColor(kAzure+2);
-    grIntFlowVsCent[2][id] -> SetMarkerStyle(22);
-
     grIntFlowVsCent[0][id] = new TGraphErrors(ncent,bin_cent,&vV22int[0],bin_centE,&eV22[0]);
     grIntFlowVsCent[0][id] -> SetMarkerColor(kRed);
-    grIntFlowVsCent[0][id] -> SetMarkerStyle(25); 
+    grIntFlowVsCent[0][id] -> SetMarkerStyle(marker[0]); // 25
 
     grIntFlowVsCent[1][id] = new TGraphErrors(ncent,bin_cent,&vV24int[0],bin_centE,&eV24[0]);
     grIntFlowVsCent[1][id] -> SetMarkerColor(kGreen+1);
-    grIntFlowVsCent[1][id] -> SetMarkerStyle(20);
+    grIntFlowVsCent[1][id] -> SetMarkerStyle(marker[1]);
+
+    grIntFlowVsCent[2][id] = new TGraphErrors(ncent,bin_cent,&vV2EP[0],bin_centE,&eV2EP[0]);
+    grIntFlowVsCent[2][id] -> SetMarkerColor(kAzure+2);
+    grIntFlowVsCent[2][id] -> SetMarkerStyle(marker[2]);
+
+    grIntFlowVsCent[3][id] = new TGraphErrors(ncent,bin_cent,&vV22Gap[0],bin_centE,&eV22Gap[0]);
+    grIntFlowVsCent[3][id] -> SetMarkerColor(kYellow+2);
+    grIntFlowVsCent[3][id] -> SetMarkerStyle(marker[3]);
+
+    // grIntFlowVsCent[4][id] = new TGraphErrors(ncent,bin_cent,&vV2MC[0],bin_centE,&eV2MC[0]);
+    // grIntFlowVsCent[4][id] -> SetMarkerColor(kBlack+2);
+    // grIntFlowVsCent[4][id] -> SetMarkerStyle(kOpenSquare);    
 
     for (int i=0;i<nmethod;i++){
       grIntFlowVsCent[i][id] -> SetMarkerSize(1.5);
       grIntFlowVsCent[i][id] -> SetDrawOption("P");
     }
-    const char *grTitle[3]={"[1] v_{2}{2,QC};cent, %;v_{2}",
-                            "[2] v_{2}{4,QC};cent, %;v_{2}",
-                            "[3] v_{2}{#eta sub-event};cent, %;v_{2}",};
+    const char *grTitle[nmethod]={"v_{2}{2,QC};cent, %;v_{2}",
+                                  "v_{2}{4,QC};cent, %;v_{2}",
+                                  Form("v_{2}{EP,|#Delta#eta|>%1.1f};cent, %%;v_{2}",eta_gap*2.),
+                                  Form("v_{2}{2,|#Delta#eta|>%1.1f};cent, %%;v_{2}",eta_gap*2.)};
     outFile -> cd();
     for (int imeth=0; imeth<nmethod; imeth++){
       grIntFlowVsCent[imeth][id] -> SetTitle(grTitle[imeth]);
@@ -645,23 +791,27 @@ void v2plot_integrated_flow(){
 
 
     std::vector<TGraphErrors*> vgr;
-    for (int imeth=0; imeth<nmethod; imeth++){
+    vgr.push_back(grIntFlowVsCent[3][id]);
+    for (int imeth=0; imeth<nmethod-1; imeth++){
+      if (imeth==excludeMethod) continue;
       vgr.push_back(grIntFlowVsCent[imeth][id]);
     }
 
     
-    can[id] = (TCanvas*) DrawTGraph(vgr,"",0.48,1.22,   0,60,-0.005,0.1,    0.18,0.56,0.5,0.8,pidFancyNames.at(id).Data()); // DCA<0.5: 0.88, 1.12 // wo DCA: 0.76, 1.03
+    can[id] = (TCanvas*) DrawTGraph(vgr,"",rangeRatioRF.first, rangeRatioRF.second,   0,60,-0.005,0.1,
+                                    coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                    level, pidFancyNames.at(id).Data());
     can[id] -> SetName(pidNames.at(id).Data());
     can[id] -> SaveAs(Form("../%s/%sV2vsCent.png",outDirName.Data(),pidNames.at(id).Data()));
   } // end of loop over particle ID
 }
-void v2plotPID(){
+void v2plot_v22gapped(){
 
   if (bMergeCharged){
     pidNames.clear();
     pidFancyNames.clear();
     pidNames = {"hadron", "pion", "kaon", "proton", "hadron_neg", "pion_neg", "kaon_neg", "proton_neg"};
-    pidFancyNames = {"hadron", "#pi", "K", "p(#bar{p})", "h-", "#pi-", "K-", "#bar{p}"};
+    pidFancyNames = {"Charged hadrons", "#pi", "K", "p(#bar{p})", "h-", "#pi-", "K-", "#bar{p}"};
   }
   gSystem->Exec(Form("mkdir -p ../%s/",outDirName.Data()));
   v2plot_differential_flow();

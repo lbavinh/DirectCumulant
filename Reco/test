@@ -76,5 +76,6 @@ hv2EP_1_1_0->GetBinContent(1)
 hPT_1_1_4->GetBinEntries(1)
 
 hcounter_1_1_0->GetBinEntries(1)
+hcounter_1_1_0->GetBinEntries(2)
 hcounter_1_1_0->GetBinEntries(3)
 hPT_1_1_0->GetBinEntries(1)

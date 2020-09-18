@@ -96,7 +96,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   if (drawLeg) leg_pt->Draw();
 
   //==============================================
-  TPaveText *pt = new TPaveText(leg_x_high+0.01,0.74,0.85,0.85,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
+  TPaveText *pt = new TPaveText(0.56,0.74,0.85,0.85,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
   pt->SetBorderSize(0);
   pt->SetFillColor(0);
   char hname[400];
@@ -171,7 +171,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     vgrRatio.at(igr)->GetYaxis()->SetTitleSize(0.12);
 
     // vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("%s/%s",vgr.at(igr+1)->GetTitle(),vgr.at(0)->GetTitle()));
-    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("#frac{v_{2}}{ v_{2}[MC] }"));
+    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("Ratio"));//#frac{v_{2}}{ v_{2}[Gapped 2QC] }
     vgrRatio.at(igr)->GetYaxis()->SetTitleOffset(0.65);
     vgrRatio.at(igr)->GetXaxis()->SetTitle(Form("%s",vgr.at(0)->GetXaxis()->GetTitle()));
     vgrRatio.at(igr)->GetYaxis()->SetNdivisions(504);

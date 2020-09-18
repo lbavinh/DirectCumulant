@@ -5,8 +5,8 @@
 #$ -cwd
 #$ -N Flow
 #$ -q all.q
-#$ -l h_rt=02:10:00
-#$ -l s_rt=02:10:00
+#$ -l h_rt=05:10:00
+#$ -l s_rt=05:10:00
 #$ -t 1-10
 #$ -o /dev/null
 #$ -e /dev/null

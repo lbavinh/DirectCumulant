@@ -6,7 +6,7 @@
 # Tell SGE that we will work in the working directory
 #$ -cwd
 # Specify job name
-#$ -N run_sim_urqmd
+#$ -N run_toy_model
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job

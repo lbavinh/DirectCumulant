@@ -136,11 +136,11 @@ void V2gen(int nevent,double Mmean) {
   double eta; // pseudorapidity
   bool bFlow;
 
-  float nonflow = 0.; /* Simulating nonflow correlations: 
+  float nonflow = 1.; /* Simulating nonflow correlations: 
 		     0: no nonflow correlations; 
 		     1: "pair wise" emission (2 particles with same azimuth);
          2: "quadruplet" emission (4 particles with same azimuth).*/
-  float nonflowrate = 0.2;
+  float nonflowrate = 0.25;
   /* Fraction of particles that are affected by nonflow effects. */
   bool bAcceptance = 0;
   float A = PI/3.;
@@ -205,7 +205,7 @@ void V2gen(int nevent,double Mmean) {
         d_bflow[nh]= bFlow;
         nh++;
 
-        if (nonflow>0 && (nm<=(mult-2*nonflow)) && (GR->Rndm()<=nonflowrate) ){ /* NONFLOW CORRELATION simulation */
+        if (nonflow>0 && (nm<=(mult-2*nonflow)) && (GR->Rndm()<=nonflowrate) && TMath::Abs(eta)<0.5){ /* NONFLOW CORRELATION simulation */
             /* Two tests: 
             - a first, very inelegant one, to avoid having more particles in the 
             event than the multiplicity which has been determined earlier;
@@ -224,10 +224,10 @@ void V2gen(int nevent,double Mmean) {
             hPhi -> Fill(phi);
             hPhil -> Fill(phil);      
 
-            if (TMath::Abs(eta)<0.5){
-              d_eta[nh] = d_eta[nh-1];
-              hEta  -> Fill(d_eta[nh-1]);
-            }
+            // if (TMath::Abs(eta)<0.5){
+              d_eta[nh] = eta;
+              hEta  -> Fill(eta);
+            // }
             nh++;
           } // end of Pair-wise emission
           else if (nonflow==2) { // Quadruplet-wise emission

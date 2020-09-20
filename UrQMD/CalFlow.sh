@@ -13,21 +13,21 @@
 #$ -l h_rt=06:30:00
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=06:30:00
-# Specify job array range (how many jobs will be created
-#$ -t 1-397
+# Specify job array range (how many jobs will be created: 980 for 4.5 GeV, 397 for 7.7, 992 for 11.5
+#$ -t 1-992
 # Specify directory where output and error logs from SGE will be stored
-#$ -o /weekly/$USER/lbavinh/UrQMD/OUT/log/
-#$ -e /weekly/$USER/lbavinh/UrQMD/OUT/log/
+#$ -o /dev/null
+#$ -e /dev/null
 #
 
-# ${JOB_ID} - Id of the job array (one for all jobs)
-# ${SGE_TASK_ID} - id of the element of the job array
-# SGE option "-t 1-N" tells array range. It will create an array
-#     of N jobs with ${JOB_ID}_1, ${JOB_ID}_2, ..., ${JOB_ID}_N
-
 #Main directory
+energy=Urqmd11.5
+macro=anaFlow
 export MAIN_DIR=/weekly/$USER/lbavinh/UrQMD
-export FILELIST=/weekly/povarov/lbavinh/UrQMD/chain60/runlist.list
+# 551
+# export FILELIST=/weekly/povarov/lbavinh/UrQMD/chain/runlist.list
+
+export FILELIST=$MAIN_DIR/split/runlistSGE_$energy.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
@@ -42,7 +42,7 @@ mkdir -p $OUT_LOG
 mkdir -p $TMP
 touch $LOG
 
-cp $MAIN_DIR/calculateFlow.C $TMP
+cp $MAIN_DIR/$macro.C $TMP
 
 # Set correct environment variables (needed version of root)
 source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh
@@ -53,7 +53,7 @@ echo "Input file:    $IN_FILE"  &>> $LOG
 echo "Output file:   $OUT_FILE" &>> $LOG
 echo "---------------" &>> $LOG
 echo "Run elliptic flow calculation..." &>> $LOG
-root -l -b -q $TMP/calculateFlow.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
+root -l -b -q $TMP/$macro.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
 
 echo "---------------" &>> $LOG
 echo "Cleaning temporary directory..." &>> $LOG

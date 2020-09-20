@@ -1,10 +1,10 @@
 #include "DrawTGraph.C"
-void Compare(int meth = 1){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
+void Compare(int meth = 2){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   static const int npid = 4; // charged hadrons, pions, kaons, protons
-  static const int nmethod = 3; // UrQMD, GEANT, Reco
+  static const int nmethod = 3; // GEANT, Reco mother ID, Reco DCA
   static const float maxpt = 2.5;
   static const int ncent = 7; // 0-10,10-20,20-30,30-40,40-50,10-40,v2vscent
-  const std::vector<std::pair<float, float>> ratioRange = {{0.88,1.12},{0.88,1.12},{0.64, 1.36},{0.88,1.12},{0.82,1.18},{0.82,1.18},{0.64, 1.36},{0.82,1.18}};
+  const std::vector<std::pair<float, float>> ratioRange = {{0.88,1.12},{0.88,1.12},{0.88,1.12},{0.88,1.12},{0.82,1.18},{0.82,1.18},{0.64, 1.36},{0.82,1.18}};
   const std::vector<TString> pidNames = {"hadron", "pion", "kaon", "proton", "hadron_neg", "pion_neg", "kaon_neg", "proton_neg"};
   const std::vector<TString> pidFancyNames = {"Charged hadrons", "#pi", "K", "p(#bar{p})", "h-", "#pi-", "K-", "#bar{p}"};
   TString graphTitle[4]={"v_{2}{2}","v_{2}{4}","v_{2}{EP}","v_{2}{2,|#Delta#eta>0.1|}"};
@@ -12,10 +12,11 @@ void Compare(int meth = 1){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   TFile *inputVinh[nmethod];
   TGraphErrors *grVinh[ncent][nmethod][npid];
   char name[400];
-  TString method[nmethod]={"[1] UrQMD","[2] GEANT","[3] Reco"};
-  inputVinh[0] = new TFile("VinhPID_UrQMD_merged_v22gapped.root","read");
-  inputVinh[1] = new TFile("VinhPID_MC_merged_v22gapped.root","read");
-  inputVinh[2] = new TFile("VinhPID_Reco_merged_v22gapped.root","read");
+  TString method[nmethod]={"[1] GEANT","[2] Reco (MotherID cut)","[3] Reco (DCA cut)"};
+  inputVinh[0] = new TFile("VinhPID_MC_merged_v22gapped.root","read");
+  inputVinh[1] = new TFile("VinhPID_Reco_merged_v22gapped.root","read");
+  inputVinh[2] = new TFile("VinhPID_Reco_merged_v22gapped_DCA.root","read");
+
   for (int i=0; i<nmethod; i++){
     for (int id=0;id<npid;id++){
       for (int icent=0;icent<ncent-2;icent++){

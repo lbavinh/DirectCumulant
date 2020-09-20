@@ -1,5 +1,5 @@
-#define FlowANA_cxx
-#include "FlowANA.h"
+#define smash_cxx
+#include "smash.h"
 #include "function.C"
 #include "TH1.h"
 #include "TH1I.h"
@@ -87,7 +87,7 @@ TProfile *hv22Gap[ncent];
 TProfile *hv22ptGap[ncent][npt][npid];
 TProfile *hcov22primeGap[ncent][npt][npid];
 
-void FlowANA::Booking(TString outFile){
+void smash::Booking(TString outFile){
   char name[800];
   char title[800];
   d_outfile = new TFile(outFile.Data(),"recreate");
@@ -144,11 +144,11 @@ void FlowANA::Booking(TString outFile){
 
 }
 
-void FlowANA::Loop_a_file(TString file){
+void smash::Loop_a_file(TString file){
   TStopwatch timer;
   timer.Start();
   TFile *treefile = TFile::Open(file.Data());
-  TTree *tree = (TTree *)treefile->Get("mctree");
+  TTree *tree = (TTree *)treefile->Get("particles");
   if (tree == 0)
   {
     cout << "mctree is not found in " << file << endl;
@@ -164,10 +164,10 @@ void FlowANA::Loop_a_file(TString file){
   timer.Print();
 }
 
-void FlowANA::Loop_a_list_of_file(TString fileList){
+void smash::Loop_a_list_of_file(TString fileList){
   TStopwatch timer;
   timer.Start();
-  TChain *chain = new TChain("mctree");
+  TChain *chain = new TChain("particles");
   std::ifstream file(fileList.Data());
   std::string line;
   while(std::getline(file, line))
@@ -175,7 +175,7 @@ void FlowANA::Loop_a_list_of_file(TString fileList){
       chain->Add(line.c_str());
   }
   if (chain == 0){
-    cout << "mctree is not found in " << line << endl;
+    cout << "TTree particles  is not found in " << line << endl;
     return;
   }
   Init(chain);
@@ -184,14 +184,14 @@ void FlowANA::Loop_a_list_of_file(TString fileList){
   timer.Print();
 }
 
-void FlowANA::Ana_end(){
+void smash::Ana_end(){
   d_outfile -> cd();
   d_outfile -> Write();
   d_outfile -> Close();
   cout << "Histfile has been written" << endl;
 }
 
-void FlowANA::Loop()
+void smash::Loop()
 {
    if (fChain == 0) return;
 
@@ -208,16 +208,16 @@ void FlowANA::Loop()
    }
 }
 
-void FlowANA::Ana_event(){
+void smash::Ana_event(){
   hEvt -> Fill(1);
   float rp = 0;
   // rp = gRandom->Uniform(0, 2.*TMath::Pi());
-  int fcent=CentB(bimp);
+  int fcent=CentB(impact_b);
   if (fcent<0) return;
-  hMult -> Fill(nh);
+  hMult -> Fill(npart);
   hRP -> Fill(rp);
-  hBimp -> Fill(bimp);
-  hBimpvsMult -> Fill(nh,bimp);
+  hBimp -> Fill(impact_b);
+  hBimpvsMult -> Fill(npart,impact_b);
   // notation as (26) in DOI:10.1103/PhysRevC.83.044913
   // Q-vector of RFP
   Double_t Qx2=0., Qy2=0., Qx4=0., Qy4=0.;
@@ -255,14 +255,14 @@ void FlowANA::Ana_event(){
   float multQv[neta]={0};       // [eta+,eta-]
   float wQv[neta]={0};
 
-  for(int iTrk=0;iTrk<nh;iTrk++) { // track loop
-    TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
+  for(int iTrk=0;iTrk<npart;iTrk++) { // track loop
+    TVector3 vect(px[iTrk], py[iTrk], pz[iTrk]);
     float pt  = vect.Pt();
     float eta = vect.Eta();
     float phi = vect.Phi();
     if (pt < minpt || pt > maxpt || abs(eta)>eta_cut) continue; // track selection
     // if (abs(eta)<eta_gap) continue;
-    auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+    auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdgcode[iTrk]);
     // if (!particle) continue;
     float charge = 1./3.*particle->Charge();
     if (charge == 0) continue;
@@ -277,12 +277,12 @@ void FlowANA::Ana_event(){
     }
 
     int fId=-1;
-    if(pdg[iTrk]==211)  fId=1; // pion+
-    if(pdg[iTrk]==321)  fId=2; // kaon+
-    if(pdg[iTrk]==2212) fId=3; // proton
-    if(pdg[iTrk]==-211)  fId=5; // pion-
-    if(pdg[iTrk]==-321)  fId=6; // kaon-
-    if(pdg[iTrk]==-2212) fId=7; // anti-proton
+    if(pdgcode[iTrk]==211)  fId=1; // pion+
+    if(pdgcode[iTrk]==321)  fId=2; // kaon+
+    if(pdgcode[iTrk]==2212) fId=3; // proton
+    if(pdgcode[iTrk]==-211)  fId=5; // pion-
+    if(pdgcode[iTrk]==-321)  fId=6; // kaon-
+    if(pdgcode[iTrk]==-2212) fId=7; // anti-proton
     // Double_t v2 = TMath::Cos(2.*phi);
     // hv2MC[fcent]->Fill(0.5, v2, 1);
     // hv2MCpt[fcent][ipt]->Fill(0.5, v2, 1);
@@ -473,13 +473,13 @@ void FlowANA::Ana_event(){
   // dPsi = TMath::ATan2( sin(dPsi) , cos(dPsi));
   HRes[fcent] -> Fill(0.5,cos(dPsi));
 
-  for(int iTrk=0;iTrk<nh;iTrk++) { // track loop
-    TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
+  for(int iTrk=0;iTrk<npart;iTrk++) { // track loop
+    TVector3 vect(px[iTrk], py[iTrk], pz[iTrk]);
     float pt  = vect.Pt();
     float eta = vect.Eta();
     float phi = vect.Phi();
     if (pt < minpt || pt > maxpt || abs(eta)>eta_cut || abs(eta)<eta_gap) continue; // track selection
-    auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+    auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdgcode[iTrk]);
     if (!particle) continue;
     float charge = 1./3.*particle->Charge();
     if (charge == 0) continue;
@@ -491,12 +491,12 @@ void FlowANA::Ana_event(){
     }
 
     int fId=-1;
-    if(pdg[iTrk]==211)  fId=1; // pion+
-    if(pdg[iTrk]==321)  fId=2; // kaon+
-    if(pdg[iTrk]==2212) fId=3; // proton
-    if(pdg[iTrk]==-211)  fId=5; // pion-
-    if(pdg[iTrk]==-321)  fId=6; // kaon-
-    if(pdg[iTrk]==-2212) fId=7; // anti-proton
+    if(pdgcode[iTrk]==211)  fId=1; // pion+
+    if(pdgcode[iTrk]==321)  fId=2; // kaon+
+    if(pdgcode[iTrk]==2212) fId=3; // proton
+    if(pdgcode[iTrk]==-211)  fId=5; // pion-
+    if(pdgcode[iTrk]==-321)  fId=6; // kaon-
+    if(pdgcode[iTrk]==-2212) fId=7; // anti-proton
     
     // ==================================== Eta Sub-event ==================================== //
     float v2=-999.0;
@@ -531,11 +531,12 @@ void FlowANA::Ana_event(){
 } // end of Ana_event();
 
 void test_loop(){
-  FlowANA *ana = new FlowANA();
+  smash *ana = new smash();
   ana->Booking("/weekly/lbavinh/lbavinh/UrQMD/test.root");
   ana->Loop_a_list_of_file("/weekly/lbavinh/lbavinh/UrQMD/split/Urqmd4.5/runlist_9889");
   ana->Ana_end();
   cout << "Histfile written. Congratz!" << endl;
 }
 // root -l -b -q calculateFlow.C+'("/weekly/povarov/lbavinh/UrQMD/chain/chain550.root","test.root")'
-// root -l -b -q anaFlow.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/Urqmd11.5/runlist_9889","test.root")'
+// root -l -b -q anaFlow.C+'("/weekly/lbavinh/lbavinh/SMASH/split/smash7.7gev/runlist_00","test.root")'
+// root -l -b -q anaFlow.C+'("/weekly/lbavinh/lbavinh/SMASH/split/smash11.5gev/runlist_00","test.root")'

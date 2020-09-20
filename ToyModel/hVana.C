@@ -218,7 +218,7 @@ void hVana::Ana_event(){
     float Eta = eta[iTrk];
     float phi = phi0[iTrk];
     if( pT<minpt  || pT>maxpt || abs(Eta)>eta_cut) continue; // main track cuts
-    if (abs(Eta)<eta_gap) continue;
+    // if (abs(Eta)<eta_gap) continue;
     hPt->Fill(pT);
     // if (phi<0) phi += 2.*TMath::Pi();
     hPhi->Fill(phi);
@@ -412,10 +412,10 @@ void loop_a_list_of_trees()
 {
   hVana *ana = new hVana();
   // ana->Booking("/mnt/pool/2/lbavinh/DirectCumulant/OUT/v2QC_Pure_1mil.root");
-  ana->Booking("/weekly/lbavinh/lbavinh/ToyModel/ToyModel_eta_gap_0.1_sameforv24.root");
+  ana->Booking("/weekly/lbavinh/lbavinh/ToyModel/ToyModel_eta_gap_1.0.root");
 
   // ifstream ifile("/mnt/pool/2/lbavinh/EventGenerator/OUT/Pure/runlist.list"); // tree runlist
-  ifstream ifile("/weekly/lbavinh/lbavinh/ToyModel/runlist_pure.list"); // tree runlist
+  ifstream ifile("/weekly/lbavinh/lbavinh/ToyModel/runlist_mynonflow.list"); // tree runlist
   char filename[200];
   int nfiles = 1;
   while (ifile.getline(filename, 200)){

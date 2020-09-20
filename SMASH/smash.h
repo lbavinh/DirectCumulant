@@ -1,12 +1,12 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Sun Jul 26 00:23:21 2020 by ROOT version 5.34/19
-// from TTree mctree/Hadrons tree from MC RHIC models
-// found on file: urqmd_1033721_1.mcpico.root
+// Sat Sep 19 02:34:45 2020 by ROOT version 6.12/06
+// from TTree particles/particles
+// found on file: /weekly/seluzhen/smash/smash11.5gev/particles_1653164_76.root
 //////////////////////////////////////////////////////////
 
-#ifndef FlowANA_h
-#define FlowANA_h
+#ifndef smash_h
+#define smash_h
 
 #include <TROOT.h>
 #include <TChain.h>
@@ -15,50 +15,50 @@
 #include <TString.h>
 
 // Header file for the classes stored in the TTree if any.
-
-// Fixed size dimensions of array or collections stored in the TTree if any.
-
 static const int max_nh = 2500;
-
-class FlowANA {
+class smash {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
 
+// Fixed size dimensions of array or collections stored in the TTree if any.
+
    // Declaration of leaf types
-   Float_t         bimp;   // impact parameter 
-   Float_t         phi2;   // v2 event plane from model 
-   Float_t         phi3;   // v3 event plane from model
-   Float_t         ecc2;   // eccentricity e2 
-   Float_t         ecc3;   // eccrntricity e3
-   Int_t           npart;  // number of participants
-   Int_t           nh;     // number of particles in event
-   Float_t         momx[max_nh];   //[nh] momentum px
-   Float_t         momy[max_nh];   //[nh] momentum py
-   Float_t         momz[max_nh];   //[nh] momentum pz
-   Float_t         ene[max_nh];    //[nh] energy of particle
-   Int_t           hid[max_nh];    //[nh] 
-   Int_t           pdg[max_nh];    //[nh] particle ID
-   Short_t         charge[max_nh]; //[nh] charge of particle
+   Int_t           npart;
+   Double_t        impact_b;
+   Bool_t          empty_event;
+   Int_t           ev;
+   Int_t           tcounter;
+   Int_t           pdgcode[max_nh];   //[npart]
+   Int_t           charge[max_nh];   //[npart]
+   Double_t        p0[max_nh];   //[npart]
+   Double_t        px[max_nh];   //[npart]
+   Double_t        py[max_nh];   //[npart]
+   Double_t        pz[max_nh];   //[npart]
+   Double_t        t[max_nh];   //[npart]
+   Double_t        x[max_nh];   //[npart]
+   Double_t        y[max_nh];   //[npart]
+   Double_t        z[max_nh];   //[npart]
 
    // List of branches
-   TBranch        *b_bimp;   //!
-   TBranch        *b_phi2;   //!
-   TBranch        *b_phi3;   //!
-   TBranch        *b_ecc2;   //!
-   TBranch        *b_ecc3;   //!
    TBranch        *b_npart;   //!
-   TBranch        *b_nh;   //!
-   TBranch        *b_momx;   //!
-   TBranch        *b_momy;   //!
-   TBranch        *b_momz;   //!
-   TBranch        *b_ene;   //!
-   TBranch        *b_hid;   //!
-   TBranch        *b_pdg;   //!
+   TBranch        *b_impact_b;   //!
+   TBranch        *b_empty_event;   //!
+   TBranch        *b_ev;   //!
+   TBranch        *b_tcounter;   //!
+   TBranch        *b_pdgcode;   //!
    TBranch        *b_charge;   //!
+   TBranch        *b_p0;   //!
+   TBranch        *b_px;   //!
+   TBranch        *b_py;   //!
+   TBranch        *b_pz;   //!
+   TBranch        *b_t;   //!
+   TBranch        *b_x;   //!
+   TBranch        *b_y;   //!
+   TBranch        *b_z;   //!
 
-   FlowANA(TTree *tree=0);
-   virtual ~FlowANA();
+   smash(TTree *tree=0);
+   virtual ~smash();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
@@ -66,7 +66,7 @@ public :
    virtual void     Loop();
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
-   // additional function
+    // additional function
    void Booking(TString outFile);
    void Loop_a_file(TString file);
    void Loop_a_list_of_file(TString fileList);
@@ -76,35 +76,35 @@ public :
 
 #endif
 
-#ifdef FlowANA_cxx
-FlowANA::FlowANA(TTree *tree) : fChain(0) 
+#ifdef smash_cxx
+smash::smash(TTree *tree) : fChain(0) 
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
   //  if (tree == 0) {
-  //     TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("urqmd_1033721_1.mcpico.root");
+  //     TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/weekly/seluzhen/smash/smash11.5gev/particles_1653164_76.root");
   //     if (!f || !f->IsOpen()) {
-  //        f = new TFile("urqmd_1033721_1.mcpico.root");
+  //        f = new TFile("/weekly/seluzhen/smash/smash11.5gev/particles_1653164_76.root");
   //     }
-  //     f->GetObject("mctree",tree);
+  //     f->GetObject("particles",tree);
 
   //  }
   //  Init(tree);
 }
 
-FlowANA::~FlowANA()
+smash::~smash()
 {
    if (!fChain) return;
    delete fChain->GetCurrentFile();
 }
 
-Int_t FlowANA::GetEntry(Long64_t entry)
+Int_t smash::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
    if (!fChain) return 0;
    return fChain->GetEntry(entry);
 }
-Long64_t FlowANA::LoadTree(Long64_t entry)
+Long64_t smash::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
    if (!fChain) return -5;
@@ -117,7 +117,7 @@ Long64_t FlowANA::LoadTree(Long64_t entry)
    return centry;
 }
 
-void FlowANA::Init(TTree *tree)
+void smash::Init(TTree *tree)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -133,24 +133,25 @@ void FlowANA::Init(TTree *tree)
    fCurrent = -1;
    fChain->SetMakeClass(1);
 
-   fChain->SetBranchAddress("bimp", &bimp, &b_bimp);
-   fChain->SetBranchAddress("phi2", &phi2, &b_phi2);
-   fChain->SetBranchAddress("phi3", &phi3, &b_phi3);
-   fChain->SetBranchAddress("ecc2", &ecc2, &b_ecc2);
-   fChain->SetBranchAddress("ecc3", &ecc3, &b_ecc3);
    fChain->SetBranchAddress("npart", &npart, &b_npart);
-   fChain->SetBranchAddress("nh", &nh, &b_nh);
-   fChain->SetBranchAddress("momx", momx, &b_momx);
-   fChain->SetBranchAddress("momy", momy, &b_momy);
-   fChain->SetBranchAddress("momz", momz, &b_momz);
-   fChain->SetBranchAddress("ene", ene, &b_ene);
-   fChain->SetBranchAddress("hid", hid, &b_hid);
-   fChain->SetBranchAddress("pdg", pdg, &b_pdg);
+   fChain->SetBranchAddress("impact_b", &impact_b, &b_impact_b);
+   fChain->SetBranchAddress("empty_event", &empty_event, &b_empty_event);
+   fChain->SetBranchAddress("ev", &ev, &b_ev);
+   fChain->SetBranchAddress("tcounter", &tcounter, &b_tcounter);
+   fChain->SetBranchAddress("pdgcode", pdgcode, &b_pdgcode);
    fChain->SetBranchAddress("charge", charge, &b_charge);
+   fChain->SetBranchAddress("p0", p0, &b_p0);
+   fChain->SetBranchAddress("px", px, &b_px);
+   fChain->SetBranchAddress("py", py, &b_py);
+   fChain->SetBranchAddress("pz", pz, &b_pz);
+   fChain->SetBranchAddress("t", t, &b_t);
+   fChain->SetBranchAddress("x", x, &b_x);
+   fChain->SetBranchAddress("y", y, &b_y);
+   fChain->SetBranchAddress("z", z, &b_z);
    Notify();
 }
 
-Bool_t FlowANA::Notify()
+Bool_t smash::Notify()
 {
    // The Notify() function is called when a new file is opened. This
    // can be either for a new TTree in a TChain or when when a new TTree
@@ -161,18 +162,18 @@ Bool_t FlowANA::Notify()
    return kTRUE;
 }
 
-void FlowANA::Show(Long64_t entry)
+void smash::Show(Long64_t entry)
 {
 // Print contents of entry.
 // If entry is not specified, print current entry
    if (!fChain) return;
    fChain->Show(entry);
 }
-Int_t FlowANA::Cut(Long64_t entry)
+Int_t smash::Cut(Long64_t entry)
 {
 // This function may be called from Loop.
 // returns  1 if entry is accepted.
 // returns -1 otherwise.
    return 1;
 }
-#endif // #ifdef FlowANA_cxx
+#endif // #ifdef smash_cxx

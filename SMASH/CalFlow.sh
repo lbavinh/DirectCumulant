@@ -1,25 +1,35 @@
 #!/bin/bash
 
 #
-#$ -wd /weekly/$USER/lbavinh/ToyModel
+# Specify working directory
+#$ -wd /weekly/$USER/lbavinh/SMASH/
+# Tell SGE that we will work in the woeking directory
 #$ -cwd
-#$ -N Flow
+# Specify job name
+#$ -N SMASH_4.5
+# Specify SGE queue
 #$ -q all.q
-#$ -l h_rt=05:10:00
-#$ -l s_rt=05:10:00
-#$ -t 1-100
+# Set hard time limit. If it is exceeded, SGE shuts the job
+#$ -l h_rt=06:30:00
+# Set soft time limit - set up the same as a hard limit
+#$ -l s_rt=06:30:00
+# Specify job array range (how many jobs will be created: 1000 for 4.5 GeV, 988 for 7.7, 387 for 11.5
+#$ -t 1-1000
+# Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
 #
 
 #Main directory
-export MAIN_DIR=/weekly/$USER/lbavinh/ToyModel
-export FILELIST=${MAIN_DIR}/runlist_mynonflow.list
+energy=smash4.5gev
+macro=anaFlow
+export MAIN_DIR=/weekly/$USER/lbavinh/SMASH
+export FILELIST=$MAIN_DIR/split/runlistSGE_$energy.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
 export TMP_DIR=${MAIN_DIR}/TMP
-export OUT=${OUT_DIR}
+export OUT=${OUT_DIR}/${JOB_ID}
 export OUT_LOG=${OUT}/log
 export TMP=${TMP_DIR}/TMP_${JOB_ID}_${SGE_TASK_ID}
 export OUT_FILE=${OUT}/sum_${JOB_ID}_${SGE_TASK_ID}.root
@@ -29,7 +39,7 @@ mkdir -p $OUT_LOG
 mkdir -p $TMP
 touch $LOG
 
-cp $MAIN_DIR/calculateFlow.C $TMP
+cp $MAIN_DIR/$macro.C $TMP
 
 # Set correct environment variables (needed version of root)
 source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh
@@ -40,7 +50,7 @@ echo "Input file:    $IN_FILE"  &>> $LOG
 echo "Output file:   $OUT_FILE" &>> $LOG
 echo "---------------" &>> $LOG
 echo "Run elliptic flow calculation..." &>> $LOG
-root -l -b -q $TMP/calculateFlow.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
+root -l -b -q $TMP/$macro.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
 
 echo "---------------" &>> $LOG
 echo "Cleaning temporary directory..." &>> $LOG

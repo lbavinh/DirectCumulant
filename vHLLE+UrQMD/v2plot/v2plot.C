@@ -1,9 +1,9 @@
 #include "DrawTGraphImp.C"
 
-char inFileName[400]={"../ROOTFile/SMASH_11.5GeV.root"};
-TFile *outFile = new TFile("../CompareResult/v2_SMASH_11.5GeV.root","recreate");
-TString outDirName={"SMASH_11.5GeV"};
-char level[400]={"SMASH, Au+Au@#sqrt{s_{NN}}=11.5 GeV"};
+char inFileName[400]={"../ROOTFile/vHLLE+UrQMD_7.7GeV.root"};
+TFile *outFile = new TFile("../CompareResult/v2_vHLLE+UrQMD_7.7GeV.root","recreate");
+TString outDirName={"vHLLE+UrQMD_7.7GeV"};
+char level[400]={"vHLLE+UrQMD, Au+Au@#sqrt{s_{NN}}=7.7 GeV"};
 bool bDrawPlots1040 = 0;
 bool drawDistributions = 0; // eta, bimp, mult, etc.
 bool bSaveCanvas = 0;
@@ -252,7 +252,6 @@ void CalStatErrCent1040(){
       }
     } // end of loop over pt bin
   } // end of loop over centrality classes
-  inFile->Close();
   delete inFile;
 }
 

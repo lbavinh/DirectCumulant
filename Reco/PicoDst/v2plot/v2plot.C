@@ -1,9 +1,9 @@
 #include "DrawTGraphImp.C"
 
-char inFileName[400]={"../ROOTFile/SMASH_11.5GeV.root"};
-TFile *outFile = new TFile("../CompareResult/v2_SMASH_11.5GeV.root","recreate");
-TString outDirName={"SMASH_11.5GeV"};
-char level[400]={"SMASH, Au+Au@#sqrt{s_{NN}}=11.5 GeV"};
+char inFileName[400]={"../ROOTFile/PID_Reco_gapped.root"};
+TFile *outFile = new TFile("../CompareResult/v2_UrQMD_7.7GeV_Reco_MotherID.root","recreate");
+TString outDirName={"UrQMD_7.7GeV_Reco"};
+char level[400]={"UrQMD, GEANT4, Au+Au@#sqrt{s_{NN}}=7.7 GeV"};
 bool bDrawPlots1040 = 0;
 bool drawDistributions = 0; // eta, bimp, mult, etc.
 bool bSaveCanvas = 0;
@@ -24,7 +24,7 @@ static const float eta_gap = 0.05; // min pt
 std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton_pos", "hadron_neg", "pion_neg", "kaon_neg", "proton_neg"};
 std::vector<TString> pidFancyNames = {"h+", "#pi+", "K+", "p", "h-", "#pi-", "K-", "#bar{p}"};
 vector <Double_t> coordinateLeg = {0.18,0.63,0.45,0.889};
-vector<pair<Double_t,Double_t>> rangeRatio = {{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11}};
+vector<pair<Double_t,Double_t>> rangeRatio = {{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.79,1.21}};
 pair<Double_t,Double_t> rangeRatioRF ={0.65,1.11};
 int marker[nmethod]={21,20,22,25}; // 2QC, 4QC, EP, 2QC-gapped
 
@@ -252,7 +252,6 @@ void CalStatErrCent1040(){
       }
     } // end of loop over pt bin
   } // end of loop over centrality classes
-  inFile->Close();
   delete inFile;
 }
 

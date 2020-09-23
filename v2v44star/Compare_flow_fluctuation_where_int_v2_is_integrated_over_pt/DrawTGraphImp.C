@@ -4,7 +4,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
                     Double_t x_low=0.0, Double_t x_high=1.0,
                     Double_t y_low=0.0, Double_t y_high=1.0,
                     Double_t leg_x_low=0.22, Double_t leg_y_low=0.55,
-                    Double_t leg_x_high=0.55, Double_t leg_y_high=0.89, TString strCent="")
+                    Double_t leg_x_high=0.55, Double_t leg_y_high=0.89,TString strModel="", TString strCent="", bool drawLeg=1)
 {
   // Setting up global variables for the plot
   gROOT->SetStyle("Pub");
@@ -93,15 +93,15 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     leg_pt->AddEntry(vgr.at(i),Form("%s",vgr.at(i)->GetTitle()),"p");
   }
 
-  leg_pt->Draw();
+  if (drawLeg) leg_pt->Draw();
 
   //==============================================
-  TPaveText *pt = new TPaveText(leg_x_high+0.01,0.74,0.85,0.85,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
+  TPaveText *pt = new TPaveText(0.56,0.74,0.85,0.85,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
   pt->SetBorderSize(0);
   pt->SetFillColor(0);
   char hname[400];
   pt->SetTextSize(0.05);
-  pt->AddText("UrQMD, Au+Au @ #sqrt{s_{NN}}=7.7 GeV");
+  pt->AddText(strModel.Data());
 
   pt->AddText(strCent.Data());
   pt->Draw();
@@ -147,7 +147,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
       v1Xerr.push_back(ex_gr.at(igr)[i]);
       v1Yerr.push_back(ey_gr.at(igr)[i]);
 
-      v2Y.push_back((Double_t) abs(vgr.at(0)->Eval(v1X.at(i),0,"S")));
+      v2Y.push_back((Double_t) abs(vgr.at(0)->Eval(v1X.at(i),0,"S"))); // hay
       v2Yerr.push_back(ey_gr.at(0)[i]);
 
       vRatioY.push_back(v1Y.at(i)/v2Y.at(i));
@@ -171,7 +171,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     vgrRatio.at(igr)->GetYaxis()->SetTitleSize(0.12);
 
     // vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("%s/%s",vgr.at(igr+1)->GetTitle(),vgr.at(0)->GetTitle()));
-    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("#frac{[2,3]}{[1]}"));
+    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("#frac{[UrQMD,SMASH]}{[Data]}"));//
     vgrRatio.at(igr)->GetYaxis()->SetTitleOffset(0.65);
     vgrRatio.at(igr)->GetXaxis()->SetTitle(Form("%s",vgr.at(0)->GetXaxis()->GetTitle()));
     vgrRatio.at(igr)->GetYaxis()->SetNdivisions(504);
@@ -183,7 +183,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     vgrRatio.at(igr)->SetMarkerSize(1.6);
     vgrRatio.at(igr)->SetLineColor(vgr.at(igr+1)->GetMarkerStyle());
     vgrRatio.at(igr)->SetMarkerColor(vgr.at(igr+1)->GetMarkerStyle());
-
+    // vgrRatio.at(igr)->SetLineWidth(1.);
     // grRatio->GetXaxis()->SetLimits(0.95*vx_gr1[0],1.05*vx_gr1[n1bins-1]);
     if (igr==0)
     {
@@ -195,7 +195,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     // }
 
     TLine lineOne;
-    lineOne.SetLineStyle(1);
+    lineOne.SetLineStyle(2);
     lineOne.SetLineColor(kAzure+4); // 1
 
     TLine line95;
@@ -235,8 +235,8 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     lineOne.DrawLine(x_low,1.,  x_high,1.);
     // line95.DrawLine( x_low,.95, x_high,.95);
     // line105.DrawLine(x_low,1.05,x_high,1.05);
-    line90.DrawLine( x_low,.9, x_high,.9);
-    line110.DrawLine(x_low,1.1,x_high,1.1);
+    // line90.DrawLine( x_low,.9, x_high,.9);
+    // line110.DrawLine(x_low,1.1,x_high,1.1);
     // line80.DrawLine( x_low,.8, x_high,.8);
     // line85.DrawLine( x_low,.85, x_high,.85);
     // line120.DrawLine(x_low,1.2,x_high,1.2);

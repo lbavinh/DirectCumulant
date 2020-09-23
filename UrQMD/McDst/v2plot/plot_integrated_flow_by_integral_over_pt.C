@@ -1,9 +1,9 @@
 #include "DrawTGraphImp.C"
 
-char inFileName[400]={"../ROOTFile/SMASH_11.5GeV.root"};
-TFile *outFile = new TFile("../CompareResult/v2_SMASH_11.5GeV.root","recreate");
-TString outDirName={"SMASH_11.5GeV"};
-char level[400]={"SMASH, Au+Au@#sqrt{s_{NN}}=11.5 GeV"};
+char inFileName[400]={"../ROOTFile/PID_Reco_gapped_DCA_cut.root"};
+TFile *outFile = new TFile("../CompareResult/VinhPID_Reco_merged_v22gapped_DCA_test.root","recreate");
+TString outDirName={"Reco_merged_v22gapped_DCA_test"};
+char level[400]={"UrQMD, GEANT4, Au+Au@#sqrt{s_{NN}}=7.7 GeV"};
 bool bDrawPlots1040 = 0;
 bool drawDistributions = 0; // eta, bimp, mult, etc.
 bool bSaveCanvas = 0;
@@ -14,7 +14,7 @@ static const int nmethod = 4; // 2QC, 4QC, EP, 2QC-gapped
 
 static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
 static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.};
-static const double maxpt = 2.5; // max pt
+static const double maxpt = 3.0; // max pt
 static const double minpt = 0.2; // min pt
 
 static const int ncent = 8; // 0-80 %
@@ -24,7 +24,7 @@ static const float eta_gap = 0.05; // min pt
 std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton_pos", "hadron_neg", "pion_neg", "kaon_neg", "proton_neg"};
 std::vector<TString> pidFancyNames = {"h+", "#pi+", "K+", "p", "h-", "#pi-", "K-", "#bar{p}"};
 vector <Double_t> coordinateLeg = {0.18,0.63,0.45,0.889};
-vector<pair<Double_t,Double_t>> rangeRatio = {{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.89,1.11}};
+vector<pair<Double_t,Double_t>> rangeRatio = {{0.79,1.21},{0.79,1.21},{0.79,1.21},{0.79,1.21},{0.79,1.21},{0.89,1.11},{0.89,1.11},{0.89,1.11},{0.79,1.21}};
 pair<Double_t,Double_t> rangeRatioRF ={0.65,1.11};
 int marker[nmethod]={21,20,22,25}; // 2QC, 4QC, EP, 2QC-gapped
 
@@ -230,30 +230,7 @@ void CalStatErrCent1040(){
       } // end of loop for all pT bin
     } // end of loop for PID
   } // end of loop for centrality
-  for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    delete HRes[icent];
-    delete hv22[icent];
-    delete hv24[icent];
-    delete hcov24[icent];
-    delete hv22Gap[icent];
-    for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-      for (int id=0;id<npid;id++){
-        delete hv2EP[icent][ipt][id];
-        delete hPT[icent][ipt][id];
-        delete hv22pt[icent][ipt][id];
-        delete hv24pt[icent][ipt][id];
-        delete hcov22prime[icent][ipt][id];
-        delete hcov24prime[icent][ipt][id];
-        delete hcov42prime[icent][ipt][id];
-        delete hcov44prime[icent][ipt][id];
-        delete hcov2prime4prime[icent][ipt][id];
-        delete hv22ptGap[icent][ipt][id];
-        delete hcov22primeGap[icent][ipt][id];
-      }
-    } // end of loop over pt bin
-  } // end of loop over centrality classes
   inFile->Close();
-  delete inFile;
 }
 
 void v2plot_differential_flow(){
@@ -635,30 +612,7 @@ void v2plot_differential_flow(){
     cV2PT1040[id] -> SetName(hname);
     cV2PT1040[id] -> SaveAs(Form("../%s/%sDFCent10-40.png",outDirName.Data(),pidNames.at(id).Data()));
   }
-  for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    delete HRes[icent];
-    delete hv22[icent];
-    delete hv24[icent];
-    delete hcov24[icent];
-    delete hv22Gap[icent];
-    for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-      for (int id=0;id<npid;id++){
-        delete hv2EP[icent][ipt][id];
-        delete hPT[icent][ipt][id];
-        delete hv22pt[icent][ipt][id];
-        delete hv24pt[icent][ipt][id];
-        delete hcov22prime[icent][ipt][id];
-        delete hcov24prime[icent][ipt][id];
-        delete hcov42prime[icent][ipt][id];
-        delete hcov44prime[icent][ipt][id];
-        delete hcov2prime4prime[icent][ipt][id];
-        delete hv22ptGap[icent][ipt][id];
-        delete hcov22primeGap[icent][ipt][id];
-        delete hcounter[icent][ipt][id];
-      }
-    } // end of loop over pt bin
-  } // end of loop over centrality classes
-  inFile->Close();
+  // inFile->Close();
 }
 
 void v2plot_integrated_flow(){
@@ -667,6 +621,7 @@ void v2plot_integrated_flow(){
   // Input histograms
   TProfile *hv22[ncent][npid];        // profile of integrated flow from v2{2}
   TProfile *hv24[ncent][npid];        // profile of integrated flow from v2{4}
+  TProfile *hPT[ncent][npt][npid];       // profile pt 
   TProfile *hv22pt[ncent][npt][npid];    // profile <<2'>> from 2nd Q-Cumulants
   TProfile *hv24pt[ncent][npt][npid];    // profile <<4'>> from 4th Q-Cumulants
   TProfile *hcov24[ncent][npid];       // <2>*<4>
@@ -678,59 +633,56 @@ void v2plot_integrated_flow(){
   TProfile *hv2EP[ncent][npt][npid];	// elliptic flow from EP method
   TProfile *hv22EP[ncent][npid];      
   TProfile *HRes[ncent];
-
+  // TProfile *hv2MC[ncent]; // profile for MC integrated v2
   TProfile *hv22Gap[ncent][npid];
   TProfile *hv22ptGap[ncent][npt][npid];
   // Get histograms
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    
+    // hv22EP[icent] = (TProfile*)inFile->Get(Form("hv22EP_%i",icent));
     // hv2MC[icent] = (TProfile*)inFile->Get(Form("hv2MC_%i",icent));
     HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
+    // hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
+    // hv24[icent] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
+    // hcov24[icent] = (TProfile*)inFile->Get(Form("hcov24_%i",icent));
+    for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+      for (int id=0;id<npid;id++){
+        hv2EP[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2EP_%i_%i_%i",icent,ipt,id));
+        hPT[icent][ipt][id]=(TProfile*)inFile->Get(Form("hPT_%i_%i_%i",icent,ipt,id));
+        hv22pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22pt_%i_%i_%i",icent,ipt,id));
+        hv24pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv24pt_%i_%i_%i",icent,ipt,id));
+        // hcov22prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov22prime_%i_%i_%i",icent,ipt,id));
+        // hcov24prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov24prime_%i_%i_%i",icent,ipt,id));
+        // hcov42prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov42prime_%i_%i_%i",icent,ipt,id));
+        // hcov44prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov44prime_%i_%i_%i",icent,ipt,id));
+        hcov2prime4prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
+        hv22ptGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22ptGap_%i_%i_%i",icent,ipt,id));
+      }
+    } // end of loop over pt bin
+  } // end of loop over centrality classes
+  // inFile -> Close();
+  for (int icent=0;icent<ncent;icent++){
     for (int id=0;id<npid;id++){
-      hv22EP[icent][id] = (TProfile*)inFile->Get(Form("hv22EP_%i_%i",icent,id));
-      hv22[icent][id] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
-      hv24[icent][id] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
-      hcov24[icent][id] = (TProfile*)inFile->Get(Form("hcov24_%i",icent));
-      hv22Gap[icent][id] = (TProfile*)inFile->Get(Form("hv22Gap_%i",icent));
+      hv22EP[icent][id] = (TProfile*) hv2EP[icent][0][id]->Clone();
+      hv22[icent][id] = (TProfile*) hv22pt[icent][0][id]->Clone();
+      hv24[icent][id] = (TProfile*) hv24pt[icent][0][id]->Clone();
+      hcov24[icent][id] = (TProfile*) hcov2prime4prime[icent][0][id]->Clone();
+      for (int ipt=1;ipt<npt;ipt++){
+        hv22EP[icent][id]->Add(hv2EP[icent][ipt][id]);
+        hv22[icent][id]->Add(hv22pt[icent][ipt][id]);
+        hv24[icent][id]->Add(hv24pt[icent][ipt][id]);
+        hcov24[icent][id]->Add(hcov2prime4prime[icent][ipt][id]);
+        hv22Gap[icent][id]->Add(hv22ptGap[icent][ipt][id]);
+      }
     }
-  //   for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-  //     for (int id=0;id<npid;id++){
-  //       hv2EP[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2EP_%i_%i_%i",icent,ipt,id));
-  //       hv22pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22pt_%i_%i_%i",icent,ipt,id));
-  //       hv24pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv24pt_%i_%i_%i",icent,ipt,id));
-  //       hcov22prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov22prime_%i_%i_%i",icent,ipt,id));
-  //       hcov24prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov24prime_%i_%i_%i",icent,ipt,id));
-  //       hcov42prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov42prime_%i_%i_%i",icent,ipt,id));
-  //       hcov44prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov44prime_%i_%i_%i",icent,ipt,id));
-  //       hcov2prime4prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
-  //       hv22ptGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22ptGap_%i_%i_%i",icent,ipt,id));
-  //     }
-  //   } // end of loop over pt bin
-  // } // end of loop over centrality classes
-
-  // for (int icent=0;icent<ncent;icent++){
-  //   for (int id=0;id<npid;id++){
-  //     hv22EP[icent][id] = (TProfile*) hv2EP[icent][0][id]->Clone();
-  //     hv22[icent][id] = (TProfile*) hv22pt[icent][0][id]->Clone();
-  //     hv24[icent][id] = (TProfile*) hv24pt[icent][0][id]->Clone();
-  //     hcov24[icent][id] = (TProfile*) hcov2prime4prime[icent][0][id]->Clone();
-  //     for (int ipt=1;ipt<npt;ipt++){
-  //       hv22EP[icent][id]->Add(hv2EP[icent][ipt][id]);
-  //       hv22[icent][id]->Add(hv22pt[icent][ipt][id]);
-  //       hv24[icent][id]->Add(hv24pt[icent][ipt][id]);
-  //       hcov24[icent][id]->Add(hcov2prime4prime[icent][ipt][id]);
-  //       hv22Gap[icent][id]->Add(hv22ptGap[icent][ipt][id]);
-  //     }
-  //   }
   }
   if (bMergeCharged){
     for (int icent=0;icent<ncent;icent++){
       for (int ipt=1;ipt<npt;ipt++){
         for (int id=0;id<npid/2;id++){
           hv22EP[icent][id]->Add(hv22EP[icent][id+4]);
-          // hv22[icent][id]->Add(hv22[icent][id+4]);
-          // hv24[icent][id]->Add(hv24[icent][id+4]);
-          // hcov24[icent][id]->Add(hcov24[icent][id+4]);
+          hv22[icent][id]->Add(hv22[icent][id+4]);
+          hv24[icent][id]->Add(hv24[icent][id+4]);
+          hcov24[icent][id]->Add(hcov24[icent][id+4]);
         }
       }
     }  
@@ -758,18 +710,18 @@ void v2plot_integrated_flow(){
       vV24.push_back(v24); // not in used
       eV24.push_back( sqrt( 1./pow(v24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) ) );
   
-      // vV22int.push_back(prV22int[icent][id]->GetBinContent(1));
-      // vV24int.push_back(prV24int[icent][id]->GetBinContent(1));
-      // eV22int.push_back(prV22int[icent][id]->GetBinError(1)); // not in used
-      // eV24int.push_back(prV24int[icent][id]->GetBinError(1)); // not in used
+      vV22int.push_back(prV22int[icent][id]->GetBinContent(1));
+      vV24int.push_back(prV24int[icent][id]->GetBinContent(1));
+      eV22int.push_back(prV22int[icent][id]->GetBinError(1)); // not in used
+      eV24int.push_back(prV24int[icent][id]->GetBinError(1)); // not in used
       // 2QC-gapped
-      // vV22Gapint.push_back(prV22intGap[icent][id]->GetBinContent(1));
+      vV22Gapint.push_back(prV22intGap[icent][id]->GetBinContent(1));
       term cor2Gap = term(hv22Gap[icent][id]);
       vV22Gap.push_back(sqrt(cor2Gap.mVal)); // not in used
       eV22Gap.push_back(sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE));
     }
     
-    grIntFlowVsCent[0][id] = new TGraphErrors(ncent,bin_cent,&vV22[0],bin_centE,&eV22[0]);
+    grIntFlowVsCent[0][id] = new TGraphErrors(ncent,bin_cent,&vV22int[0],bin_centE,&eV22[0]);
     grIntFlowVsCent[0][id] -> SetMarkerColor(kRed);
     grIntFlowVsCent[0][id] -> SetMarkerStyle(marker[0]); // 25
 
@@ -797,7 +749,7 @@ void v2plot_integrated_flow(){
     outFile -> cd();
     for (int imeth=0; imeth<nmethod; imeth++){
       grIntFlowVsCent[imeth][id] -> SetTitle(grTitle[imeth]);
-      if (id == 0) grIntFlowVsCent[imeth][id] -> Write(Form("grRF_%i_%i",imeth,id));
+      grIntFlowVsCent[imeth][id] -> Write(Form("grRF_%i_%i",imeth,id));
     }
 
 
@@ -813,11 +765,10 @@ void v2plot_integrated_flow(){
                                     coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
                                     level, pidFancyNames.at(id).Data());
     can[id] -> SetName(pidNames.at(id).Data());
-    // we can extract only v2 vs cent for charged hadrons !
-    if (id == 0) can[id] -> SaveAs(Form("../%s/%sV2vsCent.png",outDirName.Data(),pidNames.at(id).Data()));
+    can[id] -> SaveAs(Form("../%s/%sV2vsCent.png",outDirName.Data(),pidNames.at(id).Data()));
   } // end of loop over particle ID
 }
-void v2plot(){
+void v2plot_Reco_v22gapped_DCA(){
   CalStatErrCent1040();
   if (bMergeCharged){
     pidNames.clear();

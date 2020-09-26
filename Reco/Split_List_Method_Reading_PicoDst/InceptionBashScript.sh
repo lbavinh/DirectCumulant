@@ -2,11 +2,11 @@
 
 #
 # Specify working directory
-#$ -wd /weekly/$USER/lbavinh/Split_List_PicoDst/
+#$ -wd /weekly/$USER/lbavinh/readPicoDst
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
-#$ -N Cumulants_UrQMD_7.7GeV
+#$ -N Flow
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job
@@ -14,20 +14,18 @@
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=01:30:00
 # Specify job array range (how many jobs will be created
-#$ -t 1-396
+#$ -t 1-504
 # Specify directory where output and error logs from SGE will be stored
-#$ -o /weekly/$USER/lbavinh/Split_List_PicoDst/OUT/log/
-#$ -e /weekly/$USER/lbavinh/Split_List_PicoDst/OUT/log/
+#$ -o /dev/null
+#$ -e /dev/null
 #
 
-# ${JOB_ID} - Id of the job array (one for all jobs)
-# ${SGE_TASK_ID} - id of the element of the job array
-# SGE option "-t 1-N" tells array range. It will create an array
-#     of N jobs with ${JOB_ID}_1, ${JOB_ID}_2, ..., ${JOB_ID}_N
-
+export energy=11.5
+export model=Reco_UrQMD
 #Main directory
-export MAIN_DIR=/weekly/$USER/lbavinh/Split_List_PicoDst
-export FILELIST=${MAIN_DIR}/split/runlist.list
+
+export MAIN_DIR=/weekly/$USER/lbavinh/readPicoDst
+export FILELIST=${MAIN_DIR}/split/runlistSGE_${model}_${energy}.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
@@ -46,7 +44,7 @@ cp $MAIN_DIR/readPicoDst.C $TMP
 
 # Set correct environment variables (needed version of root)
 source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh
-source /weekly/parfenov/Soft/PicoDst/build/setPicoDst.sh 
+source /weekly/lbavinh/lbavinh/PicoDst/build/setPicoDst.sh
 echo "Input arguments (Job Id = ${JOB_ID}, Task ID = ${SGE_TASK_ID}):" &>> $LOG
 echo "Main directory:           ${MAIN_DIR}" &>> $LOG
 echo "Input file:    $IN_FILE"  &>> $LOG

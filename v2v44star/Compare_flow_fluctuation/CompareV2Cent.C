@@ -5,14 +5,14 @@ void CompareV2Cent(){
   const int nmethod = 4; // v22, v24, v2(eta-sub), v22(eta-gap)
   const int npid = 4; // CH, pions, kaons, protons
   const float minpt = 0.;
-  const float maxpt = 72.;
-  const float maxV2Ratio = 1.23;
-  const float minV2Ratio = 0.57;
+  const float maxpt = 64.;
+  const float maxV2Ratio = 1.58;
+  const float minV2Ratio = 0.42;
   const float leg_coordinate[4]={0.28,0.7,0.6,0.99};
   const float labelSize = 0.05;
   // flags
   const int method = 3; // compare v2{4} with: 0: v22, 2: v2{eta-sub}, 3: v2{2,eta-gap}
-  const int pid = 3; // v2 for: 0: CH; 1: Pions; 2: Kaons; 3: (Anti)protons
+  const int pid = 1; // v2 for: 0: CH; 1: Pions; 2: Kaons; 3: (Anti)protons
   // some stuffs
   TString energy[nenergy]={"4.5","7.7","11.5"};
   TString leg_header[nenergy] = {"4.5 GeV","7.7 GeV","11.5 GeV"};

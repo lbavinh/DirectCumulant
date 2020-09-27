@@ -19,7 +19,7 @@ double GetRes(double _chi, double _harm){
   double arg = _chi * _chi / 4.;
   double order1 = (_harm - 1) / 2.;
   double order2 = (_harm + 1) / 2.;
-  double res = con * _chi * exp(-arg) * (ROOT::Math::cyl_bessel_i(order1, arg) + ROOT::Math::cyl_bessel_i(order2, arg)); // т.к. мы суммировали справый и левый эвейнт плейн
+  double res = con * _chi * exp(-arg) * (ROOT::Math::cyl_bessel_i(order1, arg) + ROOT::Math::cyl_bessel_i(order2, arg));
   return res;
 }
 //E----------------------------------------------------------------
@@ -53,15 +53,14 @@ gSystem->Load(libMathMore.so);
 //TFile *file = new TFile("./out/res_11gev.root");
 //TFile *file = new TFile("./out/res_7gev_new.root");
 //TFile *file = new TFile("./OUT/7gev/urqmd_flow_7gev_check.root");
-//TFile *file = new TFile("./OUT/urqmd/11.5gev/urqmd_res_11gev_STAR_check.root");
-TFile *file = new TFile("./OUT/urqmd/7.7gev/1666386/res.root");
+TFile *file = new TFile("./OUT/urqmd/11.5gev/urqmd_res_11gev_STAR_check.root");
 //TFile *file = new TFile("./OUT/ampt/7.7gev_melt_6mb/res_ampt_7.7gev.root");
   
 char hname1[800];
 char title[800];
 
 
-const int ncent = 6;
+const int ncent = 8;
  
  float res2tpcEW[ncent];
  float res2rxnEW[ncent]; 
@@ -70,7 +69,7 @@ const int ncent = 6;
  float res2fhcalFull[ncent];
  float res1fhcalFull[ncent];
 
-float cent[ncent]={5,15,25,35,45,55};
+float cent[ncent]={5,15,25,35,45,55,65,75};
 float eres[ncent];
 float ecent[ncent];
 
@@ -100,9 +99,9 @@ TH1F *h6 = (TH1F*) file->Get(hname1);
 res = sqrt(h6->GetMean());
 chi = GetChi(res,1.,50);
 chiF = chi;//TMath::Sqrt(2)*chi;
-resF = GetRes(chiF,2.); // численное решение, where k=2: 2-th harmonic
+resF = GetRes(chiF,2.);
 res2fhcalEW[ic]=resF;
-chiF = TMath::Sqrt(2)*chi; // симметричная система
+chiF = TMath::Sqrt(2)*chi;
 resF = GetRes(chiF,2.);
 res2fhcalFull[ic]=resF;
 
@@ -124,37 +123,37 @@ res1fhcalFull[ic]=resF;
  }
  cout << endl;
  cout << "Resolution for the analysis:" << endl;
- cout << "float res2tpc[" << ncent << "] = {";
+ cout << "float res2tpc[8] = {";
  for (int ic=0; ic<ncent; ic++) {
    cout << res2tpcEW[ic];
    if (ic < ncent-1) cout << ",";
    else cout << "};" << endl;
  }
- cout << "float res2rxn[" << ncent << "] = {";
+ cout << "float res2rxn[8] = {";
  for (int ic=0; ic<ncent; ic++) {
    cout << res2rxnEW[ic];
    if (ic < ncent-1) cout << ",";
    else cout << "};" << endl;
  }
- cout << "float res2bbc[" << ncent << "] = {";
+ cout << "float res2bbc[8] = {";
  for (int ic=0; ic<ncent; ic++) {
    cout << res2bbcEW[ic];
    if (ic < ncent-1) cout << ",";
    else cout << "};" << endl;
  }
- cout << "float res2fhcal[" << ncent << "] = {";
+ cout << "float res2fhcal[8] = {";
  for (int ic=0; ic<ncent; ic++) {
    cout << res2fhcalEW[ic];
    if (ic < ncent-1) cout << ",";
    else cout << "};" << endl;
  }
- cout << "float res2fhcalFull[" << ncent << "] = {";
+ cout << "float res2fhcalFull[8] = {";
  for (int ic=0; ic<ncent; ic++) {
    cout << res2fhcalFull[ic];
    if (ic < ncent-1) cout << ",";
    else cout << "};" << endl;
  }
- cout << "float res1fhcalFull[" << ncent << "] = {";
+ cout << "float res1fhcalFull[8] = {";
  for (int ic=0; ic<ncent; ic++) {
    cout << res1fhcalFull[ic];
    if (ic < ncent-1) cout << ",";

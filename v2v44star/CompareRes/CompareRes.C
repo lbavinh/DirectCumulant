@@ -5,9 +5,9 @@ void CompareRes(){
   const int ncent = 8;
   const float mincent = -1;
   const float maxcent = 63.;
-  const float maxRes2 = 0.32;
+  const float maxRes2 = 0.55;
   const float minRes2 = 0.0;
-  const float leg_coordinate[4]={0.05,0.7,0.35,0.99};
+  const float leg_coordinate[4]={0.05,0.6,0.35,0.99};
   const float labelSize = 0.06;
   // const TString leg_header[2] = {"UrQMD,20-30%","SMASH,20-30%"};
   const TString leg_header[nenergy] = {"7.7 GeV","11.5 GeV"};
@@ -26,7 +26,8 @@ void CompareRes(){
       input[ien][imod] = new TFile(Form("%s_%sGeV.root",model[imod].Data(),energy[ien].Data()),"read");
       for (int icent=0;icent<ncent;icent++){
         prRes = (TProfile*)input[ien][imod]->Get(Form("HRes_%i",icent));
-        res2[icent] = prRes -> GetBinContent(1);
+        res2[icent] = sqrt(prRes -> GetBinContent(1));
+        // res2[icent] = prRes -> GetBinContent(1);
         res2e[icent] = prRes -> GetBinError(1);
       }
       grRes[ien][imod] = new TGraphErrors(ncent,cent_bin,res2,cent_bin_e,res2e);
@@ -83,17 +84,17 @@ void CompareRes(){
   TLegend *leg_pt = new TLegend(leg_coordinate[0]+0.4,leg_coordinate[1]+0.2,leg_coordinate[2],leg_coordinate[3]);
   leg_pt->SetBorderSize(0);
   leg_pt->SetHeader(leg_header[0].Data(),"C");
+  
   leg_pt->SetTextSize(0.05);
-  leg_pt->SetTextAlign(13);
+
   for (int imod=0;imod<nmodel;imod++){
     // grRes[0][imod]->Draw("P");
+    leg_pt->AddEntry(grRes[1][imod],Form("%s",grRes[1][imod]->GetTitle()),"p");
   }
   leg_pt->Draw();
   for (int imod=0;imod<nmodel;imod++){
     grRes[0][imod]->Draw("P");
   }
-  // leg_pt->AddEntry(grRatioV2STAR[0],Form("%s",grRatioV2STAR[0]->GetTitle()),"p");
-  // grRatioV2STAR[0]->Draw("P");
 
   leg_pt->Draw();
   TLine lineOne;
@@ -113,63 +114,15 @@ void CompareRes(){
   leg_pt2->SetBorderSize(0);
   leg_pt2->SetHeader(leg_header[1].Data(),"C");
   leg_pt2->SetTextSize(0.05);
-  leg_pt2->SetTextAlign(13);
+
   for (int imod=0;imod<nmodel;imod++){
     grRes[1][imod]->Draw("P");
-    leg_pt2->AddEntry(grRes[1][imod],Form("%s",grRes[1][imod]->GetTitle()),"p");
+    leg_pt2->AddEntry("","","");
   }
-  // leg_pt2->AddEntry(grRatioV2STAR[0],Form("%s",grRatioV2STAR[0]->GetTitle()),"p");
-  // grRatioV2STAR[0]->Draw("P");
-
   leg_pt2->Draw();
   lineOne.DrawLine(mincent,1.,maxcent,1.);
-  // //=================================================================================
-    // can->cd(3);
-    // TH2F *h3 = new TH2F("h2",";centrality [%];Res#Psi_{2}",1,mincent,maxcent,1,minRes2,maxRes2);
-    // h3->GetXaxis()->SetLabelSize(labelSize);
-    // h3->GetYaxis()->SetLabelSize(labelSize);
-    // h3->GetXaxis()->SetTitleSize(labelSize);
-    // h3->GetYaxis()->SetTitleSize(labelSize);
-    // h3->GetYaxis()->SetNdivisions(504);
-    // h3->GetYaxis()->SetTitleOffset(0.5);
-    // h3->Draw();
-    // TLegend *leg_pt3 = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
-    // leg_pt3->SetBorderSize(0);
-    // leg_pt3->SetHeader(leg_header[2].Data(),"C");
-    // leg_pt3->SetTextSize(0.05);
-    // for (int imod=0;imod<nmodel;imod++){
-    //   grRes[2][imod]->Draw("P");
-    //   leg_pt3->AddEntry(grRes[2][imod],Form("%s",grRes[2][imod]->GetTitle()),"p");
-    //   leg_pt3->SetTextSize(0.05);
-    // }
 
-
-    // leg_pt3->Draw();
-    // lineOne.DrawLine(mincent,1.,maxcent,1.);
-  // //=================================================================================
-  // can->cd(4);
-  // TH2F *h4 = new TH2F("h4",";centrality [%];Res#Psi_{2}",1,mincent,maxcent,1,minRes2,maxRes2);
-  // h4->GetXaxis()->SetLabelSize(labelSize);
-  // h4->GetYaxis()->SetLabelSize(labelSize);
-  // h4->GetXaxis()->SetTitleSize(labelSize);
-  // h4->GetYaxis()->SetTitleSize(labelSize);
-  // h4->GetYaxis()->SetNdivisions(504);
-  // h4->GetYaxis()->SetTitleOffset(0.5);
-  // h4->Draw();
-  // TLegend *leg_pt4 = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
-  // leg_pt4->SetBorderSize(0);
-  // leg_pt4->SetHeader(leg_header[3].Data(),"C");
-  // leg_pt4->SetTextSize(0.05);
-  // for (int imod=0;imod<nmodel;imod++){
-  //   // grRes[3][imod]->Draw("P");
-  //   // leg_pt4->AddEntry(grRes[3][imod],Form("%s",grRes[3][imod]->GetTitle()),"p");
-  // }
-  // // leg_pt4->AddEntry(grRatioV2STAR[2],Form("%s",grRatioV2STAR[2]->GetTitle()),"p");
-  // grRatioV2STAR[2]->Draw("P");
-
-  // leg_pt4->Draw();
-  // lineOne.DrawLine(mincent,1.,maxcent,1.);
-  can->SaveAs("ratiov2cent_vsSTAR_3ener_v24_v22gap_merge.eps");
+  can->SaveAs("Res2.eps");
 
 
 }

@@ -51,10 +51,10 @@ static const float StarProtonPtMax = 2.0;
 static const float StarPionPtMin = 0.2;
 static const float StarPionPMax = 1.6;
 
-static const int npt = 10; // 0.5 - 3.6 GeV/c - number of pT bins
-static const double bin_w[npt]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8};
+static const int npt = 11; // 0.5 - 3.6 GeV/c - number of pT bins
+static const double bin_w[npt]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8,4.0};
 
-static const float maxpt = 2.8; // max pt
+static const float maxpt = 4.0; // max pt
 static const float minpt = 0.2; // min pt
 
 
@@ -458,7 +458,7 @@ void FlowANA::ana_event(int jentry, int ientry) {
 
   */
 
- //if(ientry%100000==0) cout << ientry <<endl;// event counter
+ if(ientry%100000==0) cout << ientry <<endl;// event counter
 
 
 
@@ -497,7 +497,7 @@ double Nch_R2 = 0;
   float ch;
   if (TDatabasePDG::Instance()->GetParticle(pdg[itrk]))
     ch = 1./3.*TDatabasePDG::Instance()->GetParticle(pdg[itrk])->Charge();
-  else ch = 0.;
+  else ch = -999.;
 	//	phi += phiRP;
 	// float px = pt * cos(phi);
 	//	float py = pt * sin(phi);
@@ -507,7 +507,7 @@ double Nch_R2 = 0;
             h2eta->Fill(eta);
             h2phi->Fill(oldphi);
             h2phis->Fill(phi);
-if (ch==0) continue;
+
 	    
         if( pt>0.1 && fabs(eta)<0.5 ) refMult1++;
 	      if( pt>0.0 && fabs(eta)<0.5 ) refMult2++;
@@ -515,15 +515,15 @@ if (ch==0) continue;
         if(eta >= -4.0 && eta <= -3.1) Nch_L++;
 
        
-        if( pt<0.2  || pt>2.8 ) continue;
+        //if( pt<0.15  || pt>2. ) continue;
         //if ( pt<MpdPtMin || pt>MpdPtMax ) continue;
-        //if ( pt<StarPtMin || pt>StarPtMax ) continue;
+        if ( pt<StarPtMin || pt>StarPtMax ) continue;
 
         int fEta = -1;
 
 	// TPC plane
-	if( eta>-2.5 && eta<-0.1 ) fEta = 0; // TPC East
-	if( eta>0.1 && eta<2.5 )   fEta = 1; // TPC West
+	if( eta>-1 && eta<-0.1 ) fEta = 0; // TPC East
+	if( eta>0.1 && eta<1 )   fEta = 1; // TPC West
 	if( fabs(eta)<0.1 )      fEta = 2; // TPC Mid
 
       	// RXN plane
@@ -539,15 +539,15 @@ if (ch==0) continue;
 	if( eta>2.0 && eta<5.0  )     fEta = 8; //West
 	
 	// BBC plane - first harmonic
-	// if( eta>-5.0 && eta<-3.0 )      fEta = 7; //East
-	// if( eta>3.0 && eta<5.0  )     fEta = 8; //West
+	//if( eta>-5.0 && eta<-3.0 )      fEta = 7; //East
+	//if( eta>3.0 && eta<5.0  )     fEta = 8; //West
 
 	// if( fabs(eta)>1.1 && fabs(eta)<2.9 )     fEta = 7; // RXN combined
         //if( fabs(eta)>3.0 && fabs(eta)<5.0 )     fEta = 8; // BBC combined
 
   if( fEta>-1. ) H_Phi[0][fEta]->Fill( phi );
 	
-  //if ( fEta < 3 && (ch == 0 || ch == -999.)) continue;
+  if ( fEta < 3 && (ch == 0 || ch == -999.)) continue;
 
            if( fEta>-1. ){
 			for( int ith=0; ith<3; ith++ ){
@@ -556,7 +556,7 @@ if (ch==0) continue;
 					sumQxy[ith][fEta][1] += pt * sin( (ith+2.0) * phi );
 				}else{
           if (fEta == 7){
-            sumQxy[ith][fEta][0] += -1. * pt * cos( (ith+1.0) * phi ); // отсиметризировать т.к. v1: нечетная по отношению с y(eta), а v2: чеиная
+            sumQxy[ith][fEta][0] += -1. * pt * cos( (ith+1.0) * phi );
             sumQxy[ith][fEta][1] += -1. * pt * sin( (ith+1.0) * phi );
           }
           if (fEta == 8){
@@ -618,7 +618,7 @@ if (ch==0) continue;
 	float fQvY[3][9]; //[ith][eta]
 	for( int ith=0; ith<3; ith++ ){ // flow harmonic loop
 	  for( int ieta=0; ieta<9; ieta++ ){ // ep detector gap 
-	    if( multQv[0]+multQv[1]>3 ){ // multiplicity > 5
+	    if( multQv[ieta]>5 ){ // multiplicity > 5
 			if( ieta<7 )
 			{
 				fEP[ith][ieta] = atan2( sumQxy[ith][ieta][1], sumQxy[ith][ieta][0] ) / ( ith + 2.0 );
@@ -642,7 +642,7 @@ if (ch==0) continue;
 	  } // end of loop on EP detectors
 	} // end of flow harmonic loop
   fhcalFullEP_x = sumQxy[0][7][0] + sumQxy[0][8][0];
-  fhcalFullEP_y = sumQxy[0][7][1] + sumQxy[0][8][1]; // полный Q-вектор (справый и левый)
+  fhcalFullEP_y = sumQxy[0][7][1] + sumQxy[0][8][1];
   fhcalFullEP_phi = atan2( fhcalFullEP_y, fhcalFullEP_x );
 
 
@@ -748,7 +748,7 @@ if(fCent>=0&&fCent<ncent){
   float ch;
   if (TDatabasePDG::Instance()->GetParticle(pdg[itrk]))
     ch = 1./3.*TDatabasePDG::Instance()->GetParticle(pdg[itrk])->Charge();
-  else ch = 0.;
+  else ch = -999.;
         // phi += phiRP;
 	//  float px = pt * cos(phi);
 	//	float py = pt * sin(phi);
@@ -756,10 +756,10 @@ if(fCent>=0&&fCent<ncent){
 
 
 	
-	if (ch==0) continue; 
-        if( pt<0.2  || pt>2.8 ) continue;
+
+        //if( pt<0.15  || pt>4.0 ) continue;
         //if ( pt<MpdPtMin || pt>MpdPtMax ) continue;
-        //if ( pt<StarPtMin || pt>StarPtMax1 ) continue;
+        if ( pt<StarPtMin || pt>StarPtMax1 ) continue;
         //if ( eta<MpdEtaMin || eta>MpdEtaMax ) continue;
 				if( ch == 0 || ch == -999. ) continue;
 
@@ -778,7 +778,7 @@ if(fCent>=0&&fCent<ncent){
   float v2RP=-999.0;
   float v1RP=-999.0;
 
-	if(eta>0.1 && eta<2.5){
+	if(eta>StarEtaGap&&eta<StarEtaMax){
          v2tpc = cos(2.0 * (phi-fEP[0][0]) )/res2tpc[fCent];
          v2rxn = cos(2.0 * (phi-fEP[0][3]) )/res2rxn[fCent];
          v2bbc = cos(2.0 * (phi-fEP[0][5]) )/res2bbc[fCent];
@@ -790,7 +790,7 @@ if(fCent>=0&&fCent<ncent){
          
 	}
 
-        if(eta<-0.1 && eta>-2.5){
+        if(eta<-1.*StarEtaGap&&eta>StarEtaMin){
          v2tpc = cos(2.0 * (phi-fEP[0][1]) )/res2tpc[fCent];
          v2rxn = cos(2.0 * (phi-fEP[0][4]) )/res2rxn[fCent];
          v2bbc = cos(2.0 * (phi-fEP[0][6]) )/res2bbc[fCent];
@@ -805,7 +805,7 @@ if(fCent>=0&&fCent<ncent){
         
 	
 
-        if(fabs(eta)>0.1 && fabs(eta)<2.5){
+        if(fabs(eta)>StarEtaGap&&fabs(eta)<StarEtaMax){
 	  hv2[0][fCent][ipt][0]->Fill(v2tpc);
           hv2[1][fCent][ipt][0]->Fill(v2rxn);
           hv2[2][fCent][ipt][0]->Fill(v2bbc);
@@ -1125,6 +1125,4 @@ int FlowANA::GetCentrality10_BimpExp( float bimp ){
 
 	return fcent;
 }
-
-// /nica/mpd21/parfenov/Soft/FlowANA 
 

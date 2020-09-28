@@ -642,7 +642,7 @@ if (ch==0) continue;
 	  } // end of loop on EP detectors
 	} // end of flow harmonic loop
   fhcalFullEP_x = sumQxy[0][7][0] + sumQxy[0][8][0];
-  fhcalFullEP_y = sumQxy[0][7][1] + sumQxy[0][8][1]; // полный Q-вектор (справый и левый)
+  fhcalFullEP_y = sumQxy[0][7][1] + sumQxy[0][8][1]; // полный Q-вектор (правый и левый)
   fhcalFullEP_phi = atan2( fhcalFullEP_y, fhcalFullEP_x );
 
 

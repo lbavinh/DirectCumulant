@@ -51,10 +51,10 @@ static const float StarProtonPtMax = 2.0;
 static const float StarPionPtMin = 0.2;
 static const float StarPionPMax = 1.6;
 
-static const int npt = 11; // 0.5 - 3.6 GeV/c - number of pT bins
-static const double bin_w[npt]={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8,4.0};
+static const int npt = 10; // 0.5 - 3.6 GeV/c - number of pT bins
+static const double bin_w[npt]={0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.};
 
-static const float maxpt = 4.0; // max pt
+static const float maxpt = 3.0; // max pt
 static const float minpt = 0.2; // min pt
 
 
@@ -497,17 +497,16 @@ double Nch_R2 = 0;
   float ch;
   if (TDatabasePDG::Instance()->GetParticle(pdg[itrk]))
     ch = 1./3.*TDatabasePDG::Instance()->GetParticle(pdg[itrk])->Charge();
-  else ch = -999.;
+  else ch = 0.;
 	//	phi += phiRP;
 	// float px = pt * cos(phi);
 	//	float py = pt * sin(phi);
 	//	pt  = sqrt( TMath::Power(px, 2.0 ) + TMath::Power(py, 2.0 ) );
-
+  if (ch==0) continue;
             h2pt->Fill(pt);
             h2eta->Fill(eta);
             h2phi->Fill(oldphi);
             h2phis->Fill(phi);
-
 	    
         if( pt>0.1 && fabs(eta)<0.5 ) refMult1++;
 	      if( pt>0.0 && fabs(eta)<0.5 ) refMult2++;
@@ -515,15 +514,15 @@ double Nch_R2 = 0;
         if(eta >= -4.0 && eta <= -3.1) Nch_L++;
 
        
-        //if( pt<0.15  || pt>2. ) continue;
+        if( pt<minpt  || pt>maxpt ) continue;
         //if ( pt<MpdPtMin || pt>MpdPtMax ) continue;
-        if ( pt<StarPtMin || pt>StarPtMax ) continue;
+        // if ( pt<StarPtMin || pt>StarPtMax ) continue;
 
         int fEta = -1;
 
 	// TPC plane
-	if( eta>-1 && eta<-0.1 ) fEta = 0; // TPC East
-	if( eta>0.1 && eta<1 )   fEta = 1; // TPC West
+	if( eta>-1.5 && eta<-StarEtaGap ) fEta = 0; // TPC East
+	if( eta>StarEtaGap && eta<1.5 )   fEta = 1; // TPC West
 	if( fabs(eta)<0.1 )      fEta = 2; // TPC Mid
 
       	// RXN plane
@@ -547,7 +546,7 @@ double Nch_R2 = 0;
 
   if( fEta>-1. ) H_Phi[0][fEta]->Fill( phi );
 	
-  if ( fEta < 3 && (ch == 0 || ch == -999.)) continue;
+  // if ( fEta < 3 && (ch == 0 || ch == -999.)) continue;
 
            if( fEta>-1. ){
 			for( int ith=0; ith<3; ith++ ){
@@ -556,7 +555,7 @@ double Nch_R2 = 0;
 					sumQxy[ith][fEta][1] += pt * sin( (ith+2.0) * phi );
 				}else{
           if (fEta == 7){
-            sumQxy[ith][fEta][0] += -1. * pt * cos( (ith+1.0) * phi );
+            sumQxy[ith][fEta][0] += -1. * pt * cos( (ith+1.0) * phi ); // отсиметризировать т.к. v1: нечетная по отношению с y(eta), а v2: четная (интеграл нечетной функции=0 => необходимо отсимметризировать)
             sumQxy[ith][fEta][1] += -1. * pt * sin( (ith+1.0) * phi );
           }
           if (fEta == 8){
@@ -642,7 +641,7 @@ double Nch_R2 = 0;
 	  } // end of loop on EP detectors
 	} // end of flow harmonic loop
   fhcalFullEP_x = sumQxy[0][7][0] + sumQxy[0][8][0];
-  fhcalFullEP_y = sumQxy[0][7][1] + sumQxy[0][8][1];
+  fhcalFullEP_y = sumQxy[0][7][1] + sumQxy[0][8][1]; // полный Q-вектор (правый и левый)
   fhcalFullEP_phi = atan2( fhcalFullEP_y, fhcalFullEP_x );
 
 
@@ -718,12 +717,19 @@ double Nch_R2 = 0;
 
 // 7.7 gev
 //
-float res2tpc[8] = {0.250758,0.341655,0.339673,0.296653,0.240175,0.189697,0.160587,0.159406};
-float res2rxn[8] = {0.21077,0.327015,0.336505,0.297793,0.24667,0.209147,0.201773,0.216606};
-float res2bbc[8] = {0,0,0,0,0,0,0,0};
-float res2fhcal[8] = {0.194149,0.359119,0.379105,0.333656,0.250112,0.169913,0.105051,0.0625883};
-float res2fhcalFull[8] = {0.339758,0.557742,0.580157,0.52799,0.420552,0.302475,0.195652,0.120009};
-float res1fhcalFull[8] = {0.686506,0.838865,0.851029,0.821841,0.751099,0.652581,0.535663,0.425311};
+// float res2tpc[8] = {0.250758,0.341655,0.339673,0.296653,0.240175,0.189697,0.160587,0.159406};
+// float res2rxn[8] = {0.21077,0.327015,0.336505,0.297793,0.24667,0.209147,0.201773,0.216606};
+// float res2bbc[8] = {0,0,0,0,0,0,0,0};
+// float res2fhcal[8] = {0.194149,0.359119,0.379105,0.333656,0.250112,0.169913,0.105051,0.0625883};
+// float res2fhcalFull[8] = {0.339758,0.557742,0.580157,0.52799,0.420552,0.302475,0.195652,0.120009};
+// float res1fhcalFull[8] = {0.686506,0.838865,0.851029,0.821841,0.751099,0.652581,0.535663,0.425311};
+
+float res2tpc[8] = {0.213094,0.312455,0.318353,0.281623,0.227466,0.186141};
+float res2rxn[8] = {0.12361,0.203718,0.203173,0.17206,0.130392,0.0994951};
+float res2bbc[8] = {0,0,0,0,0,0};
+float res2fhcal[8] = {0.0840922,0.167147,0.176745,0.147867,0.103307,0.0624299};
+float res2fhcalFull[8] = {0.158891,0.298131,0.313127,0.26733,0.192636,0.119718};
+float res1fhcalFull[8] = {0.485984,0.648433,0.662575,0.617719,0.531815,0.424818};
 
 if(fCent>=0&&fCent<ncent){
 
@@ -754,12 +760,11 @@ if(fCent>=0&&fCent<ncent){
 	//	float py = pt * sin(phi);
 	//	pt  = sqrt( TMath::Power(px, 2.0 ) + TMath::Power(py, 2.0 ) );
 
-
 	
 
-        //if( pt<0.15  || pt>4.0 ) continue;
+        if( pt<minpt  || pt>maxpt ) continue;
         //if ( pt<MpdPtMin || pt>MpdPtMax ) continue;
-        if ( pt<StarPtMin || pt>StarPtMax1 ) continue;
+        // if ( pt<StarPtMin || pt>StarPtMax1 ) continue;
         //if ( eta<MpdEtaMin || eta>MpdEtaMax ) continue;
 				if( ch == 0 || ch == -999. ) continue;
 
@@ -790,7 +795,7 @@ if(fCent>=0&&fCent<ncent){
          
 	}
 
-        if(eta<-1.*StarEtaGap&&eta>StarEtaMin){
+        if(eta<-1.*StarEtaGap&&eta>MpdEtaMin){
          v2tpc = cos(2.0 * (phi-fEP[0][1]) )/res2tpc[fCent];
          v2rxn = cos(2.0 * (phi-fEP[0][4]) )/res2rxn[fCent];
          v2bbc = cos(2.0 * (phi-fEP[0][6]) )/res2bbc[fCent];
@@ -805,7 +810,7 @@ if(fCent>=0&&fCent<ncent){
         
 	
 
-        if(fabs(eta)>StarEtaGap&&fabs(eta)<StarEtaMax){
+        if(fabs(eta)>StarEtaGap&&fabs(eta)<MpdEtaMax){
 	  hv2[0][fCent][ipt][0]->Fill(v2tpc);
           hv2[1][fCent][ipt][0]->Fill(v2rxn);
           hv2[2][fCent][ipt][0]->Fill(v2bbc);
@@ -1125,4 +1130,6 @@ int FlowANA::GetCentrality10_BimpExp( float bimp ){
 
 	return fcent;
 }
+
+// /nica/mpd21/parfenov/Soft/FlowANA 
 

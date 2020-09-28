@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#
-#$ -wd /nica/mpd21/$USER/Soft/FlowANA/TMP
+# -wd /nica/mpd21/$USER/Soft/FlowANA/TMP
+#$ -wd /weekly/$USER/lbavinh/FlowANA/TMP
 #$ -cwd
 #$ -N flowANA
 #$ -q all.q

@@ -45,11 +45,11 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   static const int ncent = 8; // 0-80%
   static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 
-  static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
-  static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.};
+  static const int npt = 10; // 0.5 - 3.6 GeV/c - number of pT bins
+  static const double bin_pT[npt+1]={0.,0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.};
 
   static const double maxpt = 3.; // max pt
-  static const double minpt = 0.2; // min pt
+  static const double minpt = 0.; // min pt
 
   static const float eta_cut =  1.5;
   static const float eta_gap = 0.05;
@@ -258,7 +258,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       // if (abs(recoTrack->GetDCAy()) > DCAcut) continue; //трек не проходит по DCAy
       // if (abs(recoTrack->GetDCAz()) > DCAcut) continue; //трек не проходит по DCAz
       if (pt < minpt || pt > maxpt || abs(eta)>eta_cut) continue; // track selection
-      if (abs(eta)<eta_gap) continue;
+      // if (abs(eta)<eta_gap) continue;
       // if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
       auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(mcTrack->GetPdg());
       float charge = 1./3.*particle->Charge();

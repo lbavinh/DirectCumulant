@@ -53,14 +53,15 @@ gSystem->Load(libMathMore.so);
 //TFile *file = new TFile("./out/res_11gev.root");
 //TFile *file = new TFile("./out/res_7gev_new.root");
 //TFile *file = new TFile("./OUT/7gev/urqmd_flow_7gev_check.root");
-TFile *file = new TFile("./OUT/urqmd/11.5gev/urqmd_res_11gev_STAR_check.root");
+// TFile *file = new TFile("./OUT/urqmd/11.5gev/urqmd_res_11gev_STAR_check.root");
+TFile *file = new TFile("./OUT/urqmd/7.7gev/res.root","read");
 //TFile *file = new TFile("./OUT/ampt/7.7gev_melt_6mb/res_ampt_7.7gev.root");
   
 char hname1[800];
 char title[800];
 
 
-const int ncent = 8;
+const int ncent = 6;
  
  float res2tpcEW[ncent];
  float res2rxnEW[ncent]; 
@@ -69,7 +70,7 @@ const int ncent = 8;
  float res2fhcalFull[ncent];
  float res1fhcalFull[ncent];
 
-float cent[ncent]={5,15,25,35,45,55,65,75};
+float cent[ncent]={5,15,25,35,45,55};
 float eres[ncent];
 float ecent[ncent];
 

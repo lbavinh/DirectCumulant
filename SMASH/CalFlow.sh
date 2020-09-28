@@ -14,7 +14,7 @@
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=06:30:00
 # Specify job array range (how many jobs will be created: 1000 for 4.5 GeV, 988 for 7.7, 387 for 11.5
-#$ -t 1-1000
+#$ -t 1-953
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null

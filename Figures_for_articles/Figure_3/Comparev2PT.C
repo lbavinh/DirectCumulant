@@ -25,7 +25,7 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   const float labelSize = 0.07;
   const float titleSize = 0.1;
 
-  TString graphTitle[nmethod]={"v_{2}{4}","v_{2}{#eta-sub,EP}","v_{2}{2,|#Delta#eta>0.1|}"};
+  TString graphTitle[nmethod]={"v_{2}{4}","v_{2}{#eta-sub,EP}","v_{2}{2,|#Delta#eta|>0.1}"};
 
   // const pair<float,float> ratio={0.82,1.18};
   TFile *input[nlevel];
@@ -46,13 +46,18 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   for (int imeth=0;imeth<nmethod;imeth++){
     for (int i=0;i<2;i++){
       grV2[i][0][imeth]->SetMarkerStyle(kOpenSquare);
+      grV2[i][0][imeth]->SetMarkerColor(kRed+1);
+      grV2[i][0][imeth]->SetLineColor(kRed+1);
+
       grV2[i][1][imeth]->SetMarkerStyle(kFullCircle);
+      grV2[i][1][imeth]->SetMarkerColor(kBlue+1);
+      grV2[i][1][imeth]->SetLineColor(kBlue+1);
       // grV2[i][2][imeth]->SetMarkerStyle(kFullTriangleUp);
       // grV2[icent][3][imeth]->SetMarkerStyle(kFullCircle); // kOpenCircle
       for (int ilev=0;ilev<nlevel;ilev++){
         grV2[i][ilev][imeth] -> SetMarkerSize(1.9);
-        grV2[i][ilev][imeth] -> SetMarkerColor(1);
-        grV2[i][ilev][imeth] -> SetLineColor(1);
+        // grV2[i][ilev][imeth] -> SetMarkerColor(1);
+        // grV2[i][ilev][imeth] -> SetLineColor(1);
       }
     }
   }
@@ -60,7 +65,6 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
 
   TCanvas *can = new TCanvas("can","",200,10,2000,600);
   can->SetLeftMargin(0.2);
-  can->SetRightMargin(0.01);
   can->SetRightMargin(0.01);
   can->SetBottomMargin(0.2);
   // can->SetFillColor(0);
@@ -72,39 +76,45 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
   gStyle->SetOptStat(0);
-  can->Divide(3,1,0,0);
+  can->Divide(nmethod,1,0,0);
   TH2F *h[nmethod];
-  for (int imeth=0;imeth<nmethod;imeth++){
-    can->cd(imeth+1);
-    if (imeth==0) h[imeth] = new TH2F(Form("pad_%i",imeth+1),Form(";;v_{2}        "),1,minpt,maxpt,1,minV2,maxV2);
-    else if (imeth==1) h[imeth] = new TH2F(Form("pad_%i",imeth+1),Form(";%s         ;v_{2}",xAxisName.Data()),1,minpt,maxpt,1,minV2,maxV2);
-    else h[imeth] = new TH2F(Form("pad_%i",imeth+1),"",1,minpt,maxpt,1,minV2,maxV2);
+  for (int ipad=0;ipad<nmethod;ipad++){
+    can->cd(ipad+1);
+    if (ipad==0) h[ipad] = new TH2F(Form("pad_%i",ipad+1),Form(";;v_{2}        "),1,minpt,maxpt,1,minV2,maxV2);
+    else if (ipad==1) h[ipad] = new TH2F(Form("pad_%i",ipad+1),Form(";%s         ;v_{2}",xAxisName.Data()),1,minpt,maxpt,1,minV2,maxV2);
+    else h[ipad] = new TH2F(Form("pad_%i",ipad+1),"",1,minpt,maxpt,1,minV2,maxV2);
     
-    h[imeth]->GetXaxis()->SetLabelSize(labelSize);
-    h[imeth]->GetXaxis()->SetTitleSize(titleSize);
-    h[imeth]->GetXaxis()->SetNdivisions(504);
-    h[imeth]->GetXaxis()->SetTitleOffset(1.);
+    h[ipad]->GetXaxis()->SetLabelSize(labelSize);
+    h[ipad]->GetXaxis()->SetTitleSize(titleSize);
+    h[ipad]->GetXaxis()->SetLabelFont(42);
+    h[ipad]->GetYaxis()->SetLabelFont(42);
+    h[ipad]->GetXaxis()->SetNdivisions(504);
+    h[ipad]->GetXaxis()->SetTitleOffset(1.);
 
-    h[imeth]->GetYaxis()->SetLabelSize(labelSize);
-    h[imeth]->GetYaxis()->SetTitleSize(titleSize);
-    h[imeth]->GetYaxis()->SetNdivisions(504);
-    h[imeth]->GetYaxis()->SetTitleOffset(1.);
-    h[imeth]->Draw();
+    h[ipad]->GetYaxis()->SetLabelSize(labelSize);
+    h[ipad]->GetYaxis()->SetTitleSize(titleSize);
+    h[ipad]->GetYaxis()->SetNdivisions(504);
+    h[ipad]->GetYaxis()->SetTitleOffset(1.);
+    h[ipad]->Draw();
     
     TLatex tex;
     tex.SetTextFont(42);
     tex.SetTextAlign(33);
     tex.SetTextSize(labelSize);
-    if (imeth==0) {
-      tex.DrawLatex(maxpt*0.95,maxV2*0.9,Form("UrQMD, Au+Au @ #sqrt{s_{NN}}=%s",energy.Data()));
-      tex.DrawLatex(maxpt*0.95,maxV2*0.9-0.02,Form("Charged Hadrons, centrality 10-40%%"));
-      tex.DrawLatex(maxpt*0.95,maxV2*0.9-0.02*2,Form("%s",graphTitle[imeth].Data()));
+    if (ipad==0) {
+      tex.DrawLatex(maxpt*0.95,maxV2*0.9,Form("Au+Au @ #sqrt{s_{NN}}=%s, 10-40%%",energy.Data()));
+      
+      tex.DrawLatex(maxpt*0.95,maxV2*0.9-0.02,Form("%s",graphTitle[0].Data()));
+    }else if (ipad==1) {
+      tex.DrawLatex(maxpt*0.95,maxV2*0.9,Form("UrQMD, charged hadrons"));
+      tex.DrawLatex(maxpt*0.95,maxV2*0.9-0.02,Form("%s",graphTitle[2].Data()));
     }else{
-      tex.DrawLatex(maxpt*0.9,maxV2*0.9,Form("%s",graphTitle[imeth].Data()));
+      tex.DrawLatex(maxpt*0.95,maxV2*0.9-0.02,Form("%s",graphTitle[1].Data()));
     }
-    if (imeth==0){
+    if (ipad==0){
       TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
       leg_pt->SetBorderSize(0);
+      leg_pt->SetTextFont(42);
       leg_pt->SetTextSize(labelSize);
       for (int ilev=0; ilev<nlevel; ilev++){
         leg_pt->AddEntry(grV2[0][ilev][0],legendEntries[ilev].Data(),"p");
@@ -115,9 +125,9 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
     
     for (int ilev=0;ilev<nlevel;ilev++){
 
-        if (imeth==0) grV2[0][ilev][0]->Draw("P"); // PLC PMC // PLC (Palette Line Color) and PMC (Palette Marker Color)
-        if (imeth==1) grV2[0][ilev][1]->Draw("P");
-        if (imeth==2) grV2[0][ilev][2]->Draw("P");
+        if (ipad==0) grV2[0][ilev][0]->Draw("P"); // PLC PMC // PLC (Palette Line Color) and PMC (Palette Marker Color)
+        if (ipad==1) grV2[0][ilev][2]->Draw("P"); // PZ
+        if (ipad==2) grV2[0][ilev][1]->Draw("P");
 
     }
   }

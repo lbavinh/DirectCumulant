@@ -1,16 +1,16 @@
-void Compare_fluctuation(){
-  const int nenergy = 3; // 7.7, 11.5 GeV
+void TwoEnergy(){
+  const int nenergy = 2; // 7.7, 11.5 GeV
   const int nmodel = 3; // Star data, vHLLE+UrQMD, UrQMD, SMASH
   const int nmethod = 4; // v22, v24, v2(eta-sub), v22(eta-gap)
   const float mincent = -1;
   const float maxcent = 63.;
-  const float maxV2Ratio = 1.3;
-  const float minV2Ratio = 0.5;
+  const float maxV2Ratio = 1.58;
+  const float minV2Ratio = 0.42;
   const float leg_coordinate[4]={0.6,0.25,0.9,0.45}; //  0.05,0.7,0.35,0.99
   const float labelSize = 0.07;
   const float titleSize = 0.1;
   TString legendEntries[nmodel]={"STAR data","UrQMD","SMASH"};//(Phys.Rev.C.86.054908)
-  TString energy[nenergy]={"11.5","7.7","4.5"};
+  TString energy[nenergy]={"11.5","7.7"};
   TString model[nmodel]={"STAR data","UrQMD","SMASH"};
   TString xAxisName = {"Centrality [%]"};
   TFile *input[nenergy][nmodel];
@@ -88,10 +88,10 @@ void Compare_fluctuation(){
       grRatioV2[ien][imod]->SetMarkerSize(1.8);
     }
   }
-  TString energySTAR[nenergy-1]={"115","77"};
+  TString energySTAR[nenergy]={"115","77"};
   TGraphErrors *grV2Star[nenergy-1][nmethod-1]; // v22, v24, v2etasub
   TGraphErrors *grRatioV2STAR[nenergy-1]; // "7.7","11.5","19.6"
-  for (int iener=0;iener<nenergy-1;iener++){
+  for (int iener=0;iener<nenergy;iener++){
     FILE *fp1;
     char path1[800];
     sprintf(path1,"./v2methods%sCent.txt",energySTAR[iener].Data());
@@ -138,14 +138,14 @@ void Compare_fluctuation(){
   // cout << "error from here" << endl;
   gROOT->SetStyle("Pub");
   gStyle->SetErrorX(0);
-  TCanvas *can = new TCanvas("can","can",200,10,2000,600);
+  TCanvas *can = new TCanvas("can","can",200,10,1500,600);
   can->SetLeftMargin(0.2);
   can->SetRightMargin(0.01);
   can->SetBottomMargin(0.2);
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
   gStyle->SetOptStat(0);
-  can->Divide(3,1,0,0);
+  can->Divide(2,1,0,0);
   TH2F *h[nenergy];
   for (int ipad=0;ipad<nenergy;ipad++){
     can->cd(ipad+1);
@@ -174,13 +174,10 @@ void Compare_fluctuation(){
       tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Au+Au @"));
       tex.DrawLatex(mincent+10,maxV2Ratio*0.98-0.12,Form("#sqrt{s_{NN}}=%s GeV",energy[ipad].Data()));
     }else if (ipad==1) {
-      tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Charged hadrons"));
-      tex.DrawLatex(mincent+10,maxV2Ratio*0.98-0.12,Form("#sqrt{s_{NN}}=%s GeV",energy[ipad].Data()));
-    }else{
-      tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("0.2<p_{T}^{}<3.0 GeV/c"));
+      tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Charged hadrons, 0.2<p_{T}^{}<3.0 GeV/c"));
       tex.DrawLatex(mincent+10,maxV2Ratio*0.98-0.12,Form("#sqrt{s_{NN}}=%s GeV",energy[ipad].Data()));
     }
-    if (ipad==2){
+    if (ipad==0){
       TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
       leg_pt->SetBorderSize(0);
       leg_pt->SetTextFont(42);
@@ -194,18 +191,16 @@ void Compare_fluctuation(){
     lineOne.SetLineStyle(2);
     lineOne.DrawLine(mincent,1.,maxcent,1.);
 
-    for (int imod=nmodel-1;imod>=1;imod--){
+    for (int imod=nmodel-1;imod>=0;imod--){
 
       if (ipad==0) grRatioV2[0][imod]->Draw("P"); // PLC PMC // PLC (Palette Line Color) and PMC (Palette Marker Color)
       if (ipad==1) grRatioV2[1][imod]->Draw("P"); // PZ
-      if (ipad==2) grRatioV2[2][imod]->Draw("P");
+
 
     }
-    if (ipad!=2) grRatioV2[ipad][0]->Draw("P");
-
   }
 
-  can->SaveAs("Ratiov24v22_v2cent_3ener.png");
+  can->SaveAs("Ratiov24v22_v2cent_2ener.png");
 
 
 }

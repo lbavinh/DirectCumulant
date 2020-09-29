@@ -14,8 +14,8 @@ void GraphFlow(const char *inFileName)
     gStyle->SetPalette(kDarkRainBow);
     gStyle->SetErrorX(0);
     gStyle->SetTitleSize(0.05);
-
-    const double binpt [11] = {0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.8,2.3,2.8,4.0};
+    
+    const double bin_pT[10]={0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.};
     const TString hName [4] = {TString("h^{#pm}"),TString("#pi^{#pm}"),TString("K^{#pm}"),TString("p+#bar{p}")};
     const TString hCent [6] = {TString("0-10%"),TString("10-20%"),TString("20-30%"),TString("30-40%"),TString("40-50%"),TString("50-60%")};
     const std::pair<Double_t,Double_t> v2range[6][4] = {{{-0.023,0.06},{-0.023,0.06},{-0.023,0.06},{-0.023,0.06}},
@@ -121,7 +121,8 @@ void GraphFlow(const char *inFileName)
             hptTmp = (TH1F*) hpt[1][ipt][ipid]->Clone();
             hptTmp->Add(hpt[2][ipt][ipid]);
             hptTmp->Add(hpt[3][ipt][ipid]);
-            vPt.push_back(hptTmp->GetMean());
+            // vPt.push_back(hptTmp->GetMean());
+            vPt.push_back((bin_pT[ipt]+bin_pT[ipt+1])/2.);
             ePt.push_back(0.);
             vV2tpc.push_back(hv22[det1][ipt][ipid]->GetMean());
             eV2tpc.push_back(hv22[det1][ipt][ipid]->GetMeanError());

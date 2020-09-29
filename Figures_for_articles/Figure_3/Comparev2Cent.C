@@ -11,7 +11,7 @@ void Comparev2Cent(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   const float minV2 = 0.0;
 
   TString model = {"UrQMD"};
-  TString energy = {"7.7GeV"};
+  TString energy = {"11.5GeV"};
   TString xAxisName = {"Centrality [%]"};
   TString levelName= (TString) Form("%s, Au+Au@#sqrt{s_{NN}}=%s",model.Data(),energy.Data());
   TString legendEntries[nlevel]={"True","Reco"};
@@ -40,13 +40,17 @@ void Comparev2Cent(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   for (int imeth=0;imeth<nmethod;imeth++){
     for (int i=0;i<2;i++){
       grV2[i][0][imeth]->SetMarkerStyle(kOpenSquare);
+      grV2[i][0][imeth]->SetMarkerColor(kRed+1);
+      grV2[i][0][imeth]->SetLineColor(kRed+1);
       grV2[i][1][imeth]->SetMarkerStyle(kFullCircle);
+      grV2[i][1][imeth]->SetMarkerColor(kBlue+1);
+      grV2[i][1][imeth]->SetLineColor(kBlue+1);
       // grV2[i][2][imeth]->SetMarkerStyle(kFullTriangleUp);
       // grV2[icent][3][imeth]->SetMarkerStyle(kFullCircle); // kOpenCircle
       for (int ilev=0;ilev<nlevel;ilev++){
         grV2[i][ilev][imeth] -> SetMarkerSize(1.9);
-        grV2[i][ilev][imeth] -> SetMarkerColor(1);
-        grV2[i][ilev][imeth] -> SetLineColor(1);
+        // grV2[i][ilev][imeth] -> SetMarkerColor(1);
+        // grV2[i][ilev][imeth] -> SetLineColor(1);
       }
     }
   }
@@ -66,7 +70,7 @@ void Comparev2Cent(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
   gStyle->SetOptStat(0);
-  can->Divide(3,1,0,0);
+  can->Divide(nmethod,1,0,0);
   TH2F *h[nmethod];
   for (int imeth=0;imeth<nmethod;imeth++){
     can->cd(imeth+1);
@@ -76,6 +80,8 @@ void Comparev2Cent(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
     
     h[imeth]->GetXaxis()->SetLabelSize(labelSize);
     h[imeth]->GetXaxis()->SetTitleSize(titleSize);
+    h[imeth]->GetXaxis()->SetLabelFont(42);
+    h[imeth]->GetYaxis()->SetLabelFont(42);
     h[imeth]->GetXaxis()->SetNdivisions(504);
     h[imeth]->GetXaxis()->SetTitleOffset(1.);
 
@@ -90,15 +96,20 @@ void Comparev2Cent(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
     tex.SetTextAlign(33);
     tex.SetTextSize(labelSize);
     if (imeth==0) {
-      tex.DrawLatex(maxcent*0.95,maxV2*0.95,Form("UrQMD, Au+Au @ #sqrt{s_{NN}}=%s",energy.Data()));
-      tex.DrawLatex(maxcent*0.95,maxV2*0.95-0.01,Form("Charged Hadrons, 0.2<p_{T}<3.0 GeV/c"));
-      tex.DrawLatex(maxcent*0.95,maxV2*0.95-0.01*2,Form("%s",graphTitle[imeth].Data()));
+      tex.DrawLatex(maxcent*0.95,maxV2*0.95,Form(" Au+Au @ #sqrt{s_{NN}}=%s",energy.Data()));
+      
+      tex.DrawLatex(maxcent*0.95,maxV2*0.95-0.01,Form("%s",graphTitle[0].Data()));
+    }else if(imeth==1){
+      tex.DrawLatex(maxcent*0.95,maxV2*0.95,Form("UrQMD, charged hadrons"));
+      tex.DrawLatex(maxcent*0.95,maxV2*0.95-0.01,Form("%s",graphTitle[2].Data()));
     }else{
-      tex.DrawLatex(maxcent*0.9,maxV2*0.9,Form("%s",graphTitle[imeth].Data()));
+      tex.DrawLatex(maxcent*0.95,maxV2*0.95,Form("0.2<p_{T}^{}<3.0 GeV/c"));
+      tex.DrawLatex(maxcent*0.95,maxV2*0.95-0.01,Form("%s",graphTitle[1].Data()));
     }
     if (imeth==0){
       TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
       leg_pt->SetBorderSize(0);
+      leg_pt->SetTextFont(42);
       leg_pt->SetTextSize(labelSize);
       for (int ilev=0; ilev<nlevel; ilev++){
         leg_pt->AddEntry(grV2[1][ilev][0],legendEntries[ilev].Data(),"p");
@@ -110,8 +121,8 @@ void Comparev2Cent(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
     for (int ilev=0;ilev<nlevel;ilev++){
 
         if (imeth==0) grV2[1][ilev][0]->Draw("P"); // PLC PMC // PLC (Palette Line Color) and PMC (Palette Marker Color)
-        if (imeth==1) grV2[1][ilev][1]->Draw("P");
-        if (imeth==2) grV2[1][ilev][2]->Draw("P");
+        if (imeth==1) grV2[1][ilev][2]->Draw("P");
+        if (imeth==2) grV2[1][ilev][1]->Draw("P");
 
     }
   }

@@ -533,3 +533,4 @@ void smash::Ana_event(){
 
 // root -l -b -q anaFlow.C+'("/weekly/lbavinh/lbavinh/SMASH/split/smash7.7gev/runlist_00","test.root")'
 // root -l -b -q anaFlow.C+'("/weekly/lbavinh/lbavinh/SMASH/split/smash11.5gev/runlist_00","test.root")'
+// root -l -b -q FlowRun.C'("/weekly/seluzhen/smash/smash4.5gev/part6/particles_1645250_3.root","test.root")'

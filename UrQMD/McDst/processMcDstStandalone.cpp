@@ -356,84 +356,89 @@ int main(int argc, char* argv[]) {
       if(particle->pdg()==-321)  fId=6; // kaon-
       if(particle->pdg()==-2212) fId=7; // anti-proton
 
-      Qx2+=TMath::Cos(2.*phi);
-      Qy2+=TMath::Sin(2.*phi);
-      Qx4+=TMath::Cos(4.*phi);
-      Qy4+=TMath::Sin(4.*phi);
+      Double_t cos4phi = TMath::Cos(4.*phi);
+      Double_t sin4phi = TMath::Sin(4.*phi);
+      Double_t cos2phi = TMath::Cos(2.*phi);
+      Double_t sin2phi = TMath::Sin(2.*phi);
+
+      Qx2+=cos2phi;
+      Qy2+=sin2phi;
+      Qx4+=cos4phi;
+      Qy4+=sin4phi;
       M++;
       // POI selection
       if (charge>0){
-        px2[ipt][0]+=TMath::Cos(2.*phi);
-        py2[ipt][0]+=TMath::Sin(2.*phi);
+        px2[ipt][0]+=cos2phi;
+        py2[ipt][0]+=sin2phi;
         mp[ipt][0]++;
 
-        qx2[ipt][0]+=TMath::Cos(2.*phi);
-        qy2[ipt][0]+=TMath::Sin(2.*phi);
-        qx4[ipt][0]+=TMath::Cos(4.*phi);
-        qy4[ipt][0]+=TMath::Sin(4.*phi);
+        qx2[ipt][0]+=cos2phi;
+        qy2[ipt][0]+=sin2phi;
+        qx4[ipt][0]+=cos4phi;
+        qy4[ipt][0]+=sin4phi;
         mq[ipt][0]++;
       }
       if (charge<0){
-        px2[ipt][4]+=TMath::Cos(2.*phi);
-        py2[ipt][4]+=TMath::Sin(2.*phi);
+        px2[ipt][4]+=cos2phi;
+        py2[ipt][4]+=sin2phi;
         mp[ipt][4]++;
 
-        qx2[ipt][4]+=TMath::Cos(2.*phi);
-        qy2[ipt][4]+=TMath::Sin(2.*phi);
-        qx4[ipt][4]+=TMath::Cos(4.*phi);
-        qy4[ipt][4]+=TMath::Sin(4.*phi);
+        qx2[ipt][4]+=cos2phi;
+        qy2[ipt][4]+=sin2phi;
+        qx4[ipt][4]+=cos4phi;
+        qy4[ipt][4]+=sin4phi;
         mq[ipt][4]++;
       }
       if (fId>0){
-        px2[ipt][fId]+=TMath::Cos(2.*phi);
-        py2[ipt][fId]+=TMath::Sin(2.*phi);
+        px2[ipt][fId]+=cos2phi;
+        py2[ipt][fId]+=sin2phi;
         mp[ipt][fId]++;
 
-        qx2[ipt][fId]+=TMath::Cos(2.*phi);
-        qy2[ipt][fId]+=TMath::Sin(2.*phi);
-        qx4[ipt][fId]+=TMath::Cos(4.*phi);
+        qx2[ipt][fId]+=cos2phi;
+        qy2[ipt][fId]+=sin2phi;
+        qx4[ipt][fId]+=cos4phi;
         qy4[ipt][fId]+=TMath::Sin(4.*phi);
         mq[ipt][fId]++;
       }
 
       if (eta <-eta_gap){
-        Qx2Gap[0]+=TMath::Cos(2.*phi);
-        Qy2Gap[0]+=TMath::Sin(2.*phi);
+        Qx2Gap[0]+=cos2phi;
+        Qy2Gap[0]+=sin2phi;
         MGap[0]++;
         if (charge>0){
-          px2Gap[1][ipt][0]+=TMath::Cos(2.*phi);
-          py2Gap[1][ipt][0]+=TMath::Sin(2.*phi);
+          px2Gap[1][ipt][0]+=cos2phi;
+          py2Gap[1][ipt][0]+=sin2phi;
           mpGap[1][ipt][0]++;
         }
         if (charge<0){
-          px2Gap[1][ipt][4]+=TMath::Cos(2.*phi);
-          py2Gap[1][ipt][4]+=TMath::Sin(2.*phi);
+          px2Gap[1][ipt][4]+=cos2phi;
+          py2Gap[1][ipt][4]+=sin2phi;
           mpGap[1][ipt][4]++;
         }
         if (fId>0){
-          px2Gap[1][ipt][fId]+=TMath::Cos(2.*phi);
-          py2Gap[1][ipt][fId]+=TMath::Sin(2.*phi);
+          px2Gap[1][ipt][fId]+=cos2phi;
+          py2Gap[1][ipt][fId]+=sin2phi;
           mpGap[1][ipt][fId]++;
         }
       }
       if (eta > eta_gap){
-        Qx2Gap[1]+=TMath::Cos(2.*phi);
-        Qy2Gap[1]+=TMath::Sin(2.*phi);
+        Qx2Gap[1]+=cos2phi;
+        Qy2Gap[1]+=sin2phi;
         MGap[1]++;
 
         if (charge>0){
-          px2Gap[0][ipt][0]+=TMath::Cos(2.*phi);
-          py2Gap[0][ipt][0]+=TMath::Sin(2.*phi);
+          px2Gap[0][ipt][0]+=cos2phi;
+          py2Gap[0][ipt][0]+=sin2phi;
           mpGap[0][ipt][0]++;
         }
         if (charge<0){
-          px2Gap[0][ipt][4]+=TMath::Cos(2.*phi);
-          py2Gap[0][ipt][4]+=TMath::Sin(2.*phi);
+          px2Gap[0][ipt][4]+=cos2phi;
+          py2Gap[0][ipt][4]+=sin2phi;
           mpGap[0][ipt][4]++;
         }
         if (fId>0){
-          px2Gap[0][ipt][fId]+=TMath::Cos(2.*phi);
-          py2Gap[0][ipt][fId]+=TMath::Sin(2.*phi);
+          px2Gap[0][ipt][fId]+=cos2phi;
+          py2Gap[0][ipt][fId]+=sin2phi;
           mpGap[0][ipt][fId]++;
         }
       }
@@ -443,8 +448,8 @@ int main(int argc, char* argv[]) {
       if (eta > eta_gap) fEta = 1; // TPC Right EP
 
       if ( fEta>-1 ){
-        sumQxy[fEta][0] += pt * cos(2.*phi);
-        sumQxy[fEta][1] += pt * sin(2.*phi);
+        sumQxy[fEta][0] += pt * cos2phi;
+        sumQxy[fEta][1] += pt * sin2phi;
         wQv[fEta]       += pt;
         multQv[fEta]++;
       } // end of eta selection
@@ -617,3 +622,4 @@ int main(int argc, char* argv[]) {
 }
 // source /weekly/lbavinh/Soft/McDst/mcdst_environment.sh
 // ./processMcDstStandalone /eos/nica/mpd/users/batyuk/mcDst/UrQMD/AuAu/Hg/cms_4.5GeV/AuAu_ecm4.5GeV_EoS_Hg_0-14fm_1000ev_9.mcDst.root ./test.root
+// ./processMcDstStandalone /eos/nica/mpd/users/batyuk/mcDst/UrQMD/AuAu/Hg/cms_7.7GeV/AuAu_ecm7.7GeV_EoS_Hg_0-14fm_1000ev_9999.mcDst.root ./test.root

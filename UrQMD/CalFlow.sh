@@ -6,7 +6,7 @@
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
-#$ -N Cumulants_UrQMD_7.7GeV
+#$ -N QCumulants
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job
@@ -14,14 +14,14 @@
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=06:30:00
 # Specify job array range (how many jobs will be created: 980 for 4.5 GeV, 397 for 7.7, 992 for 11.5
-#$ -t 1-992
+#$ -t 1-154
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
 #
 
 #Main directory
-energy=Urqmd11.5
+energy=Urqmd7.7
 macro=anaFlow
 export MAIN_DIR=/weekly/$USER/lbavinh/UrQMD
 # 551

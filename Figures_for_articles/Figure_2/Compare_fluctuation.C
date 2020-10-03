@@ -7,12 +7,13 @@ void Compare_fluctuation(){
   const float maxV2Ratio = 1.3;
   const float minV2Ratio = 0.5;
   const float leg_coordinate[4]={0.6,0.25,0.9,0.45}; //  0.05,0.7,0.35,0.99
-  const float labelSize = 0.07;
-  const float titleSize = 0.1;
+  const float labelSize = 0.075;
+  const float titleSize = 0.09;
   TString legendEntries[nmodel]={"STAR data","UrQMD","SMASH"};//(Phys.Rev.C.86.054908)
   TString energy[nenergy]={"11.5","7.7","4.5"};
   TString model[nmodel]={"STAR data","UrQMD","SMASH"};
-  TString xAxisName = {"Centrality [%]"};
+  TString xAxisName = {"Centrality (%)"};
+  TString padName[6]={"(a)","(b)","(c)","(d)","(e)","(f)"};
   TFile *input[nenergy][nmodel];
   TGraphErrors *grV2[nenergy][nmodel][nmethod];
   
@@ -56,19 +57,19 @@ void Compare_fluctuation(){
         vRatioV22GappedV24Err[ien][imod].push_back(ratioErr);
       }
       grRatioV2[ien][imod] = new TGraphErrors(nbins[ien][imod][3],vx_gr[ien][imod][3],&vRatioV22GappedV24[ien][imod][0],ex_gr[ien][imod][3],&vRatioV22GappedV24Err[ien][imod][0]);
-      grRatioV2[ien][imod] -> SetTitle(Form("%s;centrality [%%];v_{2}{4}/v_{2}{2,|#Delta#eta|>0.1}",model[imod].Data()));
+      grRatioV2[ien][imod] -> SetTitle(Form("%s;centrality [%%];v_{2}{4}/v_{2}{2}",model[imod].Data()));
       
     }
     // grRatioV2[ien][0] -> SetMarkerStyle(kFullCircle);
     // grRatioV2[ien][1] -> SetMarkerStyle(kFullCircle);
-    grRatioV2[ien][2] -> SetMarkerColor(kBlue);
-    grRatioV2[ien][2] -> SetLineColor(kBlue);
+    grRatioV2[ien][2] -> SetMarkerColor(kBlue+1);
+    grRatioV2[ien][2] -> SetLineColor(kBlue+1);
     grRatioV2[ien][2] -> SetMarkerStyle(kOpenSquare);
     // grRatioV2[ien][3] -> SetMarkerColor(kRed);
     // grRatioV2[ien][3] -> SetLineColor(kRed);
     
-    grRatioV2[ien][1] -> SetMarkerColor(kGreen+2);
-    grRatioV2[ien][1] -> SetLineColor(kGreen+2);
+    grRatioV2[ien][1] -> SetMarkerColor(kBlack);
+    grRatioV2[ien][1] -> SetLineColor(kBlack);
     grRatioV2[ien][1] -> SetMarkerStyle(kFullCircle);
 
   }
@@ -130,18 +131,18 @@ void Compare_fluctuation(){
     grRatioV2[iener][0] -> SetTitle(Form("STAR data (Phys.Rev.C.86.054908);centrality [%%];v_{2}{4}/v_{2}{2,|#Delta#eta|>0.1}"));
     grRatioV2[iener][0] -> SetMarkerStyle(kFullStar);
     grRatioV2[iener][0] -> SetMarkerSize(3.);
-    grRatioV2[iener][0] -> SetMarkerColor(kRed);
-    grRatioV2[iener][0] -> SetLineColor(kRed);
+    grRatioV2[iener][0] -> SetMarkerColor(kRed+1);
+    grRatioV2[iener][0] -> SetLineColor(kRed+1);
 
   }
 
   // cout << "error from here" << endl;
-  gROOT->SetStyle("Pub");
+  // gROOT->SetStyle("Pub");
   gStyle->SetErrorX(0);
   TCanvas *can = new TCanvas("can","can",200,10,2000,600);
-  can->SetLeftMargin(0.2);
+  can->SetLeftMargin(0.15);
   can->SetRightMargin(0.01);
-  can->SetBottomMargin(0.2);
+  can->SetBottomMargin(0.18);
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
   gStyle->SetOptStat(0);
@@ -149,7 +150,7 @@ void Compare_fluctuation(){
   TH2F *h[nenergy];
   for (int ipad=0;ipad<nenergy;ipad++){
     can->cd(ipad+1);
-    if (ipad==0) h[ipad] = new TH2F(Form("pad_%i",ipad+1),Form(";;v_{2}{4}/v_{2}{2,|#Delta#eta|>0.1}"),1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
+    if (ipad==0) h[ipad] = new TH2F(Form("pad_%i",ipad+1),Form(";;v_{2}{4}/v_{2}{2}"),1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
     else if (ipad==1) h[ipad] = new TH2F(Form("pad_%i",ipad+1),Form(";%s         ;v_{2}",xAxisName.Data()),1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
     else h[ipad] = new TH2F(Form("pad_%i",ipad+1),"",1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
     
@@ -158,23 +159,24 @@ void Compare_fluctuation(){
     h[ipad]->GetXaxis()->SetLabelFont(42);
     h[ipad]->GetYaxis()->SetLabelFont(42);
     h[ipad]->GetXaxis()->SetNdivisions(504);
-    h[ipad]->GetXaxis()->SetTitleOffset(1.);
+    h[ipad]->GetXaxis()->SetTitleOffset(0.8);
 
     h[ipad]->GetYaxis()->SetLabelSize(labelSize);
     h[ipad]->GetYaxis()->SetTitleSize(titleSize);
     h[ipad]->GetYaxis()->SetNdivisions(504);
-    h[ipad]->GetYaxis()->SetTitleOffset(1.);
+    h[ipad]->GetYaxis()->SetTitleOffset(0.75);
     h[ipad]->Draw();
 
     TLatex tex;
     tex.SetTextFont(42);
     tex.SetTextAlign(13);
     tex.SetTextSize(labelSize);
+    tex.DrawLatex(mincent+2,maxV2Ratio*0.98,padName[ipad].Data());
     if (ipad==0) {
-      tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Au+Au @"));
+      tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Au+Au at"));
       tex.DrawLatex(mincent+10,maxV2Ratio*0.98-0.12,Form("#sqrt{s_{NN}}=%s GeV",energy[ipad].Data()));
     }else if (ipad==1) {
-      tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Charged hadrons"));
+      tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Ch. hadrons"));
       tex.DrawLatex(mincent+10,maxV2Ratio*0.98-0.12,Form("#sqrt{s_{NN}}=%s GeV",energy[ipad].Data()));
     }else{
       tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("0.2<p_{T}^{}<3.0 GeV/c"));
@@ -204,8 +206,9 @@ void Compare_fluctuation(){
     if (ipad!=2) grRatioV2[ipad][0]->Draw("P");
 
   }
-
-  can->SaveAs("Ratiov24v22_v2cent_3ener.png");
+  can->SaveAs("Figure_2_Ratiov24v22_v2cent_3ener.pdf");
+  gROOT->SetStyle("Pub");
+  can->SaveAs("Figure_2_Ratiov24v22_v2cent_3ener.png");
 
 
 }

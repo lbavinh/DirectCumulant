@@ -10,11 +10,11 @@
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job
-#$ -l h_rt=01:30:00
+#$ -l h_rt=03:30:00
 # Set soft time limit - set up the same as a hard limit
-#$ -l s_rt=01:30:00
+#$ -l s_rt=03:30:00
 # Specify job array range (how many jobs will be created
-#$ -t 1-987
+#$ -t 1-435
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
@@ -26,7 +26,7 @@
 #     of N jobs with ${JOB_ID}_1, ${JOB_ID}_2, ..., ${JOB_ID}_N
 
 #Main directory
-energy=4.5
+energy=7.7
 model=UrQMD
 export MAIN_DIR=/weekly/$USER/lbavinh/UrQMD/McDst
 export FILELIST=${MAIN_DIR}/split/runlistSGE_${model}_${energy}.list

@@ -10,25 +10,26 @@ void CompareV2PT_withRatio(){
   const float minV2 = -0.01;
   const float minV2Ratio = 0.82;
   const float maxV2Ratio = 1.18;
-  const float leg_coordinate[4]={0.65,0.01,0.99,0.3}; // top left: 0.28,0.7,0.6,0.99
-  const float labelSize = 0.07;
-  const float titleSize = 0.1;
+  const float leg_coordinate[4]={0.68,0.07,0.99,0.3}; // top left: 0.28,0.7,0.6,0.99
+  const float labelSizeUpperPlot = 0.095;
+  const float titleSizeUpperPlot = 0.115;
+  const float labelSizeLowerPlot = 0.08;
+  const float titleSizeLowerPlot = 0.1;
   const float markerSize = 1.8;
+  const float titleOffset = 0.8;
+  const float textFont = 42;
   const int npad = 6;
   // flags
   const int ratioToMethod = 3; // v22 gapped
   // some stuffs
   TString energy[nenergy]={"7.7","11.5"};
   TString leg_header[nenergy] = {"7.7 GeV","11.5 GeV"};
-
-  TString grFancyTitle[nmethod]={"v_{2}{2}","v_{2}{4}","v_{2}{#eta-sub}","v_{2}{2,|#{Delta}|>0.1}"}; //#{eta}
+  TString padName[npad]={"(a)","(b)","(c)","(d)","(e)","(f)"};
   TString grTitle[nmethod]={"v22","v24","v2etasub","v22etagap"};
-  TString pidFancyNames[npid] = {"Charged hadrons", "Pions", "Kaons", "(Anti)protons"};
-  TString xAxisName = {"p_{T} [GeV/c]"};
+  TString xAxisName = {"p_{T} (GeV/c)"};
   TString ratioName[nmethod-1]={"v2FHCal/v22","v24/v22","v2TPC/v22"};
-  TString legendEntries[nmethod]={"v_{2}{#Psi_{1,FHCal}}","v_{2}{4}","v_{2}{#Psi_{2,TPC}^{}}","v_{2}{2,|#Delta#eta|>0.1}"}; // ,"v_2{EP} FHCal
-  // TString energyInPads[npad]={"7.7","7.7","7.7","11.5","11.5","11.5"};
-  TString pidInPads[npad]={"h^{#pm}","#pi^{+}","p","h^{#pm}","#pi^{+}","p"};
+  TString legendEntries[nmethod]={"v_{2}{#Psi_{1,FHCal}}","v_{2}{4}","v_{2}{#Psi_{2,TPC}^{}}","v_{2}{2}"}; // ,"v_2{EP} FHCal
+  TString pidInPads[npad]={"Ch. hadrons","#pi","p","h^{#pm}","#pi^{+}","p"};
   TFile *input[nenergy][2];
   TFile *inputFlowANA = new TFile("v2_graphs.root","read");
 
@@ -46,7 +47,7 @@ void CompareV2PT_withRatio(){
     for (int id=0;id<npid;id++){
       for (int imeth=1;imeth<nmethod;imeth++){ // v24 = 1; v22(eta-gap) = 3
       // grV2[ien][id][imeth] = (TGraphErrors*)input[ien][0]->Get(Form("gr_cent10-40_%i_%i",imeth,id));
-        if (id==0) grV2[ien][id][imeth] = (TGraphErrors*)input[ien][0]->Get(Form("gr_cent10-40_%i_%i",imeth,id));
+        if (id==0 || id == 1) grV2[ien][id][imeth] = (TGraphErrors*)input[ien][0]->Get(Form("gr_cent10-40_%i_%i",imeth,id));
         else grV2[ien][id][imeth] = (TGraphErrors*)input[ien][1]->Get(Form("gr_cent10-40_%i_%i",imeth,id));
       }
     }
@@ -63,8 +64,8 @@ void CompareV2PT_withRatio(){
       grV2[ien][id][1] -> SetLineColor(kRed+1);
       grV2[ien][id][1] -> SetMarkerStyle(kFullCircle);  
 
-      grV2[ien][id][2] -> SetMarkerColor(kGreen+2);
-      grV2[ien][id][2] -> SetLineColor(kGreen+2);
+      grV2[ien][id][2] -> SetMarkerColor(kBlack);
+      grV2[ien][id][2] -> SetLineColor(kBlack);
       grV2[ien][id][2] -> SetMarkerStyle(kFullCross);
 
       grV2[ien][id][3] -> SetMarkerColor(kBlack);
@@ -118,8 +119,8 @@ void CompareV2PT_withRatio(){
       grRatioV2[ien][id][1] -> SetLineColor(kRed+1);
       grRatioV2[ien][id][1] -> SetMarkerStyle(kFullCircle);
 
-      grRatioV2[ien][id][2] -> SetMarkerColor(kGreen+2);
-      grRatioV2[ien][id][2] -> SetLineColor(kGreen+2);
+      grRatioV2[ien][id][2] -> SetMarkerColor(kBlack);
+      grRatioV2[ien][id][2] -> SetLineColor(kBlack);
       grRatioV2[ien][id][2] -> SetMarkerStyle(kFullCross);
       for (int imeth=0;imeth<nmethod-1;imeth++){
         grRatioV2[ien][id][imeth]->SetMarkerSize(markerSize);
@@ -129,11 +130,10 @@ void CompareV2PT_withRatio(){
   
 
   TCanvas *can = new TCanvas("can","",200,10,2000,1000);
-  can->SetLeftMargin(0.2);
-  can->SetRightMargin(0.01);
+  can->SetLeftMargin(0.15);
   can->SetRightMargin(0.01);
   can->SetBottomMargin(0.2);
-  gROOT->SetStyle("Pub");
+  // gROOT->SetStyle("Pub");
   gStyle->SetErrorX(0);
   // can->SetFillColor(0);
   // can->SetFrameFillStyle(0);
@@ -146,47 +146,67 @@ void CompareV2PT_withRatio(){
   can->Divide(3,2,0,0);
   TH2F *h[npad];
   for (int ipad=0;ipad<6;ipad++){
-
     can->cd(ipad+1);
-    if (ipad==0) h[ipad] = new TH2F(Form("pad_%i",ipad+1),Form(";%s;v_{2}          ",xAxisName.Data()),1,minpt,maxpt,1,minV2,maxV2);
+    if (ipad==0) h[ipad] = new TH2F(Form("pad_%i",ipad+1),Form(";%s;v_{2} ",xAxisName.Data()),1,minpt,maxpt,1,minV2,maxV2);
     if (ipad==1 || ipad==2) h[ipad] = new TH2F(Form("pad_%i",ipad+1),"",1,minpt,maxpt,1,minV2,maxV2);
-    if (ipad==3) h[ipad] = new TH2F(Form("pad_%i",ipad+1),";;Ratio to v_{2}{2}  ",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
-    if (ipad==4) h[ipad] = new TH2F(Form("pad_%i",ipad+1),Form(";%s         ;",xAxisName.Data()),1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
+    if (ipad==3) h[ipad] = new TH2F(Form("pad_%i",ipad+1),";;Ratio to v_{2}{2}    ",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
+    if (ipad==4) h[ipad] = new TH2F(Form("pad_%i",ipad+1),Form(";%s           ;",xAxisName.Data()),1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
     if (ipad==5) h[ipad] = new TH2F(Form("pad_%i",ipad+1),"",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
-    
-    h[ipad]->GetXaxis()->SetLabelSize(labelSize);
-    h[ipad]->GetXaxis()->SetTitleSize(titleSize);
+    if (ipad>=npad/2){
+      h[ipad]->GetXaxis()->SetLabelSize(labelSizeLowerPlot);
+      h[ipad]->GetXaxis()->SetTitleSize(titleSizeLowerPlot);
+      h[ipad]->GetYaxis()->SetLabelSize(labelSizeLowerPlot);
+      h[ipad]->GetYaxis()->SetTitleSize(titleSizeLowerPlot);
+    }else{
+      h[ipad]->GetXaxis()->SetLabelSize(labelSizeUpperPlot);
+      h[ipad]->GetXaxis()->SetTitleSize(titleSizeUpperPlot);
+      h[ipad]->GetYaxis()->SetLabelSize(labelSizeUpperPlot);
+      h[ipad]->GetYaxis()->SetTitleSize(titleSizeUpperPlot);
+    }
+
     h[ipad]->GetXaxis()->SetNdivisions(504);
-    h[ipad]->GetXaxis()->SetTitleOffset(1.);
+    h[ipad]->GetXaxis()->SetTitleOffset(titleOffset);
 
-    h[ipad]->GetXaxis()->SetLabelFont(42);
-    h[ipad]->GetYaxis()->SetLabelFont(42);
+    h[ipad]->GetXaxis()->SetLabelFont(textFont);
+    h[ipad]->GetYaxis()->SetLabelFont(textFont);
 
-    h[ipad]->GetYaxis()->SetLabelSize(labelSize);
-    h[ipad]->GetYaxis()->SetTitleSize(titleSize);
+
     h[ipad]->GetYaxis()->SetNdivisions(504);
-    h[ipad]->GetYaxis()->SetTitleOffset(1.);
+    h[ipad]->GetYaxis()->SetTitleOffset(titleOffset);
     h[ipad]->Draw();
     
     TLatex tex;
-    tex.SetTextFont(42);
-    tex.SetTextAlign(33);
-    tex.SetTextSize(labelSize);
-    if (ipad==0) {
-      // tex.DrawLatex(maxpt*0.9,maxV2*0.9,Form("#splitline{UrQMD, Au+Au, centrality 10-40%%}{%s @ #sqrt{s_{NN}}=%s GeV}",pidInPads[ipad].Data(),energyInPads[ipad].Data()));
-      tex.DrawLatex(maxpt*0.9,maxV2*0.9,Form("#splitline{UrQMD, Au+Au, centrality 10-40%%}{%s @ #sqrt{s_{NN}}=%s GeV}",pidInPads[ipad].Data(),energy[0].Data()));
-    }else{
-      tex.DrawLatex(maxpt*0.9,maxV2*0.9,Form("%s",pidInPads[ipad].Data()));
+    tex.SetTextFont(textFont);
+    tex.SetTextAlign(33); 
+    if (ipad<3) {
+      tex.SetTextSize(labelSizeUpperPlot); 
+      tex.DrawLatex(0.2,maxV2*0.9,padName[ipad].Data());
+    }else {
+      tex.SetTextSize(labelSizeLowerPlot);
+      tex.DrawLatex(0.2,maxV2Ratio*0.97,padName[ipad].Data());
     }
-    if (ipad==0){
+    tex.DrawLatex(maxpt*0.9,maxV2*0.9-0.02,Form("%s",pidInPads[ipad].Data()));
+    if (ipad==0) {
+      tex.DrawLatex(maxpt*0.9,maxV2*0.9,Form("Au+Au at #sqrt{s_{NN}}=%s GeV",energy[0].Data()));
       TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
       leg_pt->SetBorderSize(0);
-      leg_pt->SetTextSize(labelSize);
-      leg_pt->SetTextFont(42);
-      // leg_pt->SetHeader(leg_header[0].Data(),"C");
-      for (int imeth=0;imeth<nmethod;imeth++){
-        leg_pt->AddEntry(grV2[0][0][imeth],legendEntries[imeth].Data(),"p");
-      }
+      leg_pt->SetTextSize(labelSizeUpperPlot);
+      leg_pt->SetTextFont(textFont);
+      // for (int imeth=0;imeth<nmethod;imeth++){
+      //   leg_pt->AddEntry(grV2[0][0][imeth],legendEntries[imeth].Data(),"p");
+      // }
+      leg_pt->AddEntry(grV2[0][0][0],legendEntries[0].Data(),"p");
+      leg_pt->AddEntry(grV2[0][0][2],legendEntries[2].Data(),"p");
+      leg_pt->Draw();
+    }
+    if (ipad==1) {
+      tex.DrawLatex(maxpt*0.9,maxV2*0.9,Form("UrQMD, 10-40%%"));
+      TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
+      leg_pt->SetBorderSize(0);
+      leg_pt->SetTextSize(labelSizeUpperPlot);
+      leg_pt->SetTextFont(textFont);
+      leg_pt->AddEntry(grV2[0][0][1],legendEntries[1].Data(),"p");
+      leg_pt->AddEntry(grV2[0][0][3],legendEntries[3].Data(),"p");
       leg_pt->Draw();
     }
 
@@ -208,8 +228,10 @@ void CompareV2PT_withRatio(){
   
 
 
-  can->SaveAs(Form("Compare_methods_v2pt.png"));
-
+  // can->SaveAs(Form("Figure_1_Compare_methods_v2pt.eps"));
+  can->SaveAs(Form("Figure_1_Compare_methods_v2pt.pdf"));
+  // can->SaveAs(Form("Figure_1_Compare_methods_v2pt.C"));
+  gROOT->SetStyle("Pub");
+  can->SaveAs(Form("Figure_1_Compare_methods_v2pt.png"));
 
 }
-// 8 (965) 354-26-87 

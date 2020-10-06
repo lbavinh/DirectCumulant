@@ -5,8 +5,8 @@
 #$ -cwd
 #$ -N flowANA
 #$ -q all.q
-#$ -l h_rt=2:30:00
-#$ -l s_rt=2:30:00
+#$ -l h_rt=12:30:00
+#$ -l s_rt=12:30:00
 #$ -t 1-1
 #
 #$ -o /dev/null

@@ -54,7 +54,9 @@ gSystem->Load(libMathMore.so);
 //TFile *file = new TFile("./out/res_7gev_new.root");
 //TFile *file = new TFile("./OUT/7gev/urqmd_flow_7gev_check.root");
 // TFile *file = new TFile("./OUT/urqmd/11.5gev/urqmd_res_11gev_STAR_check.root");
-TFile *file = new TFile("./OUT/urqmd/7.7gev/res.root","read");
+// TFile *file = new TFile("./OUT/urqmd/7.7gev/res.root","read");
+TFile *file = new TFile("UrQMD_7.7GeV_V2R1.root","read");
+
 //TFile *file = new TFile("./OUT/ampt/7.7gev_melt_6mb/res_ampt_7.7gev.root");
   
 char hname1[800];
@@ -275,7 +277,7 @@ legC12->AddEntry(gr1,"TPC","lp");
 legC12->AddEntry(gr2,"RXN","lp");
 legC12->AddEntry(gr3,"BBC","lp");
 legC12->AddEntry(gr4,"FHCal","lp");
-
+legC12->AddEntry(gr5,"FHCalFull","lp");
 
 
 

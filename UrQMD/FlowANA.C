@@ -325,7 +325,7 @@ void FlowANA::Ana_event(){
       qx2[ipt][fId]+=cos2phi;
       qy2[ipt][fId]+=sin2phi;
       qx4[ipt][fId]+=cos4phi;
-      qy4[ipt][fId]+=TMath::Sin(4.*phi);
+      qy4[ipt][fId]+=sin4phi;
       mq[ipt][fId]++;
     }
 

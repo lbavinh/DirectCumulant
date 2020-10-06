@@ -19,3 +19,4 @@ root -b -l << EOF
 EOF
 
 qsub -t 1-$NJOBS exec_main.sh $OUTDIR $MAIN_DIR $FILELIST_DIR $MACRO
+# root -l -b -q main_proc.C+'("./filelists/urqmd/7.7gev/split/list_00")'

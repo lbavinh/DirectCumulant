@@ -325,7 +325,7 @@ void smash::Ana_event(){
       qx2[ipt][fId]+=cos2phi;
       qy2[ipt][fId]+=sin2phi;
       qx4[ipt][fId]+=cos4phi;
-      qy4[ipt][fId]+=TMath::Sin(4.*phi);
+      qy4[ipt][fId]+=sin4phi;
       mq[ipt][fId]++;
     }
 
@@ -533,4 +533,4 @@ void smash::Ana_event(){
 
 // root -l -b -q anaFlow.C+'("/weekly/lbavinh/lbavinh/SMASH/split/smash7.7gev/runlist_00","test.root")'
 // root -l -b -q anaFlow.C+'("/weekly/lbavinh/lbavinh/SMASH/split/smash11.5gev/runlist_00","test.root")'
-// root -l -b -q FlowRun.C'("/weekly/seluzhen/smash/smash4.5gev/part6/particles_1645250_3.root","test.root")'
+// root -l -b -q anaFlow.C+'("/weekly/lbavinh/lbavinh/SMASH/split/smash4.5_fix/runlist_smash4.5_9234","test.root")'

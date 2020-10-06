@@ -1,9 +1,9 @@
 #include "DrawTGraphImp.C"
 TString model = {"UrQMD"};
 TString energy = {"7.7GeV"};
-TString inFileName= (TString) Form("../ROOTFile/%s_%s_Batyuk.root",model.Data(),energy.Data());
-TFile *outFile = new TFile(Form("./v2_%s_%s_Batyuk.root",model.Data(),energy.Data()),"recreate");
-TString outDirName=(TString)Form("%s_%s_Batyuk",model.Data(),energy.Data());
+TString inFileName= (TString) Form("../ROOTFile/%s_%s_88M.root",model.Data(),energy.Data());
+TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");
+TString outDirName=(TString)Form("%s_%s",model.Data(),energy.Data());
 TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
 
 // Flags
@@ -18,6 +18,9 @@ const int nmethod = 4; // 2QC, 4QC, EP, 2QC-gapped
 
 const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
 const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.}; // pT bins
+const double minptRFP = 0.2;
+const double maxptRFP = 3.0;
+
 const double maxpt = 2.5; // for v2 vs pt plotting
 const double minpt = 0.;  // for v2 vs pt plotting
 
@@ -518,8 +521,8 @@ void v2plot_differential_flow(){
 
   char nameV22Gap[400], nameV2EP[400];
 
-  sprintf(nameV22Gap,"[1] v_{2}{2,|#Delta#eta|>%1.1f};p_{T} [GeV/c];v_{2}",eta_gap*2.);
-  sprintf(nameV2EP,"[3] v_{2}{#eta-sub,EP};p_{T} [GeV/c];v_{2}");
+  sprintf(nameV22Gap,"[1] v_{2}{2};p_{T} [GeV/c];v_{2}");
+  sprintf(nameV2EP,"[3] v_{2}{#Psi_{2,TPC}^{}};p_{T} [GeV/c];v_{2}");
   const char *grTitleDF[nmethod]={"v_{2}{2,QC};p_{T} [GeV/c];v_{2}",
                                   "[2] v_{2}{4};p_{T} [GeV/c];v_{2}",
                                   nameV2EP,nameV22Gap};
@@ -551,12 +554,12 @@ void v2plot_differential_flow(){
       if (bMergeCharged && id>3) continue; // if joining positively charged particles with negatively then id=0,1,2,3
       
       if (icent==0) {
-        sprintf(hname,"%s, centrality %i-%i%%",pidFancyNames.at(id).Data(),icent*10,(icent+1)*10);
+        sprintf(hname,"%s, %i-%i%%",pidFancyNames.at(id).Data(),icent*10,(icent+1)*10);
         cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][id],"",rangeRatio.at(icent).first, rangeRatio.at(icent).second, minpt, maxpt, minV2dif, maxV2dif,
                                                  coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
                                                  level.Data(), hname);
       }else{
-        sprintf(hname,"centrality %i-%i%%",icent*10,(icent+1)*10);
+        sprintf(hname,"%i-%i%%",icent*10,(icent+1)*10);
         cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][id],"",rangeRatio.at(icent).first, rangeRatio.at(icent).second, minpt, maxpt, minV2dif, maxV2dif,
                                                  coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
                                                  "", hname,0);
@@ -614,7 +617,7 @@ void v2plot_differential_flow(){
     }
     
     
-    sprintf(hname,"%s, centrality 10-40%%",pidFancyNames.at(id).Data());
+    sprintf(hname,"10-40%%, %s",pidFancyNames.at(id).Data());
 
     cV2PT1040[id] = (TCanvas*) DrawTGraph(vgrv2pt1040,"",rangeRatio.at(ncent).first, rangeRatio.at(ncent).second, minpt, maxpt, minV2dif, maxV2dif,
                                           coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
@@ -736,10 +739,10 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
     grIntFlowVsCent[i] -> SetMarkerSize(1.5);
     grIntFlowVsCent[i] -> SetDrawOption("P");
   }
-  const char *grTitle[nmethod]={"v_{2}{2,QC};cent, %;v_{2}",
-                                "[2] v_{2}{4};cent, %;v_{2}",
-                                "[3] v_{2}{#eta-sub,EP};cent, %%;v_{2}",
-                                Form("[1] v_{2}{2,|#Delta#eta|>%1.1f};cent, %%;v_{2}",eta_gap*2.)};
+  const char *grTitle[nmethod]={"v_{2}{2,QC};centrality (%);v_{2}",
+                                "[2] v_{2}{4};centrality (%);v_{2}",
+                                "[3] v_{2}{#Psi_{2,TPC}^{}};centrality (%);v_{2}",
+                                "[1] v_{2}{2};centrality (%);v_{2}"};
   outFile -> cd();
   for (int imeth=0; imeth<nmethod; imeth++){
     // grIntFlowVsCent[imeth] -> SetTitle(Form("V2 vs. centrality, %s, %s",pidNames.at(0).Data(),grTitle[imeth]));
@@ -757,9 +760,9 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
   
   can = (TCanvas*) DrawTGraph(vgr,"",rangeRatioRF.at(0).first, rangeRatioRF.at(0).second,   mincent,maxcent,minV2int,maxV2int,
                                   coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
-                                  level.Data(), pidFancyNames.at(0).Data());
+                                  level.Data(), Form("%s, %1.1f<p_{T}<%1.1f GeV/c",pidFancyNames.at(0).Data(),minptRFP,maxptRFP));
   can -> SetName(pidNames.at(0).Data());
-  // we can extract only v2 vs cent for charged hadrons !
+  // we can extract only v2 vs centrality for charged hadrons !
   if (saveAsPNG) can -> SaveAs(Form("./%s/%sV2vsCent.png",outDirName.Data(),pidNames.at(0).Data()));
 
   // Clear memory
@@ -903,10 +906,10 @@ void v2plot_integrated_flow_for_PID(){
       grIntFlowVsCent[i][id] -> SetMarkerSize(1.5);
       grIntFlowVsCent[i][id] -> SetDrawOption("P");
     }
-    const char *grTitle[nmethod]={"v_{2}{2,QC};cent, %;v_{2}",
-                                  "[2] v_{2}{4};cent, %;v_{2}",
-                                  "[3] v_{2}{#eta-sub,EP};cent, %%;v_{2}",
-                                  Form("[1] v_{2}{2,|#Delta#eta|>%1.1f};cent, %%;v_{2}",eta_gap*2.)};
+    const char *grTitle[nmethod]={"v_{2}{2,QC};centrality (%);v_{2}",
+                                  "[2] v_{2}{4};centrality (%);v_{2}",
+                                  "[3] v_{2}{#Psi_{2,TPC}^{}};centrality (%);v_{2}",
+                                  "[1] v_{2}{2};centrality (%);v_{2}"};
     outFile -> cd();
     for (int imeth=0; imeth<nmethod; imeth++){
       // grIntFlowVsCent[imeth][id] -> SetTitle(Form("V2 vs. centrality, %s, %s",pidNames.at(id).Data(),grTitle[imeth]));
@@ -957,7 +960,7 @@ void v2plot(){
     pidNames.clear();
     pidFancyNames.clear();
     pidNames = {"hadron", "pion", "kaon", "proton", "hadron_neg", "pion_neg", "kaon_neg", "proton_neg"};
-    pidFancyNames = {"Charged hadrons", "#pi", "K", "p+#bar{p}", "h-", "#pi-", "K-", "#bar{p}"};
+    pidFancyNames = {"Ch. hadrons", "#pi", "K", "p+#bar{p}", "h-", "#pi-", "K-", "#bar{p}"};
   }
   gSystem->Exec(Form("mkdir -p ./%s/",outDirName.Data()));
   for (int icent=0;icent<ncent;icent++){

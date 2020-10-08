@@ -497,7 +497,7 @@ double Nch_R2 = 0;
   float ch;
   if (TDatabasePDG::Instance()->GetParticle(pdg[itrk]))
     ch = 1./3.*TDatabasePDG::Instance()->GetParticle(pdg[itrk])->Charge();
-  else ch = 0.;
+  else ch = -999.;
 	//	phi += phiRP;
 	// float px = pt * cos(phi);
 	//	float py = pt * sin(phi);
@@ -507,8 +507,8 @@ double Nch_R2 = 0;
             h2eta->Fill(eta);
             h2phi->Fill(oldphi);
             h2phis->Fill(phi);
-if (ch==0) continue;
 	    
+
         if( pt>0.1 && fabs(eta)<0.5 ) refMult1++;
 	      if( pt>0.0 && fabs(eta)<0.5 ) refMult2++;
         if(eta >=  3.1 && eta <=  4.0) Nch_R++;
@@ -547,7 +547,7 @@ if (ch==0) continue;
 
   if( fEta>-1. ) H_Phi[0][fEta]->Fill( phi );
 	
-  //if ( fEta < 3 && (ch == 0 || ch == -999.)) continue;
+  if ( fEta < 3 && (ch == 0 || ch == -999.)) continue;
 
            if( fEta>-1. ){
 			for( int ith=0; ith<3; ith++ ){
@@ -556,7 +556,7 @@ if (ch==0) continue;
 					sumQxy[ith][fEta][1] += pt * sin( (ith+2.0) * phi );
 				}else{
           if (fEta == 7){
-            sumQxy[ith][fEta][0] += -1. * pt * cos( (ith+1.0) * phi ); // отсиметризировать т.к. v1: нечетная по отношению с y(eta), а v2: чеиная
+            sumQxy[ith][fEta][0] += -1. * pt * cos( (ith+1.0) * phi ); // отсиметризировать т.к. v1: нечетная по отношению с y(eta), а v2: четная (интеграл нечетной функции=0 => необходимо отсимметризировать)
             sumQxy[ith][fEta][1] += -1. * pt * sin( (ith+1.0) * phi );
           }
           if (fEta == 8){
@@ -618,7 +618,7 @@ if (ch==0) continue;
 	float fQvY[3][9]; //[ith][eta]
 	for( int ith=0; ith<3; ith++ ){ // flow harmonic loop
 	  for( int ieta=0; ieta<9; ieta++ ){ // ep detector gap 
-	    if( multQv[0]+multQv[1]>3 ){ // multiplicity > 5
+	    if( multQv[ieta]>5 ){ // multiplicity > 5
 			if( ieta<7 )
 			{
 				fEP[ith][ieta] = atan2( sumQxy[ith][ieta][1], sumQxy[ith][ieta][0] ) / ( ith + 2.0 );
@@ -748,7 +748,7 @@ if(fCent>=0&&fCent<ncent){
   float ch;
   if (TDatabasePDG::Instance()->GetParticle(pdg[itrk]))
     ch = 1./3.*TDatabasePDG::Instance()->GetParticle(pdg[itrk])->Charge();
-  else ch = 0.;
+  else ch = -999.;
         // phi += phiRP;
 	//  float px = pt * cos(phi);
 	//	float py = pt * sin(phi);
@@ -756,7 +756,6 @@ if(fCent>=0&&fCent<ncent){
 
 
 	
-	if (ch==0) continue; 
         if( pt<0.2  || pt>2.8 ) continue;
         //if ( pt<MpdPtMin || pt>MpdPtMax ) continue;
         //if ( pt<StarPtMin || pt>StarPtMax1 ) continue;

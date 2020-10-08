@@ -539,8 +539,8 @@ double Nch_R2 = 0;
 	if( eta>2.0 && eta<5.0  )     fEta = 8; //West
 	
 	// BBC plane - first harmonic
-	//if( eta>-5.0 && eta<-3.0 )      fEta = 7; //East
-	//if( eta>3.0 && eta<5.0  )     fEta = 8; //West
+	// if( eta>-5.0 && eta<-3.0 )      fEta = 7; //East
+	// if( eta>3.0 && eta<5.0  )     fEta = 8; //West
 
 	// if( fabs(eta)>1.1 && fabs(eta)<2.9 )     fEta = 7; // RXN combined
         //if( fabs(eta)>3.0 && fabs(eta)<5.0 )     fEta = 8; // BBC combined
@@ -764,7 +764,7 @@ if(fCent>=0&&fCent<ncent){
 
         if( pt<minpt  || pt>maxpt ) continue;
         //if ( pt<MpdPtMin || pt>MpdPtMax ) continue;
-        // if ( pt<StarPtMin || pt>StarPtMax1 ) continue;
+        //if ( pt<StarPtMin || pt>StarPtMax1 ) continue;
         //if ( eta<MpdEtaMin || eta>MpdEtaMax ) continue;
 				if( ch == 0 || ch == -999. ) continue;
 

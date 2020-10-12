@@ -1,2 +1,4 @@
 #!/bin/bash
-hadd -f -j 20 /weekly/$USER/lbavinh/readPicoDst/OUT/UrQMD_Reco_7.7GeV_test_bin_pt.root /weekly/$USER/lbavinh/readPicoDst/OUT/2012055/sum_*_*.root
+working_dir=/weekly/$USER/lbavinh/readPicoDst/OUT
+JOB_ID=2086955
+hadd -f -j 20 ${working_dir}/UrQMD_Reco_7.7GeV_new.root ${working_dir}/${JOB_ID}/sum_*_*.root

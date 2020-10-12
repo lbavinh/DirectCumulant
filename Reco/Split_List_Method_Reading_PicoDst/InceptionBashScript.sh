@@ -14,14 +14,15 @@
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=01:30:00
 # Specify job array range (how many jobs will be created
-#$ -t 1-504
+# 504 jobs for 11.5 GeV, 834 for new 7.7 GeV AuAu
+#$ -t 1-834
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
 #
 
-export energy=11.5
-export model=Reco_UrQMD
+export energy=7.7
+export model=Reco_UrQMD_PWG3-prod9
 #Main directory
 
 export MAIN_DIR=/weekly/$USER/lbavinh/readPicoDst
@@ -40,7 +41,7 @@ mkdir -p $OUT_LOG
 mkdir -p $TMP
 touch $LOG
 
-cp $MAIN_DIR/readPicoDst.C $TMP
+eos cp --streams=16 $MAIN_DIR/readPicoDst.C $TMP
 
 # Set correct environment variables (needed version of root)
 source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh

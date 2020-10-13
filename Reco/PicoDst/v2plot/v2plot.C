@@ -1,15 +1,15 @@
 #include "DrawTGraphImp.C"
 TString model = {"UrQMD"};
-TString energy = {"7.7GeV"};
+TString energy = {"11.5GeV"};
 TString inFileName= (TString) Form("../ROOTFile/%s_Reco_%s.root",model.Data(),energy.Data());
 TFile *outFile = new TFile(Form("./v2_%s_%s_Reco_MotherID_8PID.root",model.Data(),energy.Data()),"recreate");
-TString outDirName=(TString)Form("%s_%s_Reco_8PID",model.Data(),energy.Data());
+TString outDirName=(TString)Form("%s_%s_Reco_20M_8PID",model.Data(),energy.Data());
 TString level= (TString) Form("%s, GEANT4, Au+Au@#sqrt{s_{NN}}=%s",model.Data(),energy.Data());
 
 // Flags
 bool drawDistributions = false; // auxiliary plots: eta, bimp, mult, etc.
 bool bMergeCharged = false; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
-bool saveAsPNG = false;
+bool saveAsPNG = true;
 int excludeMethod = 0; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively
 int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
 // Constants

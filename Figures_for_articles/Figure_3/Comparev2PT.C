@@ -42,8 +42,8 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   for (int ilev=0; ilev<nlevel; ilev++){
     for (int imeth=0;imeth<nmethod;imeth++){
       for (int ien=0;ien<nenergy;ien++){
-      grV2[0][ilev][imeth][ien] = (TGraphErrors*)input[ilev][ien]->Get(Form("gr_cent10-40_%i_0",imeth+1));
-      grV2[1][ilev][imeth][ien] = (TGraphErrors*)input[ilev][ien]->Get(Form("grRF_%i_0",imeth+1));
+      grV2[0][ilev][imeth][ien] = (TGraphErrors*)input[ilev][ien]->Get(Form("gr_cent10-40_%i_2",imeth+1));
+      grV2[1][ilev][imeth][ien] = (TGraphErrors*)input[ilev][ien]->Get(Form("grRF_%i_2",imeth+1));
       }
     }
   }
@@ -130,7 +130,7 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
       }
       leg_pt->Draw();
     }else if (ipad==1) {
-      tex.DrawLatex(maxpt*0.95,maxV2*0.95,Form("10-40%%, UrQMD, Ch. hadrons"));
+      tex.DrawLatex(maxpt*0.95,maxV2*0.95,Form("10-40%%, UrQMD, K^{#pm}"));
     }else if (ipad==3) {
       tex.DrawLatex(maxpt*0.95,maxV2*0.95,Form("#sqrt{s_{NN}}=%s",energy[1].Data()));
     }
@@ -149,9 +149,9 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
     }
     // cout << "error here" << endl;
   }
-  can->SaveAs(Form("Figure_3_Performance_v2pt.pdf"));
+  can->SaveAs(Form("Figure_3_Performance_v2pt_kaons.pdf"));
   gROOT->SetStyle("Pub");
-  can->SaveAs(Form("Figure_3_Performance_v2pt.png"));
+  can->SaveAs(Form("Figure_3_Performance_v2pt_kaons.png"));
 
   
 }

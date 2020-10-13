@@ -29,13 +29,15 @@
 // Test Ante's code
 // Use or not the non-unit particle weights above:
 Bool_t bUseWeights = kFALSE;
+// Cross-check with nested loops:
+Bool_t bEvaluateNestedLoops = kTRUE;
 // Pick up randomly some harmonics:
-const int h1=2, h2=-2, h3=2, h4=-2, h5=2, h6=-2; //, h7=2, h8=-2;
+const int h1=2, h2=-2, h3=2, h4=-2, h5=2, h6=-2, h7=2, h8=-2;
 // Book Q-vector components: 
 const int sum = (h1<0?-1*h1:h1)+(h2<0?-1*h2:h2)+(h3<0?-1*h3:h3)+(h4<0?-1*h4:h4) 
-                + (h5<0?-1*h5:h5)+(h6<0?-1*h6:h6); // +(h7<0?-1*h7:h7)+(h8<0?-1*h8:h8);// ? : conditional operator: sum=(h1<0?-1*h1:h1) is equivalent with if(h1<0) {sum = -1*h1;} else {sum=h1;}
-const int maxCorrelator = 6; // We will not go beyond 8-p correlations
-const int maxHarmonic = sum+1; 
+                + (h5<0?-1*h5:h5)+(h6<0?-1*h6:h6)+(h7<0?-1*h7:h7)+(h8<0?-1*h8:h8);// ? : conditional operator: sum=(h1<0?-1*h1:h1) is equivalent with if(h1<0) {sum = -1*h1;} else {sum=h1;}
+const int maxCorrelator = 8; // We will not go beyond 8-p correlations
+const int maxHarmonic = sum+1;
 const int maxPower = maxCorrelator+1; // indicies for loops start at 0, so we need real maxPower = maxCorrelator + 1 (maybe)
 TComplex Qvector[maxHarmonic][maxPower]={{0.}}; // All needed Q-vector components
 
@@ -198,7 +200,7 @@ TComplex Six(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6)
 } // TComplex Six(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6)
 
 //=======================================================================================================================
-/*
+
 TComplex Eight_1(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t n7, Int_t n8)
 {
  // Generic eight-particle correlation <exp[i(n1*phi1+n2*phi2+n3*phi3+n4*phi4+n5*phi5+n6*phi6+n7*phi7+n8*phi8)]>, first part.
@@ -2325,7 +2327,7 @@ TComplex Eight(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t
  return eight;
 
 } // TComplex Eight(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t n7, Int_t n8)
-*/
+
 
 TComplex Recursion(Int_t n, Int_t* harmonic, Int_t mult = 1, Int_t skip = 0) 
 {
@@ -2495,7 +2497,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   //  Remark: [2][maxCorrelator] => [Cos,Sin][<2>,<3>,<4>,<5>,<6>,<7>,<8>]
   TProfile *correlations[2][maxCorrelator][ncent]; // Correlations calculated from Q-vector componets using standalone formulas
   TProfile *recursion[2][maxCorrelator][ncent];    // Correlations calculated from Q-vector components using recursive algorithm 
-
+  TProfile *nestedLoops[2][maxCorrelator][ncent];  // Correlations calculated from nested loops
   for(Int_t cs=0;cs<2;cs++)
   {
     for(Int_t c=0;c<maxCorrelator;c++)
@@ -2504,6 +2506,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       {
         correlations[cs][c][icent] = new TProfile(Form("correlations_%i_%i_%i",cs,c,icent),Form("correlations_%i_%i_%i",cs,c,icent),1,0.,1.);
         recursion[cs][c][icent] = new TProfile(Form("recursion_%i_%i_%i",cs,c,icent),Form("recursion_%i_%i_%i",cs,c,icent),1,0.,1.);
+        nestedLoops[cs][c][icent] = new TProfile(Form("nestedLoops_%i_%i_%i",cs,c,icent),Form("nestedLoops_%i_%i_%i",cs,c,icent),1,0.,1.);
       }
     } // end of for(Int_t c=0;c<maxCorrelator;c++)
   } // end of for(Int_t cs=0;cs<2;cs++)  
@@ -2535,7 +2538,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   int n_entries = tree->GetEntriesFast();
   for (int iEv=0; iEv<n_entries; iEv++)
   {
-    if (iEv%1000==0) std::cout << "Event [" << iEv << "/" << n_entries << "]" << std::endl;
+    if (iEv%1==0) std::cout << "Event [" << iEv << "/" << n_entries << "]" << std::endl;
     // chain->GetEntry(iEv);
     tree->GetEntry(iEv);
     hEvt -> Fill(1);
@@ -2604,6 +2607,8 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     Double_t wPhi = 1.; // particle weight
     Double_t wPhiToPowerP = 1.; // particle weight raised to power p - возводить в p степень
 
+    Double_t phi1=0., phi2=0., phi3=0., phi4=0., phi5=0., phi6=0.; // particle angle
+    Double_t weight1=1., weight2=1., weight3=1., weight4=1., weight5=1., weight6=1.; // particle weight
 
     for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
       auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
@@ -2744,15 +2749,105 @@ void readPicoDst(TString inputFileName, TString outputFileName)
 
       // b) Calculate Q-vectors for available angles and weights: 
 
-        if(bUseWeights){wPhi = pt;}
-        for(Int_t h=0;h<maxHarmonic;h++)
-        {
-        for(Int_t p=0;p<maxPower;p++) // p=0,1,2,3,4,5,6,7,8
-        {
-          if(bUseWeights){wPhiToPowerP = pow(wPhi,p);}
-          Qvector[h][p] += TComplex(wPhiToPowerP*TMath::Cos(h*phi),wPhiToPowerP*TMath::Sin(h*phi)); // This is formula B1 in the paper
-        } //  for(Int_t p=0;p<maxPower;p++)
-        } // for(Int_t h=0;h<maxHarmonic;h++)
+      if(bUseWeights){wPhi = phi;}
+      for(Int_t h=0;h<maxHarmonic;h++)
+      {
+      for(Int_t p=0;p<maxPower;p++) // p=0,1,2,3,4,5,6,7,8
+      {
+        if(bUseWeights){wPhiToPowerP = pow(wPhi,p);}
+        Qvector[h][p] += TComplex(wPhiToPowerP*TMath::Cos(h*phi),wPhiToPowerP*TMath::Sin(h*phi)); // This is formula B1 in the paper
+      } //  for(Int_t p=0;p<maxPower;p++)
+      } // for(Int_t h=0;h<maxHarmonic;h++)
+
+
+      if (!bEvaluateNestedLoops) continue;
+      phi1 = phi;
+      if(bUseWeights){weight1 = phi;}
+      for(Int_t i2=0;i2<reco_mult;i2++)
+      {
+        if(i2==iTr){continue;} // Get rid of autocorrelations
+        auto recoTrack2 = (PicoDstRecoTrack*) recoTracks->UncheckedAt(i2);
+        if (!recoTrack2) continue;
+        auto mcTrack2 = (PicoDstMCTrack*) mcTracks->UncheckedAt(recoTrack2->GetMcId());
+        if (!mcTrack2) continue;
+        if (mcTrack2->GetMotherId() != -1) continue;
+        if (recoTrack2->GetNhits() < Nhits_cut ) continue;
+        float pt2  = recoTrack2->GetPt();
+        float eta2 = recoTrack2->GetEta();
+        float phi2 = recoTrack2->GetPhi();
+        if (pt2 < minpt || pt2 > maxpt || abs(eta2)>eta_cut) continue; // track selection
+        if(bUseWeights){weight2 = phi2;}
+        // Fill the profiles:
+        nestedLoops[0][0][fcent]->Fill(0.5,TMath::Cos(h1*phi1+h2*phi2),weight1*weight2);
+        nestedLoops[1][0][fcent]->Fill(0.5,TMath::Sin(h1*phi1+h2*phi2),weight1*weight2);
+        // for(Int_t i3=0;i3<reco_mult;i3++)
+        // {
+        //   if(i3==iTr||i3==i2){continue;} // Get rid of autocorrelations
+        //   auto recoTrack3 = (PicoDstRecoTrack*) recoTracks->UncheckedAt(i3);
+        //   if (!recoTrack3) continue;
+        //   auto mcTrack3 = (PicoDstMCTrack*) mcTracks->UncheckedAt(recoTrack3->GetMcId());
+        //   if (!mcTrack3) continue;
+        //   if (mcTrack3->GetMotherId() != -1) continue;
+        //   if (recoTrack3->GetNhits() < Nhits_cut ) continue;
+        //   float pt3  = recoTrack3->GetPt();
+        //   float eta3 = recoTrack3->GetEta();
+        //   float phi3 = recoTrack3->GetPhi();
+        //   if (pt3 < minpt || pt3 > maxpt || abs(eta3)>eta_cut) continue; // track selection
+        //   if(bUseWeights){weight3 = phi3;}
+        //   for(Int_t i4=0;i4<reco_mult;i4++)
+        //   {
+        //     if(i4==iTr||i4==i2||i4==i3){continue;} // Get rid of autocorrelations
+        //     auto recoTrack4 = (PicoDstRecoTrack*) recoTracks->UncheckedAt(i4);
+        //     if (!recoTrack4) continue;
+        //     auto mcTrack4 = (PicoDstMCTrack*) mcTracks->UncheckedAt(recoTrack4->GetMcId());
+        //     if (!mcTrack4) continue;
+        //     if (mcTrack4->GetMotherId() != -1) continue;
+        //     if (recoTrack4->GetNhits() < Nhits_cut ) continue;
+        //     float pt4  = recoTrack4->GetPt();
+        //     float eta4 = recoTrack4->GetEta();
+        //     float phi4 = recoTrack4->GetPhi();
+        //     if (pt4 < minpt || pt4 > maxpt || abs(eta4)>eta_cut) continue; // track selection
+        //     if(bUseWeights){weight4 = phi4;}
+        //     // Fill the profiles:
+        //     nestedLoops[0][2][fcent]->Fill(0.5,TMath::Cos(h1*phi1+h2*phi2+h3*phi3+h4*phi4),weight1*weight2*weight3*weight4);
+        //     nestedLoops[1][2][fcent]->Fill(0.5,TMath::Sin(h1*phi1+h2*phi2+h3*phi3+h4*phi4),weight1*weight2*weight3*weight4);
+        //     for(Int_t i5=0;i5<reco_mult;i5++)
+        //     {
+        //       if(i5==iTr||i5==i2||i5==i3||i5==i4){continue;} // Get rid of autocorrelations
+        //       auto recoTrack5 = (PicoDstRecoTrack*) recoTracks->UncheckedAt(i5);
+        //       if (!recoTrack5) continue;
+        //       auto mcTrack5 = (PicoDstMCTrack*) mcTracks->UncheckedAt(recoTrack5->GetMcId());
+        //       if (!mcTrack5) continue;
+        //       if (mcTrack5->GetMotherId() != -1) continue;
+        //       if (recoTrack5->GetNhits() < Nhits_cut ) continue;
+        //       float pt5  = recoTrack5->GetPt();
+        //       float eta5 = recoTrack5->GetEta();
+        //       float phi5 = recoTrack5->GetPhi();
+        //       if (pt5 < minpt || pt5 > maxpt || abs(eta5)>eta_cut) continue; // track selection
+        //       if(bUseWeights){weight5 = phi5;}
+        //       for(Int_t i6=0;i6<reco_mult;i6++)
+        //       {
+        //         if(i6==iTr||i6==i2||i6==i3||i6==i4||i6==i5){continue;} // Get rid of autocorrelations
+        //         auto recoTrack6 = (PicoDstRecoTrack*) recoTracks->UncheckedAt(i6);
+        //         if (!recoTrack6) continue;
+        //         auto mcTrack6 = (PicoDstMCTrack*) mcTracks->UncheckedAt(recoTrack6->GetMcId());
+        //         if (!mcTrack6) continue;
+        //         if (mcTrack6->GetMotherId() != -1) continue;
+        //         if (recoTrack6->GetNhits() < Nhits_cut ) continue;
+        //         float pt6  = recoTrack6->GetPt();
+        //         float eta6 = recoTrack6->GetEta();
+        //         float phi6 = recoTrack6->GetPhi();
+        //         if (pt6 < minpt || pt6 > maxpt || abs(eta6)>eta_cut) continue; // track selection
+        //         if(bUseWeights){weight6 = phi6;}
+        //         // Fill the profiles:
+        //         nestedLoops[0][4][fcent]->Fill(0.5,TMath::Cos(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6),weight1*weight2*weight3*weight4*weight5*weight6);
+        //         nestedLoops[1][4][fcent]->Fill(0.5,TMath::Sin(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6),weight1*weight2*weight3*weight4*weight5*weight6);
+        //       } // end of for(Int_t i6=0;i6<reco_mult;i6++)
+        //     } // end of for(Int_t i5=0;i5<reco_mult;i5++)
+          // } // end of for(Int_t i4=0;i4<reco_mult;i4++) 
+        // } // end of for(Int_t i3=0;i3<reco_mult;i3++)
+      } // end of for(Int_t i2=0;i2<reco_mult;i2++)
+
 
     } // end of track loop
 
@@ -2960,39 +3055,44 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       recursion[0][4][fcent]->Fill(0.5,sixRecursion.Re(),wSixRecursion); // <<cos(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6)>>
       recursion[1][4][fcent]->Fill(0.5,sixRecursion.Im(),wSixRecursion); // <<<sin(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6)>>
     }
-    // if (M>=8.){
-    //   // d) Calculate n-particle correlations from Q-vectors (using standalone formulas):
-    //   //  8-p correlations:
-    //   TComplex eight = Eight(h1,h2,h3,h4,h5,h6,h7,h8)/Eight(0,0,0,0,0,0,0,0).Re();
-    //   Double_t wEight = Eight(0,0,0,0,0,0,0,0).Re(); // Weight is 'number of combinations' by default
-    //   correlations[0][6][fcent]->Fill(0.5,eight.Re(),wEight); // <<cos(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6+h7*phi7+h8*phi8)>>
-    //   correlations[1][6][fcent]->Fill(0.5,eight.Im(),wEight); // <<sin(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6+h7*phi7+h8*phi8)>>
-    //   // e) Calculate n-particle correlations from Q-vectors (using recursion):
-    //   //  8-p correlations:
-    //   Int_t harmonics_Eight_Num[8] = {h1,h2,h3,h4,h5,h6,h7,h8};       
-    //   Int_t harmonics_Eight_Den[8] = {0,0,0,0,0,0,0,0};       
-    //   TComplex eightRecursion = Recursion(8,harmonics_Eight_Num)/Recursion(8,harmonics_Eight_Den).Re();
-    //   Double_t wEightRecursion = Recursion(8,harmonics_Eight_Den).Re();
-    //   recursion[0][6][fcent]->Fill(0.5,eightRecursion.Re(),wEightRecursion); // <<cos(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6+h7*phi7+h8*phi8)>>
-    //   recursion[1][6][fcent]->Fill(0.5,eightRecursion.Im(),wEightRecursion); // <<<sin(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6+h7*phi7+h8*phi8)>>
-    // }
+    if (M>=8.){
+      // d) Calculate n-particle correlations from Q-vectors (using standalone formulas):
+      //  8-p correlations:
+      TComplex eight = Eight(h1,h2,h3,h4,h5,h6,h7,h8)/Eight(0,0,0,0,0,0,0,0).Re();
+      Double_t wEight = Eight(0,0,0,0,0,0,0,0).Re(); // Weight is 'number of combinations' by default
+      correlations[0][6][fcent]->Fill(0.5,eight.Re(),wEight); // <<cos(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6+h7*phi7+h8*phi8)>>
+      correlations[1][6][fcent]->Fill(0.5,eight.Im(),wEight); // <<sin(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6+h7*phi7+h8*phi8)>>
+      // e) Calculate n-particle correlations from Q-vectors (using recursion):
+      //  8-p correlations:
+      Int_t harmonics_Eight_Num[8] = {h1,h2,h3,h4,h5,h6,h7,h8};       
+      Int_t harmonics_Eight_Den[8] = {0,0,0,0,0,0,0,0};       
+      TComplex eightRecursion = Recursion(8,harmonics_Eight_Num)/Recursion(8,harmonics_Eight_Den).Re();
+      Double_t wEightRecursion = Recursion(8,harmonics_Eight_Den).Re();
+      recursion[0][6][fcent]->Fill(0.5,eightRecursion.Re(),wEightRecursion); // <<cos(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6+h7*phi7+h8*phi8)>>
+      recursion[1][6][fcent]->Fill(0.5,eightRecursion.Im(),wEightRecursion); // <<<sin(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6+h7*phi7+h8*phi8)>>
+    }
 
 
   } // end event loop
   // Write histograms to out file
-  printf("Standalone formula <2>=%.12f\n",correlations[0][0][1]->GetBinContent(1));
-  printf("My standalone formula <2>=%.12f\n",hv22[1]->GetBinContent(1));
-  printf("Recursion <2>=%.12f\n",recursion[0][0][1]->GetBinContent(1));
 
-  printf("Standalone formula <4>=%.12f\n",correlations[0][2][1]->GetBinContent(1));
-  printf("My standalone formula <4>=%.12f\n",hv24[1]->GetBinContent(1));
-  printf("Recursion <4>=%.12f\n",recursion[0][2][1]->GetBinContent(1));
   for (int icent=0;icent<ncent;icent++){
-    printf("Standalone formula <6>=%.12f\n",correlations[0][6][icent]->GetBinContent(1));
-    printf("Recursion <6>=%.12f\n",recursion[0][6][icent]->GetBinContent(1));
+    printf("Centrality %i-%i%%\n\n",icent*10,(icent+1)*10);
+    printf("Standalone formula <2>=%.12f\n",correlations[0][0][icent]->GetBinContent(1));
+    printf("My standalone formula <2>=%.12f\n",hv22[icent]->GetBinContent(1));
+    printf("Recursion <2>=%.12f\n",recursion[0][0][icent]->GetBinContent(1));
+    printf("Nested loops <2>=%.12f\n\n",nestedLoops[0][0][icent]->GetBinContent(1));
+    printf("Standalone formula <4>=%.12f\n",correlations[0][2][icent]->GetBinContent(1));
+    printf("My standalone formula <4>=%.12f\n",hv24[icent]->GetBinContent(1));
+    printf("Recursion <4>=%.12f\n\n",recursion[0][2][icent]->GetBinContent(1));
+    // printf("Nested loops <4>=%.12f\n\n",nestedLoops[0][2][icent]->GetBinContent(1));
 
-    // printf("Standalone formula <8>=%.12f\n",correlations[0][8][icent]->GetBinContent(1));
-    // printf("Recursion <8>=%.12f\n",recursion[0][8][icent]->GetBinContent(1));
+    printf("Standalone formula <6>=%.12f\n",correlations[0][4][icent]->GetBinContent(1));
+    printf("Recursion          <6>=%.12f\n\n",recursion[0][4][icent]->GetBinContent(1));
+    // printf("Nested loops <6>=%.12f\n",nestedLoops[0][4][icent]->GetBinContent(1));
+    
+    // printf("Standalone formula <8>=%.12f\n",correlations[0][6][icent]->GetBinContent(1));
+    // printf("Recursion <8>=%.12f\n",recursion[0][6][icent]->GetBinContent(1));
   }
   d_outfile -> cd();
   d_outfile -> Write();

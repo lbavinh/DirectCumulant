@@ -1,7 +1,6 @@
 // Do not forget to source setPicoDst.sh script
 
 #include <iostream>
-#include <fstream>
 
 #include <TStopwatch.h>
 #include <TChain.h>
@@ -103,6 +102,16 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   TProfile *hv22Gap[ncent];
   TProfile *hv22ptGap[ncent][npt][npid];
   TProfile *hcov22primeGap[ncent][npt][npid];
+
+  // non-uniform acceptance correction
+  // Reference flow acceptance correction
+  TProfile *hcos2phi1, *hsin2phi1, *hcos2phi12, *hsin2phi12, *hcos2phi123, *hsin2phi123;
+  TProfile *hcos2phi1Gap, *hsin2phi1Gap; // for v_2{2,eta-gapped}
+  // Differential flow acceptance correction
+  TProfile *hcos2psi1[npt][npid], *hsin2psi1[npt][npid], *hcos2psi1phi2[npt][npid], *hsin2psi1phi2[npt][npid],
+           *hcos2psi1pphi23[npt][npid], *hsin2psi1pphi23[npt][npid], *hcos2psi1mphi23[npt][npid], *hsin2psi1mphi23[npt][npid],
+           *hcos2psi1Gap[npt][npid], *hsin2psi1Gap[npt][npid]; // for v_2{2,eta-gapped}
+
   char name[800];
   char title[800];
   d_outfile = new TFile(outputFileName.Data(), "recreate");
@@ -111,11 +120,34 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
   hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", max_nh, 0, max_nh, 200, 0., 20.);
   hBimp = new TH1F("hBimp", "Impact parameter;b (fm);dN/db", 200, 0., 20.);
-  hPt = new TH1F("hPt", "Pt-distr;p_{T} (GeV/c); dN/dP_{T}", 500, 0., 6.);
-  hRP = new TH1F("hRP", "Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}", 300, 0., 7.);
-  hPhi = new TH1F("hPhi", "Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})", 300, 0., 7.);
+  hPt = new TH1F("hPt", "Pt-distr;p_{T} (GeV/c);dN/dP_{T}", 500, 0., 6.);
+  hRP = new TH1F("hRP", "Event Plane;#phi-#Psi_{RP};dN/d#Psi_{RP}", 300, 0., 7.);
+  hPhi = new TH1F("hPhi","Particle azimuthal angle distr; #phi;dN/d#phi", 350, -3.5, 3.5);
   hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -10, 10);
 
+  // Acceptance correction
+  hcos2phi1 = new TProfile("hcos2phi1","hcos2phi1",ncent,0.,ncent);
+  hsin2phi1 = new TProfile("hsin2phi1","hsin2phi1",ncent,0.,ncent);
+  hcos2phi12 = new TProfile("hcos2phi12","hcos2phi12",ncent,0.,ncent);
+  hsin2phi12 = new TProfile("hsin2phi12","hsin2phi12",ncent,0.,ncent);
+  hcos2phi123 = new TProfile("hcos2phi123","hcos2phi123",ncent,0.,ncent);
+  hsin2phi123 = new TProfile("hsin2phi123","hsin2phi123",ncent,0.,ncent);
+  hcos2phi1Gap = new TProfile("hcos2phi1Gap","hcos2phi1Gap",ncent,0.,ncent);
+  hsin2phi1Gap = new TProfile("hsin2phi1Gap","hsin2phi1Gap",ncent,0.,ncent);
+  for (int ipt=0;ipt<npt;ipt++){
+    for (int id=0;id<npid;id++){
+      hcos2psi1[ipt][id] = new TProfile(Form("hcos2psi1_%i_%i", ipt,id),Form("hcos2psi1_%i_%i", ipt,id),ncent,0.,ncent);
+      hsin2psi1[ipt][id] = new TProfile(Form("hsin2psi1_%i_%i", ipt,id),Form("hsin2psi1_%i_%i", ipt,id),ncent,0.,ncent);
+      hcos2psi1phi2[ipt][id] = new TProfile(Form("hcos2psi1phi2_%i_%i", ipt,id),Form("hcos2psi1phi2_%i_%i", ipt,id),ncent,0.,ncent);
+      hsin2psi1phi2[ipt][id] = new TProfile(Form("hsin2psi1phi2_%i_%i",ipt,id),Form("hsin2psi1phi2_%i_%i",ipt,id),ncent,0.,ncent);
+      hcos2psi1pphi23[ipt][id] = new TProfile(Form("hcos2psi1pphi23_%i_%i",ipt,id),Form("hcos2psi1pphi23_%i_%i",ipt,id),ncent,0.,ncent);
+      hsin2psi1pphi23[ipt][id] = new TProfile(Form("hsin2psi1pphi23_%i_%i",ipt,id),Form("hsin2psi1pphi23_%i_%i",ipt,id),ncent,0.,ncent);
+      hcos2psi1mphi23[ipt][id] = new TProfile(Form("hcos2psi1mphi23_%i_%i",ipt,id),Form("hcos2psi1mphi23_%i_%i",ipt,id),ncent,0.,ncent);
+      hsin2psi1mphi23[ipt][id] = new TProfile(Form("hsin2psi1mphi23_%i_%i", ipt,id),Form("hsin2psi1mphi23_%i_%i", ipt,id),ncent,0.,ncent);
+      hcos2psi1Gap[ipt][id] = new TProfile(Form("hcos2psi1Gap_%i_%i", ipt,id),Form("hcos2psi1Gap_%i_%i", ipt,id),ncent,0.,ncent);
+      hsin2psi1Gap[ipt][id] = new TProfile(Form("hsin2psi1Gap_%i_%i", ipt,id),Form("hsin2psi1Gap_%i_%i", ipt,id),ncent,0.,ncent);
+    }
+  }
   for( int ieta=0;ieta<neta;ieta++){
     H_Qw[ieta] = new TH1F(Form("H_Qw_%d",ieta),Form("H_Qw_%d",ieta), 300, 0, 300 );    
     H_EP[ieta] = new TH1F(Form("H_EP_%d",ieta),Form("H_EP_%d",ieta), 100, -TMath::Pi()/2.-0.1, TMath::Pi()/2.+0.1 );
@@ -145,39 +177,34 @@ void readPicoDst(TString inputFileName, TString outputFileName)
         hcov2prime4prime[icent][ipt][id] = new TProfile(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id),Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id),1,0.,1.);
         hcounter[icent][ipt][id] = new TProfile(Form("hcounter_%i_%i_%i",icent,ipt,id),Form("hcounter_%i_%i_%i",icent,ipt,id),3,0.,3.);
         hv22ptGap[icent][ipt][id] = new TProfile(Form("hv22ptGap_%i_%i_%i",icent,ipt,id),Form("hv22ptGap_%i_%i_%i",icent,ipt,id),1,0.,1.);
-        hcov22primeGap[icent][ipt][id] = new TProfile(Form("hcov22primeGap_%i_%i_%i",icent,ipt,id),Form("hcov22primeGap_%i_%i_%i",icent,ipt,id),1,0.,1.);      
+        hcov22primeGap[icent][ipt][id] = new TProfile(Form("hcov22primeGap_%i_%i_%i",icent,ipt,id),Form("hcov22primeGap_%i_%i_%i",icent,ipt,id),1,0.,1.);
       } // end of loop over pt bin
     }
   } // end of loop over centrality classes
   cout << "Histograms have been initialized" << endl;
 
-  // Configure input information
-  TChain *chain = new TChain("picodst");
-
-  std::ifstream file(inputFileName.Data());
-  std::string line;
-  while(std::getline(file, line))
-  {
-      chain->Add(line.c_str());
+  TFile *treefile = TFile::Open(inputFileName.Data());
+  TTree *tree = (TTree *)treefile->Get("picodst");
+  if (!tree){
+    cout << "picodst is not found in " << inputFileName.Data() << endl;
+    treefile->Close();
+    return;
   }
+  cout << inputFileName.Data() << " is opened" << endl;
   PicoDstMCEvent *mcEvent = nullptr;
   TClonesArray *recoTracks = nullptr;
   TClonesArray *mcTracks = nullptr;
 
-  // chain->SetBranchAddress("mcevent.", &mcEvent);
-  // chain->SetBranchAddress("recotracks",&recoTracks);
-  chain->SetBranchAddress("mcevent.", &mcEvent);
-  chain->SetBranchAddress("recotracks",&recoTracks);
-  chain->SetBranchAddress("mctracks",&mcTracks);
+  tree->SetBranchAddress("mcevent.", &mcEvent);
+  tree->SetBranchAddress("recotracks",&recoTracks);
+  tree->SetBranchAddress("mctracks",&mcTracks);
 
   // Start event loop
-  int n_entries = chain->GetEntries();
-  // int n_entries = tree->GetEntriesFast();
+  int n_entries = tree->GetEntries();
   for (int iEv=0; iEv<n_entries; iEv++)
   {
     if (iEv%1000==0) std::cout << "Event [" << iEv << "/" << n_entries << "]" << std::endl;
-    chain->GetEntry(iEv);
-    // tree->GetEntry(iEv);
+    tree->GetEntry(iEv);
     hEvt -> Fill(1);
     // Read MC event
     float bimp = mcEvent->GetB();
@@ -230,19 +257,6 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     float multQv[neta]={0};       // [eta+,eta-]
     float wQv[neta]={0};
 
-    // Read Reco tracks
-    // for (int iTr=0; iTr<reco_mult; iTr++)
-    // {
-    //   auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
-    //   //recoTrack->GetPt()
-    //   //recoTrack->GetEta()
-    //   //recoTrack->GetPhi()
-    //   //recoTrack->GetDCAx()
-    //   //recoTrack->GetDCAy()
-    //   //recoTrack->GetDCAz()
-    //   //recoTrack->GetNhits()
-    // }
-
     for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
       auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
       if (!recoTrack) continue;
@@ -261,7 +275,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       // if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
       auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(mcTrack->GetPdg());
       float charge = 1./3.*particle->Charge();
-      
+      if (phi > (TMath::Pi()/180.*15.) && phi < (TMath::Pi()/180.*45.)) continue;
       hPt -> Fill(pt);
       hEta -> Fill(eta);
       hPhi -> Fill(phi);
@@ -269,7 +283,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       for(int j=0; j<npt;j++){
         if(pt>=bin_pT[j] && pt<bin_pT[j+1]) ipt = j;
       }
-
+      
       int fId=-1;
       if(mcTrack->GetPdg()==211)  fId=1; // pion+
       if(mcTrack->GetPdg()==321)  fId=2; // kaon+
@@ -375,77 +389,116 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       if (eta > eta_gap) fEta = 1; // TPC Right EP
 
       if ( fEta>-1 ){
-        sumQxy[fEta][0] += pt * cos(2.*phi);
-        sumQxy[fEta][1] += pt * sin(2.*phi);
+        sumQxy[fEta][0] += pt * cos2phi;
+        sumQxy[fEta][1] += pt * sin2phi;
         wQv[fEta]       += pt;
         multQv[fEta]++;
       } // end of eta selection
+
+      
     } // end of track loop
 
     // ================================== Direct Cumulants ================================== //
-  if (MGap[0]!=0 && MGap[1]!=0){
-    for (int ieta=0;ieta<neta;ieta++){
-      Q2Gap[ieta] = TComplex(Qx2Gap[ieta], Qy2Gap[ieta]);
-    }
-    w2Gap = MGap[0]*MGap[1];
-    cor22Gap = CalRedCor22(Q2Gap[0],Q2Gap[1],MGap[0],MGap[1], 0.,w2Gap);       // <2>
-    hv22Gap[fcent]->Fill(0.5, cor22Gap, w2Gap);
-  
-    for (int ieta=0;ieta<neta;ieta++){
-      for (int ipt = 0; ipt < npt; ipt++){ // <2'>
-        for (int id=0;id<npid;id++){
-          if (mpGap[ieta][ipt][id]==0) continue;
-          // Q2Gap[ieta] = TComplex(Qx2Gap[ieta], Qy2Gap[ieta]);
-          p2Gap[ieta][ipt][id] = TComplex(px2Gap[ieta][ipt][id], py2Gap[ieta][ipt][id]);
-          wred2Gap[ieta][ipt][id] = mpGap[ieta][ipt][id]*MGap[ieta];
-          redCor22Gap[ieta][ipt][id] = CalRedCor22(Q2Gap[ieta], p2Gap[ieta][ipt][id], MGap[ieta], mpGap[ieta][ipt][id], 0., wred2Gap[ieta][ipt][id]);   // <2'>
-          hv22ptGap[fcent][ipt][id]->Fill(0.5, redCor22Gap[ieta][ipt][id], wred2Gap[ieta][ipt][id]);                                                                      // <<2'>>
-          hcounter[fcent][ipt][id]->Fill(1.5,1,mpGap[ieta][ipt][id]);
-          // TProfile for covariance calculation in statistic error
-          hcov22primeGap[fcent][ipt][id]->Fill(0.5, cor22Gap*redCor22Gap[ieta][ipt][id], w2Gap*wred2Gap[ieta][ipt][id]); // <2>*<2'>
+    if (MGap[0]!=0 && MGap[1]!=0){
+      for (int ieta=0;ieta<neta;ieta++){
+        Q2Gap[ieta] = TComplex(Qx2Gap[ieta], Qy2Gap[ieta]);
+      }
+      w2Gap = MGap[0]*MGap[1];
+      cor22Gap = CalRedCor22(Q2Gap[0],Q2Gap[1],MGap[0],MGap[1], 0.,w2Gap);       // <2>
+      hv22Gap[fcent]->Fill(0.5, cor22Gap, w2Gap);
+      for (int ieta=0;ieta<neta;ieta++){
+        // Non-uniform acceptance correction
+        hcos2phi1Gap -> Fill(0.5+fcent,Qx2Gap[ieta]/MGap[ieta],MGap[ieta]);
+        hsin2phi1Gap -> Fill(0.5+fcent,Qy2Gap[ieta]/MGap[ieta],MGap[ieta]);
+        for (int ipt = 0; ipt < npt; ipt++){ // <2'>
+          for (int id=0;id<npid;id++){
+            if (mpGap[ieta][ipt][id]==0) continue;
+            // Q2Gap[ieta] = TComplex(Qx2Gap[ieta], Qy2Gap[ieta]);
+            p2Gap[ieta][ipt][id] = TComplex(px2Gap[ieta][ipt][id], py2Gap[ieta][ipt][id]);
+            wred2Gap[ieta][ipt][id] = mpGap[ieta][ipt][id]*MGap[ieta];
+            redCor22Gap[ieta][ipt][id] = CalRedCor22(Q2Gap[ieta], p2Gap[ieta][ipt][id], MGap[ieta], mpGap[ieta][ipt][id], 0., wred2Gap[ieta][ipt][id]);   // <2'>
+            hv22ptGap[fcent][ipt][id]->Fill(0.5, redCor22Gap[ieta][ipt][id], wred2Gap[ieta][ipt][id]);                                                    // <<2'>>
+            hcounter[fcent][ipt][id]->Fill(1.5,1,mpGap[ieta][ipt][id]);
+            // TProfile for covariance calculation in statistic error
+            hcov22primeGap[fcent][ipt][id]->Fill(0.5, cor22Gap*redCor22Gap[ieta][ipt][id], w2Gap*wred2Gap[ieta][ipt][id]); // <2>*<2'>
+            // Non-uniform acceptance correction
+            hcos2psi1Gap[ipt][id] -> Fill(0.5+fcent,px2Gap[ieta][ipt][id]/mpGap[ieta][ipt][id],mpGap[ieta][ipt][id]);
+            hsin2psi1Gap[ipt][id] -> Fill(0.5+fcent,py2Gap[ieta][ipt][id]/mpGap[ieta][ipt][id],mpGap[ieta][ipt][id]);
+          }
         }
       }
     }
-  }
 
-  Q2 = TComplex(Qx2, Qy2);
-  w2 = M*(M-1);                         // w(<2>)
-  Q4 = TComplex(Qx4, Qy4);
-  w4 = M*(M-1)*(M-2)*(M-3);             // w(<4>)
-  if (w2 != 0 && w4 != 0){
-    cor22 = CalCor22(Q2, M, w2);        // <2>
-    cor24 = CalCor24(Q2, Q4, M, w4);    // <4>
-    hv22[fcent]->Fill(0.5, cor22, w2);  // <<2>>
-    hv24[fcent]->Fill(0.5, cor24, w4);  // <<4>>
+    Q2 = TComplex(Qx2, Qy2);
+    w2 = M*(M-1);                         // w(<2>)
+    Q4 = TComplex(Qx4, Qy4);
+    w4 = M*(M-1)*(M-2)*(M-3);             // w(<4>)
+    if (w2 != 0 && w4 != 0){
+      cor22 = CalCor22(Q2, M, w2);        // <2>
+      cor24 = CalCor24(Q2, Q4, M, w4);    // <4>
+      hv22[fcent]->Fill(0.5, cor22, w2);  // <<2>>
+      hv24[fcent]->Fill(0.5, cor24, w4);  // <<4>>
 
-    // TProfile for covariance calculation in statistic error
-    hcov24[fcent]->Fill(0.5, cor22 * cor24, w2 * w4); // <2>*<4>
-    for (int ipt = 0; ipt < npt; ipt++){
-      for (int id=0;id<npid;id++){
-        if (mp[ipt][id] == 0) continue;
-        p2[ipt][id] = TComplex(px2[ipt][id], py2[ipt][id]);
-        q2[ipt][id] = TComplex(qx2[ipt][id], qy2[ipt][id]);
-        wred2[ipt][id] = mp[ipt][id]*M-mq[ipt][id];                                                                                   // w(<2'>)
-        if (wred2[ipt][id]==0) continue;
-        q4[ipt][id] = TComplex(qx4[ipt][id], qy4[ipt][id]);
-        wred4[ipt][id] = (mp[ipt][id]*M-3*mq[ipt][id])*(M-1)*(M-2);                                                                   // w(<4'>)
-        if (wred4[ipt][id]==0) continue;
-        redCor22[ipt][id] = CalRedCor22(Q2, p2[ipt][id], M, mp[ipt][id], mq[ipt][id], wred2[ipt][id]);                                // <2'>
-        hv22pt[fcent][ipt][id]->Fill(0.5, redCor22[ipt][id], wred2[ipt][id]);                                                         // <<2'>>
-        redCor24[ipt][id] = CalRedCor24(Q2, Q4, p2[ipt][id], q2[ipt][id], q4[ipt][id], M, mp[ipt][id], mq[ipt][id], wred4[ipt][id]);  // <4'>
-        hv24pt[fcent][ipt][id]->Fill(0.5, redCor24[ipt][id], wred4[ipt][id]);                                                         // <<4'>>
+      // TProfile for covariance calculation in statistic error
+      hcov24[fcent]->Fill(0.5, cor22 * cor24, w2 * w4); // <2>*<4>
+      // Non-uniform acceptance correction
+      hcos2phi1 -> Fill(0.5+fcent,Qx2/M,M);
+      hsin2phi1 -> Fill(0.5+fcent,Qy2/M,M);
 
-        // TProfile for covariance calculation in statistic error
-        hcov22prime[fcent][ipt][id]->Fill(0.5, cor22 * redCor22[ipt][id], w2 * wred2[ipt][id]);     // <2>*<2'>
-        hcov24prime[fcent][ipt][id]->Fill(0.5, cor22 * redCor24[ipt][id], w2 * wred4[ipt][id]);
-        hcov42prime[fcent][ipt][id]->Fill(0.5, cor24 * redCor22[ipt][id], w4 * wred2[ipt][id]);
-        hcov44prime[fcent][ipt][id]->Fill(0.5, cor24 * redCor24[ipt][id], w4 * wred4[ipt][id]);
-        hcov2prime4prime[fcent][ipt][id]->Fill(0.5, redCor22[ipt][id] * redCor24[ipt][id], wred2[ipt][id] * wred4[ipt][id]);
+      Double_t cos2phi12=(Q2*Q2-Q4).Re();
+      Double_t sin2phi12=(Q2*Q2-Q4).Im();
+      Double_t cos2phi123=((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Re())-2.*(M-1)*(Qstar(Q2).Re());
+      Double_t sin2phi123=((Q2*Qstar(Q2)*Qstar(Q2)-Q2*Qstar(Q4)).Im())-2.*(M-1)*(Qstar(Q2).Im());
+      Double_t sumMMm1=M*(M-1);
+      Double_t sumMMm1Mm2=M*(M-1)*(M-2);
+      hcos2phi12  -> Fill( 0.5+fcent, cos2phi12/sumMMm1, sumMMm1);
+      hsin2phi12  -> Fill( 0.5+fcent, sin2phi12/sumMMm1, sumMMm1);
+      hcos2phi123 -> Fill( 0.5+fcent, cos2phi123/sumMMm1Mm2, sumMMm1Mm2);
+      hsin2phi123 -> Fill( 0.5+fcent, sin2phi123/sumMMm1Mm2, sumMMm1Mm2);
 
-        hcounter[fcent][ipt][id]->Fill(0.5,1,mp[ipt][id]);
+      for (int ipt = 0; ipt < npt; ipt++){
+        for (int id=0;id<npid;id++){
+          if (mp[ipt][id] == 0) continue;
+          p2[ipt][id] = TComplex(px2[ipt][id], py2[ipt][id]);
+          q2[ipt][id] = TComplex(qx2[ipt][id], qy2[ipt][id]);
+          wred2[ipt][id] = mp[ipt][id]*M-mq[ipt][id];                                                                                   // w(<2'>)
+          if (wred2[ipt][id]==0) continue;
+          q4[ipt][id] = TComplex(qx4[ipt][id], qy4[ipt][id]);
+          wred4[ipt][id] = (mp[ipt][id]*M-3*mq[ipt][id])*(M-1)*(M-2);                                                                   // w(<4'>)
+          if (wred4[ipt][id]==0) continue;
+          redCor22[ipt][id] = CalRedCor22(Q2, p2[ipt][id], M, mp[ipt][id], mq[ipt][id], wred2[ipt][id]);                                // <2'>
+          hv22pt[fcent][ipt][id]->Fill(0.5, redCor22[ipt][id], wred2[ipt][id]);                                                         // <<2'>>
+          redCor24[ipt][id] = CalRedCor24(Q2, Q4, p2[ipt][id], q2[ipt][id], q4[ipt][id], M, mp[ipt][id], mq[ipt][id], wred4[ipt][id]);  // <4'>
+          hv24pt[fcent][ipt][id]->Fill(0.5, redCor24[ipt][id], wred4[ipt][id]);                                                         // <<4'>>
+
+          // TProfile for covariance calculation in statistic error
+          hcov22prime[fcent][ipt][id]->Fill(0.5, cor22 * redCor22[ipt][id], w2 * wred2[ipt][id]);     // <2>*<2'>
+          hcov24prime[fcent][ipt][id]->Fill(0.5, cor22 * redCor24[ipt][id], w2 * wred4[ipt][id]);
+          hcov42prime[fcent][ipt][id]->Fill(0.5, cor24 * redCor22[ipt][id], w4 * wred2[ipt][id]);
+          hcov44prime[fcent][ipt][id]->Fill(0.5, cor24 * redCor24[ipt][id], w4 * wred4[ipt][id]);
+          hcov2prime4prime[fcent][ipt][id]->Fill(0.5, redCor22[ipt][id] * redCor24[ipt][id], wred2[ipt][id] * wred4[ipt][id]);
+          // Non-uniform acceptance correction
+          hcos2psi1[ipt][id] -> Fill(0.5+fcent,px2[ipt][id]/mp[ipt][id],mp[ipt][id]);
+          hsin2psi1[ipt][id] -> Fill(0.5+fcent,py2[ipt][id]/mp[ipt][id],mp[ipt][id]);
+
+          Double_t mpMminusmq = mp[ipt][id]*M-mq[ipt][id];
+          Double_t mpMminus2mqMminus1 = (mp[ipt][id]*M-2*mq[ipt][id])*(M-1);
+          TComplex p2Q2minusq4 = p2[ipt][id]*Q2-q4[ipt][id];
+          TComplex p2Q2minusM  = p2[ipt][id]*(Q2.Rho2()-M);
+          TComplex q4Q2StarplusmqQ2minus2q2    = q4[ipt][id]*Qstar(Q2)+mq[ipt][id]*Q2-2.*q2[ipt][id];
+          TComplex p2Q2StarQ2Starminusp2Q4Star = p2[ipt][id]*Qstar(Q2)*Qstar(Q2)-p2[ipt][id]*Qstar(Q4);
+          TComplex TwomqQ2Starminus2q2Star = 2.*mq[ipt][id]*Qstar(Q2)-2.*Qstar(q2[ipt][id]);
+          hcos2psi1phi2[ipt][id] -> Fill(0.5+fcent,p2Q2minusq4.Re()/mpMminusmq,mpMminusmq);
+          hsin2psi1phi2[ipt][id] -> Fill(0.5+fcent,p2Q2minusq4.Im()/mpMminusmq,mpMminusmq);
+          hcos2psi1pphi23[ipt][id] -> Fill(0.5+fcent,(p2Q2minusM.Re()-q4Q2StarplusmqQ2minus2q2.Re())/mpMminus2mqMminus1,mpMminus2mqMminus1);
+          hsin2psi1pphi23[ipt][id] -> Fill(0.5+fcent,(p2Q2minusM.Im()-q4Q2StarplusmqQ2minus2q2.Im())/mpMminus2mqMminus1,mpMminus2mqMminus1);
+          hcos2psi1mphi23[ipt][id] -> Fill(0.5+fcent,(p2Q2StarQ2Starminusp2Q4Star.Re()-TwomqQ2Starminus2q2Star.Re())/mpMminus2mqMminus1,mpMminus2mqMminus1);
+          hsin2psi1mphi23[ipt][id] -> Fill(0.5+fcent,(p2Q2StarQ2Starminusp2Q4Star.Im()-TwomqQ2Starminus2q2Star.Im())/mpMminus2mqMminus1,mpMminus2mqMminus1);
+
+          hcounter[fcent][ipt][id]->Fill(0.5,1,mp[ipt][id]);
+        }
       }
     }
-  }
     // ==================================== Eta Sub-event ==================================== //
 
     float fEP[2]; // [eta-,eta+]
@@ -490,7 +543,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       // if (abs(recoTrack->GetDCAy()) > DCAcut) continue; //трек не проходит по DCAy
       // if (abs(recoTrack->GetDCAz()) > DCAcut) continue; //трек не проходит по DCAz
       if (pt < minpt || pt > maxpt || abs(eta)>eta_cut || abs(eta)<eta_gap) continue; // track selection      
-      
+      if (phi > (TMath::Pi()/180.*15.) && phi < (TMath::Pi()/180.*45.)) continue;
       // if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
 
       Int_t ipt = -1;
@@ -548,5 +601,4 @@ void readPicoDst(TString inputFileName, TString outputFileName)
   timer.Stop();
   timer.Print();
 }
-// source /weekly/parfenov/Soft/PicoDst/build/setPicoDst.sh 
-// root -l -b -q readPicoDst.C+'("/weekly/lbavinh/lbavinh/readPicoDst/split/Reco_UrQMD_PWG3-prod9_7.7/runlist_Reco_UrQMD_PWG3-prod9_7.7_9742.list","test.root")'
+// root -l -b -q readPicoDst.C+'("/weekly/parfenov/mpd_winter2019/mpd_prod/7.7gev/merged_new/picodst_merged_600.root","test.root")'

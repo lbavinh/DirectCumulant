@@ -1,10 +1,10 @@
 #include "DrawTGraphImp.C"
 TString model = {"UrQMD"};
-TString energy = {"11.5GeV"};
-TString inFileName= (TString) Form("../ROOTFile/%s_Reco_%s.root",model.Data(),energy.Data());
-TFile *outFile = new TFile(Form("./v2_%s_%s_Reco_MotherID.root",model.Data(),energy.Data()),"recreate");
-TString outDirName=(TString)Form("%s_%s_Reco",model.Data(),energy.Data());
-TString level= (TString) Form("%s, GEANT4, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
+TString energy = {"7.7GeV"};
+TString inFileName= (TString) Form("../ROOTFile/%s_Reco_%s_AcceptanceEffect.root",model.Data(),energy.Data());
+TFile *outFile = new TFile(Form("./v2_%s_%s_Reco_MotherID_AC.root",model.Data(),energy.Data()),"recreate");
+TString outDirName=(TString)Form("%s_%s_Reco_AC",model.Data(),energy.Data());
+TString level= (TString) Form("%s, GEANT4, Au+Au@#sqrt{s_{NN}}=%s",model.Data(),energy.Data());
 
 // Flags
 bool drawDistributions = false; // auxiliary plots: eta, bimp, mult, etc.
@@ -320,6 +320,12 @@ void v2plot_differential_flow(){
   TProfile *hv22ptGap[ncent][npt][npid];
   TProfile *hcov22primeGap[ncent][npt][npid];
   TProfile *hcounter[ncent][npt][npid];
+  // Acc. correction terms
+  TProfile *hcos2phi1, *hsin2phi1, *hcos2phi12, *hsin2phi12, *hcos2phi123, *hsin2phi123;
+  TProfile *hcos2phi1Gap, *hsin2phi1Gap;
+  TProfile *hcos2psi1[npt][npid], *hsin2psi1[npt][npid], *hcos2psi1phi2[npt][npid], *hsin2psi1phi2[npt][npid],
+           *hcos2psi1pphi23[npt][npid], *hsin2psi1pphi23[npt][npid], *hcos2psi1mphi23[npt][npid], *hsin2psi1mphi23[npt][npid];
+  TProfile *hcos2psi1Gap[npt][npid], *hsin2psi1Gap[npt][npid];
   // OUTPUT
   TGraphErrors *grDifFl[nmethod][ncent][npid];    // v2(pt); 3 = {2QC, 4QC, EP, gapped 2QC}
   TGraphErrors *grDifFl1040[nmethod][npid];
@@ -350,6 +356,29 @@ void v2plot_differential_flow(){
     } // end of loop over pt bin
   } // end of loop over centrality classes
 
+  // Acceptance correction
+  hcos2phi1 = (TProfile*)inFile->Get("hcos2phi1");
+  hsin2phi1 = (TProfile*)inFile->Get("hsin2phi1");
+  hcos2phi12 = (TProfile*)inFile->Get("hcos2phi12");
+  hsin2phi12 = (TProfile*)inFile->Get("hsin2phi12");
+  hcos2phi123 = (TProfile*)inFile->Get("hcos2phi123");
+  hsin2phi123 = (TProfile*)inFile->Get("hsin2phi123");
+  hcos2phi1Gap = (TProfile*)inFile->Get("hcos2phi1Gap");
+  hsin2phi1Gap = (TProfile*)inFile->Get("hsin2phi1Gap");
+  for (int ipt=0;ipt<npt;ipt++){
+    for (int id=0;id<npid;id++){
+      hcos2psi1[ipt][id] = (TProfile*)inFile->Get(Form("hcos2psi1_%i_%i",ipt,id));
+      hsin2psi1[ipt][id] = (TProfile*)inFile->Get(Form("hsin2psi1_%i_%i",ipt,id));
+      hcos2psi1phi2[ipt][id] = (TProfile*)inFile->Get(Form("hcos2psi1phi2_%i_%i",ipt,id));
+      hsin2psi1phi2[ipt][id] = (TProfile*)inFile->Get(Form("hsin2psi1phi2_%i_%i",ipt,id));
+      hcos2psi1pphi23[ipt][id] = (TProfile*)inFile->Get(Form("hcos2psi1pphi23_%i_%i",ipt,id));
+      hsin2psi1pphi23[ipt][id] = (TProfile*)inFile->Get(Form("hsin2psi1pphi23_%i_%i",ipt,id));
+      hcos2psi1mphi23[ipt][id] = (TProfile*)inFile->Get(Form("hcos2psi1mphi23_%i_%i",ipt,id));
+      hsin2psi1mphi23[ipt][id] = (TProfile*)inFile->Get(Form("hsin2psi1mphi23_%i_%i",ipt,id));
+      hcos2psi1Gap[ipt][id] = (TProfile*)inFile->Get(Form("hcos2psi1Gap_%i_%i",ipt,id));
+      hsin2psi1Gap[ipt][id] = (TProfile*)inFile->Get(Form("hsin2psi1Gap_%i_%i",ipt,id));
+    }
+  }
   //==========================================================================================================================
   if(bMergeCharged){
     for (int icent=0;icent<ncent;icent++){
@@ -370,7 +399,57 @@ void v2plot_differential_flow(){
         }
       }
     }
+    for (int ipt=0;ipt<npt;ipt++){
+      for (int id=0;id<npid/2;id++){
+        hcos2psi1[ipt][id]->Add(hcos2psi1[ipt][id+4]);
+        hsin2psi1[ipt][id]->Add(hsin2psi1[ipt][id+4]);
+        hcos2psi1phi2[ipt][id]->Add(hcos2psi1phi2[ipt][id+4]);
+        hsin2psi1phi2[ipt][id]->Add(hsin2psi1phi2[ipt][id+4]);
+        hcos2psi1pphi23[ipt][id]->Add(hcos2psi1pphi23[ipt][id+4]);
+        hsin2psi1pphi23[ipt][id]->Add(hsin2psi1pphi23[ipt][id+4]);
+        hcos2psi1mphi23[ipt][id]->Add(hcos2psi1mphi23[ipt][id+4]);
+        hsin2psi1mphi23[ipt][id]->Add(hsin2psi1mphi23[ipt][id+4]);
+        hcos2psi1Gap[ipt][id]->Add(hcos2psi1Gap[ipt][id+4]);
+        hsin2psi1Gap[ipt][id]->Add(hsin2psi1Gap[ipt][id+4]);
+      }
+    }     
   }
+  //==========================================================================================================================
+  // Acceptance correction terms
+  double  cos2phi1[ncent], sin2phi1[ncent], cos2phi12[ncent], sin2phi12[ncent],
+          cos2phi123[ncent], sin2phi123[ncent],
+          cos2phi1Gap[ncent], sin2phi1Gap[ncent];
+  double  cos2psi1[ncent][npt][npid], sin2psi1[ncent][npt][npid], cos2psi1phi2[ncent][npt][npid], sin2psi1phi2[ncent][npt][npid],
+          cos2psi1pphi23[ncent][npt][npid], sin2psi1pphi23[ncent][npt][npid], cos2psi1mphi23[ncent][npt][npid], sin2psi1mphi23[ncent][npt][npid],
+          cos2psi1Gap[ncent][npt][npid], sin2psi1Gap[ncent][npt][npid];
+
+
+  // Extract the acceptance correction terms
+  for (int icent=0; icent<ncent; icent++){
+    cos2phi1[icent] = hcos2phi1 -> GetBinContent(1+icent);
+    sin2phi1[icent] = hsin2phi1 -> GetBinContent(1+icent);
+    cos2phi12[icent] = hcos2phi12 -> GetBinContent(1+icent);
+    sin2phi12[icent] = hsin2phi12 -> GetBinContent(1+icent);
+    cos2phi123[icent] = hcos2phi123 -> GetBinContent(1+icent);
+    sin2phi123[icent] = hsin2phi123 -> GetBinContent(1+icent);
+    cos2phi1Gap[icent] = hcos2phi1Gap -> GetBinContent(1+icent);
+    sin2phi1Gap[icent] = hsin2phi1Gap -> GetBinContent(1+icent);
+    for (int ipt=0; ipt<npt; ipt++){
+      for (int id=0;id<npid;id++){
+        cos2psi1[icent][ipt][id] = hcos2psi1[ipt][id] -> GetBinContent(1+icent);
+        sin2psi1[icent][ipt][id] = hsin2psi1[ipt][id] -> GetBinContent(1+icent);
+        cos2psi1phi2[icent][ipt][id] = hcos2psi1phi2[ipt][id] -> GetBinContent(1+icent);
+        sin2psi1phi2[icent][ipt][id] = hsin2psi1phi2[ipt][id] -> GetBinContent(1+icent);
+        cos2psi1pphi23[icent][ipt][id] = hcos2psi1pphi23[ipt][id] -> GetBinContent(1+icent);
+        sin2psi1pphi23[icent][ipt][id] = hsin2psi1pphi23[ipt][id] -> GetBinContent(1+icent);
+        cos2psi1mphi23[icent][ipt][id] = hcos2psi1mphi23[ipt][id] -> GetBinContent(1+icent);
+        sin2psi1mphi23[icent][ipt][id] = hsin2psi1mphi23[ipt][id] -> GetBinContent(1+icent);
+        cos2psi1Gap[icent][ipt][id] = hcos2psi1Gap[ipt][id] -> GetBinContent(1+icent);
+        sin2psi1Gap[icent][ipt][id] = hsin2psi1Gap[ipt][id] -> GetBinContent(1+icent);
+      }
+    }
+  }
+
   //==========================================================================================================================
   /*
   // Filling pT bin
@@ -398,17 +477,31 @@ void v2plot_differential_flow(){
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     // 2QC
     term cor2 = term(hv22[icent]);
-    double v22 = sqrt(cor2.mVal);
+    // double v22 = sqrt(cor2.mVal);
+    double v22 = sqrt(cor2.mVal - (pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2)));
     double ev22 = sqrt(1./(4.*cor2.mVal)*cor2.mMSE);
     // 4QC
     term cor4 = term(hv24[icent]);
     double cov24 = Covariance(hcov24[icent],hv22[icent],hv24[icent]);
-    double v24 = pow(2*pow(cor2.mVal,2)-cor4.mVal,0.25);
+    // double v24 = pow(2*pow(cor2.mVal,2)-cor4.mVal,0.25);
+    double v24 = pow( -
+        ( cor4.mVal - 2.*cor2.mVal*cor2.mVal
+        - 4. * cos2phi1[icent] * cos2phi123[icent]
+        + 4. * sin2phi1[icent] * sin2phi123[icent]
+        - pow(cos2phi12[icent],2) - pow(sin2phi12[icent],2)
+        + 4. * cos2phi12[icent]
+        * (pow(cos2phi1[icent],2) - pow(sin2phi1[icent],2))
+        + 8. * sin2phi12[icent] * sin2phi1[icent] * cos2phi1[icent]
+        + 8. * cor2.mVal
+        * (pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2))
+        - 6. * pow(pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2),2))
+        ,0.25);
     double ev24 = sqrt( 1./pow(v24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) );
     
     // 2QC Gapped
     term cor2Gap = term(hv22Gap[icent]);
-    double v22Gap = sqrt(cor2Gap.mVal);
+    // double v22Gap = sqrt(cor2Gap.mVal);
+    double v22Gap = sqrt(cor2Gap.mVal - (pow(cos2phi1Gap[icent],2) + pow(sin2phi1Gap[icent],2)));
     double ev22Gap = sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE);
     for (int id=0;id<npid;id++){
 
@@ -432,7 +525,9 @@ void v2plot_differential_flow(){
         
         // v22
         term cor2red = term(hv22pt[icent][ipt][id]);
-        double v22Dif = cor2red.mVal/v22;
+        // double v22Dif = cor2red.mVal/v22;
+        double v22Dif = (cor2red.mVal - cos2psi1[icent][ipt][id] * cos2phi1[icent] - sin2psi1[icent][ipt][id] * sin2phi1[icent]) / v22;
+
         double cov22prime = Covariance(hcov22prime[icent][ipt][id],hv22[icent],hv22pt[icent][ipt][id]);
         double ev22Dif = sqrt(0.25*pow(cor2.mVal,-3)*(pow(cor2red.mVal,2)*cor2.mMSE
                             + 4*pow(cor2.mVal,2)*cor2red.mMSE - 4*cor2.mVal*cor2red.mVal*cov22prime));
@@ -445,7 +540,32 @@ void v2plot_differential_flow(){
         double cov42prime = Covariance(hcov42prime[icent][ipt][id],hv24[icent],hv22pt[icent][ipt][id]);
         double cov44prime = Covariance(hcov44prime[icent][ipt][id],hv24[icent],hv24pt[icent][ipt][id]);
         double cov2prime4prime = Covariance(hcov2prime4prime[icent][ipt][id],hv22pt[icent][ipt][id],hv24pt[icent][ipt][id]);
-        double v24Dif = (2.*cor2.mVal*cor2red.mVal-cor4red.mVal)*pow(v24,-3);
+        // double v24Dif = (2.*cor2.mVal*cor2red.mVal-cor4red.mVal)*pow(v24,-3);
+        double v24Dif =
+        - (cor4red.mVal - 2.*cor2red.mVal*cor2.mVal
+        - cos2psi1[icent][ipt][id] * cos2phi123[icent]
+        + sin2psi1[icent][ipt][id] * sin2phi123[icent]
+        - cos2phi1[icent] * cos2psi1mphi23[icent][ipt][id]
+        + sin2phi1[icent] * sin2psi1mphi23[icent][ipt][id]
+        - 2. * cos2phi1[icent] * cos2psi1pphi23[icent][ipt][id]
+        - 2. * sin2phi1[icent] * sin2psi1pphi23[icent][ipt][id]
+        - cos2psi1phi2[icent][ipt][id] * cos2phi12[icent]
+        - sin2psi1phi2[icent][ipt][id] * sin2phi12[icent]
+        + 2. * cos2phi12[icent]
+        * (cos2psi1[icent][ipt][id] * cos2phi1[icent] - sin2psi1[icent][ipt][id] * sin2phi1[icent])
+        + 2. * sin2phi12[icent]
+        * (cos2psi1[icent][ipt][id] * sin2phi1[icent] + sin2psi1[icent][ipt][id] * cos2phi1[icent])
+        + 4. * cor2.mVal
+        * (cos2psi1[icent][ipt][id] * cos2phi1[icent] + sin2psi1[icent][ipt][id] * sin2phi1[icent])
+        + 2. * cos2psi1phi2[icent][ipt][id]
+        * (pow(cos2phi1[icent],2) - pow(sin2phi1[icent],2))
+        + 4. * sin2psi1phi2[icent][ipt][id] * cos2phi1[icent] * sin2phi1[icent]
+        + 4. * cor2red.mVal * (pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2))
+        - 6. * (pow(cos2phi1[icent],2) - pow(sin2phi1[icent],2))
+        * (cos2psi1[icent][ipt][id] * cos2phi1[icent] - sin2psi1[icent][ipt][id] * sin2phi1[icent])
+        - 12. * cos2phi1[icent] * sin2phi1[icent]
+        * (sin2psi1[icent][ipt][id] * cos2phi1[icent] + cos2psi1[icent][ipt][id] * sin2phi1[icent]))
+        * pow(v24,-3.);
         double ev24Dif = sqrt( pow(v24,-14)
             * (pow(2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal,2.)
             * cor2.mMSE
@@ -471,7 +591,9 @@ void v2plot_differential_flow(){
 
         // v22 Gapped
         term cor2redGap = term(hv22ptGap[icent][ipt][id]);
-        double v22DifGap = cor2redGap.mVal/v22Gap;
+        // double v22DifGap = cor2redGap.mVal/v22Gap;
+        double v22DifGap = (cor2redGap.mVal - cos2psi1Gap[icent][ipt][id] * cos2phi1Gap[icent] - sin2psi1Gap[icent][ipt][id] * sin2phi1Gap[icent]) / v22Gap;
+
         double cov22primeGap = Covariance(hcov22primeGap[icent][ipt][id],hv22Gap[icent],hv22ptGap[icent][ipt][id]);
         double ev22DifGap = sqrt(0.25*pow(cor2Gap.mVal,-3)*(pow(cor2redGap.mVal,2)*cor2Gap.mMSE
                             + 4*pow(cor2Gap.mVal,2)*cor2redGap.mMSE - 4*cor2Gap.mVal*cor2redGap.mVal*cov22primeGap));
@@ -600,7 +722,7 @@ void v2plot_differential_flow(){
       grDifFl1040[i][id] -> SetDrawOption("P");
       grDifFl1040[i][id] -> SetLineWidth(1);
     }
-
+    
     std::vector<TGraphErrors*> vgrv2pt1040;
     for (int imeth=0; imeth<nmethod; imeth++){
       // grDifFl1040[imeth][id] -> SetTitle(Form("V2 vs. pT, %s, centrality 10-40%%, %s",pidNames.at(id).Data(),grTitleDF[imeth]));
@@ -645,6 +767,32 @@ void v2plot_differential_flow(){
       }
     } // end of loop over pt bin
   } // end of loop over centrality classes
+  for (int ipt=0;ipt<npt;ipt++){cout<<eV24cent1040[0][ipt]<<endl;}
+  // Acceptance correction
+  delete hcos2phi1;
+  delete hsin2phi1;
+  delete hcos2phi12;
+  delete hsin2phi12;
+  delete hcos2phi123;
+  delete hsin2phi123;
+  delete hcos2phi1Gap;
+  delete hsin2phi1Gap;
+  for (int ipt=0;ipt<npt;ipt++){
+    for (int id=0;id<npid;id++){
+      delete hcos2psi1[ipt][id];
+      delete hsin2psi1[ipt][id];
+      delete hcos2psi1phi2[ipt][id];
+      delete hsin2psi1phi2[ipt][id];
+      delete hcos2psi1pphi23[ipt][id];
+      delete hsin2psi1pphi23[ipt][id];
+      delete hcos2psi1mphi23[ipt][id];
+      delete hsin2psi1mphi23[ipt][id];
+      delete hcos2psi1Gap[ipt][id];
+      delete hsin2psi1Gap[ipt][id];
+    }
+  }
+
+
   inFile->Close();
 }
 
@@ -663,8 +811,19 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
   TProfile *hv22EP[ncent][npid]; // profile of integrated flow from v2{eta-sub}     
   TProfile *HRes[ncent];
   TProfile *hv22Gap[ncent];
-
+  // Acc. correction terms
+  TProfile *hcos2phi1, *hsin2phi1, *hcos2phi12, *hsin2phi12, *hcos2phi123, *hsin2phi123;
+  TProfile *hcos2phi1Gap, *hsin2phi1Gap;
   // Get histograms
+  // Acceptance correction
+  hcos2phi1 = (TProfile*)inFile->Get("hcos2phi1");
+  hsin2phi1 = (TProfile*)inFile->Get("hsin2phi1");
+  hcos2phi12 = (TProfile*)inFile->Get("hcos2phi12");
+  hsin2phi12 = (TProfile*)inFile->Get("hsin2phi12");
+  hcos2phi123 = (TProfile*)inFile->Get("hcos2phi123");
+  hsin2phi123 = (TProfile*)inFile->Get("hsin2phi123");
+  hcos2phi1Gap = (TProfile*)inFile->Get("hcos2phi1Gap");
+  hsin2phi1Gap = (TProfile*)inFile->Get("hsin2phi1Gap");
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
     hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
@@ -680,6 +839,22 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
     // merging CH(-) at id=4 with CH(+) at id=0
     hv22EP[icent][0]->Add(hv22EP[icent][4]);
   }
+
+  // Acceptance correction terms
+  double  cos2phi1[ncent], sin2phi1[ncent], cos2phi12[ncent], sin2phi12[ncent],
+          cos2phi123[ncent], sin2phi123[ncent], cos2phi1Gap[ncent], sin2phi1Gap[ncent];
+  // Extract the acceptance correction terms
+  for (int icent=0; icent<ncent; icent++){
+    cos2phi1[icent] = hcos2phi1 -> GetBinContent(1+icent);
+    sin2phi1[icent] = hsin2phi1 -> GetBinContent(1+icent);
+    cos2phi12[icent] = hcos2phi12 -> GetBinContent(1+icent);
+    sin2phi12[icent] = hsin2phi12 -> GetBinContent(1+icent);
+    cos2phi123[icent] = hcos2phi123 -> GetBinContent(1+icent);
+    sin2phi123[icent] = hsin2phi123 -> GetBinContent(1+icent);
+    cos2phi1Gap[icent] = hcos2phi1Gap -> GetBinContent(1+icent);
+    sin2phi1Gap[icent] = hsin2phi1Gap -> GetBinContent(1+icent);
+  }
+
   TGraphErrors *grIntFlowVsCent[nmethod];
   TCanvas *can;
 
@@ -694,17 +869,28 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
     eV2EP.push_back( hv22EP[icent][0]->GetBinError(1)   / sqrt( HRes[icent]->GetBinContent(1) ) );
     // 2QC
     term cor2 = term(hv22[icent]);
-    vV22.push_back(sqrt(cor2.mVal));
+    vV22.push_back(sqrt(cor2.mVal - (pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2))));
     eV22.push_back(sqrt(1./(4.*cor2.mVal)*cor2.mMSE));
     // 4QC
     term cor4 = term(hv24[icent]);
     double cov24 = Covariance(hcov24[icent],hv22[icent],hv24[icent]);
-    double v24 = pow(2*pow(cor2.mVal,2)-cor4.mVal,0.25);
+    double v24 = pow( -
+        ( cor4.mVal - 2.*cor2.mVal*cor2.mVal
+        - 4. * cos2phi1[icent] * cos2phi123[icent]
+        + 4. * sin2phi1[icent] * sin2phi123[icent]
+        - pow(cos2phi12[icent],2) - pow(sin2phi12[icent],2)
+        + 4. * cos2phi12[icent]
+        * (pow(cos2phi1[icent],2) - pow(sin2phi1[icent],2))
+        + 8. * sin2phi12[icent] * sin2phi1[icent] * cos2phi1[icent]
+        + 8. * cor2.mVal
+        * (pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2))
+        - 6. * pow(pow(cos2phi1[icent],2) + pow(sin2phi1[icent],2),2))
+        ,0.25);
     vV24.push_back(v24);
     eV24.push_back( sqrt( 1./pow(v24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) ) );
 
     term cor2Gap = term(hv22Gap[icent]);
-    vV22Gap.push_back(sqrt(cor2Gap.mVal));
+    vV22Gap.push_back(sqrt(cor2Gap.mVal - (pow(cos2phi1Gap[icent],2) + pow(sin2phi1Gap[icent],2))));
     eV22Gap.push_back(sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE));
 
     // Checking if there are differences with v2plot_integrated_flow_for_PID() or not
@@ -773,6 +959,15 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
       delete hv22EP[icent][id];
     }
   }
+  // Acceptance correction
+  delete hcos2phi1;
+  delete hsin2phi1;
+  delete hcos2phi12;
+  delete hsin2phi12;
+  delete hcos2phi123;
+  delete hsin2phi123;
+  delete hcos2phi1Gap;
+  delete hsin2phi1Gap;
   delete inFile;
 
 }
@@ -794,6 +989,14 @@ void v2plot_integrated_flow_for_PID(){
 
   TProfile *hv22Gap[ncent][npid];
   TProfile *hv22ptGap[ncent][npt][npid];
+
+  // Acc. correction terms
+  TProfile *hcos2phi1[npid], *hsin2phi1[npid], *hcos2phi12[npid], *hsin2phi12[npid], *hcos2phi123[npid], *hsin2phi123[npid];
+  TProfile *hcos2phi1Gap[npid], *hsin2phi1Gap[npid];
+  TProfile *hcos2psi1[npt][npid], *hsin2psi1[npt][npid], *hcos2psi1phi2[npt][npid], *hsin2psi1phi2[npt][npid],
+           *hcos2psi1pphi23[npt][npid], *hsin2psi1pphi23[npt][npid], *hcos2psi1mphi23[npt][npid], *hsin2psi1mphi23[npt][npid];
+  TProfile *hcos2psi1Gap[npt][npid], *hsin2psi1Gap[npt][npid];
+
   // Get histograms
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     
@@ -811,7 +1014,23 @@ void v2plot_integrated_flow_for_PID(){
       }
     } // end of loop over pt bin
   } // end of loop over centrality classes
+  
+  for (int ipt=0;ipt<npt;ipt++){// Acceptance correction
+    for (int id=0;id<npid;id++){
+      hcos2psi1[ipt][id] = (TProfile*)inFile->Get(Form("hcos2psi1_%i_%i",ipt,id));
+      hsin2psi1[ipt][id] = (TProfile*)inFile->Get(Form("hsin2psi1_%i_%i",ipt,id));
+      hcos2psi1phi2[ipt][id] = (TProfile*)inFile->Get(Form("hcos2psi1phi2_%i_%i",ipt,id));
+      hsin2psi1phi2[ipt][id] = (TProfile*)inFile->Get(Form("hsin2psi1phi2_%i_%i",ipt,id));
+      // hcos2psi1pphi23[ipt][id] = (TProfile*)inFile->Get(Form("hcos2psi1pphi23_%i_%i",ipt,id));
+      // hsin2psi1pphi23[ipt][id] = (TProfile*)inFile->Get(Form("hsin2psi1pphi23_%i_%i",ipt,id));
+      hcos2psi1mphi23[ipt][id] = (TProfile*)inFile->Get(Form("hcos2psi1mphi23_%i_%i",ipt,id));
+      hsin2psi1mphi23[ipt][id] = (TProfile*)inFile->Get(Form("hsin2psi1mphi23_%i_%i",ipt,id));
+      hcos2psi1Gap[ipt][id] = (TProfile*)inFile->Get(Form("hcos2psi1Gap_%i_%i",ipt,id));
+      hsin2psi1Gap[ipt][id] = (TProfile*)inFile->Get(Form("hsin2psi1Gap_%i_%i",ipt,id));
+    }
+  }
 
+  // Merging pt bins
   for (int icent=0;icent<ncent;icent++){
     for (int id=0;id<npid;id++){
       hv22EP[icent][id] = (TProfile*) hv2EP[icent][0][id]->Clone();
@@ -828,9 +1047,43 @@ void v2plot_integrated_flow_for_PID(){
       }
     }
   }
+  for (int id=0;id<npid;id++){ // Acceptance correction
+    hcos2phi1[id] = (TProfile*) hcos2psi1[0][id]->Clone();
+    hsin2phi1[id] = (TProfile*) hsin2psi1[0][id]->Clone();
+    hcos2phi12[id] = (TProfile*) hcos2psi1phi2[0][id]->Clone();
+    hsin2phi12[id] = (TProfile*) hsin2psi1phi2[0][id]->Clone();
+    hcos2phi123[id] = (TProfile*) hcos2psi1mphi23[0][id]->Clone();
+    hsin2phi123[id] = (TProfile*) hsin2psi1mphi23[0][id]->Clone();
+    hcos2phi1Gap[id] = (TProfile*) hcos2psi1Gap[0][id]->Clone();
+    hsin2phi1Gap[id] = (TProfile*) hsin2psi1Gap[0][id]->Clone();
+    for (int ipt=1;ipt<npt;ipt++){
+      hcos2phi1[id]->Add(hcos2psi1[ipt][id]);
+      hsin2phi1[id]->Add(hsin2psi1[ipt][id]);
+      hcos2phi12[id]->Add(hcos2psi1phi2[ipt][id]);
+      hsin2phi12[id]->Add(hsin2psi1phi2[ipt][id]);
+      hcos2phi123[id]->Add(hcos2psi1mphi23[ipt][id]);
+      hsin2phi123[id]->Add(hsin2psi1mphi23[ipt][id]);
+      hcos2phi1Gap[id]->Add(hcos2psi1Gap[ipt][id]);
+      hsin2phi1Gap[id]->Add(hsin2psi1Gap[ipt][id]);
+    }
+  }
+
+
+
+
   if (bMergeCharged){
-    for (int icent=0;icent<ncent;icent++){
-      for (int id=0;id<npid/2;id++){
+    
+    for (int id=0;id<npid/2;id++){
+      // Acceptance correction
+      hcos2phi1[id]->Add(hcos2phi1[id+4]);
+      hsin2phi1[id]->Add(hsin2phi1[id+4]);
+      hcos2phi12[id]->Add(hcos2phi12[id+4]);
+      hsin2phi12[id]->Add(hsin2phi12[id+4]);
+      hcos2phi123[id]->Add(hcos2phi123[id+4]);
+      hsin2phi123[id]->Add(hsin2phi123[id+4]);
+      hcos2phi1Gap[id]->Add(hcos2phi1Gap[id+4]);
+      hsin2phi1Gap[id]->Add(hsin2phi1Gap[id+4]);
+      for (int icent=0;icent<ncent;icent++){
         hv22EP[icent][id]->Add(hv22EP[icent][id+4]);
         hv22[icent][id]->Add(hv22[icent][id+4]);
         hv24[icent][id]->Add(hv24[icent][id+4]);
@@ -951,7 +1204,7 @@ void v2plot_integrated_flow_for_PID(){
   delete inFile;
 }
 
-void v2plot(){
+void plot_AC(){
   CalStatErrCent1040();
   if (bMergeCharged){
     pidNames.clear();

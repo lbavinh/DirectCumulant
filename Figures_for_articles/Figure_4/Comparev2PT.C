@@ -21,6 +21,7 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   TString energy[nenergy] = {"7.7GeV","11.5GeV"};
   TString xAxisName = {"p_{T} (GeV/c)"};
   TString legendEntries[nlevel]={"True","Reco"};
+  TString legendEntries1[2]={"#pi^{#pm}","p"};
   TString padName[6]={"(a)","(b)","(c)","(d)","(e)","(f)"};
   const float leg_coordinate[4]={0.68,0.07,0.99,0.3}; // top left: 0.28,0.7,0.6,0.99
   const float labelSizeUpperPlot = 0.115;
@@ -31,36 +32,46 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   TString graphTitle[6]={"v_{2}{4}","v_{2}{2}","v_{2}{#Psi_{2,TPC}^{}}","v_{2}{4}","v_{2}{2}","v_{2}{#Psi_{2,TPC}^{}}"};
 
   // const pair<float,float> ratio={0.82,1.18};
-  TFile *input[nlevel][nenergy];
-  TGraphErrors *grV2[2][nlevel][nmethod][nenergy];
+  TFile *inputPion[nlevel][nenergy];
+  TFile *inputProton[nlevel][nenergy];
+  TGraphErrors *grV2[2][nlevel][nmethod][nenergy]; // [0:pions,1:protons]
   char hname[400];
   TString method[nlevel]={"Model","Reco"};
   for (int i=0;i<nenergy;i++){
-    input[0][i] = new TFile(Form("v2_%s_%s.root",model.Data(),energy[i].Data()),"read");
-    input[1][i] = new TFile(Form("v2_%s_%s_Reco_MotherID.root",model.Data(),energy[i].Data()),"read");
+    inputPion[0][i] = new TFile(Form("v2_%s_%s.root",model.Data(),energy[i].Data()),"read");
+    inputPion[1][i] = new TFile(Form("v2_%s_%s_Reco_MotherID.root",model.Data(),energy[i].Data()),"read");
   }
+  for (int i=0;i<nenergy;i++){
+    inputProton[0][i] = new TFile(Form("v2_UrQMD_%s_8PID.root",energy[i].Data()),"read");
+    inputProton[1][i] = new TFile(Form("v2_UrQMD_%s_Reco_MotherID_8PID.root",energy[i].Data()),"read");
+  }
+  // Get TGraphErrors
   for (int ilev=0; ilev<nlevel; ilev++){
     for (int imeth=0;imeth<nmethod;imeth++){
       for (int ien=0;ien<nenergy;ien++){
-      grV2[0][ilev][imeth][ien] = (TGraphErrors*)input[ilev][ien]->Get(Form("gr_cent10-40_%i_0",imeth+1));
-      grV2[1][ilev][imeth][ien] = (TGraphErrors*)input[ilev][ien]->Get(Form("grRF_%i_0",imeth+1));
+        grV2[0][ilev][imeth][ien] = (TGraphErrors*)inputPion[ilev][ien]->Get(Form("gr_cent10-40_%i_1",imeth+1));
+        grV2[1][ilev][imeth][ien] = (TGraphErrors*)inputProton[ilev][ien]->Get(Form("gr_cent10-40_%i_3",imeth+1));
       }
     }
   }
+  // Cosmetics
   for (int imeth=0;imeth<nmethod;imeth++){
-    for (int i=0;i<2;i++){
-      for (int ien=0;ien<nenergy;ien++){
-        grV2[i][0][imeth][ien]->SetMarkerStyle(kOpenSquare);
-        grV2[i][0][imeth][ien]->SetMarkerColor(kRed+1);
-        grV2[i][0][imeth][ien]->SetLineColor(kRed+1);
-
-        grV2[i][1][imeth][ien]->SetMarkerStyle(kFullCircle);
-        grV2[i][1][imeth][ien]->SetMarkerColor(kBlue+1);
-        grV2[i][1][imeth][ien]->SetLineColor(kBlue+1);
-        // grV2[i][2][imeth]->SetMarkerStyle(kFullTriangleUp);
-        // grV2[icent][3][imeth]->SetMarkerStyle(kFullCircle); // kOpenCircle
-        for (int ilev=0;ilev<nlevel;ilev++){
-          grV2[i][ilev][imeth][ien] -> SetMarkerSize(1.9);
+    for (int ien=0;ien<nenergy;ien++){
+      grV2[0][0][imeth][ien]->SetMarkerStyle(kOpenTriangleUp); // pion
+      grV2[0][1][imeth][ien]->SetMarkerStyle(kFullTriangleUp); // pion - reco
+      grV2[1][0][imeth][ien]->SetMarkerStyle(kOpenCircle); // proton
+      grV2[1][1][imeth][ien]->SetMarkerStyle(kFullCircle); // proton - reco
+    }
+  }
+  for (int imeth=0;imeth<nmethod;imeth++){
+    for (int ien=0;ien<nenergy;ien++){
+      for (int ilev=0;ilev<nlevel;ilev++){
+        grV2[0][ilev][imeth][ien]->SetMarkerColor(kRed+1);
+        grV2[0][ilev][imeth][ien]->SetLineColor(kRed+1);
+        grV2[1][ilev][imeth][ien]->SetMarkerColor(kBlue+1);
+        grV2[1][ilev][imeth][ien]->SetLineColor(kBlue+1);
+        for (int id=0;id<2;id++){
+          grV2[id][ilev][imeth][ien] -> SetMarkerSize(1.9);
           // grV2[i][ilev][imeth] -> SetMarkerColor(1);
           // grV2[i][ilev][imeth] -> SetLineColor(1);
         }
@@ -129,7 +140,15 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
       }
       leg_pt->Draw();
     }else if (ipad==1) {
-      tex.DrawLatex(maxpt*0.95,maxV2*0.95,Form("10-40%%, UrQMD, Ch. hadrons"));
+      tex.DrawLatex(maxpt*0.95,maxV2*0.95,Form("10-40%%, UrQMD"));
+      TLegend *leg_pt1 = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
+      leg_pt1->SetBorderSize(0);
+      leg_pt1->SetTextFont(42);
+      leg_pt1->SetTextSize(labelSizeUpperPlot);
+      for (int id=0; id<2; id++){
+        leg_pt1->AddEntry(grV2[id][1][0][0],legendEntries1[id].Data(),"p");
+      }
+      leg_pt1->Draw();
     }else if (ipad==3) {
       tex.DrawLatex(maxpt*0.95,maxV2*0.95,Form("#sqrt{s_{NN}}=%s",energy[1].Data()));
     }
@@ -145,12 +164,19 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
         if (ipad==3) grV2[0][ilev][0][1]->Draw("P"); // PLC PMC // PLC (Palette Line Color) and PMC (Palette Marker Color)
         if (ipad==4) grV2[0][ilev][2][1]->Draw("P"); // PZ
         if (ipad==5) grV2[0][ilev][1][1]->Draw("P");
+
+        if (ipad==0) grV2[1][ilev][0][0]->Draw("P"); // PLC PMC // PLC (Palette Line Color) and PMC (Palette Marker Color)
+        if (ipad==1) grV2[1][ilev][2][0]->Draw("P"); // PZ
+        if (ipad==2) grV2[1][ilev][1][0]->Draw("P");
+        if (ipad==3) grV2[1][ilev][0][1]->Draw("P"); // PLC PMC // PLC (Palette Line Color) and PMC (Palette Marker Color)
+        if (ipad==4) grV2[1][ilev][2][1]->Draw("P"); // PZ
+        if (ipad==5) grV2[1][ilev][1][1]->Draw("P");
     }
     // cout << "error here" << endl;
   }
-  can->SaveAs(Form("Figure_3_Performance_v2pt.pdf"));
+  can->SaveAs(Form("Figure_4_Performance_v2pt_PID.pdf"));
   gROOT->SetStyle("Pub");
-  can->SaveAs(Form("Figure_3_Performance_v2pt.png"));
+  can->SaveAs(Form("Figure_4_Performance_v2pt_PID.png"));
 
   
 }

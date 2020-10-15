@@ -1,10 +1,10 @@
 #include "DrawTGraphImp.C"
-TString model = {"UrQMD"};
-TString energy = {"11.5GeV"};
-TString inFileName= (TString) Form("../ROOTFile/%s_Reco_%s.root",model.Data(),energy.Data());
-TFile *outFile = new TFile(Form("./v2_%s_%s_Reco_MotherID.root",model.Data(),energy.Data()),"recreate");
-TString outDirName=(TString)Form("%s_%s_Reco",model.Data(),energy.Data());
-TString level= (TString) Form("%s, GEANT4, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
+TString model = {"AMPT15"}; char modelName[] = {"AMPT SM, #sigma=1.5 mb"};
+TString energy = {"7.7GeV"};
+TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
+TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");
+TString outDirName=(TString)Form("%s_%s",model.Data(),energy.Data());
+TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",modelName,energy.Data());
 
 // Flags
 bool drawDistributions = false; // auxiliary plots: eta, bimp, mult, etc.
@@ -871,7 +871,7 @@ void v2plot_integrated_flow_for_PID(){
       eV22Gap.push_back(sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE));
 
       // Checking if there are differences of vV2{x} & vV2{X}int 
-      if (id==0) { // PID: 0,1,2,3: CH,Pions,Kaons, protons & antiprotons
+      if (id==3) { // PID: 0,1,2,3: CH,Pions,Kaons, protons & antiprotons
         // cout << icent <<" "<<vV22.at(icent)<<" "<< vV22int.at(icent)<<" "<< eV22.at(icent)<<endl;
         // cout << icent <<" "<<vV24.at(icent)<<" "<< vV24int.at(icent)<<" "<< eV24.at(icent)<<endl; // discrepancy ~3% for mid-central collisions, >10% for the rest
         // cout << icent <<" "<<vV2EP.at(icent)<<" "<< vV2EPint.at(icent)<<" "<< eV2EP.at(icent)<<endl; // Both pt-bin merging method and integral over pt-bin method of integrated flow measurements give the same results for v2{eta-sub} ! 

@@ -2,8 +2,8 @@
 
 #
 # Specify working directory
-#$ -wd /weekly/$USER/lbavinh/readPicoDst/
-# Tell SGE that we will work in the working directory
+#$ -wd /weekly/$USER/lbavinh/readPicoDst
+# Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
 #$ -N Flow
@@ -14,20 +14,22 @@
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=01:30:00
 # Specify job array range (how many jobs will be created
-#$ -t 1-633
+# 121 jobs for 11.5 GeV, 95 for old, 100 for new 7.7 GeV AuAu,  for total 20M events
+#$ -t 1-121
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
 #
 
-# ${JOB_ID} - Id of the job array (one for all jobs)
-# ${SGE_TASK_ID} - id of the element of the job array
-# SGE option "-t 1-N" tells array range. It will create an array
-#     of N jobs with ${JOB_ID}_1, ${JOB_ID}_2, ..., ${JOB_ID}_N
-
+export energy=11.5
+export model=Reco_UrQMD
+# export energy=7.7
+# export model=Reco_UrQMD_mpd_winter2019
+# export model=Reco_UrQMD_PWG3-prod9
 #Main directory
+
 export MAIN_DIR=/weekly/$USER/lbavinh/readPicoDst
-export FILELIST=${MAIN_DIR}/runlist_PicoDst_merged.list
+export FILELIST=${MAIN_DIR}/split/runlistSGE_${model}_${energy}.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
@@ -41,8 +43,8 @@ export LOG=${OUT_LOG}/JOB_${JOB_ID}_${SGE_TASK_ID}.log
 mkdir -p $OUT_LOG
 mkdir -p $TMP
 touch $LOG
+
 eos cp --streams=16 $MAIN_DIR/readPicoDst.C $TMP
-eos cp --streams=16 $MAIN_DIR/function.C $TMP
 
 
 # Set correct environment variables (needed version of root)
@@ -54,13 +56,10 @@ echo "Input file:    $IN_FILE"  &>> $LOG
 echo "Output file:   $OUT_FILE" &>> $LOG
 echo "---------------" &>> $LOG
 echo "Run elliptic flow calculation..." &>> $LOG
-cd $TMP
-root -l -b -q readPicoDst.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
-
+root -l -b -q $TMP/readPicoDst.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
 echo "---------------" &>> $LOG
 echo "Cleaning temporary directory..." &>> $LOG
 cd ${START_DIR}
-pwd &>>$LOG
 rm -rf ${TMP}
 echo "Job is done!" &>> $LOG
 echo "=====================================" &>> $LOG

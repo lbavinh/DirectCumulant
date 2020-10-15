@@ -2,7 +2,7 @@
 
 #
 # Specify working directory
-#$ -wd /weekly/$USER/lbavinh/readPicoDst/
+#$ -wd /weekly/$USER/lbavinh/PicoDst/
 # Tell SGE that we will work in the working directory
 #$ -cwd
 # Specify job name
@@ -26,7 +26,7 @@
 #     of N jobs with ${JOB_ID}_1, ${JOB_ID}_2, ..., ${JOB_ID}_N
 
 #Main directory
-export MAIN_DIR=/weekly/$USER/lbavinh/readPicoDst
+export MAIN_DIR=/weekly/$USER/lbavinh/PicoDst
 export FILELIST=${MAIN_DIR}/runlist_PicoDst_merged.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}

@@ -2,7 +2,7 @@
 
 #
 # Specify working directory
-#$ -wd /weekly/$USER/lbavinh/readPicoDst
+#$ -wd /weekly/$USER/lbavinh/FlowANA/PicoDst
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
@@ -14,22 +14,20 @@
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=01:30:00
 # Specify job array range (how many jobs will be created
-# 121 jobs for 11.5 GeV, 95 for old, 100 for new 7.7 GeV AuAu,  for total 20M events
+# 121 jobs for 11.5 GeV, 295 for total 20M events 7.7
 #$ -t 1-121
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
 #
 
-export energy=11.5
+# export energy=7.7_20M
 export model=Reco_UrQMD
-# export energy=7.7
-# export model=Reco_UrQMD_mpd_winter2019
-# export model=Reco_UrQMD_PWG3-prod9
+export energy=11.5
 #Main directory
 
-export MAIN_DIR=/weekly/$USER/lbavinh/readPicoDst
-export FILELIST=${MAIN_DIR}/split/runlistSGE_${model}_${energy}.list
+export MAIN_DIR=/weekly/$USER/lbavinh/FlowANA/PicoDst
+export FILELIST=/weekly/lbavinh/lbavinh/PicoDst/split/runlistSGE_${model}_${energy}.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT

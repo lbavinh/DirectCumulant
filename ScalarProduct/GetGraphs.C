@@ -1,6 +1,6 @@
 #include "DrawTGraph.C"
 #include "Utils.C"
-
+Bool_t bMergePIDExeptForProtons = kTRUE;
 const double beam_energy = 7.7; // sqrt(sNN) in GeV
 
 const std::vector<std::pair<float, float>> centRange = {{0., 10.}, {10., 20.}, {20., 30.}, {30., 40.}, {40., 50.}, {10., 40.}, {40., 80.}, {0., 60.}, {10., 60}};
@@ -22,39 +22,50 @@ void GetGraphs(TString iFileModel="UrQMD_7.7GeV.root", TString oFile="v2_UrQMD_7
   TFile *fiModel = new TFile(iFileModel.Data(), "read");
   // TFile *fiReco = new TFile(iFileReco.Data(), "read");
 
-  // Resolution calculation
-  TProfile *pRes2_model= (TProfile*) fiModel->Get("pResTPC");
-  std::vector<float> vRes_model;
-  float res2, res;
-  for (int ibin = 0; ibin < pRes2_model->GetNbinsX(); ibin++)
-  {
-    res2 = pRes2_model->GetBinContent(ibin+1);
-    if (res2 < 0) res = 0;
-    else          res = sqrt(res2);
-    vRes_model.push_back(res);
-  }
+  // // Resolution calculation
+  // TProfile *pRes2_model= (TProfile*) fiModel->Get("pResTPC");
+  // std::vector<float> vRes_model;
+  // float res2, res;
+  // for (int ibin = 0; ibin < pRes2_model->GetNbinsX(); ibin++)
+  // {
+  //   res2 = pRes2_model->GetBinContent(ibin+1);
+  //   if (res2 < 0) res = 0;
+  //   else          res = sqrt(res2);
+  //   vRes_model.push_back(res);
+  // }
 
-  std::cout << "const std::vector<float> vResTpc     = {";
-  for (int i=0; i<vRes_model.size(); i++)
-  {
-    std::cout << vRes_model.at(i);
-    if (i < vRes_model.size()-1) std::cout << ", ";
-  }
-  std::cout << "};" << std::endl;
+  // std::cout << "const std::vector<float> vResTpc     = {";
+  // for (int i=0; i<vRes_model.size(); i++)
+  // {
+  //   std::cout << vRes_model.at(i);
+  //   if (i < vRes_model.size()-1) std::cout << ", ";
+  // }
+  // std::cout << "};" << std::endl;
 
 
 
   TProfile2D *tmp;
+  TProfile2D *mergePr[Npid];
   std::pair<int, int> cent_bins;
   // TProfile *pv2_mc[n_cent_bins][Npid];
   // TProfile *pv2_reco[n_cent_bins][Npid];
   TProfile *pv2_model[n_cent_bins][Npid];
-
-
+  if (bMergePIDExeptForProtons) {
+    for (int id=0;id<Npid;id++){
+      mergePr[id] = (TProfile2D *)fiModel->Get(Form("pv2TPC_pid%i", id));
+    }
+    for (int id=0;id<Npid/2;id++){
+      if (id!=3) mergePr[id] -> Add(mergePr[id+4]);
+      // delete mergePr[id+4];
+    }
+  }
   // Get Model results
   for (int i = 0; i < Npid; i++)
   {
     tmp = (TProfile2D *)fiModel->Get(Form("pv2TPC_pid%i", i));
+    if (bMergePIDExeptForProtons && i<Npid/2){
+      tmp = mergePr[i];
+    }
     for (int icent = 0; icent < n_cent_bins; icent++)
     {
       cent_bins.first = tmp->GetYaxis()->FindBin(centRange.at(icent).first);
@@ -110,9 +121,9 @@ void GetGraphs(TString iFileModel="UrQMD_7.7GeV.root", TString oFile="v2_UrQMD_7
 
   TCanvas *canv;
   TH2F *h;
-  for (int icent = 5; icent < n_cent_bins; icent++)
+  for (int icent = 5; icent < 6; icent++) // n_cent_bins
   {
-    for (int i = 0; i < 1; i++) // Npid
+    for (int i = 0; i < Npid/2; i++) // Npid
     {
       canv = new TCanvas("c","can",200,10,800,600);  
       grv2_model[icent][i]->SetTitle("model");

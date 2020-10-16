@@ -1,6 +1,6 @@
 #include "DrawTGraphImp.C"
-TString model = {"AMPT15"}; char modelName[] = {"AMPT SM, #sigma=1.5 mb"};
-TString energy = {"7.7GeV"};
+TString model = {"AMPT08"}; char modelName[] = {"AMPT SM, #sigma=0.8 mb"};
+TString energy = {"11.5GeV"};
 TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
 TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");
 TString outDirName=(TString)Form("%s_%s",model.Data(),energy.Data());

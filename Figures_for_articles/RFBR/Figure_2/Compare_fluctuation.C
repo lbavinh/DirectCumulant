@@ -1,19 +1,19 @@
 void Compare_fluctuation(){
   const int nenergy = 3; // 7.7, 11.5 GeV
-  const int nmodel = 3; // Star data, vHLLE+UrQMD, UrQMD, SMASH
+  const int nmodel = 5; // "STAR data","UrQMD","SMASH","AMPT15","AMPT08"
   const int nmethod = 4; // v22, v24, v2(eta-sub), v22(eta-gap)
   const float mincent = -1;
   const float maxcent = 63.;
   const float maxV2Ratio = 1.3;
   const float minV2Ratio = 0.5;
-  const float leg_coordinate[4]={0.6,0.25,0.9,0.45}; //  0.05,0.7,0.35,0.99
+  const float leg_coordinate[4]={0.3,0.2,0.6,0.45}; //  0.05,0.7,0.35,0.99
   const float labelSize = 0.075;
   const float titleSize = 0.09;
-  TString legendEntries[nmodel]={"STAR data","UrQMD","SMASH"};//(Phys.Rev.C.86.054908)
+  TString legendEntries[nmodel]={"STAR data","UrQMD","SMASH","AMPT, #sigma_{p}=1.5mb","AMPT, #sigma_{p}=0.8mb"};//(Phys.Rev.C.86.054908)
   TString energy[nenergy]={"11.5","7.7","4.5"};
-  TString model[nmodel]={"STAR data","UrQMD","SMASH"};
+  TString model[nmodel]={"STAR data","UrQMD","SMASH","AMPT15","AMPT08"};
   TString xAxisName = {"Centrality (%)"};
-  TString padName[6]={"(a)","(b)","(c)","(d)","(e)","(f)"};
+  TString padName[]={"(a)","(b)","(c)","(d)","(e)","(f)"};
   TFile *input[nenergy][nmodel];
   TGraphErrors *grV2[nenergy][nmodel][nmethod];
   
@@ -21,7 +21,7 @@ void Compare_fluctuation(){
 
   for (int ien=0;ien<nenergy;ien++){
     for (int imod=1;imod<nmodel;imod++){
-
+      if (ien==2 &&(imod==3||imod==4)) continue;  
       input[ien][imod] = new TFile(Form("v2_%s_%sGeV.root",model[imod].Data(),energy[ien].Data()),"read");
       for (int imeth=0;imeth<nmethod;imeth++){ // v22, v24, v2(eta-sub), v22(eta-gap)
         grV2[ien][imod][imeth] = (TGraphErrors*)input[ien][imod]->Get(Form("grRF_%i_0",imeth)); // "_0" - Charged Hadrons
@@ -34,6 +34,7 @@ void Compare_fluctuation(){
   for (int ien=0;ien<nenergy;ien++){
     for (int imod=1;imod<nmodel;imod++){
       for (int imeth=0;imeth<nmethod;imeth++){
+        if (ien==2 &&(imod==3||imod==4)) continue;
         // Read points
         vx_gr[ien][imod][imeth]=(Double_t*)grV2[ien][imod][imeth]->GetX();
         vy_gr[ien][imod][imeth]=(Double_t*)grV2[ien][imod][imeth]->GetY();
@@ -49,7 +50,7 @@ void Compare_fluctuation(){
   std::vector<Double_t> vRatioV22GappedV24[nenergy][nmodel], vRatioV22GappedV24Err[nenergy][nmodel];
   for (int ien=0;ien<nenergy;ien++){
     for (int imod=1;imod<nmodel;imod++){
-
+      if (ien==2 &&(imod==3||imod==4)) continue;
       for (int i=0;i<nbins[ien][imod][3];i++){
         Double_t ratio = vy_gr[ien][imod][1][i]/vy_gr[ien][imod][3][i];
         Double_t ratioErr = ratio*(TMath::Sqrt(TMath::Power(ey_gr[ien][imod][3][i]/vy_gr[ien][imod][3][i],2)+TMath::Power(ey_gr[ien][imod][1][i]/vy_gr[ien][imod][1][i],2)));
@@ -62,30 +63,26 @@ void Compare_fluctuation(){
     }
     // grRatioV2[ien][0] -> SetMarkerStyle(kFullCircle);
     // grRatioV2[ien][1] -> SetMarkerStyle(kFullCircle);
+    grRatioV2[ien][1] -> SetMarkerColor(kBlack);
+    grRatioV2[ien][1] -> SetLineColor(kBlack);
+    grRatioV2[ien][1] -> SetMarkerStyle(kOpenCircle);
+
     grRatioV2[ien][2] -> SetMarkerColor(kBlue+1);
     grRatioV2[ien][2] -> SetLineColor(kBlue+1);
     grRatioV2[ien][2] -> SetMarkerStyle(kOpenSquare);
-    // grRatioV2[ien][3] -> SetMarkerColor(kRed);
-    // grRatioV2[ien][3] -> SetLineColor(kRed);
-    
-    grRatioV2[ien][1] -> SetMarkerColor(kBlack);
-    grRatioV2[ien][1] -> SetLineColor(kBlack);
-    grRatioV2[ien][1] -> SetMarkerStyle(kFullCircle);
+    if (ien==2) continue;
+    grRatioV2[ien][3] -> SetMarkerColor(kGreen+2);
+    grRatioV2[ien][3] -> SetLineColor(kGreen+2);
+    grRatioV2[ien][3] -> SetMarkerStyle(kFullTriangleUp);
+
+    grRatioV2[ien][4] -> SetMarkerColor(kBlack);
+    grRatioV2[ien][4] -> SetLineColor(kBlack);
+    grRatioV2[ien][4] -> SetMarkerStyle(kFullCross);
 
   }
   for (int imod=1;imod<nmodel;imod++){
-    // grRatioV2[0][imod] -> SetMarkerColor(kRed);
-    // grRatioV2[0][imod] -> SetLineColor(kRed);
-    // grRatioV2[1][imod] -> SetMarkerColor(kGreen);
-    // grRatioV2[1][imod] -> SetLineColor(kGreen);
-    // grRatioV2[2][imod] -> SetMarkerColor(kBlue);
-    // grRatioV2[2][imod] -> SetLineColor(kBlue);
-
-    // grRatioV2[0][imod] -> SetMarkerStyle(kFullCircle);
-    // grRatioV2[1][imod] -> SetMarkerStyle(kFullCircle);
-    // grRatioV2[2][imod] -> SetMarkerStyle(kFullCircle);
     for (int ien=0;ien<nenergy;ien++){
-
+      if (ien==2 &&(imod==3||imod==4)) continue;
       grRatioV2[ien][imod]->SetMarkerSize(1.8);
     }
   }
@@ -136,7 +133,7 @@ void Compare_fluctuation(){
 
   }
 
-  // cout << "error from here" << endl;
+  cout << "error from here" << endl;
   // gROOT->SetStyle("Pub");
   gStyle->SetErrorX(0);
   TCanvas *can = new TCanvas("can","can",200,10,2000,600);
@@ -175,35 +172,47 @@ void Compare_fluctuation(){
     if (ipad==0) {
       tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Au+Au at"));
       tex.DrawLatex(mincent+10,maxV2Ratio*0.98-0.12,Form("#sqrt{s_{NN}}=%s GeV",energy[ipad].Data()));
-    }else if (ipad==1) {
-      tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Ch. hadrons"));
-      tex.DrawLatex(mincent+10,maxV2Ratio*0.98-0.12,Form("#sqrt{s_{NN}}=%s GeV",energy[ipad].Data()));
-    }else{
-      tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("0.2<p_{T}^{}<3.0 GeV/c"));
-      tex.DrawLatex(mincent+10,maxV2Ratio*0.98-0.12,Form("#sqrt{s_{NN}}=%s GeV",energy[ipad].Data()));
-    }
-    if (ipad==2){
       TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
       leg_pt->SetBorderSize(0);
       leg_pt->SetTextFont(42);
-      leg_pt->SetTextSize(labelSize);
-      for (int imod=0; imod<nmodel; imod++){
+      leg_pt->SetTextSize(labelSize-0.01);
+      for (int imod=3; imod<nmodel; imod++){
+        leg_pt->AddEntry(grRatioV2[0][imod],legendEntries[imod].Data(),"p");
+      }
+      leg_pt->Draw();      
+
+    }else if (ipad==1) {
+      tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Ch. hadrons"));
+      tex.DrawLatex(mincent+10,maxV2Ratio*0.98-0.12,Form("#sqrt{s_{NN}}=%s GeV",energy[ipad].Data()));
+      TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
+      leg_pt->SetBorderSize(0);
+      leg_pt->SetTextFont(42);
+      leg_pt->SetTextSize(labelSize-0.01);
+      for (int imod=0; imod<3; imod++){
         leg_pt->AddEntry(grRatioV2[0][imod],legendEntries[imod].Data(),"p");
       }
       leg_pt->Draw();
+    }else{
+      tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("0.2<p_{T}^{}<3.0 GeV/c"));
+      tex.DrawLatex(mincent+10,maxV2Ratio*0.98-0.12,Form("#sqrt{s_{NN}}=%s GeV",energy[ipad].Data()));
+
+
+
     }
+
     TLine lineOne;
     lineOne.SetLineStyle(2);
     lineOne.DrawLine(mincent,1.,maxcent,1.);
 
-    for (int imod=nmodel-1;imod>=1;imod--){
+    for (int imod=nmodel-1;imod>=0;imod--){
 
       if (ipad==0) grRatioV2[0][imod]->Draw("P"); // PLC PMC // PLC (Palette Line Color) and PMC (Palette Marker Color)
       if (ipad==1) grRatioV2[1][imod]->Draw("P"); // PZ
-      if (ipad==2) grRatioV2[2][imod]->Draw("P");
-
+      if (ipad==2) {
+        if (imod==3||imod==4||imod==0) continue;
+      grRatioV2[2][imod]->Draw("P");
+      }
     }
-    if (ipad!=2) grRatioV2[ipad][0]->Draw("P");
 
   }
   can->SaveAs("Figure_2_Ratiov24v22_v2cent_3ener.pdf");

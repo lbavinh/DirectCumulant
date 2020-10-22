@@ -1,9 +1,9 @@
 #include "DrawTGraphImp.C"
 TString model = {"UrQMD"};
-TString energy = {"11.5GeV"};
-TString inFileName= (TString) Form("../ROOTFile/%s_Reco_%s.root",model.Data(),energy.Data());
-TFile *outFile = new TFile(Form("./v2_%s_%s_Reco_MotherID.root",model.Data(),energy.Data()),"recreate");
-TString outDirName=(TString)Form("%s_%s_Reco",model.Data(),energy.Data());
+TString energy = {"7.7GeV"};
+TString inFileName= (TString) Form("../ROOTFile/%s_Reco_%s_10M.root",model.Data(),energy.Data());
+TFile *outFile = new TFile(Form("./v2_%s_%s_Reco_MotherID_10M.root",model.Data(),energy.Data()),"recreate");
+TString outDirName=(TString)Form("%s_%s_Reco_10M",model.Data(),energy.Data());
 TString level= (TString) Form("%s, GEANT4, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
 
 // Flags

@@ -220,7 +220,7 @@ void ReadFlow(const char *inFileName)
 
         leg2[ipid] = new TLegend(lc[ipid].xlow,lc[ipid].ylow,lc[ipid].xup,lc[ipid].yup);
         leg2[ipid]->SetBorderSize(0.);
-        leg2[ipid]->SetHeader(Form("10-40%, %s",hName[ipid].Data()),"C");
+        leg2[ipid]->SetHeader(Form("10-40%%, %s",hName[ipid].Data()),"C");
         if (ipid == 0)
         {
             leg2[ipid]->AddEntry(grv22tpc[ipid],"v2{TPC}","p");

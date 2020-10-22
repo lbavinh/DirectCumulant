@@ -263,7 +263,7 @@ void FlowANA::Ana_event(){
     if (pt < minpt || pt > maxpt || abs(eta)>eta_cut) continue; // track selection
     // if (abs(eta)<eta_gap) continue;
     auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
-    // if (!particle) continue;
+    if (!particle) continue;
     float charge = 1./3.*particle->Charge();
     if (charge == 0) continue;
     // if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */

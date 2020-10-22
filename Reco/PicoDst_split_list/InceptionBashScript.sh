@@ -15,13 +15,13 @@
 #$ -l s_rt=01:30:00
 # Specify job array range (how many jobs will be created
 # 121 jobs for 11.5 GeV, 95 for old, 100 for new 7.7 GeV AuAu,  for total 20M events
-#$ -t 1-121
+#$ -t 1-95
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
 #
 
-export energy=11.5
+export energy=7.7
 export model=Reco_UrQMD
 # export energy=7.7
 # export model=Reco_UrQMD_mpd_winter2019

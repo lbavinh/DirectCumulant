@@ -261,6 +261,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       // if (abs(eta)<eta_gap) continue;
       // if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
       auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(mcTrack->GetPdg());
+      if (!particle) continue;
       float charge = 1./3.*particle->Charge();
       
       hPt -> Fill(pt);
@@ -376,8 +377,8 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       if (eta > eta_gap) fEta = 1; // TPC Right EP
 
       if ( fEta>-1 ){
-        sumQxy[fEta][0] += pt * cos(2.*phi);
-        sumQxy[fEta][1] += pt * sin(2.*phi);
+        sumQxy[fEta][0] += pt * cos2phi;
+        sumQxy[fEta][1] += pt * sin2phi;
         wQv[fEta]       += pt;
         multQv[fEta]++;
       } // end of eta selection

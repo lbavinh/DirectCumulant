@@ -564,20 +564,15 @@ double Nch_R2 = 0;
             sumQxy[ith][fEta][1] += 1. * pt * sin( (ith+1.0) * phi );
           }
 				}
-				//if(fEta == 7 || fEta == 8){
-				//	sumQxyFull[ith][0] += pt * cos( (ith+1.0) * phi );
-				//	sumQxyFull[ith][1] += pt * sin( (ith+1.0) * phi );
-				//}
+				// if(fEta == 7 || fEta == 8){
+				// 	sumQxyFull[ith][0] += pt * cos( (ith+1.0) * phi );
+				// 	sumQxyFull[ith][1] += pt * sin( (ith+1.0) * phi );
+				// }
 			}
 			multQv[fEta]++;
-	   }// end of eta selection
-      
+	   } // end of eta selection
+   } // end of track loop
 
-   }// end of track loop
-
-
-  
-      
       if(Nch_L >= 1 && Nch_R >= 1){
           href1 -> Fill(Nch_L + Nch_R);
       }
@@ -590,27 +585,23 @@ double Nch_R2 = 0;
           href3 -> Fill(refMult1);
 	  hbimp3->Fill(bimp);
       }
-      
-
       if(refMult2>0){
           href4 -> Fill(refMult1);
 	  hbimp4->Fill(bimp);
       }
-
       if(refMult1>2){
           href5 -> Fill(refMult1);
 	  hbimp5->Fill(bimp);
       }
-
       float sumLR=Nch_L + Nch_R;
   
       // int fCent   = GetCentrality10_RefMult( refMult1 );// STAR def
-      //if( fCent<0 ) cout << fCent << endl;
+      // if( fCent<0 ) cout << fCent << endl;
 
       // int fCent   =  GetCentrality10_RefMultPHENIX(sumLR);
 
       int fCent   = GetCentrality10_Bimp(bimp);
-      //int fCent   =  GetCentrality10_BimpExp(bimp);
+      // int fCent   =  GetCentrality10_BimpExp(bimp);
       
   	float fEP[3][9]; //[ith][eta]
 	float fQv[3][9]; //[ith][eta]
@@ -645,8 +636,6 @@ double Nch_R2 = 0;
   fhcalFullEP_y = sumQxy[0][7][1] + sumQxy[0][8][1]; // полный Q-вектор (правый и левый)
   fhcalFullEP_phi = atan2( fhcalFullEP_y, fhcalFullEP_x );
 
-
-
 	for( int ith=0; ith<3; ith++ ){ // harmonic loop
 	  for( int ieta=0; ieta<9; ieta++ ){// eta EP detector loop
 	    if( fEP[ith][ieta]>-9000 ){ // EP reconstructed 
@@ -654,12 +643,12 @@ double Nch_R2 = 0;
 				H_Qv[ith][ieta]->Fill( fQv[ith][ieta] );
 				H_QvX[ith][ieta]->Fill( fQvX[ith][ieta] );
 				H_QvY[ith][ieta]->Fill( fQvY[ith][ieta] );
-	    }// end of EP reconstructed
-	  }// end of eta loop
-	}// end of harm loop
+	    } // end of EP reconstructed
+	  } // end of eta loop
+	} // end of harm loop
 
 	
-		//Resolution
+		// Resolution
 	for( int ith=0; ith<3; ith++ ){
 		for( int icb=0; icb<4; icb++ ){
 			double psi1, psi2, fq1, fq2, HarmStart=2.;
@@ -669,24 +658,14 @@ double Nch_R2 = 0;
 	       else if( icb==2 ){ psi1 = fEP[ith][5]; psi2 = fEP[ith][6]; fq1 = fQv[ith][5]; fq2 = fQv[ith][6]; } // BBC.E-BBC.W
 	       else { psi1 = fEP[ith][7]; psi2 = fEP[ith][8]; fq1 = fQv[ith][7]; fq2 = fQv[ith][8]; HarmStart=1.; } // FHCal.E-FHCal.W
 		       
-
-		        
-		
-		
-
 			if( psi1<-9000 || psi2<-9000 ) continue;
 			if( fq1<0 || fq2<0 ) continue;
-
-
 
       double dPsi = ( ith + HarmStart ) * ( psi1 - psi2 );
 		  dPsi = atan2( sin(dPsi), cos(dPsi) );
 			if(fCent>-1&&fCent<ncent){
-			
 			  HRes[ith][icb][fCent]->Fill(cos(dPsi) );
-
 			}
-
 		}
 	}
 
@@ -802,9 +781,6 @@ if(fCent>=0&&fCent<ncent){
          v1RP = -1.0 * cos(1.0 * (dphiRP) );
  
 	}
-
-        
-	
 
         if(fabs(eta)>StarEtaGap&&fabs(eta)<MpdEtaMax){
 	  hv2[0][fCent][ipt][0]->Fill(v2tpc);

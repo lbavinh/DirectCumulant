@@ -9,11 +9,11 @@ void TwoEnergy(){
   const float leg_coordinate[4]={0.6,0.2,0.9,0.45}; //  0.05,0.7,0.35,0.99
   const float labelSize = 0.06;
   const float titleSize = 0.075;
-  TString legendEntries[nmodel]={"STAR data","UrQMD","SMASH","AMPT, #sigma=1.5mb","AMPT, #sigma=0.8mb"};//(Phys.Rev.C.86.054908)
+  TString legendEntries[nmodel]={"STAR data","UrQMD","SMASH","AMPT, #sigma_{p}=1.5mb","AMPT, #sigma_{p}=0.8mb"};//(Phys.Rev.C.86.054908)
   TString energy[nenergy]={"11.5","7.7"};
   TString model[nmodel]={"STAR data","UrQMD","SMASH","AMPT15","AMPT08"};
   TString xAxisName = {"Centrality (%)"};
-  TString padName[6]={"(a)","(b)","(c)","(d)","(e)","(f)"};
+  TString padName[]={"(a)","(b)","(c)","(d)","(e)","(f)"};
   TFile *input[nenergy][nmodel];
   TGraphErrors *grV2[nenergy][nmodel][nmethod];
   
@@ -57,7 +57,7 @@ void TwoEnergy(){
         vRatioV22GappedV24Err[ien][imod].push_back(ratioErr);
       }
       grRatioV2[ien][imod] = new TGraphErrors(nbins[ien][imod][3],vx_gr[ien][imod][3],&vRatioV22GappedV24[ien][imod][0],ex_gr[ien][imod][3],&vRatioV22GappedV24Err[ien][imod][0]);
-      grRatioV2[ien][imod] -> SetTitle(Form("%s;centrality [%%];v_{2}{4}/v_{2}{2,|#Delta#eta|>0.1}",model[imod].Data()));
+      grRatioV2[ien][imod] -> SetTitle(Form("%s;centrality [%%];v_{2}{4}/v_{2}{2}",model[imod].Data()));
       
     }
 
@@ -73,9 +73,9 @@ void TwoEnergy(){
     grRatioV2[ien][3] -> SetLineColor(kGreen+2);
     grRatioV2[ien][3] -> SetMarkerStyle(kFullTriangleUp);
 
-    grRatioV2[ien][4] -> SetMarkerColor(kCyan+3);
-    grRatioV2[ien][4] -> SetLineColor(kCyan+3);
-    grRatioV2[ien][4] -> SetMarkerStyle(kFullCrossX);
+    grRatioV2[ien][4] -> SetMarkerColor(kBlack);
+    grRatioV2[ien][4] -> SetLineColor(kBlack);
+    grRatioV2[ien][4] -> SetMarkerStyle(kFullCross);
 
   }
   for (int imod=1;imod<nmodel;imod++){
@@ -172,7 +172,7 @@ void TwoEnergy(){
       TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
       leg_pt->SetBorderSize(0);
       leg_pt->SetTextFont(42);
-      leg_pt->SetTextSize(labelSize);
+      leg_pt->SetTextSize(labelSize-0.01);
       for (int imod=0; imod<3; imod++){
         leg_pt->AddEntry(grRatioV2[0][imod],legendEntries[imod].Data(),"p");
       }
@@ -182,10 +182,10 @@ void TwoEnergy(){
       tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Ch. hadrons, 0.2<p_{T}^{}<3.0 GeV/c"));
       tex.DrawLatex(mincent+10,maxV2Ratio*0.98-0.12,Form("#sqrt{s_{NN}}=%s GeV",energy[ipad].Data()));
 
-      TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
+      TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]-0.07);
       leg_pt->SetBorderSize(0);
       leg_pt->SetTextFont(42);
-      leg_pt->SetTextSize(labelSize);
+      leg_pt->SetTextSize(labelSize-0.01);
       for (int imod=3; imod<nmodel; imod++){
         leg_pt->AddEntry(grRatioV2[0][imod],legendEntries[imod].Data(),"p");
       }

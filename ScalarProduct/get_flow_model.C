@@ -68,11 +68,10 @@ void get_flow_model(TString inputFileName, TString outputFileName)
   // PID - reco tracks
   // const float PidProb_cut = 0.9;
 
-  // const std::vector<float> vResTpc     = {6.24556, 8.62629, 7.89656, 6.02394, 4.0085, 2.63911, 1.55677, 1.1422};
-  const std::vector<float> vResTpc     = {6.27383, 8.52203, 7.73442, 5.99234, 4.13289, 2.57332, 1.55835, 1.06316};
+  // const std::vector<float> vResTpc     = {6.27383, 8.52203, 7.73442, 5.99234, 4.13289, 2.57332, 1.55835, 1.06316}; // 7.7
+  const std::vector<float> vResTpc     = {8.57096, 10.8675, 9.73692, 7.45796, 5.10023, 3.16144, 1.87627, 1.22423}; // 11.5
   // Configure input information
   TChain *chain = new TChain("mctree");
-  // chain->Add(inputFileName.Data());
 
   std::ifstream file(inputFileName.Data());
   std::string line;
@@ -136,12 +135,6 @@ void get_flow_model(TString inputFileName, TString outputFileName)
   {
     pv2mcTPC[i] = new TProfile2D(Form("pv2TPC_pid%i", i), Form("v2(TPC EP) MODEL of %s", pidNames.at(i).Data()), NptBins, ptBinMin, ptBinMax, NcentBins, centBinMin, centBinMax);
   }
-  TProfile *pTest = new TProfile("pTest","pTest",8,0.,8.);
-  // TH2F *hQx_L_mc = new TH2F("hQx_L","Qx from Left TPC MODEL",  NcentBins, centBinMin, centBinMax, NQvBins, QvBinMin, QvBinMax);
-  // TH2F *hQy_L_mc = new TH2F("hQy_L","Qy from Left TPC MODEL",  NcentBins, centBinMin, centBinMax, NQvBins, QvBinMin, QvBinMax);
-  // TH2F *hQx_R_mc = new TH2F("hQx_R","Qx from Right TPC MODEL", NcentBins, centBinMin, centBinMax, NQvBins, QvBinMin, QvBinMax);
-  // TH2F *hQy_R_mc = new TH2F("hQy_R","Qy from Right TPC MODEL", NcentBins, centBinMin, centBinMax, NQvBins, QvBinMin, QvBinMax);
-
   // Start event loop
   int n_entries = chain->GetEntries();
   for (int iEv=0; iEv<n_entries; iEv++)
@@ -205,12 +198,6 @@ void get_flow_model(TString inputFileName, TString outputFileName)
     {
       Qv2_L = TComplex(Qx_L_mc,Qy_L_mc);
       Qv2_R = TComplex(Qx_R_mc,Qy_R_mc);
-
-      // hQx_L_mc->Fill(cent, Qx_L_mc);
-      // hQy_L_mc->Fill(cent, Qy_L_mc);
-      // hQx_R_mc->Fill(cent, Qx_R_mc);
-      // hQy_R_mc->Fill(cent, Qy_R_mc);
-
       float res_mc   = (float) (Qv2_L*TComplex::Conjugate(Qv2_R)).Re();
       pResMcTPC->Fill(cent, res_mc);
     }
@@ -249,12 +236,10 @@ void get_flow_model(TString inputFileName, TString outputFileName)
       if (eta < 0)
       {
         v2TPC = (float) (u2*TComplex::Conjugate(Qv2_R)).Re();
-        // pTest->Fill(0.5+GetCentBin(cent),v2TPC/(res_v2TPC_mc*2));
       }
       if (eta > 0)
       {
         v2TPC = (float) (u2*TComplex::Conjugate(Qv2_L)).Re();
-        // pTest->Fill(0.5+GetCentBin(cent),v2TPC/(res_v2TPC_mc*2));
       }
       v2TPC /= res_v2TPC_mc;
 

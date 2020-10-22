@@ -262,18 +262,26 @@ hpt[icent][ipt][id] = new TH1F( Form("hpt_%d_%d_%d",icent,ipt,id), Form("hpt_%d_
   {
       chain->Add(line.c_str());
   }
+
   PicoDstMCEvent *mcEvent = nullptr;
+  PicoDstRecoEvent *recoEvent = nullptr;
   TClonesArray *recoTracks = nullptr;
   TClonesArray *mcTracks = nullptr;
+  TClonesArray *fhcalmodules = nullptr;
 
   chain->SetBranchAddress("mcevent.", &mcEvent);
-  chain->SetBranchAddress("recotracks",&recoTracks);
+  chain->SetBranchAddress("recoevent.", &recoEvent);
   chain->SetBranchAddress("mctracks",&mcTracks);
-
+  chain->SetBranchAddress("recotracks",&recoTracks);
+  chain->SetBranchAddress("FHCalModules",&fhcalmodules);
+  cout << "error from here" << endl;
   // Start event loop
   int n_entries = chain->GetEntries();
+
+  cout << "n_entries=" <<n_entries<<endl;
   for (int iEv=0; iEv<n_entries; iEv++)
   {
+    cout << "error from here" << endl;
     if (iEv%1000==0) std::cout << "Event [" << iEv << "/" << n_entries << "]" << std::endl;
     chain->GetEntry(iEv);
     // Read MC event
@@ -300,18 +308,6 @@ hpt[icent][ipt][id] = new TH1F( Form("hpt_%d_%d_%d",icent,ipt,id), Form("hpt_%d_
     Int_t reco_mult = recoTracks->GetEntriesFast();
 
 
-    // Read Reco tracks
-    // for (int iTr=0; iTr<reco_mult; iTr++)
-    // {
-    //   auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
-    //   //recoTrack->GetPt()
-    //   //recoTrack->GetEta()
-    //   //recoTrack->GetPhi()
-    //   //recoTrack->GetDCAx()
-    //   //recoTrack->GetDCAy()
-    //   //recoTrack->GetDCAz()
-    //   //recoTrack->GetNhits()
-    // }
 
     for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
       auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
@@ -371,7 +367,7 @@ hpt[icent][ipt][id] = new TH1F( Form("hpt_%d_%d_%d",icent,ipt,id), Form("hpt_%d_
 
       if( fEta>-1. ) H_Phi[0][fEta]->Fill( phi );
       
-      if ( fEta < 3 && (ch == 0 || ch == -999.)) continue;
+      if ( fEta < 3 && (ch == 0)) continue;
 
       if( fEta>-1. ){
         for( int ith=0; ith<3; ith++ ){
@@ -487,7 +483,6 @@ hpt[icent][ipt][id] = new TH1F( Form("hpt_%d_%d_%d",icent,ipt,id), Form("hpt_%d_
 
         double dPsi = ( ith + HarmStart ) * ( psi1 - psi2 );
 		    dPsi = atan2( sin(dPsi), cos(dPsi) );
-
 			  if(fCent>-1&&fCent<ncent){
 			    HRes[ith][icb][fCent]->Fill(cos(dPsi) );
 			  }
@@ -823,4 +818,5 @@ hpt[icent][ipt][id] = new TH1F( Form("hpt_%d_%d_%d",icent,ipt,id), Form("hpt_%d_
   timer.Print();
 }
 // source /weekly/parfenov/Soft/PicoDst/build/setPicoDst.sh 
-// root -l -b -q readPicoDst.C+'("/weekly/lbavinh/lbavinh/readPicoDst/split/Reco_UrQMD_PWG3-prod9_7.7/runlist_Reco_UrQMD_PWG3-prod9_7.7_9009.list","test.root")'
+// root -l -b -q readPicoDst.C+'("/weekly/lbavinh/lbavinh/ScalarProduct/split/Reco_UrQMD_7.7/runlist_Reco_UrQMD_7.7_31.list","test.root")'
+// https://devel.mephi.ru/PEParfenov/MpdFlow/src/master/utils/mfNamespace.cxx#L67 

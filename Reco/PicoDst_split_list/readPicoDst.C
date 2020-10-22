@@ -23,7 +23,7 @@
 #include <PicoDstFHCal.h>
 
 
-#include "/weekly/lbavinh/lbavinh/readPicoDst/function.C"
+#include "/weekly/lbavinh/lbavinh/PicoDst/function.C"
 // R__LOAD_LIBRARY(libPicoDst.so)
 
 
@@ -161,12 +161,16 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       chain->Add(line.c_str());
   }
   PicoDstMCEvent *mcEvent = nullptr;
+  PicoDstRecoEvent *recoEvent = nullptr;
   TClonesArray *recoTracks = nullptr;
   TClonesArray *mcTracks = nullptr;
+  TClonesArray *fhcalmodules = nullptr;
 
   chain->SetBranchAddress("mcevent.", &mcEvent);
-  chain->SetBranchAddress("recotracks",&recoTracks);
+  chain->SetBranchAddress("recoevent.", &recoEvent);
   chain->SetBranchAddress("mctracks",&mcTracks);
+  chain->SetBranchAddress("recotracks",&recoTracks);
+  chain->SetBranchAddress("FHCalModules",&fhcalmodules);
 
   // Start event loop
   int n_entries = chain->GetEntries();
@@ -226,19 +230,6 @@ void readPicoDst(TString inputFileName, TString outputFileName)
     float multQv[neta]={0};       // [eta+,eta-]
     float wQv[neta]={0};
 
-    // Read Reco tracks
-    // for (int iTr=0; iTr<reco_mult; iTr++)
-    // {
-    //   auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
-    //   //recoTrack->GetPt()
-    //   //recoTrack->GetEta()
-    //   //recoTrack->GetPhi()
-    //   //recoTrack->GetDCAx()
-    //   //recoTrack->GetDCAy()
-    //   //recoTrack->GetDCAz()
-    //   //recoTrack->GetNhits()
-    // }
-
     for (int iTr=0; iTr<reco_mult; iTr++) { // track loop
       auto recoTrack = (PicoDstRecoTrack*) recoTracks->UncheckedAt(iTr);
       if (!recoTrack) continue;
@@ -256,6 +247,7 @@ void readPicoDst(TString inputFileName, TString outputFileName)
       // if (abs(eta)<eta_gap) continue;
       // if (phi<0) phi += 2.*TMath::Pi(); /* To make sure that phi is between 0 and 2 Pi */
       auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(mcTrack->GetPdg());
+      if (!particle) continue;
       float charge = 1./3.*particle->Charge();
       
       hPt -> Fill(pt);

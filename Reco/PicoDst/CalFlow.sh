@@ -13,8 +13,8 @@
 #$ -l h_rt=01:30:00
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=01:30:00
-# Specify job array range (how many jobs will be created
-#$ -t 1-633
+# Specify job array range (how many jobs will be created: 633
+#$ -t 1-100
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
@@ -27,7 +27,8 @@
 
 #Main directory
 export MAIN_DIR=/weekly/$USER/lbavinh/PicoDst
-export FILELIST=${MAIN_DIR}/runlist_PicoDst_merged.list
+# export FILELIST=${MAIN_DIR}/runlist_PicoDst_merged.list
+export FILELIST=/weekly/lbavinh/lbavinh/PicoDst/split/Reco_UrQMD_7.7/runlist_Reco_UrQMD_7.7_03.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT

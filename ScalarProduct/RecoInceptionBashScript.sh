@@ -2,29 +2,29 @@
 
 #
 # Specify working directory
-#$ -wd /weekly/$USER/lbavinh/UrQMD/
+#$ -wd /weekly/$USER/lbavinh/ScalarProduct
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
-#$ -N QCumulants
+#$ -N SP115Reco
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job
-#$ -l h_rt=06:30:00
+#$ -l h_rt=01:30:00
 # Set soft time limit - set up the same as a hard limit
-#$ -l s_rt=06:30:00
-# Specify job array range (how many jobs will be created: 980 for 4.5 GeV, 584 for 7.7, 992 for 11.5
-#$ -t 1-992
+#$ -l s_rt=01:30:00
+# Specify job array range (how many jobs will be created
+# 61 jobs for 11.5 GeV, 32 for 7.7 GeV AuAu (88M)
+#$ -t 1-31
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
 #
-
-#Main directory
-energy=Urqmd11.5
-macro=QCumulant_Model
-export MAIN_DIR=/weekly/$USER/lbavinh/UrQMD
-export FILELIST=$MAIN_DIR/split/runlistSGE_$energy.list
+export script_name=get_flow_pico
+export energy=7.7
+export model=Reco_UrQMD
+export MAIN_DIR=/weekly/$USER/lbavinh/ScalarProduct
+export FILELIST=${MAIN_DIR}/split/runlistSGE_${model}_${energy}.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
 export START_DIR=${PWD}
 export OUT_DIR=${MAIN_DIR}/OUT
@@ -39,19 +39,19 @@ mkdir -p $OUT_LOG
 mkdir -p $TMP
 touch $LOG
 
-eos cp --streams=16 $MAIN_DIR/$macro.C $TMP
+eos cp --streams=16 $MAIN_DIR/${script_name}.C $TMP
+
 
 # Set correct environment variables (needed version of root)
 source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh
-
+source /weekly/lbavinh/Soft/PicoDst/build/setPicoDst.sh
 # echo "Input arguments (Job Id = ${JOB_ID}, Task ID = ${SGE_TASK_ID}):" &>> $LOG
 # echo "Main directory:           ${MAIN_DIR}" &>> $LOG
 # echo "Input file:    $IN_FILE"  &>> $LOG
 # echo "Output file:   $OUT_FILE" &>> $LOG
 # echo "---------------" &>> $LOG
 # echo "Run elliptic flow calculation..." &>> $LOG
-root -l -b -q $TMP/$macro.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
-
+root -l -b -q $TMP/${script_name}.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
 # echo "---------------" &>> $LOG
 # echo "Cleaning temporary directory..." &>> $LOG
 # cd ${START_DIR}

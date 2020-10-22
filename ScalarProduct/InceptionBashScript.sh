@@ -14,14 +14,14 @@
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=01:30:00
 # Specify job array range (how many jobs will be created
-# jobs for 11.5 GeV, 730 for 7.7 GeV AuAu (88M)
-#$ -t 1-730
+# 570 jobs for 11.5 GeV, 730 for 7.7 GeV AuAu (88M)
+#$ -t 1-570
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
 #
 export script_name=get_flow_model
-export energy=7.7
+export energy=11.5
 export model=UrQMD
 export MAIN_DIR=/weekly/$USER/lbavinh/ScalarProduct
 export FILELIST=${MAIN_DIR}/split/runlistSGE_${model}_${energy}.list

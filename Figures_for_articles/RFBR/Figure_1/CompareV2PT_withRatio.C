@@ -10,7 +10,7 @@ void CompareV2PT_withRatio(){
   const float minV2 = -0.01;
   const float minV2Ratio = 0.82;
   const float maxV2Ratio = 1.18;
-  const float leg_coordinate[4]={0.68,0.05,0.99,0.32}; // top left: 0.28,0.7,0.6,0.99
+  const float leg_coordinate[4]={0.6,0.05,0.99,0.32}; // top left: 0.28,0.7,0.6,0.99
   const float labelSizeUpperPlot = 0.095;
   const float titleSizeUpperPlot = 0.115;
   const float labelSizeLowerPlot = 0.08;
@@ -28,13 +28,13 @@ void CompareV2PT_withRatio(){
   TString grTitle[nmethod]={"v22","v24","v2etasub","v22etagap"};
   TString xAxisName = {"p_{T} (GeV/c)"};
   TString ratioName[nmethod-1]={"v2FHCal/v22","v24/v22","v2TPC/v22","v2SP/v22"};
-  TString legendEntries[nmethod]={"v_{2}{#Psi_{1,FHCal}}","v_{2}{4}","v_{2}{#Psi_{2,TPC}^{}}","v_{2}{SP}","v_{2}{2}"};
+  TString legendEntries[nmethod]={"v_{2}^{EP}{#Psi_{1,FHCal}}","v_{2}{4}","v_{2}^{EP}{#Psi_{2,TPC}^{}}","v_{2}^{SP}{Q_{2,TPC}}","v_{2}{2}"};
   TString pidInPads[npad]={"Ch. hadrons","#pi^{#pm}","p","h^{#pm}","#pi^{+}","p"};
   TFile *input[nenergy][2];
   TFile *inputFlowANA = new TFile("v2_UrQMD_7.7GeV_V2R1.root","read");
   TFile *inputScalarProduct = new TFile("v2_UrQMD_7.7GeV_V2SP.root","read");
   TGraphErrors *grV2[nenergy][npid][nmethod];
-  TGraphErrors *grRatioV2[nenergy][npid][nmethod-1];
+  TGraphErrors *grRatioV2[nenergy][npid][nmethod];
 
   for (int id=0;id<npid;id++){
     grV2[0][id][0] = (TGraphErrors*)inputFlowANA->Get(Form("grv22fhcal_%i",id));
@@ -78,8 +78,8 @@ void CompareV2PT_withRatio(){
       grV2[ien][id][2] -> SetLineColor(kBlack);
       grV2[ien][id][2] -> SetMarkerStyle(kFullCross);
 
-      grV2[ien][id][3] -> SetMarkerColor(kCyan+3);
-      grV2[ien][id][3] -> SetLineColor(kCyan+3);
+      grV2[ien][id][3] -> SetMarkerColor(kGreen+3);
+      grV2[ien][id][3] -> SetLineColor(kGreen+3);
       grV2[ien][id][3] -> SetMarkerStyle(kOpenCircle);
 
       grV2[ien][id][4] -> SetMarkerColor(kBlack);
@@ -111,7 +111,7 @@ void CompareV2PT_withRatio(){
   
   for (int ien=0;ien<nenergy-1;ien++){
     for (int id=0;id<npid;id++){
-      for (int imeth=0;imeth<nmethod-1;imeth++){
+      for (int imeth=0;imeth<nmethod;imeth++){
         std::vector<Double_t> vRatioToV22, vRatioToV22Err;  
         for (int i=0;i<nbins[ien][id][ratioToMethod];i++){
           Double_t ratio = vy_gr[ien][id][imeth][i]/vy_gr[ien][id][ratioToMethod][i];
@@ -137,10 +137,15 @@ void CompareV2PT_withRatio(){
       grRatioV2[ien][id][2] -> SetLineColor(kBlack);
       grRatioV2[ien][id][2] -> SetMarkerStyle(kFullCross);
 
-      grRatioV2[ien][id][3] -> SetMarkerColor(kCyan+3);
-      grRatioV2[ien][id][3] -> SetLineColor(kCyan+3);
+      grRatioV2[ien][id][3] -> SetMarkerColor(kGreen+3);
+      grRatioV2[ien][id][3] -> SetLineColor(kGreen+3);
       grRatioV2[ien][id][3] -> SetMarkerStyle(kOpenCircle);
-      for (int imeth=0;imeth<nmethod-1;imeth++){
+
+      grRatioV2[ien][id][4] -> SetMarkerColor(kBlack);
+      grRatioV2[ien][id][4] -> SetLineColor(kBlack);
+      grRatioV2[ien][id][4] -> SetMarkerStyle(kOpenSquare);
+
+      for (int imeth=0;imeth<nmethod;imeth++){
         grRatioV2[ien][id][imeth]->SetMarkerSize(markerSize);
       }    
     }
@@ -203,9 +208,13 @@ void CompareV2PT_withRatio(){
       tex.SetTextSize(labelSizeLowerPlot);
       tex.DrawLatex(0.2,maxV2Ratio*0.97,padName[ipad].Data());
     }
-    tex.DrawLatex(maxpt*0.9,maxV2*0.9-0.02,Form("%s",pidInPads[ipad].Data()));
+    TLatex tex1;
+    tex1.SetTextFont(textFont);
+    tex1.SetTextAlign(33);
+    tex1.SetTextSize(labelSizeUpperPlot+0.02);
+    tex1.DrawLatex(maxpt*0.9,maxV2*0.9-0.02,Form("%s",pidInPads[ipad].Data()));
     if (ipad==0) {
-      tex.DrawLatex(maxpt*0.9,maxV2*0.9,Form("Au+Au at #sqrt{s_{NN}}=%s GeV",energy[0].Data()));
+      tex.DrawLatex(maxpt*0.97,maxV2*0.9,Form("Au+Au at #sqrt{s_{NN}}=%s GeV, 10-40%%",energy[0].Data()));
       TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
       leg_pt->SetBorderSize(0);
       leg_pt->SetTextSize(labelSizeUpperPlot);
@@ -218,7 +227,7 @@ void CompareV2PT_withRatio(){
       leg_pt->Draw();
     }
     if (ipad==1) {
-      tex.DrawLatex(maxpt*0.9,maxV2*0.9,Form("10-40%%, UrQMD"));
+      tex.DrawLatex(maxpt*0.9,maxV2*0.9,Form("UrQMD                             "));
       TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
       leg_pt->SetBorderSize(0);
       leg_pt->SetTextSize(labelSizeUpperPlot);
@@ -245,7 +254,7 @@ void CompareV2PT_withRatio(){
       if (ipad==1) grV2[0][1][imeth]->Draw("P");
       if (ipad==2) grV2[0][3][imeth]->Draw("P");
     }
-    for (int imeth=1;imeth<nmethod-1;imeth++){
+    for (int imeth=1;imeth<nmethod;imeth++){
       if (ipad==3) grRatioV2[0][0][imeth]->Draw("P");
       if (ipad==4) grRatioV2[0][1][imeth]->Draw("P");
       if (ipad==5) grRatioV2[0][3][imeth]->Draw("P");

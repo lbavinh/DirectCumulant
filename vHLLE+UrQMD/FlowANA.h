@@ -18,7 +18,7 @@
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
-static const int max_nh = 2500;
+static const int max_nh = 10000;
 
 class FlowANA {
 public :

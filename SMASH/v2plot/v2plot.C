@@ -1,9 +1,9 @@
 #include "DrawTGraphImp.C"
 TString model = {"SMASH"};
-TString energy = {"4.5GeV"};
-TString inFileName= (TString) Form("../ROOTFile/%s_%s_fixed.root",model.Data(),energy.Data());
+TString energy = {"11.5GeV"};
+TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
 TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");
-TString outDirName=(TString)Form("%s_%s_fixed",model.Data(),energy.Data());
+TString outDirName=(TString)Form("%s_%s",model.Data(),energy.Data());
 TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
 
 // Flags

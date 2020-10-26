@@ -6,22 +6,23 @@
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
-#$ -N Flow
+#$ -N Hybrid39
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job
 #$ -l h_rt=06:30:00
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=06:30:00
-# Specify job array range (how many jobs will be created: 980 for 4.5 GeV, 397 for 7.7, 992 for 11.5
-#$ -t 1-342
+# Specify job array range (how many jobs will be created:
+# 77 = 342 ; 115 = 379 ; 196 = 163 ; 27 = 252 ; 39 = 162
+#$ -t 1-162
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
 #
 
 #Main directory
-energy=77
+energy=39
 macro=calculateFlow
 export MAIN_DIR=/weekly/$USER/lbavinh/vHLLE+UrQMD
 export FILELIST=$MAIN_DIR/runlist_$energy.list
@@ -39,22 +40,22 @@ mkdir -p $OUT_LOG
 mkdir -p $TMP
 touch $LOG
 
-cp $MAIN_DIR/$macro.C $TMP
+eos cp --streams=16 $MAIN_DIR/$macro.C $TMP
 
 # Set correct environment variables (needed version of root)
 source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh
 
-echo "Input arguments (Job Id = ${JOB_ID}, Task ID = ${SGE_TASK_ID}):" &>> $LOG
-echo "Main directory:           ${MAIN_DIR}" &>> $LOG
-echo "Input file:    $IN_FILE"  &>> $LOG
-echo "Output file:   $OUT_FILE" &>> $LOG
-echo "---------------" &>> $LOG
-echo "Run elliptic flow calculation..." &>> $LOG
+# echo "Input arguments (Job Id = ${JOB_ID}, Task ID = ${SGE_TASK_ID}):" &>> $LOG
+# echo "Main directory:           ${MAIN_DIR}" &>> $LOG
+# echo "Input file:    $IN_FILE"  &>> $LOG
+# echo "Output file:   $OUT_FILE" &>> $LOG
+# echo "---------------" &>> $LOG
+# echo "Run elliptic flow calculation..." &>> $LOG
 root -l -b -q $TMP/$macro.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
 
-echo "---------------" &>> $LOG
-echo "Cleaning temporary directory..." &>> $LOG
-cd ${START_DIR}
+# echo "---------------" &>> $LOG
+# echo "Cleaning temporary directory..." &>> $LOG
+# cd ${START_DIR}
 rm -rf ${TMP}
-echo "Job is done!" &>> $LOG
+# echo "Job is done!" &>> $LOG
 echo "=====================================" &>> $LOG

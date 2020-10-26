@@ -6,22 +6,22 @@
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
-#$ -N SMASH7.7
+#$ -N SMASH11.5
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job
 #$ -l h_rt=07:30:00
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=07:30:00
-# Specify job array range (how many jobs will be created: 881 for 4.5 GeV, 953 for 7.7, 387 for 11.5
-#$ -t 1-881
+# Specify job array range (how many jobs will be created: 580 for 4.5 GeV, 953 for 7.7, 706 for 11.5
+#$ -t 1-706
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
 #
 
 #Main directory
-energy=smash7.7gev
+energy=smash11.5gev
 macro=anaFlow
 export MAIN_DIR=/weekly/$USER/lbavinh/SMASH
 export FILELIST=$MAIN_DIR/split/runlistSGE_${energy}.list

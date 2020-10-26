@@ -1,6 +1,6 @@
 #!/bin/bash
 # 7.7 4.5 11.5 - 39 42 23 - 881 953 387
-export energy=smash4.5gev
+export energy=smash11.5gev
 export working_dir=SMASH
 echo "Did they add something new?"
 # ls /weekly/seluzhen/smash/$energy/ | grep '.root'| wc -l

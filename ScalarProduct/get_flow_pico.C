@@ -144,6 +144,10 @@ void get_flow_pico(TString inputFileName, TString outputFileName)
       if (pt > pt_max_cut) continue;
       if (abs(eta) > eta_cut) continue;
       if (abs(eta) < eta_gap) continue;
+      auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(mcTrack->GetPdg());
+      if (!particle) continue;
+      float charge = 1./3.*particle->Charge();
+      if (charge==0) continue;
 
       // Reco-specific track cuts
       if (recoTrack->GetNhits() < Nhits_cut) continue;

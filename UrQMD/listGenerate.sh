@@ -1,15 +1,20 @@
 #!/bin/bash
-# 47 23 4.5 11.5 980 992
-export energy=UrQMD_7.7
+
+export energy=UrQMD_27
 export working_dir=/weekly/$USER/lbavinh/UrQMD
 # ls /weekly/demanov/UrQMD/new7.7gev/
-# ls /weekly/dmitriev/$energy/*/ | wc -l
+
+# /weekly/dmitriev/Urqmd4.5/
+# /weekly/dmitriev/Urqmd77/
+# /weekly/dmitriev/Urqmd11.5/
+# /weekly/dmitriev/Urqmd27/
+
 
 echo "Initializing list of list (Inception)"
 mkdir -p $working_dir/split/${energy}
 echo "Listing all ROOT tree of $energy GeV (Inception - level 1)"
-find /weekly/dmitriev/Urqmd77/ -type f -name "*.root" > $working_dir/split/runlist_${energy}.list
-find /weekly/demanov/UrQMD/new7.7gev/ -type f -name "*.root" >> $working_dir/split/runlist_${energy}.list
+find /weekly/dmitriev/Urqmd27/ -type f -name "*.root" > $working_dir/split/runlist_${energy}.list
+# find /weekly/demanov/UrQMD/new7.7gev/ -type f -name "*.root" >> $working_dir/split/runlist_${energy}.list
 
 echo "Creating list for each job (Inception - level 2)"
 split -l50 -d $working_dir/split/runlist_${energy}.list $working_dir/split/${energy}/runlist_${energy}_

@@ -6,15 +6,17 @@
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
-#$ -N AMPT0877
+#$ -N AMPT15_39
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job
 #$ -l h_rt=07:30:00
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=07:30:00
-# Specify job array range (how many jobs will be created): 474 for 7.7 GeV, 782 for 11.5 GeV, for 0.8mb: 395 for 11.5, 821 for 7.7
-#$ -t 1-821
+# Specify job array range (how many jobs will be created):
+# 1.5mb: 474 for 7.7 ; 782 for 11.5 ; 367 for 27 ; 575 for 39
+# 0.8mb: 821 for 7.7 ; 395 for 11.5 ; 326 for 27 ;
+#$ -t 1-575
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
@@ -22,8 +24,8 @@
 
 #Main directory
 export macro=anaFlow
-export energy=7.7
-export model=AMPT08
+export energy=39
+export model=AMPT15
 
 export MAIN_DIR=/weekly/$USER/lbavinh/AMPT
 export FILELIST=${MAIN_DIR}/split/runlistSGE_${model}_${energy}.list
@@ -56,5 +58,5 @@ root -l -b -q $TMP/$macro.C+'("'${IN_FILE}'","'${OUT_FILE}'")' &>> $LOG
 # echo "Cleaning temporary directory..." &>> $LOG
 
 rm -rf ${TMP}
-echo "Job is done!" &>> $LOG
+# echo "Job is done!" &>> $LOG
 echo "============================================================" &>> $LOG

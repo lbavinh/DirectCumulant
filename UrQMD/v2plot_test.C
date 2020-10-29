@@ -1,8 +1,8 @@
 #include "DrawTGraphImp.C"
 TString model = {"UrQMD"};
 TString energy = {"7.7GeV"};
-TString inFileName= (TString) Form("./%s_%s.root",model.Data(),energy.Data());
-TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");
+TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
+TFile *outFile = new TFile(Form("./v2_%s_%s_test.root",model.Data(),energy.Data()),"recreate");
 TString outDirName=(TString)Form("%s_%s_test",model.Data(),energy.Data());
 TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
 
@@ -10,21 +10,23 @@ TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energ
 bool drawDistributions = false; // auxiliary plots: eta, bimp, mult, etc.
 bool bMergeCharged = true; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
 bool saveAsPNG = true;
+int excludeMethod = 0; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively
 int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
 // Constants
 const int npid = 8; // charged hadrons, pions, kaons, protons
-const int nmethod = 3; // 2QC, 4QC, 2QC-gapped
+const int nmethod = 7; // 2QC,FHCal; 2QC,eta-gap; 2QC; 4QC; TPC,EP; TPC,SP; FHCal,EP
 
-const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
-const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.}; // pT bins
+const int npt = 10; // 0.5 - 3.6 GeV/c - number of pT bins
+const double bin_pT[npt+1]={0.,0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.}; // pT bins
+
 const double minptRFP = 0.2;
 const double maxptRFP = 3.0;
 
 const double maxpt = 2.5; // for v2 vs pt plotting
 const double minpt = 0.;  // for v2 vs pt plotting
 
-const int ncent = 8; // 0-80 %
-const double bin_cent[ncent] = {5,15,25,35,45,55,65,75};
+const int ncent = 9; // 0-80 %
+const double bin_cent[ncent] = {2.5,7.5,15,25,35,45,55,65,75};
 const double bin_centE[ncent] = {0};
 const float eta_gap = 0.05;
 
@@ -41,22 +43,22 @@ std::vector<TString> pidFancyNames = {"h+", "#pi+", "K+", "p", "h-", "#pi-", "K-
 vector <Double_t> coordinateLeg = {0.18,0.63,0.45,0.889};
 vector<pair<Double_t,Double_t>> rangeRatio = {{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16}}; // 0-10; 10-20; 20-30; 30-40; 40-50; 50-60; 60-70; 70-80; 10-40%
 vector<pair<Double_t,Double_t>> rangeRatioRF ={{0.65,1.11},{0.65,1.11},{0.65,1.11},{0.65,1.11},{0.65,1.11},{0.65,1.11},{0.65,1.11},{0.65,1.11}}; // charged hadrons, pions, kaons, protons
-int marker[]={21,20,25}; // 2QC, 4QC, 2QC-gapped
+int marker[nmethod]={20,21,22,23,24,25,26}; // 2QC,FHCal; 2QC,eta-gap; 2QC; 4QC; TPC,EP; TPC,SP; FHCal,EP
 
-TProfile *prV22int[ncent][npid], *prV24int[ncent][npid], *prV22intGap[ncent][npid]; // TProfile for integrated flow 
+TProfile *prV22int[ncent][npid], *prV24int[ncent][npid], *prV22FHCalint[ncent][npid], *prV22intGap[ncent][npid]; // TProfile for integrated flow 
 
 
-double eV22cent1040[npid][npt], eV24cent1040[npid][npt], eV22Gapcent1040[npid][npt];
+double eV22FHCalcent1040[npid][npt], eV22Gapcent1040[npid][npt], eV22cent1040[npid][npt], eV24cent1040[npid][npt], eV2EPcent1040[npid][npt], eV2SPcent1040[npid][npt], eV2EPFHCalcent1040[npid][npt];
 
-double Covariance(TProfile *const &hcovXY, TProfile *const &hX, TProfile *const &hY){
+double Covariance(TProfile *const &hcovXY, TProfile *const &hX, TProfile *const &hY, Int_t bin=1){
 
-  double mSumWXY = hcovXY->GetBinEntries(1);
-  double sumWX = hX->GetBinEntries(1);
-  double sumWY = hY->GetBinEntries(1);
+  double mSumWXY = hcovXY->GetBinEntries(bin);
+  double sumWX = hX->GetBinEntries(bin);
+  double sumWY = hY->GetBinEntries(bin);
 
-  double meanXY = hcovXY -> GetBinContent(1);
-  double meanX = hX -> GetBinContent(1);
-  double meanY = hY -> GetBinContent(1);
+  double meanXY = hcovXY -> GetBinContent(bin);
+  double meanX = hX -> GetBinContent(bin);
+  double meanY = hY -> GetBinContent(bin);
   double mVal = (meanXY-meanX*meanY)/(sumWX*sumWY/mSumWXY-1.); // Cov(x,y)/(sumWX*sumWY/sumWXY)
   return mVal;
 }
@@ -66,12 +68,12 @@ struct term{ // structure for "Mean squared error of MEAN" calculation, using un
     mVal = 0;
     mMSE = 0;
   }
-  term(TProfile *const &pr){
+  term(TProfile *const &pr, Int_t bin){
 
-    double Neff = pr -> GetBinEffectiveEntries(1);
-    mVal = pr -> GetBinContent(1);
+    double Neff = pr -> GetBinEffectiveEntries(bin);
+    mVal = pr -> GetBinContent(bin);
     pr -> SetErrorOption("s");
-    double stdevW = pr -> GetBinError(1);
+    double stdevW = pr -> GetBinError(bin);
     double S2 = stdevW*stdevW/(1-1./Neff);
     mMSE = S2/Neff;
   };
@@ -95,17 +97,21 @@ void CalStatErrCent1040(){
   TProfile *hcov42prime[ncent][npt][npid]; // <2>*<4'>
   TProfile *hcov44prime[ncent][npt][npid]; // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt][npid]; // <2'>*<4'>
+  TProfile *hv2EP[ncent][npt][npid];	  // elliptic flow from EP method
+  TProfile *HRes[ncent];
   TProfile *hv22Gap[ncent];
   TProfile *hv22ptGap[ncent][npt][npid];
   TProfile *hcov22primeGap[ncent][npt][npid];
 
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
+    HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
     hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
     hv24[icent] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
     hcov24[icent] = (TProfile*)inFile->Get(Form("hcov24_%i",icent));
     hv22Gap[icent] = (TProfile*)inFile->Get(Form("hv22Gap_%i",icent));
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid;id++){
+        hv2EP[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2EP_%i_%i_%i",icent,ipt,id));
         hPT[icent][ipt][id]=(TProfile*)inFile->Get(Form("hPT_%i_%i_%i",icent,ipt,id));
         hv22pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22pt_%i_%i_%i",icent,ipt,id));
         hv24pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv24pt_%i_%i_%i",icent,ipt,id));
@@ -124,6 +130,7 @@ void CalStatErrCent1040(){
     for (int icent=0;icent<ncent;icent++){
       for (int ipt=0;ipt<npt;ipt++){
         for (int id=0;id<npid/2;id++){
+          hv2EP[icent][ipt][id] -> Add(hv2EP[icent][ipt][id+4]);
           hPT[icent][ipt][id] -> Add(hPT[icent][ipt][id+4]);
           hv22pt[icent][ipt][id] -> Add(hv22pt[icent][ipt][id+4]);
           hv24pt[icent][ipt][id] -> Add(hv24pt[icent][ipt][id+4]);
@@ -141,12 +148,14 @@ void CalStatErrCent1040(){
 
   // Add
   for (int icent=2; icent<4; icent++){ // add 20-30% & 30-40% to 10-20%
+    HRes[1] -> Add(HRes[icent]);
     hv22[1] -> Add(hv22[icent]);
     hv24[1] -> Add(hv24[icent]);
     hcov24[1] -> Add(hcov24[icent]);
     hv22Gap[1]-> Add(hv22Gap[icent]);
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid;id++){ // loop over pid
+        hv2EP[1][ipt][id]-> Add(hv2EP[icent][ipt][id]);
         hPT[1][ipt][id]-> Add(hPT[icent][ipt][id]);
         hv22pt[1][ipt][id]-> Add(hv22pt[icent][ipt][id]);
         hv24pt[1][ipt][id]-> Add(hv24pt[icent][ipt][id]);
@@ -161,7 +170,7 @@ void CalStatErrCent1040(){
     } // end of loop over pt bin
   }
 
-  for (int icent=1; icent<2; icent++){ // 10-40
+  for (int icent=2; icent<3; icent++){ // 10-40%
     // 2QC
     term cor2 = term(hv22[icent]);
     // 4QC
@@ -172,6 +181,10 @@ void CalStatErrCent1040(){
     term cor2Gap = term(hv22Gap[icent]);
     for (int id=0;id<npid;id++){     
       for(int ipt=0; ipt<npt; ipt++){
+        // v2EP
+        double res2 = sqrt(HRes[icent]->GetBinContent(1));
+        double ev2EP = hv2EP[icent][ipt][id]->GetBinError(1) / res2;
+        eV2EPcent1040[id][ipt] = ev2EP;
         // v22
         term cor2red = term(hv22pt[icent][ipt][id]);
         double cov22prime = Covariance(hcov22prime[icent][ipt][id],hv22[icent],hv22pt[icent][ipt][id]);
@@ -216,12 +229,14 @@ void CalStatErrCent1040(){
     } // end of loop for PID
   } // end of loop for centrality
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
+    delete HRes[icent];
     delete hv22[icent];
     delete hv24[icent];
     delete hcov24[icent];
     delete hv22Gap[icent];
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid;id++){
+        delete hv2EP[icent][ipt][id];
         delete hPT[icent][ipt][id];
         delete hv22pt[icent][ipt][id];
         delete hv24pt[icent][ipt][id];
@@ -284,6 +299,8 @@ void v2plot_differential_flow(){
   TProfile *hcov42prime[ncent][npt][npid]; // <2>*<4'>
   TProfile *hcov44prime[ncent][npt][npid]; // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt][npid]; // <2'>*<4'>
+  TProfile *hv2EP[ncent][npt][npid];	  // elliptic flow from EP method
+  TProfile *HRes[ncent];
   // v22 with eta-gap
   TProfile *hv22Gap[ncent];
   TProfile *hv22ptGap[ncent][npt][npid];
@@ -296,12 +313,14 @@ void v2plot_differential_flow(){
   // Get TProfile histograms from ROOTFile
 
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
+    HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
     hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
     hv24[icent] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
     hcov24[icent] = (TProfile*)inFile->Get(Form("hcov24_%i",icent));
     hv22Gap[icent] = (TProfile*)inFile->Get(Form("hv22Gap_%i",icent));
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid;id++){
+        hv2EP[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2EP_%i_%i_%i",icent,ipt,id));
         hPT[icent][ipt][id]=(TProfile*)inFile->Get(Form("hPT_%i_%i_%i",icent,ipt,id));
         hv22pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22pt_%i_%i_%i",icent,ipt,id));
         hv24pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv24pt_%i_%i_%i",icent,ipt,id));
@@ -322,6 +341,7 @@ void v2plot_differential_flow(){
     for (int icent=0;icent<ncent;icent++){
       for (int ipt=0;ipt<npt;ipt++){
         for (int id=0;id<npid/2;id++){
+          hv2EP[icent][ipt][id] -> Add(hv2EP[icent][ipt][id+4]);
           hPT[icent][ipt][id] -> Add(hPT[icent][ipt][id+4]);
           hv22pt[icent][ipt][id] -> Add(hv22pt[icent][ipt][id+4]);
           hv24pt[icent][ipt][id] -> Add(hv24pt[icent][ipt][id+4]);
@@ -350,11 +370,12 @@ void v2plot_differential_flow(){
   }
   */
   //==========================================================================================================================
-  TProfile *prV22dif1040[npt][npid], *prV24dif1040[npt][npid], *prV22dif1040Gap[npt][npid], *pt1040[npt][npid]; // TProfile for differential flow of 10-40% centrality bin
+  TProfile *prV22dif1040[npt][npid], *prV24dif1040[npt][npid], *prV2EPdif1040[npt][npid], *prV22dif1040Gap[npt][npid], *pt1040[npt][npid]; // TProfile for differential flow of 10-40% centrality bin
   for (int ipt=0;ipt<npt;ipt++){
     for (int id=0;id<npid;id++){
       prV22dif1040[ipt][id]=new TProfile(Form("prV22dif1040_%i_%i",ipt,id),"",1,0.,1.);
       prV24dif1040[ipt][id]=new TProfile(Form("prV24dif1040_%i_%i",ipt,id),"",1,0.,1.);
+      prV2EPdif1040[ipt][id]=new TProfile(Form("prV2EPdif1040_%i_%i",ipt,id),"",1,0.,1.);
       prV22dif1040Gap[ipt][id]=new TProfile(Form("prV22dif1040Gap_%i_%i",ipt,id),"",1,0.,1.);
       pt1040[ipt][id]=new TProfile(Form("pt1040_%i_%i",ipt,id),"",1,0.,1.);
     }
@@ -386,6 +407,14 @@ void v2plot_differential_flow(){
         // vPt.push_back(hPT[icent][ipt][id] -> GetBinContent(1));
         vPt.push_back((bin_pT[ipt]+bin_pT[ipt+1])/2.);
         ePt.push_back(0);
+        // v2EP
+        double res2 = sqrt(HRes[icent]->GetBinContent(1));
+        double v2obs = hv2EP[icent][ipt][id]->GetBinContent(1);
+        double v2EPDif = v2obs / res2;
+        // double v2EPDif = v2obs;
+        double ev2EP = hv2EP[icent][ipt][id]->GetBinError(1) / res2;
+        vV2EPDif.push_back(v2EPDif);
+        eV2EPDif.push_back(ev2EP);
         
         // v22
         term cor2red = term(hv22pt[icent][ipt][id]);
@@ -437,8 +466,10 @@ void v2plot_differential_flow(){
 
         prV22int[icent][id] -> Fill(0.5,v22Dif,hcounter[icent][ipt][id] -> GetBinEntries(1));
         prV24int[icent][id] -> Fill(0.5,v24Dif,hcounter[icent][ipt][id] -> GetBinEntries(1));
+        prV22FHCalint[icent][id] -> Fill(0.5,v2EPDif,hcounter[icent][ipt][id] -> GetBinEntries(3));
         prV22intGap[icent][id] -> Fill(0.5,v22DifGap,hcounter[icent][ipt][id] -> GetBinEntries(2));
         if (icent>=1 && icent <=3) { // 10-40%
+          prV2EPdif1040[ipt][id]->Fill(0.5,v2EPDif,hcounter[icent][ipt][id] -> GetBinEntries(3));
           prV22dif1040Gap[ipt][id]->Fill(0.5,v22DifGap,hcounter[icent][ipt][id] -> GetBinEntries(2));
           prV22dif1040[ipt][id]->Fill(0.5,v22Dif,hcounter[icent][ipt][id] -> GetBinEntries(1));
           prV24dif1040[ipt][id]->Fill(0.5,v24Dif,hcounter[icent][ipt][id] -> GetBinEntries(1));
@@ -454,11 +485,14 @@ void v2plot_differential_flow(){
       grDifFl[1][icent][id] = new TGraphErrors(npt,&vPt[0],&vV24Dif[0],&ePt[0],&eV24Dif[0]);
       grDifFl[1][icent][id] -> SetMarkerColor(kGreen+1);
       grDifFl[1][icent][id] -> SetMarkerStyle(marker[1]);
-      // v2 Gap
-      grDifFl[2][icent][id] = new TGraphErrors(npt,&vPt[0],&vV22DifGap[0],&ePt[0],&eV22DifGap[0]);
+      // EP differential flow
+      grDifFl[2][icent][id] = new TGraphErrors(npt,&vPt[0],&vV2EPDif[0],&ePt[0],&eV2EPDif[0]);
       grDifFl[2][icent][id] -> SetMarkerColor(kAzure+2);
       grDifFl[2][icent][id] -> SetMarkerStyle(marker[2]);
-      
+      // v2 Gap
+      grDifFl[3][icent][id] = new TGraphErrors(npt,&vPt[0],&vV22DifGap[0],&ePt[0],&eV22DifGap[0]);
+      grDifFl[3][icent][id] -> SetMarkerColor(kYellow+2);
+      grDifFl[3][icent][id] -> SetMarkerStyle(marker[3]);
       for (int i=0; i<nmethod; i++){
         grDifFl[i][icent][id] -> SetMarkerSize(1.5);
         grDifFl[i][icent][id] -> SetDrawOption("P");
@@ -468,9 +502,13 @@ void v2plot_differential_flow(){
 
   //==========================================================================================================================
 
-  const char *grTitleDF[]={"[1] v_{2}{2};p_{T} [GeV/c];v_{2}",
-                           "[2] v_{2}{4};p_{T} [GeV/c];v_{2}",
-                           "[3] v_{2}{2,eta-gap};p_{T} [GeV/c];v_{2}"};
+  char nameV22Gap[400], nameV2EP[400];
+
+  sprintf(nameV22Gap,"[1] v_{2}{2};p_{T} [GeV/c];v_{2}");
+  sprintf(nameV2EP,"[3] v_{2}{#Psi_{2,TPC}^{}};p_{T} [GeV/c];v_{2}");
+  const char *grTitleDF[nmethod]={"v_{2}{2,QC};p_{T} [GeV/c];v_{2}",
+                                  "[2] v_{2}{4};p_{T} [GeV/c];v_{2}",
+                                  nameV2EP,nameV22Gap};
   outFile -> cd();
   for (int imethod=0; imethod<nmethod; imethod++){
     for (int icent=0;icent<ncent;icent++){
@@ -486,8 +524,9 @@ void v2plot_differential_flow(){
   std::vector<TGraphErrors*> vgrv2pt[ncent][npid];
   for (int icent=0; icent<ncent; icent++){
     for (int id=0;id<npid;id++){
-      vgrv2pt[icent][id].push_back(grDifFl[2][icent][id]); // v2{gapped 2QC}
+      vgrv2pt[icent][id].push_back(grDifFl[3][icent][id]); // v2{gapped 2QC}
       for (int i=0; i<nmethod-1; i++){
+        if (i==excludeMethod) continue;
         vgrv2pt[icent][id].push_back(grDifFl[i][icent][id]);
       }
     }
@@ -517,10 +556,11 @@ void v2plot_differential_flow(){
   TCanvas *cV2PT1040[npid];
   for (int id=0;id<npid;id++){
     if (bMergeCharged && id>3) continue; // if joining positively charged particles with negatively then id=0,1,2,3
-    vector <double> vV22Dif1040, vV24Dif1040, vV22GapDif1040, vPT;
+    vector <double> vV22Dif1040, vV24Dif1040, vV2EPDif1040, vV22GapDif1040, vPT;
     for (int ipt=0;ipt<npt;ipt++){
       vV22Dif1040.push_back(prV22dif1040[ipt][id]->GetBinContent(1));
       vV24Dif1040.push_back(prV24dif1040[ipt][id]->GetBinContent(1));
+      vV2EPDif1040.push_back(prV2EPdif1040[ipt][id]->GetBinContent(1));
       vV22GapDif1040.push_back(prV22dif1040Gap[ipt][id]->GetBinContent(1));
       // vPT.push_back(pt1040[ipt][id]->GetBinContent(1));
       vPT.push_back((bin_pT[ipt]+bin_pT[ipt+1])/2.);
@@ -532,11 +572,14 @@ void v2plot_differential_flow(){
     grDifFl1040[1][id] = new TGraphErrors(npt,&vPT[0],&vV24Dif1040[0],&ePT[0],eV24cent1040[id]);
     grDifFl1040[1][id] -> SetMarkerColor(kGreen+1);
     grDifFl1040[1][id] -> SetMarkerStyle(marker[1]);
-    // v2 gapped
-    grDifFl1040[2][id] = new TGraphErrors(npt,&vPT[0],&vV22GapDif1040[0],&ePT[0],eV22Gapcent1040[id]);
+    // EP differential flow
+    grDifFl1040[2][id] = new TGraphErrors(npt,&vPT[0],&vV2EPDif1040[0],&ePT[0],eV2EPcent1040[id]);
     grDifFl1040[2][id] -> SetMarkerColor(kAzure+2);
     grDifFl1040[2][id] -> SetMarkerStyle(marker[2]);
-    
+    // v2 gapped
+    grDifFl1040[3][id] = new TGraphErrors(npt,&vPT[0],&vV22GapDif1040[0],&ePT[0],eV22Gapcent1040[id]);
+    grDifFl1040[3][id] -> SetMarkerColor(kAzure+2);
+    grDifFl1040[3][id] -> SetMarkerStyle(marker[3]);
 
     for (int i=0; i<nmethod; i++){
       grDifFl1040[i][id] -> SetMarkerSize(1.5);
@@ -550,8 +593,9 @@ void v2plot_differential_flow(){
       grDifFl1040[imeth][id] -> SetTitle(grTitleDF[imeth]);
       grDifFl1040[imeth][id] -> Write(Form("gr_cent10-40_%i_%i",imeth,id));
     }
-    vgrv2pt1040.push_back(grDifFl1040[2][id]);
+    vgrv2pt1040.push_back(grDifFl1040[3][id]);
     for (int imeth=0;imeth<nmethod-1;imeth++){
+      if (imeth==excludeMethod) continue;
       vgrv2pt1040.push_back(grDifFl1040[imeth][id]);
     }
     
@@ -565,12 +609,14 @@ void v2plot_differential_flow(){
     if (saveAsPNG) cV2PT1040[id] -> SaveAs(Form("./%s/%sDFCent10-40.png",outDirName.Data(),pidNames.at(id).Data()));
   }
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
+    delete HRes[icent];
     delete hv22[icent];
     delete hv24[icent];
     delete hcov24[icent];
     delete hv22Gap[icent];
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid;id++){
+        delete hv2EP[icent][ipt][id];
         delete hPT[icent][ipt][id];
         delete hv22pt[icent][ipt][id];
         delete hv24pt[icent][ipt][id];
@@ -600,24 +646,38 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
   TProfile *hv22[ncent];         // profile of integrated flow from v2{2}
   TProfile *hv24[ncent];         // profile of integrated flow from v2{4}
   TProfile *hcov24[ncent];       // <2>*<4>
+  TProfile *hv22EP[ncent][npid]; // profile of integrated flow from v2{eta-sub}     
+  TProfile *HRes[ncent];
   TProfile *hv22Gap[ncent];
 
   // Get histograms
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
+    HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
     hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
     hv24[icent] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
     hcov24[icent] = (TProfile*)inFile->Get(Form("hcov24_%i",icent));
     hv22Gap[icent] = (TProfile*)inFile->Get(Form("hv22Gap_%i",icent));
+    for (int id=0;id<npid;id++){
+      hv22EP[icent][id] = (TProfile*)inFile->Get(Form("hv22EP_%i_%i",icent,id));
+    }
+  }
+
+  for (int icent=0;icent<ncent;icent++){
+    // merging CH(-) at id=4 with CH(+) at id=0
+    hv22EP[icent][0]->Add(hv22EP[icent][4]);
   }
   TGraphErrors *grIntFlowVsCent[nmethod];
   TCanvas *can;
 
 
-  std::vector<double>  vV22, vV24, vV22int, vV24int, vV22Gap, vV22Gapint;
-  std::vector<double>  eV22, eV24, eV22int, eV24int, eV22Gap, eV22Gapint;
+  std::vector<double> vV2EP, vV22, vV24, vV22int, vV24int, vV22Gap, vV22Gapint;
+  std::vector<double> eV2EP, eV22, eV24, eV22int, eV24int, eV22Gap, eV22Gapint;
 
   for (int icent=0;icent<ncent;icent++){
 
+    // EP
+    vV2EP.push_back( hv22EP[icent][0]->GetBinContent(1) / sqrt( HRes[icent]->GetBinContent(1) ) );
+    eV2EP.push_back( hv22EP[icent][0]->GetBinError(1)   / sqrt( HRes[icent]->GetBinContent(1) ) );
     // 2QC
     term cor2 = term(hv22[icent]);
     vV22.push_back(sqrt(cor2.mVal));
@@ -632,6 +692,13 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
     term cor2Gap = term(hv22Gap[icent]);
     vV22Gap.push_back(sqrt(cor2Gap.mVal));
     eV22Gap.push_back(sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE));
+
+    // Checking if there are differences with v2plot_integrated_flow_for_PID() or not
+
+    // cout << icent <<" "<<vV22.at(icent)<<" "<< prV22int[icent][0]->GetBinContent(1)<<" "<< eV22.at(icent) <<endl;
+    // cout << icent <<" "<<vV24.at(icent)<<" "<< prV24int[icent][0]->GetBinContent(1)<<" "<< eV24.at(icent) <<endl;
+    // cout << icent <<" "<<vV2EP.at(icent)<<" "<< prV22FHCalint[icent][0]->GetBinContent(1)<<" "<< eV2EP.at(icent) <<endl;
+    cout << icent <<" "<<vV22Gap.at(icent)<<" "<< prV22intGap[icent][0]->GetBinContent(1)<<" "<< eV22Gap.at(icent) <<endl;
   }
   
   grIntFlowVsCent[0] = new TGraphErrors(ncent,bin_cent,&vV22[0],bin_centE,&eV22[0]);
@@ -642,28 +709,34 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
   grIntFlowVsCent[1] -> SetMarkerColor(kGreen+1);
   grIntFlowVsCent[1] -> SetMarkerStyle(marker[1]);
 
-  grIntFlowVsCent[2] = new TGraphErrors(ncent,bin_cent,&vV22Gap[0],bin_centE,&eV22Gap[0]);
+  grIntFlowVsCent[2] = new TGraphErrors(ncent,bin_cent,&vV2EP[0],bin_centE,&eV2EP[0]);
   grIntFlowVsCent[2] -> SetMarkerColor(kAzure+2);
   grIntFlowVsCent[2] -> SetMarkerStyle(marker[2]);
 
+  grIntFlowVsCent[3] = new TGraphErrors(ncent,bin_cent,&vV22Gap[0],bin_centE,&eV22Gap[0]);
+  grIntFlowVsCent[3] -> SetMarkerColor(kYellow+2);
+  grIntFlowVsCent[3] -> SetMarkerStyle(marker[3]);
 
 
   for (int i=0;i<nmethod;i++){
     grIntFlowVsCent[i] -> SetMarkerSize(1.5);
     grIntFlowVsCent[i] -> SetDrawOption("P");
   }
-  const char *grTitle[]={"[1]v_{2}{2};centrality (%);v_{2}",
-                         "[2] v_{2}{4};centrality (%);v_{2}",
-                         "[3] v_{2}{2,Gapped};centrality (%);v_{2}"};
+  const char *grTitle[nmethod]={"v_{2}{2,QC};centrality (%);v_{2}",
+                                "[2] v_{2}{4};centrality (%);v_{2}",
+                                "[3] v_{2}{#Psi_{2,TPC}^{}};centrality (%);v_{2}",
+                                "[1] v_{2}{2};centrality (%);v_{2}"};
   outFile -> cd();
   for (int imeth=0; imeth<nmethod; imeth++){
+    // grIntFlowVsCent[imeth] -> SetTitle(Form("V2 vs. centrality, %s, %s",pidNames.at(0).Data(),grTitle[imeth]));
     grIntFlowVsCent[imeth] -> SetTitle(grTitle[imeth]);
     grIntFlowVsCent[imeth] -> Write(Form("grRF_%i_0",imeth));
   }
 
   std::vector<TGraphErrors*> vgr;
-  vgr.push_back(grIntFlowVsCent[2]);
+  vgr.push_back(grIntFlowVsCent[3]);
   for (int imeth=0; imeth<nmethod-1; imeth++){
+    if (imeth==excludeMethod) continue;
     vgr.push_back(grIntFlowVsCent[imeth]);
   }
 
@@ -677,10 +750,14 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
 
   // Clear memory
   for (int icent=0; icent<ncent; icent++){
+    delete HRes[icent];
     delete hv22[icent];
     delete hv24[icent];
     delete hcov24[icent];
     delete hv22Gap[icent];
+    for (int id=0;id<npid;id++){
+      delete hv22EP[icent][id];
+    }
   }
   delete inFile;
 
@@ -697,17 +774,22 @@ void v2plot_integrated_flow_for_PID(){
   TProfile *hv24pt[ncent][npt][npid];    // profile <<4'>> from 4th Q-Cumulants
   TProfile *hcov24[ncent][npid];       // <2>*<4>
   TProfile *hcov2prime4prime[ncent][npt][npid]; // <2'>*<4'>
+  TProfile *hv2EP[ncent][npt][npid];	// elliptic flow from EP method
+  TProfile *hv22EP[ncent][npid];      
+  TProfile *HRes[ncent];
 
   TProfile *hv22Gap[ncent][npid];
   TProfile *hv22ptGap[ncent][npt][npid];
   // Get histograms
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     
+    HRes[icent] = (TProfile*)inFile->Get(Form("HRes_%i",icent));
     for (int id=0;id<npid;id++){
       // hv22EP[icent][id] = (TProfile*)inFile->Get(Form("hv22EP_%i_%i",icent,id));
     }
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid;id++){
+        hv2EP[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2EP_%i_%i_%i",icent,ipt,id));
         hv22pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22pt_%i_%i_%i",icent,ipt,id));
         hv24pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv24pt_%i_%i_%i",icent,ipt,id));
         hcov2prime4prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
@@ -718,11 +800,13 @@ void v2plot_integrated_flow_for_PID(){
 
   for (int icent=0;icent<ncent;icent++){
     for (int id=0;id<npid;id++){
+      hv22EP[icent][id] = (TProfile*) hv2EP[icent][0][id]->Clone();
       hv22[icent][id] = (TProfile*) hv22pt[icent][0][id]->Clone();
       hv24[icent][id] = (TProfile*) hv24pt[icent][0][id]->Clone();
       hcov24[icent][id] = (TProfile*) hcov2prime4prime[icent][0][id]->Clone();
       hv22Gap[icent][id] = (TProfile*) hv22ptGap[icent][0][id]->Clone();
       for (int ipt=1;ipt<npt;ipt++){
+        hv22EP[icent][id]->Add(hv2EP[icent][ipt][id]);
         hv22[icent][id]->Add(hv22pt[icent][ipt][id]);
         hv24[icent][id]->Add(hv24pt[icent][ipt][id]);
         hcov24[icent][id]->Add(hcov2prime4prime[icent][ipt][id]);
@@ -733,6 +817,7 @@ void v2plot_integrated_flow_for_PID(){
   if (bMergeCharged){
     for (int icent=0;icent<ncent;icent++){
       for (int id=0;id<npid/2;id++){
+        hv22EP[icent][id]->Add(hv22EP[icent][id+4]);
         hv22[icent][id]->Add(hv22[icent][id+4]);
         hv24[icent][id]->Add(hv24[icent][id+4]);
         hcov24[icent][id]->Add(hcov24[icent][id+4]);
@@ -744,10 +829,14 @@ void v2plot_integrated_flow_for_PID(){
   TCanvas *can[npid];
   for (int id=0;id<npid;id++){
     if (bMergeCharged && (id>3 || id==0)) continue; // if one merges CH+ with CH- then V2vsCentrality of CH (id=0) will be calculated by previous function
-    std::vector<double>  vV22, vV24, vV22int, vV24int, vV22Gap, vV22Gapint, vV2EPint;
-    std::vector<double>  eV22, eV24, eV22int, eV24int, eV22Gap, eV22Gapint;
+    std::vector<double> vV2EP, vV22, vV24, vV22int, vV24int, vV22Gap, vV22Gapint, vV2EPint;
+    std::vector<double> eV2EP, eV22, eV24, eV22int, eV24int, eV22Gap, eV22Gapint;
 
     for (int icent=0;icent<ncent;icent++){
+
+      // EP
+      vV2EP.push_back( hv22EP[icent][id]->GetBinContent(1) / sqrt( HRes[icent]->GetBinContent(1) ) );
+      eV2EP.push_back( hv22EP[icent][id]->GetBinError(1)   / sqrt( HRes[icent]->GetBinContent(1) ) );
       // 2QC
       term cor2 = term(hv22[icent][id]);
       vV22.push_back(sqrt(cor2.mVal)); // not in used
@@ -762,45 +851,60 @@ void v2plot_integrated_flow_for_PID(){
       vV22int.push_back(prV22int[icent][id]->GetBinContent(1));
       vV24int.push_back(prV24int[icent][id]->GetBinContent(1));
       vV22Gapint.push_back(prV22intGap[icent][id]->GetBinContent(1));
+      vV2EPint.push_back(prV22FHCalint[icent][id]->GetBinContent(1));
       term cor2Gap = term(hv22Gap[icent][id]);
       vV22Gap.push_back(sqrt(cor2Gap.mVal)); // not in used
       eV22Gap.push_back(sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE));
+
+      // Checking if there are differences of vV2{x} & vV2{X}int 
+      if (id==3) { // PID: 0,1,2,3: CH,Pions,Kaons, protons & antiprotons
+        // cout << icent <<" "<<vV22.at(icent)<<" "<< vV22int.at(icent)<<" "<< eV22.at(icent)<<endl;
+        // cout << icent <<" "<<vV24.at(icent)<<" "<< vV24int.at(icent)<<" "<< eV24.at(icent)<<endl; // discrepancy ~3% for mid-central collisions, >10% for the rest
+        // cout << icent <<" "<<vV2EP.at(icent)<<" "<< vV2EPint.at(icent)<<" "<< eV2EP.at(icent)<<endl; // Both pt-bin merging method and integral over pt-bin method of integrated flow measurements give the same results for v2{eta-sub} ! 
+        // cout << icent <<" "<<vV22Gap.at(icent)<<" "<< vV22Gapint.at(icent)<<" "<< eV22Gap.at(icent)<<endl; // discrepancy approximately 2% at central collisions, >10% at peripheral collisions 
+      }
     }
     
-    // grIntFlowVsCent[0][id] = new TGraphErrors(ncent,bin_cent,&vV22[0],bin_centE,&eV22[0]); // v2int = mergence of pt bin 
+    // grIntFlowVsCent[0][id] = new TGraphErrors(ncent,bin_cent,&vV22[0],bin_centE,&eV22[0]); // v2int = mergence pt bin 
     grIntFlowVsCent[0][id] = new TGraphErrors(ncent,bin_cent,&vV22int[0],bin_centE,&eV22[0]); // v2int = integral over pT of differential v2
     grIntFlowVsCent[0][id] -> SetMarkerColor(kRed);
     grIntFlowVsCent[0][id] -> SetMarkerStyle(marker[0]);
 
-    // grIntFlowVsCent[1][id] = new TGraphErrors(ncent,bin_cent,&vV24[0],bin_centE,&eV24[0]); // v2int = mergence of pt bin 
+    // grIntFlowVsCent[1][id] = new TGraphErrors(ncent,bin_cent,&vV24[0],bin_centE,&eV24[0]); // v2int = mergence pt bin 
     grIntFlowVsCent[1][id] = new TGraphErrors(ncent,bin_cent,&vV24int[0],bin_centE,&eV24[0]); // v2int = integral over pT of differential v2
     grIntFlowVsCent[1][id] -> SetMarkerColor(kGreen+1);
     grIntFlowVsCent[1][id] -> SetMarkerStyle(marker[1]);
 
-    // grIntFlowVsCent[2][id] = new TGraphErrors(ncent,bin_cent,&vV22Gap[0],bin_centE,&eV22Gap[0]); // v2int = mergence of pt bin
-    grIntFlowVsCent[2][id] = new TGraphErrors(ncent,bin_cent,&vV22Gapint[0],bin_centE,&eV22Gap[0]); // v2int = integral over pT of differential v2
+    grIntFlowVsCent[2][id] = new TGraphErrors(ncent,bin_cent,&vV2EP[0],bin_centE,&eV2EP[0]); // same results
+    // grIntFlowVsCent[2][id] = new TGraphErrors(ncent,bin_cent,&vV2EPint[0],bin_centE,&eV2EP[0]); // same results
     grIntFlowVsCent[2][id] -> SetMarkerColor(kAzure+2);
     grIntFlowVsCent[2][id] -> SetMarkerStyle(marker[2]);
 
-
+    // grIntFlowVsCent[3][id] = new TGraphErrors(ncent,bin_cent,&vV22Gap[0],bin_centE,&eV22Gap[0]); // v2int = mergence pt bin 
+    grIntFlowVsCent[3][id] = new TGraphErrors(ncent,bin_cent,&vV22Gapint[0],bin_centE,&eV22Gap[0]); // v2int = integral over pT of differential v2
+    grIntFlowVsCent[3][id] -> SetMarkerColor(kYellow+2);
+    grIntFlowVsCent[3][id] -> SetMarkerStyle(marker[3]);
 
     for (int i=0;i<nmethod;i++){
       grIntFlowVsCent[i][id] -> SetMarkerSize(1.5);
       grIntFlowVsCent[i][id] -> SetDrawOption("P");
     }
-    const char *grTitle[]={"[1] v_{2}{2};centrality (%);v_{2}",
-                           "[2] v_{2}{4};centrality (%);v_{2}",
-                           "[3] v_{2}{2,gapped};centrality (%);v_{2}"};
+    const char *grTitle[nmethod]={"v_{2}{2,QC};centrality (%);v_{2}",
+                                  "[2] v_{2}{4};centrality (%);v_{2}",
+                                  "[3] v_{2}{#Psi_{2,TPC}^{}};centrality (%);v_{2}",
+                                  "[1] v_{2}{2};centrality (%);v_{2}"};
     outFile -> cd();
     for (int imeth=0; imeth<nmethod; imeth++){
+      // grIntFlowVsCent[imeth][id] -> SetTitle(Form("V2 vs. centrality, %s, %s",pidNames.at(id).Data(),grTitle[imeth]));
       grIntFlowVsCent[imeth][id] -> SetTitle(grTitle[imeth]);
       grIntFlowVsCent[imeth][id] -> Write(Form("grRF_%i_%i",imeth,id));
     }
 
 
     std::vector<TGraphErrors*> vgr;
-    vgr.push_back(grIntFlowVsCent[2][id]);
+    vgr.push_back(grIntFlowVsCent[3][id]);
     for (int imeth=0; imeth<nmethod-1; imeth++){
+      if (imeth==excludeMethod) continue;
       vgr.push_back(grIntFlowVsCent[imeth][id]);
     }
 
@@ -814,12 +918,15 @@ void v2plot_integrated_flow_for_PID(){
 
   // clear memory
   for (int icent=0;icent<ncent;icent++){
+    delete HRes[icent];
     for (int id=0;id<npid;id++){
       delete hv22[icent][id];
       delete hv24[icent][id];
+      delete hv22EP[icent][id];
       delete hv22Gap[icent][id];
       delete hcov24[icent][id];
       for (int ipt=0;ipt<npt;ipt++){
+        delete hv2EP[icent][ipt][id];
         delete hv22ptGap[icent][ipt][id];
         delete hv22pt[icent][ipt][id];
         delete hv24pt[icent][ipt][id];
@@ -830,7 +937,7 @@ void v2plot_integrated_flow_for_PID(){
   delete inFile;
 }
 
-void v2plot(){
+void v2plot_test(){
   CalStatErrCent1040();
   if (bMergeCharged){
     pidNames.clear();
@@ -844,6 +951,7 @@ void v2plot(){
       prV22int[icent][id] = new TProfile(Form("prV22int_%i_%i",icent,id),"",1,0.,1.);
       prV24int[icent][id] = new TProfile(Form("prV24int_%i_%i",icent,id),"",1,0.,1.);
       prV22intGap[icent][id] = new TProfile(Form("prV22intGap_%i_%i",icent,id),"",1,0.,1.);
+      prV22FHCalint[icent][id] = new TProfile(Form("prV22FHCalint_%i_%i",icent,id),"",1,0.,1.);
     }
   }
   v2plot_differential_flow();

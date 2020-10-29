@@ -16,31 +16,24 @@
 #include <fstream>
 #include <cmath>
 using namespace std;
-//List of histograms and Ntuples....
 
-// static const int neta = 7;
-// static const int ndet = 3;
-// static const int ncent = 6;
-// static const int nth = 3;
+
 static const int npid = 8; // h+, pions+, kaons+, protons+, h-, pions-, kaons-, protons-
-
-
 
 static const int ncent = 8; // 0-80%
 static const int bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 
-static const int npt = 9; // 0.5 - 3.6 GeV/c - number of pT bins
+static const int npt = 9;
 static const double bin_pT[npt+1]={0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.};
 
-static const double maxpt = 3.; // max pt
-static const double minpt = 0.2; // min pt
+static const double maxpt = 3.;
+static const double minpt = 0.2;
 
-static const float eta_cut =  1.5; // min pt
-static const float eta_gap = 0.05; // min pt
+static const float eta_cut =  1.5;
+static const float eta_gap = 0.05;
 
 static const int neta = 2; // [eta-,eta+]
 
-// static const int max_nh = 1700;
 
 TFile *d_outfile;  // out file with histograms and profiles
 TH1I *hEvt;        // Event number 
@@ -49,7 +42,7 @@ TH1F *hPhi;        // distr of particle azimuthal angle
 TH1F *hEta;        // pseudorapidity
 TH1F *hBimp;       // impact parameter
 TH1I *hMult;       // emitted multiplicity
-TH2F *hBimpvsMult; // 2-D histogram impact parameter (y) vs mult (x)
+TH2F *hBimpvsMult;
 
 // TProfile for reference flow (RF)
 TProfile *hv22[ncent];  //  <<2>> 
@@ -79,12 +72,12 @@ void QCumulant::Booking(TString outFile){
   d_outfile = new TFile(outFile.Data(),"recreate");
   cout << outFile.Data() << " has been initialized" << endl;
   hEvt  = new TH1I("hEvt","Event number",1,0,1);
-  hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
-  hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", max_nh, 0, max_nh, 200, 0., 20.);
+  hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", 250, 0, max_nh);
+  hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", 250, 0, max_nh, 200, 0., 20.);
   hBimp = new TH1F("hBimp", "Impact parameter;b (fm);dN/db", 200, 0., 20.);
-  hPt = new TH1F("hPt", "Pt-distr;p_{T} (GeV/c); dN/dP_{T}", 500, 0., 6.);
-  hPhi = new TH1F("hPhi", "Particle azimuthal angle distr;#phi;dN/d#phi", 700, -3.5, 3.5);
-  hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -10, 10);
+  hPt = new TH1F("hPt", "Pt-distr;p_{T} (GeV/c); dN/dP_{T}", 300, 0., 3.);
+  hPhi = new TH1F("hPhi", "Particle azimuthal angle distr;#phi;dN/d#phi", 350, -3.5, 3.5);
+  hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 250, -10, 10);
 
   for (int icent=0;icent<ncent;icent++){ // loop over centrality classes
     hv22[icent] = new TProfile(Form("hv22_%i",icent),Form("hv22_%i",icent),1,0.,1.);
@@ -140,7 +133,7 @@ void QCumulant::Loop_a_list_of_file(TString fileList){
   std::string line;
   while(std::getline(file, line))
   {
-      chain->Add(line.c_str());
+    chain->Add(line.c_str());
   }
   if (chain == 0){
     cout << "mctree is not found in " << line << endl;
@@ -161,19 +154,18 @@ void QCumulant::Ana_end(){
 
 void QCumulant::Loop()
 {
-   if (fChain == 0) return;
+  if (fChain == 0) return;
 
-   Long64_t nentries = fChain->GetEntries();
-   Long64_t nbytes = 0, nb = 0;
-   for (Long64_t jentry=0; jentry<nentries;jentry++) {
-      Long64_t ientry = LoadTree(jentry);
-      if (ientry < 0) break;
-      nb = fChain->GetEntry(jentry);   nbytes += nb;
-      // if (Cut(ientry) < 0) continue;
-      Ana_event();
-      
-      if (jentry%100000==0) cout << jentry << endl;
-   }
+  Long64_t nentries = fChain->GetEntries();
+  Long64_t nbytes = 0, nb = 0;
+  for (Long64_t jentry=0; jentry<nentries;jentry++) {
+    Long64_t ientry = LoadTree(jentry);
+    if (ientry < 0) break;
+    nb = fChain->GetEntry(jentry);   nbytes += nb;
+    // if (Cut(ientry) < 0) continue;
+    Ana_event();
+    if (jentry%100000==0) cout << "Event [" << jentry << "/" << nentries << "]" << endl;
+  }
 }
 
 void QCumulant::Ana_event(){
@@ -188,25 +180,24 @@ void QCumulant::Ana_event(){
   // Q-vector of RFP
   Double_t Qx2=0., Qy2=0., Qx4=0., Qy4=0.;
   TComplex Q2=0., Q4=0.;
-  // p-vector of POI
+  // p,q-vectors
   Double_t px2[npt][npid]={{0.}}, py2[npt][npid]={{0.}};
   TComplex p2[npt][npid]={{0.}}, p4[npt][npid]={{0.}}, q2[npt][npid]={{0.}}, q4[npt][npid]={{0.}};
-  // q-vector of particles marked as POI and RFP, which is used for 
-  // autocorrelation substraction
   Double_t qx2[npt][npid]={{0.}}, qy2[npt][npid]={{0.}}, qx4[npt][npid]={{0.}}, qy4[npt][npid]={{0.}};
   // Total number of RFP in given event
   Double_t M = 0.;
-  // numbers of POI (mp) and particles marked both POI and RFP (mq)
+  // mp - number of POI, mq - number of particles marked both as POI and RFP
   Double_t mq[npt][npid]={{0.}},mp[npt][npid]={{0.}};
-  // average reduced single-event 2- and 4-particle correlations : <2'> & <4'>
-  Double_t redCor22[npt][npid]={{0.}}, redCor24[npt][npid]={{0.}};
-  // event weights for correlation calculation
-  Double_t w2=0.,w4=0.;
-  // event weights for reduced correlation calculation
-  Double_t wred2[npt][npid]={{0.}},wred4[npt][npid]={{0.}};
   // Average single-event 2- and 4- particle correlations : <2> & <4>
   Double_t cor22 = 0., cor24 = 0.;
+  // event weights for correlation calculation
+  Double_t w2=0.,w4=0.;
+  // average reduced single-event 2- and 4-particle correlations : <2'> & <4'>
+  Double_t redCor22[npt][npid]={{0.}}, redCor24[npt][npid]={{0.}};
+  // event weights for reduced correlation calculation
+  Double_t wred2[npt][npid]={{0.}},wred4[npt][npid]={{0.}};
 
+  // v_2{2,eta-gap}
   Double_t Qx2Gap[neta]={0.}, Qy2Gap[neta]={0.};
   Double_t px2Gap[neta][npt][npid]={{{0.}}}, py2Gap[neta][npt][npid]={{{0.}}};
   TComplex Q2Gap[neta]={0.}, p2Gap[neta][npt][npid]={{{0.}}};
@@ -225,7 +216,6 @@ void QCumulant::Ana_event(){
     float eta = vect.Eta();
     float phi = vect.Phi();
     if (pt < minpt || pt > maxpt || abs(eta)>eta_cut) continue; // track selection
-    // if (abs(eta)<eta_gap) continue;
     auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
     if (!particle) continue;
     float charge = 1./3.*particle->Charge();
@@ -240,9 +230,9 @@ void QCumulant::Ana_event(){
     }
 
     int fId=-1;
-    if(pdg[iTrk]==211)  fId=1; // pion+
-    if(pdg[iTrk]==321)  fId=2; // kaon+
-    if(pdg[iTrk]==2212) fId=3; // proton
+    if(pdg[iTrk]==211)   fId=1; // pion+
+    if(pdg[iTrk]==321)   fId=2; // kaon+
+    if(pdg[iTrk]==2212)  fId=3; // proton
     if(pdg[iTrk]==-211)  fId=5; // pion-
     if(pdg[iTrk]==-321)  fId=6; // kaon-
     if(pdg[iTrk]==-2212) fId=7; // anti-proton
@@ -252,12 +242,13 @@ void QCumulant::Ana_event(){
     Double_t cos2phi = TMath::Cos(2.*phi);
     Double_t sin2phi = TMath::Sin(2.*phi);
     
+    // v_{2}{2} & v_{2}{4}
     Qx2+=cos2phi;
     Qy2+=sin2phi;
     Qx4+=cos4phi;
     Qy4+=sin4phi;
     M++;
-    // POI selection
+    
     if (charge>0){
       px2[ipt][0]+=cos2phi;
       py2[ipt][0]+=sin2phi;
@@ -294,7 +285,8 @@ void QCumulant::Ana_event(){
       mq[ipt][fId]++;
       hPT[fcent][ipt][fId]->Fill(0.5, pt, 1);
     }
-    // v22gapped
+
+    // v_{2}{2,eta-gap}
     if (eta <-eta_gap){
       Qx2Gap[0]+=cos2phi;
       Qy2Gap[0]+=sin2phi;
@@ -403,4 +395,3 @@ void QCumulant::Ana_event(){
     }
   }
 } // end of Ana_event();
-// root -l -b -q anaFlow.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/UrQMD_7.7/runlist_UrQMD_7.7_00.list","test.root")'

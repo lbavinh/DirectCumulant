@@ -26,7 +26,7 @@ void get_flow_model(TString inputFileName, TString outputFileName)
   // Constant declaration
 
   // Profile info - general
-  const int nCentBins     = 8;
+  const int nCentBins     = 9;
   const double centBinMin = 0.;
   const double centBinMax = 80.;
   const int nPtBins       = 300;
@@ -757,22 +757,11 @@ void get_flow_model(TString inputFileName, TString outputFileName)
         }
       }
     } // end tracks loop
-    // std::cout << "Error here" << std::endl;
   } // end event loop
   
   // Writing output
   fo->cd();
   fo->Write();
-  // pResMcTPC->Write();
-  // for (int ipid=0; ipid < nPID; ipid++)
-  // {
-  //   pv2mcTPC[ipid]->Write();
-  // }
-  // hQx_L->Write();
-  // hQy_L->Write();
-  // hQx_R->Write();
-  // hQy_R->Write();
-
   fo->Close();
 
   timer.Stop();

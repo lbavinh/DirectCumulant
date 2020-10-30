@@ -6,7 +6,7 @@
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
-#$ -N UrQMD27
+#$ -N Flow
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job
@@ -14,7 +14,7 @@
 # Set soft time limit - set up the same as a hard limit
 #$ -l s_rt=06:30:00
 # Specify job array range (how many jobs will be created: 980 for 4.5 GeV, 584 for 7.7, 992 for 11.5, 438 for 27
-#$ -t 1-438
+#$ -t 1-584
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
@@ -23,10 +23,11 @@
 #Main directory
 # energy=Urqmd11.5
 # energy=Urqmd4.5
-# energy=UrQMD_7.7
-energy=UrQMD_27
+energy=UrQMD_7.7
+# energy=UrQMD_27
 # macro=QCumulant_Model
-macro=anaFlow
+# macro=anaFlow
+macro=get_flow_model
 export MAIN_DIR=/weekly/$USER/lbavinh/UrQMD
 export FILELIST=$MAIN_DIR/split/runlistSGE_$energy.list
 export IN_FILE=`sed "${SGE_TASK_ID}q;d" $FILELIST`
@@ -44,6 +45,7 @@ mkdir -p $TMP
 touch $LOG
 
 eos cp --streams=16 $MAIN_DIR/$macro.C $TMP
+eos cp --streams=16 $MAIN_DIR/utilities.C $TMP
 
 # Set correct environment variables (needed version of root)
 source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh

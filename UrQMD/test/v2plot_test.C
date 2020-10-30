@@ -1,17 +1,17 @@
 #include "DrawTGraphImp.C"
 TString model = {"UrQMD"};
 TString energy = {"7.7GeV"};
-TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
+TString inFileName= (TString) Form("./%s_%s.root",model.Data(),energy.Data());
 TFile *outFile = new TFile(Form("./v2_%s_%s_test.root",model.Data(),energy.Data()),"recreate");
 TString outDirName=(TString)Form("%s_%s_test",model.Data(),energy.Data());
 TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
 
 // Flags
 bool bDrawQAHist = false; // auxiliary plots: eta, bimp, mult, etc.
-bool bMergeCharged = true; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
+bool bMergeCharged = false; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
 bool saveAsPNG = true;
 int excludeMethod = 0; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively
-int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
+int drawDifferentialFlowTill = 3; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
 // Constants
 const int npid = 8; // charged hadrons, pions, kaons, protons
 const int nmethod = 7; // 2QC,FHCal; 2QC,eta-gap; 2QC; 4QC; TPC,EP; TPC,SP; FHCal,EP
@@ -28,11 +28,13 @@ const double maxptRFP = 3.0;
 const double maxpt = 2.5; // for v2 vs pt plotting
 const double minpt = 0.;  // for v2 vs pt plotting
 
-const std::vector<std::pair<float, float>> centRange = {{0., 5.}, {5., 10.}, {10.,20.}, {20., 30.}, {30., 40.}, {40., 50.}, {50.,60.}, {60.,70.}, {70.,80.}};
+// const std::vector<std::pair<float, float>> centRange = {{0., 5.}, {5., 10.}, {10.,20.}, {20., 30.}, {30., 40.}, {40., 50.}, {50.,60.}, {60.,70.}, {70.,80.}};
+const std::vector<std::pair<float, float>> centRange = {{0., 10.}, {10.,20.}, {20., 30.}, {30., 40.}, {40., 50.}, {50.,60.}, {60.,70.}, {70.,80.}};
 const int n_cent_bins = centRange.size();
 
-const int ncent = 9; // 0-80 %
-const double bin_cent[ncent] = {2.5,7.5,15,25,35,45,55,65,75};
+const int ncent = 8; // 0-80 %
+// const double bin_cent[ncent] = {2.5,7.5,15,25,35,45,55,65,75};
+const double bin_cent[ncent] = {5,15,25,35,45,55,65,75};
 const double bin_centE[ncent] = {0};
 const float eta_gap = 0.05;
 
@@ -47,7 +49,7 @@ const double maxV2dif = 0.2; // for v2 vs pt plotting
 std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton_pos", "hadron_neg", "pion_neg", "kaon_neg", "proton_neg"};
 std::vector<TString> pidFancyNames = {"h+", "#pi+", "K+", "p", "h-", "#pi-", "K-", "#bar{p}"};
 vector <Double_t> coordinateLeg = {0.18,0.63,0.45,0.889};
-vector<pair<Double_t,Double_t>> rangeRatio = {{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16}}; // 0-10; 10-20; 20-30; 30-40; 40-50; 50-60; 60-70; 70-80; 10-40%
+vector<pair<Double_t,Double_t>> rangeRatio = {{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16},{0.84,1.16}}; // 0-10; 10-20; 20-30; 30-40; 40-50; 50-60; 60-70; 70-80; 10-40%
 vector<pair<Double_t,Double_t>> rangeRatioRF ={{0.65,1.11},{0.65,1.11},{0.65,1.11},{0.65,1.11},{0.65,1.11},{0.65,1.11},{0.65,1.11},{0.65,1.11}}; // charged hadrons, pions, kaons, protons
 int marker[nmethod]={20,21,22,23,24,25,26}; // 2QC,FHCal; 2QC,eta-gap; 2QC; 4QC; TPC,EP; TPC,SP; FHCal,EP
 
@@ -89,7 +91,7 @@ struct term{ // structure for "Mean squared error of MEAN" calculation, using un
 
 };
 
-void Ca213lStatErrCent1040(){
+void CalStatErrCent1040(){
   TFile *inFile = new TFile(inFileName.Data(),"read");
 
   // TProfile *hv22[ncent];        // profile <<2>> from 2nd Q-Cumulants
@@ -140,7 +142,7 @@ void Ca213lStatErrCent1040(){
   for (int i=0; i<npid; i++)
   {
     pReducedCorrelator2EtaGap_FHCal[i] = (TProfile2D*)inFile->Get(Form("pReducedCorrelator2EtaGap_FHCal_pid%i",i));
-    pReducedCorrelator2EtaGap[i] = = (TProfile2D*)inFile->Get(Form("pReducedCorrelator2EtaGap_pid%i",i));
+    pReducedCorrelator2EtaGap[i] = (TProfile2D*)inFile->Get(Form("pReducedCorrelator2EtaGap_pid%i",i));
     pReducedCorrelator2[i] = (TProfile2D*)inFile->Get(Form("pReducedCorrelator2_pid%i",i));
     pReducedCorrelator4[i] = (TProfile2D*)inFile->Get(Form("pReducedCorrelator4_pid%i",i));
     
@@ -204,28 +206,28 @@ void Ca213lStatErrCent1040(){
   //   }
   // }
 
-  if(bMergeCharged){
-    for (int id=0;id<npid/2;id++){
-      pReducedCorrelator2EtaGap_FHCal[i]->Add(pReducedCorrelator2EtaGap_FHCal[id+4]);
-      pReducedCorrelator2EtaGap[i]->Add(pReducedCorrelator2EtaGap[id+4]);
-      pReducedCorrelator2[i]->Add(pReducedCorrelator2[id+4]);
-      pReducedCorrelator4[i]->Add(pReducedCorrelator4[id+4]);
-      pv2TPC_EP[i]->Add(pv2TPC_EP[id+4]);
-      pv2TPC_SP[i]->Add(pv2TPC_SP[id+4]);
-      pv2FHCal_EP[i]->Add(pv2FHCal_EP[id+4]);
-      pCov22RedEtaGap_FHCal[i]->Add(pCov22RedEtaGap_FHCal[id+4]);
-      pCov22RedEtaGap[i]->Add(pCov22RedEtaGap[id+4]);
-      pCov22Red[i]->Add(pCov22Red[id+4]);
-      pCov24Red[i]->Add(pCov24Red[id+4]);
-      pCov42Red[i]->Add(pCov42Red[id+4]);
-      pCov44Red[i]->Add(pCov44Red[id+4]);
-      pCov2Red4Red[i]->Add(pCov2Red4Red[id+4]);
-      for (int m=0; m<nmethod; m++)
-      {
-        pPt[i][m]->Add(pPt[id+4]);
-      }
-    }
-  }
+  // if(bMergeCharged){
+  //   for (int i=0;i<npid/2;i++){
+  //     pReducedCorrelator2EtaGap_FHCal[i]->Add(pReducedCorrelator2EtaGap_FHCal[i+4]);
+  //     pReducedCorrelator2EtaGap[i]->Add(pReducedCorrelator2EtaGap[i+4]);
+  //     pReducedCorrelator2[i]->Add(pReducedCorrelator2[i+4]);
+  //     pReducedCorrelator4[i]->Add(pReducedCorrelator4[i+4]);
+  //     pv2TPC_EP[i]->Add(pv2TPC_EP[i+4]);
+  //     pv2TPC_SP[i]->Add(pv2TPC_SP[i+4]);
+  //     pv2FHCal_EP[i]->Add(pv2FHCal_EP[i+4]);
+  //     pCov22RedEtaGap_FHCal[i]->Add(pCov22RedEtaGap_FHCal[i+4]);
+  //     pCov22RedEtaGap[i]->Add(pCov22RedEtaGap[i+4]);
+  //     pCov22Red[i]->Add(pCov22Red[i+4]);
+  //     pCov24Red[i]->Add(pCov24Red[i+4]);
+  //     pCov42Red[i]->Add(pCov42Red[i+4]);
+  //     pCov44Red[i]->Add(pCov44Red[i+4]);
+  //     pCov2Red4Red[i]->Add(pCov2Red4Red[i+4]);
+  //     for (int m=0; m<nmethod; m++)
+  //     {
+  //       pPt[i][m]->Add(pPt[i+4]);
+  //     }
+  //   }
+  // }
 
   double centrality_bin[2] = {10.,40.};
   pCorrelator2EtaGap_FHCal = (TProfile*)pCorrelator2EtaGap_FHCal->Rebin(1,pCorrelator2EtaGap_FHCal->GetName(), &centrality_bin[0]); 
@@ -238,44 +240,61 @@ void Ca213lStatErrCent1040(){
   pResFHCal_EP = (TProfile*)pResFHCal_EP->Rebin(1,pResFHCal_EP->GetName(), &centrality_bin[0]); 
   pCov24 = (TProfile*)pCov24->Rebin(1,pCov24->GetName(), &centrality_bin[0]);
 
+  
+
+  TProfile *pReducedCorrelator2EtaGap_FHCal_cent[npid][n_cent_bins];
+  TProfile *pReducedCorrelator2EtaGap_cent[npid][n_cent_bins];
+  TProfile *pReducedCorrelator2_cent[npid][n_cent_bins];
+  TProfile *pReducedCorrelator4_cent[npid][n_cent_bins];
+  TProfile *pv2TPC_EP_cent[npid][n_cent_bins];
+  TProfile *pv2TPC_SP_cent[npid][n_cent_bins];
+  TProfile *pv2FHCal_EP_cent[npid][n_cent_bins];
+  TProfile *pCov22RedEtaGap_FHCal_cent[npid][n_cent_bins];
+  TProfile *pCov22RedEtaGap_cent[npid][n_cent_bins];
+  TProfile *pCov22Red_cent[npid][n_cent_bins];
+  TProfile *pCov24Red_cent[npid][n_cent_bins];
+  TProfile *pCov42Red_cent[npid][n_cent_bins];
+  TProfile *pCov44Red_cent[npid][n_cent_bins];
+  TProfile *pCov2Red4Red_cent[npid][n_cent_bins];
+  TProfile *pPt_cent[npid][nmethod][n_cent_bins];
   std::pair<int, int> cent_bins;
-
-
   for (int i = 0; i < npid; i++)
   {
-    cent_bins.first  = pv2TPC_EP[i]->GetYaxis()->FindBin(10.);
-    cent_bins.second = pv2TPC_EP[i]->GetYaxis()->FindBin(39.);
+    for (int c = 0; c < 1; c++)
+    {
+      cent_bins.first  = pv2TPC_EP[i]->GetYaxis()->FindBin(10.);
+      cent_bins.second = pv2TPC_EP[i]->GetYaxis()->FindBin(39.);
 
-    pReducedCorrelator2EtaGap_FHCal[i] = (TProfile*)pReducedCorrelator2EtaGap_FHCal[i]->ProfileX(pReducedCorrelator2EtaGap_FHCal[i]->GetName(), cent_bins.first, cent_bins.second);
-    pReducedCorrelator2EtaGap[i] = (TProfile*)pReducedCorrelator2EtaGap[i]->ProfileX(pReducedCorrelator2EtaGap[i]->GetName(), cent_bins.first, cent_bins.second);
-    pReducedCorrelator2[i] = (TProfile*)pReducedCorrelator2[i]->ProfileX(pReducedCorrelator2[i]->GetName(), cent_bins.first, cent_bins.second);
-    pReducedCorrelator4[i] = (TProfile*)pReducedCorrelator4[i]->ProfileX(pReducedCorrelator4[i]->GetName(), cent_bins.first, cent_bins.second);
-    pv2TPC_EP[i]  = (TProfile*)pv2TPC_EP[i]->ProfileX(pv2TPC_EP[i]->GetName(), cent_bins.first, cent_bins.second);
-    pv2TPC_SP[i]  = (TProfile*)pv2TPC_SP[i]->ProfileX(pv2TPC_SP[i]->GetName(), cent_bins.first, cent_bins.second);
-    pv2FHCal_EP[i]  = (TProfile*)pv2FHCal_EP[i]->ProfileX(pv2FHCal_EP[i]->GetName(), cent_bins.first, cent_bins.second);
-    pCov22RedEtaGap_FHCal[i] = (TProfile*)pCov22RedEtaGap_FHCal[i]->ProfileX(pCov22RedEtaGap_FHCal[i]->GetName(), cent_bins.first, cent_bins.second);
-    pCov22RedEtaGap[i] = (TProfile*)pCov22RedEtaGap[i]->ProfileX(pCov22RedEtaGap[i]->GetName(), cent_bins.first, cent_bins.second);
-    pCov22Red[i] = (TProfile*)pCov22Red[i]->ProfileX(pCov22Red[i]->GetName(), cent_bins.first, cent_bins.second);
-    pCov24Red[i] = (TProfile*)pCov24Red[i]->ProfileX(pCov24Red[i]->GetName(), cent_bins.first, cent_bins.second); 
-    pCov42Red[i] = (TProfile*)pCov42Red[i]->ProfileX(pCov42Red[i]->GetName(), cent_bins.first, cent_bins.second); 
-    pCov44Red[i] = (TProfile*)pCov44Red[i]->ProfileX(pCov44Red[i]->GetName(), cent_bins.first, cent_bins.second); 
-    pCov2Red4Red[i] = (TProfile*)pCov2Red4Red[i]->ProfileX(pCov2Red4Red[i]->GetName(), cent_bins.first, cent_bins.second); 
+      pReducedCorrelator2EtaGap_FHCal_cent[i][c] = (TProfile*)pReducedCorrelator2EtaGap_FHCal[i]->ProfileX(Form("%s_cent%i",pReducedCorrelator2EtaGap_FHCal[i]->GetName(),c), cent_bins.first, cent_bins.second);
+      pReducedCorrelator2EtaGap_cent[i][c] = (TProfile*)pReducedCorrelator2EtaGap[i]->ProfileX(Form("%s_cent%i",pReducedCorrelator2EtaGap[i]->GetName(),c), cent_bins.first, cent_bins.second);
+      pReducedCorrelator2_cent[i][c] = (TProfile*)pReducedCorrelator2[i]->ProfileX(Form("%s_cent%i",pReducedCorrelator2[i]->GetName(),c), cent_bins.first, cent_bins.second);
+      pReducedCorrelator4_cent[i][c] = (TProfile*)pReducedCorrelator4[i]->ProfileX(Form("%s_cent%i",pReducedCorrelator4[i]->GetName(),c), cent_bins.first, cent_bins.second);
+      pv2TPC_EP_cent[i][c]  = (TProfile*)pv2TPC_EP[i]->ProfileX(Form("%s_cent%i",pv2TPC_EP[i]->GetName(),c), cent_bins.first, cent_bins.second);
+      pv2TPC_SP_cent[i][c]  = (TProfile*)pv2TPC_SP[i]->ProfileX(Form("%s_cent%i",pv2TPC_SP[i]->GetName(),c), cent_bins.first, cent_bins.second);
+      pv2FHCal_EP_cent[i][c]  = (TProfile*)pv2FHCal_EP[i]->ProfileX(Form("%s_cent%i",pv2FHCal_EP[i]->GetName(),c), cent_bins.first, cent_bins.second);
+      pCov22RedEtaGap_FHCal_cent[i][c] = (TProfile*)pCov22RedEtaGap_FHCal[i]->ProfileX(Form("%s_cent%i",pCov22RedEtaGap_FHCal[i]->GetName(),c), cent_bins.first, cent_bins.second);
+      pCov22RedEtaGap_cent[i][c] = (TProfile*)pCov22RedEtaGap[i]->ProfileX(Form("%s_cent%i",pCov22RedEtaGap[i]->GetName(),c), cent_bins.first, cent_bins.second);
+      pCov22Red_cent[i][c] = (TProfile*)pCov22Red[i]->ProfileX(Form("%s_cent%i",pCov22Red[i]->GetName(),c), cent_bins.first, cent_bins.second);
+      pCov24Red_cent[i][c] = (TProfile*)pCov24Red[i]->ProfileX(Form("%s_cent%i",pCov24Red[i]->GetName(),c), cent_bins.first, cent_bins.second); 
+      pCov42Red_cent[i][c] = (TProfile*)pCov42Red[i]->ProfileX(Form("%s_cent%i",pCov42Red[i]->GetName(),c), cent_bins.first, cent_bins.second); 
+      pCov44Red_cent[i][c] = (TProfile*)pCov44Red[i]->ProfileX(Form("%s_cent%i",pCov44Red[i]->GetName(),c), cent_bins.first, cent_bins.second); 
+      pCov2Red4Red_cent[i][c] = (TProfile*)pCov2Red4Red[i]->ProfileX(Form("%s_cent%i",pCov2Red4Red[i]->GetName(),c), cent_bins.first, cent_bins.second); 
 
-    pReducedCorrelator2EtaGap_FHCal[i] = (TProfile*)pReducedCorrelator2EtaGap_FHCal[i]->Rebin(n_pt_bins,pReducedCorrelator2EtaGap_FHCal[i]->GetName(), &pt_binning[0]);
-    pReducedCorrelator2EtaGap[i] = (TProfile*)pReducedCorrelator2EtaGap[i]->Rebin(n_pt_bins,pReducedCorrelator2EtaGap[i]->GetName(), &pt_binning[0]);
-    pReducedCorrelator2[i] = (TProfile*)pReducedCorrelator2[i]->Rebin(n_pt_bins,pReducedCorrelator2[i]->GetName(), &pt_binning[0]);
-    pReducedCorrelator4[i] = (TProfile*)pReducedCorrelator4[i]->Rebin(n_pt_bins,pReducedCorrelator4[i]->GetName(), &pt_binning[0]);
-    pv2TPC_EP[i]  = (TProfile*)pv2TPC_EP[i]->Rebin(n_pt_bins,pv2TPC_EP[i]->GetName(), &pt_binning[0]);
-    pv2TPC_SP[i]  = (TProfile*)pv2TPC_SP[i]->Rebin(n_pt_bins,pv2TPC_SP[i]->GetName(), &pt_binning[0]);
-    pv2FHCal_EP[i]  = (TProfile*)pv2FHCal_EP[i]->Rebin(n_pt_bins,pv2FHCal_EP[i]->GetName(), &pt_binning[0]);
-    pCov22RedEtaGap_FHCal[i] = (TProfile*)pCov22RedEtaGap_FHCal[i]->Rebin(n_pt_bins,pCov22RedEtaGap_FHCal[i]->GetName(), &pt_binning[0]);
-    pCov22RedEtaGap[i] = (TProfile*)pCov22RedEtaGap[i]->Rebin(n_pt_bins,pCov22RedEtaGap[i]->GetName(), &pt_binning[0]);
-    pCov22Red[i] = (TProfile*)pCov22Red[i]->Rebin(n_pt_bins,pCov22Red[i]->GetName(), &pt_binning[0]);
-    pCov24Red[i] = (TProfile*)pCov24Red[i]->Rebin(n_pt_bins,pCov24Red[i]->GetName(), &pt_binning[0]); 
-    pCov42Red[i] = (TProfile*)pCov42Red[i]->Rebin(n_pt_bins,pCov42Red[i]->GetName(), &pt_binning[0]); 
-    pCov44Red[i] = (TProfile*)pCov44Red[i]->Rebin(n_pt_bins,pCov44Red[i]->GetName(), &pt_binning[0]); 
-    pCov2Red4Red[i] = (TProfile*)pCov2Red4Red[i]->Rebin(n_pt_bins,pCov2Red4Red[i]->GetName(), &pt_binning[0]); 
-
+      pReducedCorrelator2EtaGap_FHCal_cent[i][c] = (TProfile*)pReducedCorrelator2EtaGap_FHCal_cent[i][c]->Rebin(n_pt_bins,pReducedCorrelator2EtaGap_FHCal_cent[i][c]->GetName(), &pt_binning[0]);
+      pReducedCorrelator2EtaGap_cent[i][c] = (TProfile*)pReducedCorrelator2EtaGap_cent[i][c]->Rebin(n_pt_bins,pReducedCorrelator2EtaGap_cent[i][c]->GetName(), &pt_binning[0]);
+      pReducedCorrelator2_cent[i][c] = (TProfile*)pReducedCorrelator2_cent[i][c]->Rebin(n_pt_bins,pReducedCorrelator2_cent[i][c]->GetName(), &pt_binning[0]);
+      pReducedCorrelator4_cent[i][c] = (TProfile*)pReducedCorrelator4_cent[i][c]->Rebin(n_pt_bins,pReducedCorrelator4_cent[i][c]->GetName(), &pt_binning[0]);
+      pv2TPC_EP_cent[i][c]  = (TProfile*)pv2TPC_EP_cent[i][c]->Rebin(n_pt_bins,pv2TPC_EP_cent[i][c]->GetName(), &pt_binning[0]);
+      pv2TPC_SP_cent[i][c]  = (TProfile*)pv2TPC_SP_cent[i][c]->Rebin(n_pt_bins,pv2TPC_SP_cent[i][c]->GetName(), &pt_binning[0]);
+      pv2FHCal_EP_cent[i][c]  = (TProfile*)pv2FHCal_EP_cent[i][c]->Rebin(n_pt_bins,pv2FHCal_EP_cent[i][c]->GetName(), &pt_binning[0]);
+      pCov22RedEtaGap_FHCal_cent[i][c] = (TProfile*)pCov22RedEtaGap_FHCal_cent[i][c]->Rebin(n_pt_bins,pCov22RedEtaGap_FHCal_cent[i][c]->GetName(), &pt_binning[0]);
+      pCov22RedEtaGap_cent[i][c] = (TProfile*)pCov22RedEtaGap_cent[i][c]->Rebin(n_pt_bins,pCov22RedEtaGap_cent[i][c]->GetName(), &pt_binning[0]);
+      pCov22Red_cent[i][c] = (TProfile*)pCov22Red_cent[i][c]->Rebin(n_pt_bins,pCov22Red_cent[i][c]->GetName(), &pt_binning[0]);
+      pCov24Red_cent[i][c] = (TProfile*)pCov24Red_cent[i][c]->Rebin(n_pt_bins,pCov24Red_cent[i][c]->GetName(), &pt_binning[0]); 
+      pCov42Red_cent[i][c] = (TProfile*)pCov42Red_cent[i][c]->Rebin(n_pt_bins,pCov42Red_cent[i][c]->GetName(), &pt_binning[0]); 
+      pCov44Red_cent[i][c] = (TProfile*)pCov44Red_cent[i][c]->Rebin(n_pt_bins,pCov44Red_cent[i][c]->GetName(), &pt_binning[0]); 
+      pCov2Red4Red_cent[i][c] = (TProfile*)pCov2Red4Red_cent[i][c]->Rebin(n_pt_bins,pCov2Red4Red_cent[i][c]->GetName(), &pt_binning[0]);
+    }
   }
 
   // // Add
@@ -302,64 +321,64 @@ void Ca213lStatErrCent1040(){
   //   } // end of loop over pt bin
   // }
 
-
-  // 2QC
-  term cor2 = term(pCorrelator2);
-  // 4QC
-  term cor4 = term(pCorrelator4);
-  double cov24 = Covariance(pCov24,pCorrelator2,pCorrelator4);
-  double v24 = pow(2*pow(cor2.mVal,2)-cor4.mVal,0.25);
-  // 2QC Gapped
-  term cor2Gap = term(pCorrelator2EtaGap);
-  for (int id=0;id<npid;id++){     
-    for(int ipt=0; ipt<npt; ipt++){
-      // v2EP
-      double res2 = sqrt(pResTPC_EP->GetBinContent(1));
-      double ev2EP = pv2TPC_EP[id]->GetBinError(ipt+1) / res2;
-      eV2EPcent1040[id][ipt] = ev2EP;
-      // v22
-      term cor2red = term(pReducedCorrelator2[id],ipt);
-      double cov22prime = Covariance(pCov22Red[id],pCorrelator2,pReducedCorrelator2[id],ipt,0,ipt);
-      double ev22Dif = sqrt(0.25*pow(cor2.mVal,-3)*(pow(cor2red.mVal,2)*cor2.mMSE
-                          + 4*pow(cor2.mVal,2)*cor2red.mMSE - 4*cor2.mVal*cor2red.mVal*cov22prime));
-      eV22cent1040[id][ipt] = ev22Dif;
-      
-      // v24
-      term cor4red = term(pReducedCorrelator4[id],ipt);
-      double cov24prime = Covariance(pCov24Red[id],pCorrelator2,pReducedCorrelator4[id],ipt,0,ipt);
-      double cov42prime = Covariance(pCov42Red[id],pCorrelator4,pReducedCorrelator2[id],ipt,0,ipt);
-      double cov44prime = Covariance(pCov44Red[id],pCorrelator4,pReducedCorrelator4[id],ipt,0,ipt);
-      double cov2prime4prime = Covariance(pCov2Red4Red[id],pReducedCorrelator2[id],pReducedCorrelator4[id],ipt,ipt,ipt);
-      double ev24Dif = sqrt( pow(v24,-14)
-          * (pow(2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal,2.)
-          * cor2.mMSE
-          + 9./16*pow(2.*cor2.mVal*cor2red.mVal-cor4red.mVal,2.)*cor4.mMSE
-          + 4*pow(cor2.mVal,2)*pow(v24,8)*cor2red.mMSE
-          + pow(v24,8)*cor4red.mMSE
-          - 1.5*(2*cor2.mVal*cor2red.mVal-cor4red.mVal)
-          * (2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal)
-          * cov24
-          - 4*cor2.mVal*pow(v24,4)
-          * (2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal)
-          * cov22prime
-          + 2*pow(v24,4)
-          * (2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal)
-          * cov24prime
-          + 3*cor2.mVal*pow(v24,4)*(2*cor2.mVal*cor2red.mVal-cor4red.mVal)
-          * cov42prime
-          - 1.5*pow(v24,4)*(2*cor2.mVal*cor2red.mVal-cor4red.mVal)
-          * cov44prime
-          - 4*cor2.mVal*pow(v24,8)*cov2prime4prime));
-      eV24cent1040[id][ipt] = ev24Dif;
-      // v22 Gapped
-      term cor2redGap = term(pReducedCorrelator2EtaGap[id],ipt);
-      double cov22primeGap = Covariance(pCov22RedEtaGap[id],pCorrelator2EtaGap,pReducedCorrelator2EtaGap[id],ipt,0,ipt);
-      double ev22DifGap = sqrt(0.25*pow(cor2Gap.mVal,-3)*(pow(cor2redGap.mVal,2)*cor2Gap.mMSE
-                          + 4*pow(cor2Gap.mVal,2)*cor2redGap.mMSE - 4*cor2Gap.mVal*cor2redGap.mVal*cov22primeGap));
-      eV22Gapcent1040[id][ipt] = ev22DifGap;
-    } // end of loop for all pT bin
-  } // end of loop for PID
-
+  for (int icent=0;icent<1;icent++){
+    // 2QC
+    term cor2 = term(pCorrelator2);
+    // 4QC
+    term cor4 = term(pCorrelator4);
+    double cov24 = Covariance(pCov24,pCorrelator2,pCorrelator4);
+    double v24 = pow(2*pow(cor2.mVal,2)-cor4.mVal,0.25);
+    // 2QC Gapped
+    term cor2Gap = term(pCorrelator2EtaGap);
+    for (int id=0;id<npid;id++){     
+      for(int ipt=0; ipt<npt; ipt++){
+        // v2EP
+        double res2 = sqrt(pResTPC_EP->GetBinContent(1));
+        double ev2EP = pv2TPC_EP_cent[id][icent]->GetBinError(ipt+1) / res2;
+        eV2EPcent1040[id][ipt] = ev2EP;
+        // v22
+        term cor2red = term(pReducedCorrelator2_cent[id][icent],ipt);
+        double cov22prime = Covariance(pCov22Red_cent[id][icent],pCorrelator2,pReducedCorrelator2_cent[id][icent],ipt,icent,ipt);
+        double ev22Dif = sqrt(0.25*pow(cor2.mVal,-3)*(pow(cor2red.mVal,2)*cor2.mMSE
+                            + 4*pow(cor2.mVal,2)*cor2red.mMSE - 4*cor2.mVal*cor2red.mVal*cov22prime));
+        eV22cent1040[id][ipt] = ev22Dif;
+        
+        // v24
+        term cor4red = term(pReducedCorrelator4_cent[id][icent],ipt);
+        double cov24prime = Covariance(pCov24Red_cent[id][icent],pCorrelator2,pReducedCorrelator4_cent[id][icent],ipt,icent,ipt);
+        double cov42prime = Covariance(pCov42Red_cent[id][icent],pCorrelator4,pReducedCorrelator2_cent[id][icent],ipt,icent,ipt);
+        double cov44prime = Covariance(pCov44Red_cent[id][icent],pCorrelator4,pReducedCorrelator4_cent[id][icent],ipt,icent,ipt);
+        double cov2prime4prime = Covariance(pCov2Red4Red_cent[id][icent],pReducedCorrelator2_cent[id][icent],pReducedCorrelator4_cent[id][icent],ipt,ipt,ipt);
+        double ev24Dif = sqrt( pow(v24,-14)
+            * (pow(2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal,2.)
+            * cor2.mMSE
+            + 9./16*pow(2.*cor2.mVal*cor2red.mVal-cor4red.mVal,2.)*cor4.mMSE
+            + 4*pow(cor2.mVal,2)*pow(v24,8)*cor2red.mMSE
+            + pow(v24,8)*cor4red.mMSE
+            - 1.5*(2*cor2.mVal*cor2red.mVal-cor4red.mVal)
+            * (2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal)
+            * cov24
+            - 4*cor2.mVal*pow(v24,4)
+            * (2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal)
+            * cov22prime
+            + 2*pow(v24,4)
+            * (2*cor2.mVal*cor2.mVal*cor2red.mVal-3*cor2.mVal*cor4red.mVal+2*cor4.mVal*cor2red.mVal)
+            * cov24prime
+            + 3*cor2.mVal*pow(v24,4)*(2*cor2.mVal*cor2red.mVal-cor4red.mVal)
+            * cov42prime
+            - 1.5*pow(v24,4)*(2*cor2.mVal*cor2red.mVal-cor4red.mVal)
+            * cov44prime
+            - 4*cor2.mVal*pow(v24,8)*cov2prime4prime));
+        eV24cent1040[id][ipt] = ev24Dif;
+        // v22 Gapped
+        term cor2redGap = term(pReducedCorrelator2EtaGap_cent[id][icent],ipt);
+        double cov22primeGap = Covariance(pCov22RedEtaGap_cent[id][icent],pCorrelator2EtaGap,pReducedCorrelator2EtaGap_cent[id][icent],ipt,icent,ipt);
+        double ev22DifGap = sqrt(0.25*pow(cor2Gap.mVal,-3)*(pow(cor2redGap.mVal,2)*cor2Gap.mMSE
+                            + 4*pow(cor2Gap.mVal,2)*cor2redGap.mMSE - 4*cor2Gap.mVal*cor2redGap.mVal*cov22primeGap));
+        eV22Gapcent1040[id][ipt] = ev22DifGap;
+      } // end of loop for all pT bin
+    } // end of loop for PID
+  }
 
 
   // for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
@@ -415,6 +434,23 @@ void Ca213lStatErrCent1040(){
     for (int m=0; m<nmethod; m++)
     {
       delete pPt[i][m];
+    }
+    for (int c=0;c<ncent; c++){
+    delete pReducedCorrelator2EtaGap_FHCal_cent[i][c];
+    delete pReducedCorrelator2EtaGap_cent[i][c];
+    delete pReducedCorrelator2_cent[i][c];
+    delete pReducedCorrelator4_cent[i][c];
+    delete pv2TPC_EP_cent[i][c];
+    delete pv2TPC_SP_cent[i][c];
+    delete pv2FHCal_EP_cent[i][c];
+    delete pCov22RedEtaGap_FHCal_cent[i][c];
+    delete pCov22RedEtaGap_cent[i][c];
+    delete pCov22Red_cent[i][c];
+    delete pCov24Red_cent[i][c];
+    delete pCov42Red_cent[i][c];
+    delete pCov44Red_cent[i][c];
+    delete pCov2Red4Red_cent[i][c];
+    delete pPt_cent[i][nmethod][c];
     }
   }
 
@@ -513,7 +549,7 @@ void v2plot_differential_flow(){
   {
 
     pReducedCorrelator2EtaGap_FHCal[i] = (TProfile2D*)inFile->Get(Form("pReducedCorrelator2EtaGap_FHCal_pid%i",i));
-    pReducedCorrelator2EtaGap[i] = = (TProfile2D*)inFile->Get(Form("pReducedCorrelator2EtaGap_pid%i",i));
+    pReducedCorrelator2EtaGap[i] = (TProfile2D*)inFile->Get(Form("pReducedCorrelator2EtaGap_pid%i",i));
     pReducedCorrelator2[i] = (TProfile2D*)inFile->Get(Form("pReducedCorrelator2_pid%i",i));
     pReducedCorrelator4[i] = (TProfile2D*)inFile->Get(Form("pReducedCorrelator4_pid%i",i));
     
@@ -535,28 +571,28 @@ void v2plot_differential_flow(){
     
   }
 
-  if(bMergeCharged){
-    for (int id=0;id<npid/2;id++){
-      pReducedCorrelator2EtaGap_FHCal[i]->Add(pReducedCorrelator2EtaGap_FHCal[id+4]);
-      pReducedCorrelator2EtaGap[i]->Add(pReducedCorrelator2EtaGap[id+4]);
-      pReducedCorrelator2[i]->Add(pReducedCorrelator2[id+4]);
-      pReducedCorrelator4[i]->Add(pReducedCorrelator4[id+4]);
-      pv2TPC_EP[i]->Add(pv2TPC_EP[id+4]);
-      pv2TPC_SP[i]->Add(pv2TPC_SP[id+4]);
-      pv2FHCal_EP[i]->Add(pv2FHCal_EP[id+4]);
-      pCov22RedEtaGap_FHCal[i]->Add(pCov22RedEtaGap_FHCal[id+4]);
-      pCov22RedEtaGap[i]->Add(pCov22RedEtaGap[id+4]);
-      pCov22Red[i]->Add(pCov22Red[id+4]);
-      pCov24Red[i]->Add(pCov24Red[id+4]);
-      pCov42Red[i]->Add(pCov42Red[id+4]);
-      pCov44Red[i]->Add(pCov44Red[id+4]);
-      pCov2Red4Red[i]->Add(pCov2Red4Red[id+4]);
-      for (int m=0; m<nmethod; m++)
-      {
-        pPt[i][m]->Add(pPt[id+4]);
-      }
-    }
-  }
+  // if(bMergeCharged){
+  //   for (int i=0;i<npid/2;i++){
+  //     pReducedCorrelator2EtaGap_FHCal[i]->Add(pReducedCorrelator2EtaGap_FHCal[i+4]);
+  //     pReducedCorrelator2EtaGap[i]->Add(pReducedCorrelator2EtaGap[i+4]);
+  //     pReducedCorrelator2[i]->Add(pReducedCorrelator2[i+4]);
+  //     pReducedCorrelator4[i]->Add(pReducedCorrelator4[i+4]);
+  //     pv2TPC_EP[i]->Add(pv2TPC_EP[i+4]);
+  //     pv2TPC_SP[i]->Add(pv2TPC_SP[i+4]);
+  //     pv2FHCal_EP[i]->Add(pv2FHCal_EP[i+4]);
+  //     pCov22RedEtaGap_FHCal[i]->Add(pCov22RedEtaGap_FHCal[i+4]);
+  //     pCov22RedEtaGap[i]->Add(pCov22RedEtaGap[i+4]);
+  //     pCov22Red[i]->Add(pCov22Red[i+4]);
+  //     pCov24Red[i]->Add(pCov24Red[i+4]);
+  //     pCov42Red[i]->Add(pCov42Red[i+4]);
+  //     pCov44Red[i]->Add(pCov44Red[i+4]);
+  //     pCov2Red4Red[i]->Add(pCov2Red4Red[i+4]);
+  //     for (int m=0; m<nmethod; m++)
+  //     {
+  //       pPt[i][m]->Add(pPt[i+4]);
+  //     }
+  //   }
+  // }
 
   TProfile *pReducedCorrelator2EtaGap_FHCal_cent[npid][n_cent_bins];
   TProfile *pReducedCorrelator2EtaGap_cent[npid][n_cent_bins];
@@ -573,13 +609,13 @@ void v2plot_differential_flow(){
   TProfile *pCov44Red_cent[npid][n_cent_bins];
   TProfile *pCov2Red4Red_cent[npid][n_cent_bins];
   TProfile *pPt_cent[npid][nmethod][n_cent_bins];
-
+  std::pair<int, int> cent_bins;
   for (int i = 0; i < npid; i++)
   {
     for (int c = 0; c < n_cent_bins; c++)
     {
       cent_bins.first  = pv2TPC_EP[i]->GetYaxis()->FindBin(centRange.at(c).first);
-      cent_bins.second = pv2TPC_EP[i]->GetYaxis()->FindBin(centRange.at(c).second - 1);
+      cent_bins.second = pv2TPC_EP[i]->GetYaxis()->FindBin(centRange.at(c).second - 1.);
 
       pReducedCorrelator2EtaGap_FHCal_cent[i][c] = (TProfile*)pReducedCorrelator2EtaGap_FHCal[i]->ProfileX(Form("%s_cent%i",pReducedCorrelator2EtaGap_FHCal[i]->GetName(),c), cent_bins.first, cent_bins.second);
       pReducedCorrelator2EtaGap_cent[i][c] = (TProfile*)pReducedCorrelator2EtaGap[i]->ProfileX(Form("%s_cent%i",pReducedCorrelator2EtaGap[i]->GetName(),c), cent_bins.first, cent_bins.second);
@@ -636,9 +672,9 @@ void v2plot_differential_flow(){
   // TProfile *hv22ptGap[ncent][npt][npid];
   // TProfile *hcov22primeGap[ncent][npt][npid];
   // TProfile *hcounter[ncent][npt][npid];
-  // // OUTPUT
-  // TGraphErrors *grDifFl[nmethod][ncent][npid];    // v2(pt); 3 = {2QC, 4QC, EP, gapped 2QC}
-  // TGraphErrors *grDifFl1040[nmethod][npid];
+  // OUTPUT
+  TGraphErrors *grDifFl[nmethod][ncent][npid];    // v2(pt); 3 = {2QC, 4QC, EP, gapped 2QC}
+  TGraphErrors *grDifFl1040[nmethod][npid];
   
   // // Get TProfile histograms from ROOTFile
 
@@ -798,7 +834,7 @@ void v2plot_differential_flow(){
         prV22int[icent][id] -> Fill(0.5,v22Dif,pPt_cent[id][2][icent] -> GetBinEntries(ipt+1));
         prV24int[icent][id] -> Fill(0.5,v24Dif,pPt_cent[id][3][icent] -> GetBinEntries(ipt+1));
         
-        if (icent>=2 && icent <=4) { // 10-40%
+        if (icent>=1 && icent <=3) { // 10-40%
           prV22FHCaldif1040[ipt][id]->Fill(0.5,v2EPDif,pPt_cent[id][0][icent] -> GetBinEntries(ipt+1));
           prV22dif1040Gap[ipt][id]->Fill(0.5,v22DifGap,pPt_cent[id][1][icent] -> GetBinEntries(ipt+1));
           prV22dif1040[ipt][id]->Fill(0.5,v22Dif,pPt_cent[id][2][icent] -> GetBinEntries(ipt+1));
@@ -823,7 +859,7 @@ void v2plot_differential_flow(){
       grDifFl[3][icent][id] = new TGraphErrors(npt,&vPt[0],&vV22DifGap[0],&ePt[0],&eV22DifGap[0]);
       grDifFl[3][icent][id] -> SetMarkerColor(kYellow+2);
       grDifFl[3][icent][id] -> SetMarkerStyle(marker[3]);
-      for (int i=0; i<nmethod; i++){
+      for (int i=0; i<nmethod-3; i++){
         grDifFl[i][icent][id] -> SetMarkerSize(1.5);
         grDifFl[i][icent][id] -> SetDrawOption("P");
       }
@@ -836,15 +872,15 @@ void v2plot_differential_flow(){
 
   sprintf(nameV22Gap,"[1] v_{2}{2};p_{T} [GeV/c];v_{2}");
   sprintf(nameV2EP,"[3] v_{2}{#Psi_{2,TPC}^{}};p_{T} [GeV/c];v_{2}");
-  const char *grTitleDF[nmethod]={"v_{2}{2,QC};p_{T} [GeV/c];v_{2}",
+  const char *grTitleDF[nmethod-3]={"v_{2}{2,QC};p_{T} [GeV/c];v_{2}",
                                   "[2] v_{2}{4};p_{T} [GeV/c];v_{2}",
                                   nameV2EP,nameV22Gap};
   outFile -> cd();
-  for (int imethod=0; imethod<nmethod; imethod++){
+  for (int imethod=0; imethod<nmethod-3; imethod++){
     for (int icent=0;icent<ncent;icent++){
       for (int id=0;id<npid;id++){
         if (bMergeCharged && id>3) continue; // if joining positively charged particles with negatively then id=0,1,2,3
-        // grDifFl[imethod][icent][id] -> SetTitle(Form("V2 vs. pT, %s, centrality %i-%i%%, %s",pidNames.at(id).Data(),icent*10,(icent+1)*10,grTitleDF[imethod]));
+        // grDifFl[imethod][icent][id] -> SetTitle(Form("V2 vs. pT, %s, centrality %1.0f-%1.0f%%, %s",pidNames.at(id).Data(),icent*10,(icent+1)*10,grTitleDF[imethod]));
         grDifFl[imethod][icent][id] -> SetTitle(grTitleDF[imethod]);
         grDifFl[imethod][icent][id] -> Write(Form("gr_cent%i_%i_%i",icent,imethod,id));
       }
@@ -855,7 +891,7 @@ void v2plot_differential_flow(){
   for (int icent=0; icent<ncent; icent++){
     for (int id=0;id<npid;id++){
       vgrv2pt[icent][id].push_back(grDifFl[3][icent][id]); // v2{gapped 2QC}
-      for (int i=0; i<nmethod-1; i++){
+      for (int i=0; i<nmethod-4; i++){
         if (i==excludeMethod) continue;
         vgrv2pt[icent][id].push_back(grDifFl[i][icent][id]);
       }
@@ -867,18 +903,18 @@ void v2plot_differential_flow(){
       if (bMergeCharged && id>3) continue; // if joining positively charged particles with negatively then id=0,1,2,3
       
       if (icent==0) {
-        sprintf(hname,"%s, %i-%i%%",pidFancyNames.at(id).Data(),centRange.at(icent).first,centRange.at(icent).second);
+        sprintf(hname,"%s, %1.0f-%1.0f%%",pidFancyNames.at(id).Data(),centRange.at(icent).first,centRange.at(icent).second);
         cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][id],"",rangeRatio.at(icent).first, rangeRatio.at(icent).second, minpt, maxpt, minV2dif, maxV2dif,
                                                  coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
                                                  level.Data(), hname);
       }else{
-        sprintf(hname,"%i-%i%%",centRange.at(icent).first,centRange.at(icent).second);
+        sprintf(hname,"%1.0f-%1.0f%%",centRange.at(icent).first,centRange.at(icent).second);
         cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt[icent][id],"",rangeRatio.at(icent).first, rangeRatio.at(icent).second, minpt, maxpt, minV2dif, maxV2dif,
                                                  coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
                                                  "", hname,0);
       }
       cV2PT[icent][id] -> SetName(hname);
-      if (saveAsPNG) cV2PT[icent][id] -> SaveAs(Form("./%s/%sDFCent%i-%i.png",outDirName.Data(),pidNames.at(id).Data(),centRange.at(icent).first,centRange.at(icent).second));
+      if (saveAsPNG) cV2PT[icent][id] -> SaveAs(Form("./%s/%sDFCent%1.0f-%1.0f.png",outDirName.Data(),pidNames.at(id).Data(),centRange.at(icent).first,centRange.at(icent).second));
     }
   }
 
@@ -911,20 +947,20 @@ void v2plot_differential_flow(){
     grDifFl1040[3][id] -> SetMarkerColor(kAzure+2);
     grDifFl1040[3][id] -> SetMarkerStyle(marker[3]);
 
-    for (int i=0; i<nmethod; i++){
+    for (int i=0; i<nmethod-3; i++){
       grDifFl1040[i][id] -> SetMarkerSize(1.5);
       grDifFl1040[i][id] -> SetDrawOption("P");
       grDifFl1040[i][id] -> SetLineWidth(1);
     }
 
     std::vector<TGraphErrors*> vgrv2pt1040;
-    for (int imeth=0; imeth<nmethod; imeth++){
+    for (int imeth=0; imeth<nmethod-3; imeth++){
       // grDifFl1040[imeth][id] -> SetTitle(Form("V2 vs. pT, %s, centrality 10-40%%, %s",pidNames.at(id).Data(),grTitleDF[imeth]));
       grDifFl1040[imeth][id] -> SetTitle(grTitleDF[imeth]);
       grDifFl1040[imeth][id] -> Write(Form("gr_cent10-40_%i_%i",imeth,id));
     }
     vgrv2pt1040.push_back(grDifFl1040[3][id]);
-    for (int imeth=0;imeth<nmethod-1;imeth++){
+    for (int imeth=0;imeth<nmethod-4;imeth++){
       if (imeth==excludeMethod) continue;
       vgrv2pt1040.push_back(grDifFl1040[imeth][id]);
     }
@@ -938,29 +974,29 @@ void v2plot_differential_flow(){
     cV2PT1040[id] -> SetName(hname);
     if (saveAsPNG) cV2PT1040[id] -> SaveAs(Form("./%s/%sDFCent10-40.png",outDirName.Data(),pidNames.at(id).Data()));
   }
-  for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    delete HRes[icent];
-    delete hv22[icent];
-    delete hv24[icent];
-    delete hcov24[icent];
-    delete hv22Gap[icent];
-    for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-      for (int id=0;id<npid;id++){
-        delete hv2EP[icent][ipt][id];
-        delete hPT[icent][ipt][id];
-        delete hv22pt[icent][ipt][id];
-        delete hv24pt[icent][ipt][id];
-        delete hcov22prime[icent][ipt][id];
-        delete hcov24prime[icent][ipt][id];
-        delete hcov42prime[icent][ipt][id];
-        delete hcov44prime[icent][ipt][id];
-        delete hcov2prime4prime[icent][ipt][id];
-        delete hv22ptGap[icent][ipt][id];
-        delete hcov22primeGap[icent][ipt][id];
-        delete hcounter[icent][ipt][id];
-      }
-    } // end of loop over pt bin
-  } // end of loop over centrality classes
+  // for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
+  //   delete HRes[icent];
+  //   delete hv22[icent];
+  //   delete hv24[icent];
+  //   delete hcov24[icent];
+  //   delete hv22Gap[icent];
+  //   for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+  //     for (int id=0;id<npid;id++){
+  //       delete hv2EP[icent][ipt][id];
+  //       delete hPT[icent][ipt][id];
+  //       delete hv22pt[icent][ipt][id];
+  //       delete hv24pt[icent][ipt][id];
+  //       delete hcov22prime[icent][ipt][id];
+  //       delete hcov24prime[icent][ipt][id];
+  //       delete hcov42prime[icent][ipt][id];
+  //       delete hcov44prime[icent][ipt][id];
+  //       delete hcov2prime4prime[icent][ipt][id];
+  //       delete hv22ptGap[icent][ipt][id];
+  //       delete hcov22primeGap[icent][ipt][id];
+  //       delete hcounter[icent][ipt][id];
+  //     }
+  //   } // end of loop over pt bin
+  // } // end of loop over centrality classes
   inFile->Close();
 }
 
@@ -1268,7 +1304,7 @@ void v2plot_integrated_flow_for_PID(){
 }
 
 void v2plot_test(){
-  CalStatErrCent1040();
+  // CalStatErrCent1040();
   if (bMergeCharged){
     pidNames.clear();
     pidFancyNames.clear();

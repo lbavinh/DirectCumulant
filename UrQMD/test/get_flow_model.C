@@ -26,7 +26,7 @@ void get_flow_model(TString inputFileName, TString outputFileName)
   // Constant declaration
 
   // Profile info - general
-  const int nCentBins     = 9;
+  const int nCentBins     = 8;
   const double centBinMin = 0.;
   const double centBinMax = 80.;
   const int nPtBins       = 300;
@@ -192,7 +192,7 @@ void get_flow_model(TString inputFileName, TString outputFileName)
     pCov2Red4Red[i] = new TProfile2D(Form("pCov2Red4Red_pid%i", i), Form("Covariance(<4'>,<2'>) of %s", pidNames.at(i).Data()), nPtBins, ptBinMin, ptBinMax, nCentBins, centBinMin, centBinMax);
     for (int m=0; m<nMethod; m++)
     {
-      pPt[i][m] = new TProfile2D(Form("pCov42Red_pid%i_meth%i", i, m), Form("p_{T} distr. of %s, %s", pidNames.at(i).Data(),methodNames.at(m).Data()), nPtBins, ptBinMin, ptBinMax, nCentBins, centBinMin, centBinMax);
+      pPt[i][m] = new TProfile2D(Form("pPt_pid%i_meth%i", i, m), Form("p_{T} distr. of %s, %s", pidNames.at(i).Data(),methodNames.at(m).Data()), nPtBins, ptBinMin, ptBinMax, nCentBins, centBinMin, centBinMax);
     }
   }
 
@@ -773,4 +773,4 @@ void get_flow_model(TString inputFileName, TString outputFileName)
 
 
 
-// root -l -b -q get_flow_model.C+'("/weekly/lbavinh/lbavinh/ScalarProduct/split/UrQMD_7.7/runlist_UrQMD_7.7_9639.list","test.root")'
+// root -l -b -q get_flow_model.C+'("/weekly/lbavinh/lbavinh/ScalarProduct/split/UrQMD_7.7/runlist_UrQMD_7.7_9639.list","UrQMD_7.7GeV.root")'

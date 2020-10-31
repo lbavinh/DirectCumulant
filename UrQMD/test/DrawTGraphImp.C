@@ -7,8 +7,8 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
                     Double_t leg_x_high=0.55, Double_t leg_y_high=0.89,TString strModel="", TString strCent="", bool drawLeg=1)
 {
   // Setting up global variables for the plot
-  gROOT->SetStyle("Pub");
-	gROOT->ForceStyle();
+  // gROOT->SetStyle("Pub");
+	// gROOT->ForceStyle();
 	gStyle->SetPalette(kDarkRainBow);// kDarkRainBow, kVisibleSpectrum, kRainBow,kPastel, kCMYK, kBlueRedYellow, kBird (default), kDeepSea
 	gStyle->SetErrorX(0);
 
@@ -77,8 +77,9 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   vgr.at(0)->GetXaxis()->SetTitleSize(0.07);
   vgr.at(0)->GetYaxis()->SetTitleSize(0.07);
   vgr.at(0)->GetYaxis()->SetTitleOffset(1.08);
-
   vgr.at(0)->Draw("AP PLC PMC");
+  
+
   for (int i=1; i<vgr.size();i++)
   {
     vgr.at(i)->Draw("P PLC PMC");
@@ -87,6 +88,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   // TLegend *leg_pt = new TLegend(0.568,0.02,0.89,0.295);
   TLegend *leg_pt = new TLegend(leg_x_low,leg_y_low,leg_x_high,leg_y_high);
   leg_pt->SetBorderSize(0);
+  leg_pt->SetTextSize(0.05);
   leg_pt->SetHeader(str.Data(),"C");
   for (int i=0; i<vgr.size();i++)
   {
@@ -114,6 +116,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   // lineZero.DrawLine(x_low,0.00,x_high,0.00);
   //==============================================
   //Draw grN/gr1 ratio in the bottom pad
+  vgr.at(0)->SetTitle("");
   padDown->cd();
   
   std::vector<Double_t> v1X;
@@ -178,9 +181,10 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     vgrRatio.at(igr)->GetXaxis()->SetTickLength(3*12/padUH);
     vgrRatio.at(igr)->GetYaxis()->SetTickLength(2.6*12/padUW);
     vgrRatio.at(igr)->GetYaxis()->SetRangeUser(yRatio_low,yRatio_high);
-
+    vgrRatio.at(igr)->SetTitle("");
     vgrRatio.at(igr)->SetMarkerStyle(vgr.at(igr+1)->GetMarkerStyle());
-    vgrRatio.at(igr)->SetMarkerSize(1.6);
+    vgrRatio.at(igr)->SetMarkerSize(1.2);
+    vgrRatio.at(igr)->SetLineWidth(1.);
     vgrRatio.at(igr)->SetLineColor(vgr.at(igr+1)->GetMarkerStyle());
     vgrRatio.at(igr)->SetMarkerColor(vgr.at(igr+1)->GetMarkerStyle());
     // vgrRatio.at(igr)->SetLineWidth(1.);
@@ -193,7 +197,6 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     // else{
     vgrRatio.at(igr)->Draw("P PLC PMC");
     // }
-
     TLine lineOne;
     lineOne.SetLineStyle(1);
     lineOne.SetLineColor(kAzure+4); // 1

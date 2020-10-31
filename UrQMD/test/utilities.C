@@ -48,34 +48,34 @@ float CentB(float bimp)
     return -1;
 }
 
-int GetCentBin(float cent)
-{
-  if (cent == -1) return -1;
-  if (cent == 2.5) return 0;
-  if (cent == 7.5) return 1;
-  if (cent == 15.) return 2;
-  if (cent == 25.) return 3;
-  if (cent == 35.) return 4;
-  if (cent == 45.) return 5;
-  if (cent == 55.) return 6;
-  if (cent == 65.) return 7;
-  if (cent == 75.) return 8;
-  return -1;
-}
-
 // int GetCentBin(float cent)
 // {
 //   if (cent == -1) return -1;
-//   if (cent == 5.) return 0;
-//   if (cent == 15.) return 1;
-//   if (cent == 25.) return 2;
-//   if (cent == 35.) return 3;
-//   if (cent == 45.) return 4;
-//   if (cent == 55.) return 5;
-//   if (cent == 65.) return 6;
-//   if (cent == 75.) return 7;
+//   if (cent == 2.5) return 0;
+//   if (cent == 7.5) return 1;
+//   if (cent == 15.) return 2;
+//   if (cent == 25.) return 3;
+//   if (cent == 35.) return 4;
+//   if (cent == 45.) return 5;
+//   if (cent == 55.) return 6;
+//   if (cent == 65.) return 7;
+//   if (cent == 75.) return 8;
 //   return -1;
 // }
+
+int GetCentBin(float cent)
+{
+  if (cent == -1) return -1;
+  if (cent == 5.) return 0;
+  if (cent == 15.) return 1;
+  if (cent == 25.) return 2;
+  if (cent == 35.) return 3;
+  if (cent == 45.) return 4;
+  if (cent == 55.) return 5;
+  if (cent == 65.) return 6;
+  if (cent == 75.) return 7;
+  return -1;
+}
 
 TComplex Qstar(TComplex Q){
   TComplex QStar   = TComplex::Conjugate(Q);

@@ -1,9 +1,9 @@
 #include "DrawTGraphImp.C"
 TString model = {"UrQMD"};
-TString energy = {"27GeV"};
+TString energy = {"7.7GeV"};
 TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
-TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");
-TString outDirName=(TString)Form("%s_%s",model.Data(),energy.Data());
+TFile *outFile = new TFile(Form("./v2_%s_%s_test.root",model.Data(),energy.Data()),"recreate");
+TString outDirName=(TString)Form("%s_%s_test",model.Data(),energy.Data());
 TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
 
 // Flags
@@ -711,7 +711,9 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
     eV22Gap.push_back(sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE));
 
     // Checking if there are differences with v2plot_integrated_flow_for_PID() or not
-
+    // cout << icent <<" "<<vV22Gap.at(icent)<<" "<< eV22Gap.at(icent) <<endl;
+    // cout << icent <<" "<<vV24.at(icent)<<" "<< eV24.at(icent) <<endl;
+    cout << icent <<" "<<vV22.at(icent)<<" "<< eV22.at(icent) <<endl;
     // cout << icent <<" "<<vV22.at(icent)<<" "<< prV22int[icent][0]->GetBinContent(1)<<" "<< eV22.at(icent) <<endl;
     // cout << icent <<" "<<vV24.at(icent)<<" "<< prV24int[icent][0]->GetBinContent(1)<<" "<< eV24.at(icent) <<endl;
     // cout << icent <<" "<<vV2EP.at(icent)<<" "<< prV2EPint[icent][0]->GetBinContent(1)<<" "<< eV2EP.at(icent) <<endl;

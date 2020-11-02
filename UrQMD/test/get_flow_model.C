@@ -282,22 +282,33 @@ void get_flow_model(TString inputFileName, TString outputFileName)
       if (!particle) continue;
       float charge = 1./3.*particle->Charge();
       if (pt >= pt_min_cut && pt <= pt_max_cut)
-      { // Main track cuts for FHCal 2QC Reference flow
+      { // Main track cuts for: 2QC, FHCal, Reference flow & FHCal, EP resolution
         if (eta > -5. && eta < -2.)
         { // Left FHCal
           Qx2Gap_FHCal[0]+=TMath::Cos(2.*phi);
           Qy2Gap_FHCal[0]+=TMath::Sin(2.*phi);
           MGap_FHCal[0]++;
+
+          Qx_L_FHCal += -1.*pt*TMath::Cos(1.*phi);
+          Qy_L_FHCal += -1.*pt*TMath::Cos(1.*phi);
+          W_L_FHCal  += pt;
+          Mult_L_FHCal++;
         }
         if (eta > 2. && eta < 5.)
         { // Right FHCal
           Qx2Gap_FHCal[1]+=TMath::Cos(2.*phi);
           Qy2Gap_FHCal[1]+=TMath::Sin(2.*phi);
           MGap_FHCal[1]++;
+
+          Qx_R_FHCal += 1.*pt*TMath::Cos(1.*phi);
+          Qy_R_FHCal += 1.*pt*TMath::Cos(1.*phi);
+          W_R_FHCal  += pt;
+          Mult_R_FHCal++;
         }
       }
-      if (pt >= pt_min_cut && pt <= pt_max_cut && abs(eta) <= eta_cut && abs(eta) >= eta_gap && charge != 0)
-      { // Main track cuts for EP resolution/Reference flow of QC method
+
+      if (pt >= pt_min_cut && pt <= pt_max_cut && abs(eta) <= eta_cut && charge != 0)
+      { // Main track cuts for TPC,EP resolution & TPC,QC Reference flow
         double cos4phi = TMath::Cos(4.*phi);
         double sin4phi = TMath::Sin(4.*phi);
         double cos2phi = TMath::Cos(2.*phi);
@@ -339,7 +350,7 @@ void get_flow_model(TString inputFileName, TString outputFileName)
           // EP
           Qx_R_EP += pt * cos2phi;
           Qy_R_EP += pt * sin2phi;
-          W_L_EP  += pt;
+          W_R_EP  += pt;
           Mult_R++;
         }
       }
@@ -487,23 +498,6 @@ void get_flow_model(TString inputFileName, TString outputFileName)
           pPt[pidID][3] -> Fill(pt, cent, pt, 1.);
         }
       }
-      if (pt >= pt_min_cut && pt <= pt_max_cut)
-      { // Main track cuts for FHCal EP resolution
-        if (eta > -5. && eta < -2.)
-        {
-          Qx_L_FHCal += -1.*pt*TMath::Cos(1.*phi);
-          Qy_L_FHCal += -1.*pt*TMath::Cos(1.*phi);
-          W_L_FHCal  += pt;
-          Mult_L_FHCal++;
-        }
-        if (eta > 2. && eta < 5.)
-        {
-          Qx_R_FHCal += 1.*pt*TMath::Cos(1.*phi);
-          Qy_R_FHCal += 1.*pt*TMath::Cos(1.*phi);
-          W_R_FHCal  += pt;
-          Mult_R_FHCal++;
-        }
-      }
     } // end of 1st track loop
 
     // 2QC,eta-gap (FHCal)
@@ -641,13 +635,16 @@ void get_flow_model(TString inputFileName, TString outputFileName)
     }
     if (Mult_L_FHCal > mult_EP_cut && Mult_L_FHCal > mult_EP_cut)
     {
-      Qx_L_FHCal /= W_L_FHCal;
-      Qy_L_FHCal /= W_L_FHCal;
-      Qx_R_FHCal /= W_R_FHCal;
-      Qy_R_FHCal /= W_R_FHCal;
+      // Qx_L_FHCal /= W_L_FHCal;
+      // Qy_L_FHCal /= W_L_FHCal;
+      // Qx_R_FHCal /= W_R_FHCal;
+      // Qy_R_FHCal /= W_R_FHCal;
 
       Psi_L_FHCal = atan2(Qy_L_FHCal, Qx_L_FHCal);
       Psi_R_FHCal = atan2(Qy_R_FHCal, Qx_R_FHCal);
+
+      Psi_L_FHCal = atan2(sin(1.*Psi_L_FHCal), cos(1.*Psi_L_FHCal));
+      Psi_R_FHCal = atan2(sin(1.*Psi_R_FHCal), cos(1.*Psi_R_FHCal));
 
       Psi_FHCal   = atan2(Qy_L_FHCal + Qy_R_FHCal, Qx_L_FHCal + Qx_R_FHCal);
 
@@ -736,7 +733,7 @@ void get_flow_model(TString inputFileName, TString outputFileName)
         }
       }
 
-      if (pt >= ptBinMin && pt <= ptBinMax && abs(eta) <= eta_cut && Psi_FHCal != -999)
+      if (pt >= ptBinMin && pt <= ptBinMax && abs(eta) <= eta_cut && Psi_FHCal != -999.)
       { // Main track cuts for FHCal, EP
 
         float v2FHCal_EP = cos( 2. * (phi - Psi_FHCal) );

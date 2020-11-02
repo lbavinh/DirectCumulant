@@ -11,7 +11,8 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
 	// gROOT->ForceStyle();
 	gStyle->SetPalette(kDarkRainBow);// kDarkRainBow, kVisibleSpectrum, kRainBow,kPastel, kCMYK, kBlueRedYellow, kBird (default), kDeepSea
 	gStyle->SetErrorX(0);
-
+  gStyle->SetPadTickX(1);
+  gStyle->SetPadTickY(1);
   std::vector<Double_t*> vx_gr, vy_gr, ex_gr, ey_gr;
   std::vector<Int_t> nbins;
   for (int i=0; i<vgr.size();i++)
@@ -174,7 +175,8 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     vgrRatio.at(igr)->GetYaxis()->SetTitleSize(0.12);
 
     // vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("%s/%s",vgr.at(igr+1)->GetTitle(),vgr.at(0)->GetTitle()));
-    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("#frac{[2,3]}{[1]}"));
+    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("Ratio")); //#frac{[2,3]}{[1]}
+    vgrRatio.at(igr)->GetYaxis()->CenterTitle(kTRUE);
     vgrRatio.at(igr)->GetYaxis()->SetTitleOffset(0.5);
     vgrRatio.at(igr)->GetXaxis()->SetTitle(Form("%s",vgr.at(0)->GetXaxis()->GetTitle()));
     vgrRatio.at(igr)->GetYaxis()->SetNdivisions(504);

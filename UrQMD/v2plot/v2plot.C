@@ -8,8 +8,8 @@ TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energ
 
 // Flags
 bool drawDistributions = false; // auxiliary plots: eta, bimp, mult, etc.
-bool bMergeCharged = true; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
-bool saveAsPNG = true;
+bool bMergeCharged = false; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
+bool saveAsPNG = false;
 int excludeMethod = 0; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively
 int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
 // Constants
@@ -428,6 +428,7 @@ void v2plot_differential_flow(){
         double res2 = sqrt(HRes[icent]->GetBinContent(1));
         double v2obs = hv2EP[icent][ipt][id]->GetBinContent(1);
         double v2EPDif = v2obs / res2;
+        // if (id==0 && icent==1) cout << v2EPDif << " ";
         // double v2EPDif = v2obs;
         double ev2EP = hv2EP[icent][ipt][id]->GetBinError(1) / res2;
         vV2EPDif.push_back(v2EPDif);
@@ -441,7 +442,7 @@ void v2plot_differential_flow(){
                             + 4*pow(cor2.mVal,2)*cor2red.mMSE - 4*cor2.mVal*cor2red.mVal*cov22prime));
         vV22Dif.push_back(v22Dif);
         eV22Dif.push_back(ev22Dif);
-        
+        if (id==0 && icent==1) cout << eV22Dif.at(ipt) << endl;
         // v24
         term cor4red = term(hv24pt[icent][ipt][id]);
         double cov24prime = Covariance(hcov24prime[icent][ipt][id],hv22[icent],hv24pt[icent][ipt][id]);
@@ -480,7 +481,7 @@ void v2plot_differential_flow(){
                             + 4*pow(cor2Gap.mVal,2)*cor2redGap.mMSE - 4*cor2Gap.mVal*cor2redGap.mVal*cov22primeGap));
         vV22DifGap.push_back(v22DifGap);
         eV22DifGap.push_back(ev22DifGap);
-
+        // if (id==0 && icent==7) cout << v22DifGap << " ";
         prV22int[icent][id] -> Fill(0.5,v22Dif,hcounter[icent][ipt][id] -> GetBinEntries(1));
         prV24int[icent][id] -> Fill(0.5,v24Dif,hcounter[icent][ipt][id] -> GetBinEntries(1));
         prV2EPint[icent][id] -> Fill(0.5,v2EPDif,hcounter[icent][ipt][id] -> GetBinEntries(3));
@@ -494,6 +495,7 @@ void v2plot_differential_flow(){
         }
 
       } // end of loop for all pT bin
+      // if (id==0 && icent==1) cout << endl;
       // 2QC differential flow
       grDifFl[0][icent][id] = new TGraphErrors(npt,&vPt[0],&vV22Dif[0],&ePt[0],&eV22Dif[0]);
       grDifFl[0][icent][id] -> SetMarkerColor(kRed);
@@ -577,8 +579,14 @@ void v2plot_differential_flow(){
     for (int ipt=0;ipt<npt;ipt++){
       vV22Dif1040.push_back(prV22dif1040[ipt][id]->GetBinContent(1));
       vV24Dif1040.push_back(prV24dif1040[ipt][id]->GetBinContent(1));
+      // if (id==0) cout << vV24Dif1040.at(ipt) << endl;
+      // if (id==0) cout << eV24cent1040[0][ipt] << endl;
       vV2EPDif1040.push_back(prV2EPdif1040[ipt][id]->GetBinContent(1));
+      // if (id==0) cout << vV2EPDif1040.at(ipt) << endl;
+      // if (id==0) cout << eV2EPcent1040[0][ipt] << endl;
       vV22GapDif1040.push_back(prV22dif1040Gap[ipt][id]->GetBinContent(1));
+      // if (id==0) cout << vV22GapDif1040.at(ipt) << endl;
+      // if (id==0) cout << eV22Gapcent1040[0][ipt] << endl;
       // vPT.push_back(pt1040[ipt][id]->GetBinContent(1));
       vPT.push_back((bin_pT[ipt]+bin_pT[ipt+1])/2.);
     }
@@ -691,29 +699,37 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
   std::vector<double> eV2EP, eV22, eV24, eV22int, eV24int, eV22Gap, eV22Gapint;
 
   for (int icent=0;icent<ncent;icent++){
-
+    // cout << hv22EP[icent][0]->GetBinContent(1) << endl;
+    // cout << sqrt( HRes[icent]->GetBinContent(1) ) << endl;
     // EP
     vV2EP.push_back( hv22EP[icent][0]->GetBinContent(1) / sqrt( HRes[icent]->GetBinContent(1) ) );
     eV2EP.push_back( hv22EP[icent][0]->GetBinError(1)   / sqrt( HRes[icent]->GetBinContent(1) ) );
+    // cout << vV2EP.at(icent) << endl;
+    // cout << eV2EP.at(icent) << endl;
     // 2QC
     term cor2 = term(hv22[icent]);
     vV22.push_back(sqrt(cor2.mVal));
     eV22.push_back(sqrt(1./(4.*cor2.mVal)*cor2.mMSE));
+    // cout << vV22.at(icent) << endl;
+    // cout << eV22.at(icent) << endl;
+
     // 4QC
     term cor4 = term(hv24[icent]);
     double cov24 = Covariance(hcov24[icent],hv22[icent],hv24[icent]);
     double v24 = pow(2*pow(cor2.mVal,2)-cor4.mVal,0.25);
     vV24.push_back(v24);
     eV24.push_back( sqrt( 1./pow(v24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) ) );
-
+    // cout << vV24.at(icent) << endl;
+    // cout << eV24.at(icent) << endl;
     term cor2Gap = term(hv22Gap[icent]);
     vV22Gap.push_back(sqrt(cor2Gap.mVal));
     eV22Gap.push_back(sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE));
-
+    // cout << vV22Gap.at(icent) << endl;
+    // cout << eV22Gap.at(icent) << endl;
     // Checking if there are differences with v2plot_integrated_flow_for_PID() or not
     // cout << icent <<" "<<vV22Gap.at(icent)<<" "<< eV22Gap.at(icent) <<endl;
     // cout << icent <<" "<<vV24.at(icent)<<" "<< eV24.at(icent) <<endl;
-    cout << icent <<" "<<vV22.at(icent)<<" "<< eV22.at(icent) <<endl;
+    // cout << icent <<" "<<vV22.at(icent)<<" "<< eV22.at(icent) <<endl;
     // cout << icent <<" "<<vV22.at(icent)<<" "<< prV22int[icent][0]->GetBinContent(1)<<" "<< eV22.at(icent) <<endl;
     // cout << icent <<" "<<vV24.at(icent)<<" "<< prV24int[icent][0]->GetBinContent(1)<<" "<< eV24.at(icent) <<endl;
     // cout << icent <<" "<<vV2EP.at(icent)<<" "<< prV2EPint[icent][0]->GetBinContent(1)<<" "<< eV2EP.at(icent) <<endl;
@@ -852,7 +868,7 @@ void v2plot_integrated_flow_for_PID(){
     std::vector<double> eV2EP, eV22, eV24, eV22int, eV24int, eV22Gap, eV22Gapint;
 
     for (int icent=0;icent<ncent;icent++){
-
+      // if (id==0) cout << sqrt( HRes[icent]->GetBinContent(1) ) << endl;  
       // EP
       vV2EP.push_back( hv22EP[icent][id]->GetBinContent(1) / sqrt( HRes[icent]->GetBinContent(1) ) );
       eV2EP.push_back( hv22EP[icent][id]->GetBinError(1)   / sqrt( HRes[icent]->GetBinContent(1) ) );

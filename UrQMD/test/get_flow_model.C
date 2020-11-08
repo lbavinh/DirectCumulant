@@ -157,17 +157,23 @@ void get_flow_model(TString inputFileName, TString outputFileName)
   TProfile2D *pv2TPC_EP[nPID];
   TProfile2D *pv2TPC_SP[nPID];
   TProfile2D *pv2FHCal_EP[nPID];
-  
+  TProfile *pReducedCorrelator2_test[nPID][nCentBins];
   for (int i=0; i<nPID; i++)
   {
     pReducedCorrelator2EtaGap_FHCal[i] = new TProfile2D(Form("pReducedCorrelator2EtaGap_FHCal_pid%i", i), Form("Reduced 2nd order correlator with eta-gap of %s (FHCal)", pidNames.at(i).Data()), nPtBins, ptBinMin, ptBinMax, nCentBins, centBinMin, centBinMax);
+    pReducedCorrelator2EtaGap_FHCal[i]->Sumw2();
     pReducedCorrelator2EtaGap[i] = new TProfile2D(Form("pReducedCorrelator2EtaGap_pid%i", i), Form("Reduced 2nd order correlator with eta-gap of %s (TPC", pidNames.at(i).Data()), nPtBins, ptBinMin, ptBinMax, nCentBins, centBinMin, centBinMax);
+    pReducedCorrelator2EtaGap[i]->Sumw2();
     pReducedCorrelator2[i] = new TProfile2D(Form("pReducedCorrelator2_pid%i", i), Form("Reduced 2nd order correlator of %s", pidNames.at(i).Data()), nPtBins, ptBinMin, ptBinMax, nCentBins, centBinMin, centBinMax);
+    pReducedCorrelator2[i]->Sumw2();
     pReducedCorrelator4[i] = new TProfile2D(Form("pReducedCorrelator4_pid%i", i), Form("Reduced 4th order correlator of %s", pidNames.at(i).Data()), nPtBins, ptBinMin, ptBinMax, nCentBins, centBinMin, centBinMax);
-    
+    pReducedCorrelator4[i]->Sumw2();
     pv2TPC_EP[i] = new TProfile2D(Form("pv2TPC_EP_pid%i", i), Form("v2(TPC EP) of %s", pidNames.at(i).Data()), nPtBins, ptBinMin, ptBinMax, nCentBins, centBinMin, centBinMax);
     pv2TPC_SP[i] = new TProfile2D(Form("pv2TPC_SP_pid%i", i), Form("v2(TPC SP) of %s", pidNames.at(i).Data()), nPtBins, ptBinMin, ptBinMax, nCentBins, centBinMin, centBinMax);
     pv2FHCal_EP[i] = new TProfile2D(Form("pv2FHCal_EP_pid%i", i), Form("v2(FHCal EP) of %s", pidNames.at(i).Data()), nPtBins, ptBinMin, ptBinMax, nCentBins, centBinMin, centBinMax);
+    for (int c=0; c<nCentBins; c++){
+      pReducedCorrelator2_test[i][c] = new TProfile(Form("pReducedCorrelator2_test_pid%i_cent%i", i, c), Form("Reduced 2nd order correlator of %s, cent %i", pidNames.at(i).Data(), c), nPtBins, ptBinMin, ptBinMax);
+    }
   }
 
   // Statistical errors of QC
@@ -557,7 +563,7 @@ void get_flow_model(TString inputFileName, TString outputFileName)
         }
       }
     }
-
+    int icent = GetCentBin(cent);
     // 2QC, 4QC
     Q2 = TComplex(Qx2, Qy2);
     w2 = M*(M-1);                         // w(<2>)
@@ -582,7 +588,8 @@ void get_flow_model(TString inputFileName, TString outputFileName)
           wred4[ipt][id] = (mp[ipt][id]*M-3*mq[ipt][id])*(M-1)*(M-2);                                                                   // w(<4'>)
           if (wred4[ipt][id]==0) continue;
           redCor22[ipt][id] = CalRedCor22(Q2, p2[ipt][id], M, mp[ipt][id], mq[ipt][id], wred2[ipt][id]);                                // <2'>
-          pReducedCorrelator2[id]->Fill((ipt+0.5)*(ptBinMax-ptBinMin)/nPtBins, cent, redCor22[ipt][id], wred2[ipt][id]);                                                         // <<2'>>
+          pReducedCorrelator2[id]->Fill((ipt+0.5)*(ptBinMax-ptBinMin)/nPtBins, cent, redCor22[ipt][id], wred2[ipt][id]);
+          pReducedCorrelator2_test[id][icent]->Fill((ipt+0.5)*(ptBinMax-ptBinMin)/nPtBins, redCor22[ipt][id], 1.);
           redCor24[ipt][id] = CalRedCor24(Q2, Q4, p2[ipt][id], q2[ipt][id], q4[ipt][id], M, mp[ipt][id], mq[ipt][id], wred4[ipt][id]);  // <4'>
           // hv24pt[fcent][ipt][id]->Fill(0.5, redCor24[ipt][id], wred4[ipt][id]);
           pReducedCorrelator4[id]->Fill((ipt+0.5)*(ptBinMax-ptBinMin)/nPtBins, cent, redCor24[ipt][id], wred4[ipt][id]);                                                      // <<4'>>

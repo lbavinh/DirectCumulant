@@ -1,6 +1,6 @@
 #include "DrawTGraphImp.C"
 TString model = {"UrQMD"};
-TString energy = {"7.7GeV"};
+TString energy = {"27GeV"};
 TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
 TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");
 TString outDirName=(TString)Form("%s_%s",model.Data(),energy.Data());
@@ -8,8 +8,8 @@ TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energ
 
 // Flags
 bool drawDistributions = false; // auxiliary plots: eta, bimp, mult, etc.
-bool bMergeCharged = false; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
-bool saveAsPNG = false;
+bool bMergeCharged = true; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
+bool saveAsPNG = true;
 int excludeMethod = 0; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively
 int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
 // Constants
@@ -687,34 +687,34 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
     hv22Gap[icent] = (TProfile*)inFile->Get(Form("hv22Gap_%i",icent));
     // hv22EP[icent][0] = (TProfile*)inFile->Get(Form("hv22EP_%i_0",icent));    
     // hv22EP[icent][4] = (TProfile*)inFile->Get(Form("hv22EP_%i_4",icent));
-    for (int id=0;id<npid;id++){
-      hv22EP[icent][id] = (TProfile*)inFile->Get(Form("hv22EP_%i_%i",icent,id));
-    }
+    // for (int id=0;id<npid;id++){
+    //   hv22EP[icent][id] = (TProfile*)inFile->Get(Form("hv22EP_%i_%i",icent,id));
+    // }
   }
 
-  // TProfile *hv2EP[ncent][npt][npid];
-  // for (int icent=0; icent<ncent; icent++){
-  //   for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-  //     for (int id=0;id<npid;id++){
-  //       hv2EP[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2EP_%i_%i_%i",icent,ipt,id));
-  //     }
-  //   }
-  // }
-  // for (int icent=0;icent<ncent;icent++){
-  //   for (int id=0;id<npid;id++){
-  //     hv22EP[icent][id] = (TProfile*) hv2EP[icent][0][id]->Clone();
-  //     for (int ipt=1;ipt<npt;ipt++){
-  //       hv22EP[icent][id]->Add(hv2EP[icent][ipt][id]);
-  //     }
-  //   }
-  // }
-  // for (int icent=0; icent<ncent; icent++){
-  //   for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-  //     for (int id=0;id<npid;id++){
-  //       delete hv2EP[icent][ipt][id];
-  //     }
-  //   }
-  // }
+  TProfile *hv2EP[ncent][npt][npid];
+  for (int icent=0; icent<ncent; icent++){
+    for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+      for (int id=0;id<npid;id++){
+        hv2EP[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv2EP_%i_%i_%i",icent,ipt,id));
+      }
+    }
+  }
+  for (int icent=0;icent<ncent;icent++){
+    for (int id=0;id<npid;id++){
+      hv22EP[icent][id] = (TProfile*) hv2EP[icent][1][id]->Clone();
+      for (int ipt=2;ipt<npt-1;ipt++){
+        hv22EP[icent][id]->Add(hv2EP[icent][ipt][id]);
+      }
+    }
+  }
+  for (int icent=0; icent<ncent; icent++){
+    for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+      for (int id=0;id<npid;id++){
+        delete hv2EP[icent][ipt][id];
+      }
+    }
+  }
 
   for (int icent=0;icent<ncent;icent++){
     // merging CH(-) at id=4 with CH(+) at id=0
@@ -749,7 +749,7 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
     vV24.push_back(v24);
     eV24.push_back( sqrt( 1./pow(v24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) ) );
     // cout << vV24.at(icent) << endl;
-    cout << eV24.at(icent) << endl;
+    // cout << eV24.at(icent) << endl;
     term cor2Gap = term(hv22Gap[icent]);
     vV22Gap.push_back(sqrt(cor2Gap.mVal));
     eV22Gap.push_back(sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE));
@@ -945,8 +945,8 @@ void v2plot_integrated_flow_for_PID(){
     grIntFlowVsCent[1][id] -> SetMarkerColor(kGreen+1);
     grIntFlowVsCent[1][id] -> SetMarkerStyle(marker[1]);
 
-    grIntFlowVsCent[2][id] = new TGraphErrors(ncent,bin_cent,&vV2EP[0],bin_centE,&eV2EP[0]); // same results
-    // grIntFlowVsCent[2][id] = new TGraphErrors(ncent,bin_cent,&vV2EPint[0],bin_centE,&eV2EP[0]); // same results
+    // grIntFlowVsCent[2][id] = new TGraphErrors(ncent,bin_cent,&vV2EP[0],bin_centE,&eV2EP[0]); // same results
+    grIntFlowVsCent[2][id] = new TGraphErrors(ncent,bin_cent,&vV2EPint[0],bin_centE,&eV2EP[0]); // same results
     grIntFlowVsCent[2][id] -> SetMarkerColor(kAzure+2);
     grIntFlowVsCent[2][id] -> SetMarkerStyle(marker[2]);
 

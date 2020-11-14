@@ -1,15 +1,16 @@
 #include "DrawTGraphImp.C"
-TString model = {"UrQMD"};
-TString energy = {"27GeV"};
+TString model = {"vHLLEUrQMD"};
+// TString energy = {"7.7GeV"};
+TString energy = {"39GeV"};
 TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
-TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");
-TString outDirName=(TString)Form("%s_%s",model.Data(),energy.Data());
+TFile *outFile = new TFile(Form("./v2_%s_%s_8PID.root",model.Data(),energy.Data()),"recreate");
+TString outDirName=(TString)Form("%s_%s_8PID",model.Data(),energy.Data());
 TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
 
 // Flags
 bool drawDistributions = false; // auxiliary plots: eta, bimp, mult, etc.
-bool bMergeCharged = true; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
-bool saveAsPNG = true;
+bool bMergeCharged = false; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
+bool saveAsPNG = false;
 int excludeMethod = 0; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively
 int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
 // Constants
@@ -703,7 +704,7 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
   for (int icent=0;icent<ncent;icent++){
     for (int id=0;id<npid;id++){
       hv22EP[icent][id] = (TProfile*) hv2EP[icent][1][id]->Clone();
-      for (int ipt=2;ipt<npt-1;ipt++){
+      for (int ipt=2;ipt<npt-2;ipt++){
         hv22EP[icent][id]->Add(hv2EP[icent][ipt][id]);
       }
     }
@@ -869,7 +870,7 @@ void v2plot_integrated_flow_for_PID(){
       hv24[icent][id] = (TProfile*) hv24pt[icent][1][id]->Clone();
       hcov24[icent][id] = (TProfile*) hcov2prime4prime[icent][1][id]->Clone();
       hv22Gap[icent][id] = (TProfile*) hv22ptGap[icent][1][id]->Clone();
-      for (int ipt=2;ipt<npt-1;ipt++){
+      for (int ipt=2;ipt<npt-2;ipt++){
         // hv22EP[icent][id]->Add(hv2EP[icent][ipt][id]);
         hv22[icent][id]->Add(hv22pt[icent][ipt][id]);
         hv24[icent][id]->Add(hv24pt[icent][ipt][id]);
@@ -901,7 +902,7 @@ void v2plot_integrated_flow_for_PID(){
     std::vector<double> eV2EP, eV22, eV24, eV22int, eV24int, eV22Gap, eV22Gapint;
 
     for (int icent=0;icent<ncent;icent++){
-      if (id==0) cout << sqrt( HRes[icent]->GetBinContent(1) ) << endl;  
+      // if (id==0) cout << sqrt( HRes[icent]->GetBinContent(1) ) << endl;  
       // EP
       vV2EP.push_back( hv22EP[icent][id]->GetBinContent(1) / sqrt( HRes[icent]->GetBinContent(1) ) );
       eV2EP.push_back( hv22EP[icent][id]->GetBinError(1)   / sqrt( HRes[icent]->GetBinContent(1) ) );
@@ -925,7 +926,7 @@ void v2plot_integrated_flow_for_PID(){
       term cor2Gap = term(hv22Gap[icent][id]);
       vV22Gap.push_back(sqrt(cor2Gap.mVal)); // not in used
       eV22Gap.push_back(sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE));
-
+      if (id==5) cout << prV22intGap[icent][id]->GetBinContent(1) << endl;
       // Checking if there are differences of vV2{x} & vV2{X}int 
       // if (id==3) { // PID: 0,1,2,3: CH,Pions,Kaons, protons & antiprotons
       //   cout << icent <<" "<<vV22.at(icent)<<" "<< vV22int.at(icent)<<" "<< eV22.at(icent)<<endl;

@@ -7,7 +7,7 @@ void RatioV24V22vsCentralityPID(){
   const float maxpt = 65.;
   const float maxV2Ratio = 1.3;
   const float minV2Ratio = 0.5;
-  const float leg_coordinate[4]={0.07,0.2,0.45,0.4}; //  0.05,0.7,0.35,0.99
+  const float leg_coordinate[4]={0.7,0.3,0.95,0.35}; //  0.05,0.7,0.35,0.99
   const float labelSize = 0.1;
   const float titleSize = 0.12;
   const float labelSize1 = 0.08;
@@ -206,34 +206,32 @@ void RatioV24V22vsCentralityPID(){
     if (imod==0) tex.DrawLatex(minpt+0.3,minV2Ratio+0.1,Form("%s GeV",energy[ien].Data()));
     // if (ien==2 && imod==1) tex.DrawLatex(minpt+0.3,minV2Ratio+0.1,"open - p");
     // if (ien==2 && imod==2) tex.DrawLatex(minpt+0.3,minV2Ratio+0.1,"filled - #pi^{#pm}");
-    // if (ipad==1) {
+    if (imod==1 && ien==1) {
 
-    //   TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
-    //   leg_pt->SetBorderSize(0);
-    //   leg_pt->SetTextFont(textFont);
-    //   leg_pt->SetTextSize(labelSize-0.01);
-    //   leg_pt->AddEntry(grRatioV2[0][ipad][0],energy[0].Data(),"p");
-    //   leg_pt->AddEntry(grRatioV2[1][ipad][0],energy[1].Data(),"p");
-    //   leg_pt->Draw();      
-    // }else if (ipad==2) {
+      TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
+      leg_pt->SetBorderSize(0);
+      leg_pt->SetTextFont(textFont);
+      leg_pt->SetTextSize(labelSize-0.01);
+      leg_pt->AddEntry(grRatioV2[0][0][0],"#pi^{+}","p");
+      leg_pt->Draw();      
+    }else if (imod==2 && ien==1) {
 
-    //   TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
-    //   leg_pt->SetBorderSize(0);
-    //   leg_pt->SetTextFont(textFont);
-    //   leg_pt->SetTextSize(labelSize-0.01);
-    //   leg_pt->AddEntry(grRatioV2[2][ipad][0],energy[2].Data(),"p");
-    //   leg_pt->AddEntry(grRatioV2[3][ipad][0],energy[3].Data(),"p");
-    //   leg_pt->Draw();
-    // }else if (ipad==3){
+      TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
+      leg_pt->SetBorderSize(0);
+      leg_pt->SetTextFont(textFont);
+      leg_pt->SetTextSize(labelSize-0.01);
+      leg_pt->AddEntry(grRatioV2[0][0][3],"#pi^{-}","p");
+      leg_pt->Draw();
+    }else if (imod==3 && ien==1){
 
-    //   TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2]+0.2,leg_coordinate[3]);
-    //   leg_pt->SetBorderSize(0);
-    //   leg_pt->SetTextFont(textFont);
-    //   leg_pt->SetTextSize(labelSize-0.01);
-    //   leg_pt->AddEntry(grRatioV2[4][ipad][0],energy[4].Data(),"p");
-    //   leg_pt->Draw();
+      TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
+      leg_pt->SetBorderSize(0);
+      leg_pt->SetTextFont(textFont);
+      leg_pt->SetTextSize(labelSize-0.01);
+      leg_pt->AddEntry(grRatioV2[0][0][2],"p","p");
+      leg_pt->Draw();
 
-    // }
+    }
     TLine lineOne;
     lineOne.SetLineStyle(2);
     lineOne.DrawLine(minpt,1.,maxpt,1.);

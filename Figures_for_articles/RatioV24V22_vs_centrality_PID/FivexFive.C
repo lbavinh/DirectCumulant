@@ -3,8 +3,8 @@ void FivexFive(){
   const int npid = 2; 
   const int nmethod = 4; // v22, v24, v2(eta-sub), v22(eta-gap)
   const int nenergy = 5; // 7.7, 11.5, 19.6, 27, 39 GeV
-  const float minpt = -0.1;
-  const float maxpt = 3.2;
+  const float mincent = -4;
+  const float maxcent = 64.;
   const float maxV2Ratio = 1.3;
   const float minV2Ratio = 0.5;
   const float leg_coordinate[4]={0.07,0.2,0.45,0.4}; //  0.05,0.7,0.35,0.99
@@ -35,8 +35,8 @@ void FivexFive(){
       if (!input[ien][imod]) { cout << model[imod].Data() << energy[ien].Data() << "not found!" << endl; return; }
       for (int imeth=0;imeth<nmethod;imeth++){ // v22, v24, v2(eta-sub), v22(eta-gap)
 
-        grV2[ien][imod][imeth][0] = (TGraphErrors*)input[ien][imod]->Get(Form("gr_cent10-40_%i_9",imeth));
-        grV2[ien][imod][imeth][1] = (TGraphErrors*)input[ien][imod]->Get(Form("gr_cent10-40_%i_3",imeth));
+        grV2[ien][imod][imeth][0] = (TGraphErrors*)input[ien][imod]->Get(Form("grRF_%i_9",imeth));
+        grV2[ien][imod][imeth][1] = (TGraphErrors*)input[ien][imod]->Get(Form("grRF_%i_3",imeth));
       }
     }
   }
@@ -141,7 +141,7 @@ void FivexFive(){
   can->SetBottomMargin(0.21);
   can->SetTopMargin(0.17);
 
-  TPaveLabel* title = new TPaveLabel(0.1,0.98,0.9,0.99,"Au+Au, 10-40%");
+  TPaveLabel* title = new TPaveLabel(0.1,0.98,0.9,0.99,"Au+Au, 0.2<p_{T}<3.0 GeV/c");
   title->SetBorderSize(0);
   title->SetFillColor(0);
   title->SetTextFont(textFont);
@@ -160,9 +160,9 @@ void FivexFive(){
     if (ien==2) can->cd(imod+11);
     if (ien==3) can->cd(imod+16);
     if (ien==4) can->cd(imod+21);
-    if (ien==2 && imod==0) h[imod][ien] = new TH2F(Form("pad_%i_%i",imod,ien),";;v_{2}{4}/v_{2}{2}",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
-    else if (ien==4 && imod==2) h[imod][ien] = new TH2F(Form("pad_%i_%i",imod,ien),";p_{T} (GeV/c);",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
-    else h[imod][ien] = new TH2F(Form("pad_%i_%i",imod,ien),"",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
+    if (ien==2 && imod==0) h[imod][ien] = new TH2F(Form("pad_%i_%i",imod,ien),";;v_{2}{4}/v_{2}{2}",1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
+    else if (ien==4 && imod==2) h[imod][ien] = new TH2F(Form("pad_%i_%i",imod,ien),";centrality (%);",1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
+    else h[imod][ien] = new TH2F(Form("pad_%i_%i",imod,ien),"",1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
     h[imod][ien]->GetXaxis()->SetLabelSize(labelSize);
     h[imod][ien]->GetXaxis()->SetTitleSize(titleSize);
     h[imod][ien]->GetXaxis()->SetLabelFont(textFont);
@@ -192,11 +192,11 @@ void FivexFive(){
     tex.SetTextAlign(13);
     tex.SetTextSize(labelSize);
     if (imod==0 && ien==4) tex.SetTextSize(labelSize1);
-    // tex.DrawLatex(minpt+0.1,maxV2Ratio*0.98,padName[imod+ien].Data());
-    if (ien==0) tex.DrawLatex(minpt+0.5,maxV2Ratio*0.98,Form("%s",padFancyName[imod].Data())); // #sqrt{s_{NN}}=
-    if (imod==0) tex.DrawLatex(minpt+0.3,minV2Ratio+0.1,Form("%s GeV",energy[ien].Data()));
-    if (ien==2 && imod==1) tex.DrawLatex(minpt+0.3,minV2Ratio+0.1,"open - p");
-    if (ien==2 && imod==2) tex.DrawLatex(minpt+0.3,minV2Ratio+0.1,"filled - #pi^{#pm}");
+    // tex.DrawLatex(mincent+0.1,maxV2Ratio*0.98,padName[imod+ien].Data());
+    if (ien==0) tex.DrawLatex(mincent+2,maxV2Ratio*0.98,Form("%s",padFancyName[imod].Data())); // #sqrt{s_{NN}}=
+    if (imod==0) tex.DrawLatex(mincent+2,minV2Ratio+0.1,Form("%s GeV",energy[ien].Data()));
+    if (ien==2 && imod==1) tex.DrawLatex(mincent+2,minV2Ratio+0.1,"open - p");
+    if (ien==2 && imod==2) tex.DrawLatex(mincent+2,minV2Ratio+0.1,"filled - #pi^{#pm}");
     // if (ipad==1) {
 
     //   TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
@@ -227,7 +227,7 @@ void FivexFive(){
     // }
     TLine lineOne;
     lineOne.SetLineStyle(2);
-    lineOne.DrawLine(minpt,1.,maxpt,1.);
+    lineOne.DrawLine(mincent,1.,maxcent,1.);
 
 
       for (int id=0;id<npid;id++){
@@ -236,9 +236,9 @@ void FivexFive(){
   
   }
   }
-  can->SaveAs("Figure_Ratiov24v22_vs_pt_PID_5x5.pdf");
+  can->SaveAs("Figure_Ratiov24v22_vs_centrality_PID_5x5.pdf");
   gROOT->SetStyle("Pub");
-  can->SaveAs("Figure_Ratiov24v22_vs_pt_PID_5x5.png");
+  can->SaveAs("Figure_Ratiov24v22_vs_centrality_PID_5x5.png");
 
 
 }

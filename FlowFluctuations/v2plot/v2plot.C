@@ -263,8 +263,8 @@ void CalStatErrCent1040(TString model, TString energy,double v2eDif1040[nmethod]
 void v2plot(TString model = "UrQMD", TString energy = "7.7GeV"){
   
   TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
-  TFile *outFile = new TFile(Form("./v2_%s_%s_test.root",model.Data(),energy.Data()),"recreate");
-  TString outDirName=(TString)Form("%s_%s_test",model.Data(),energy.Data());
+  TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");
+  TString outDirName=(TString)Form("%s_%s",model.Data(),energy.Data());
   TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
   double v2eDif1040[nmethod][npid][npt];
   CalStatErrCent1040(model,energy,v2eDif1040);
@@ -724,28 +724,28 @@ void v2plot(TString model = "UrQMD", TString energy = "7.7GeV"){
   cV2CentRF -> SetName("Reference flow");
   if (saveAsPNG) cV2CentRF -> SaveAs(Form("./%s/IntegratedFlow_hadron.png",outDirName.Data()));
 
-  // for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-  //   delete HRes[icent];
-  //   delete hv22[icent];
-  //   delete hv24[icent];
-  //   delete hcov24[icent];
-  //   delete hv22Gap[icent];
-  //   for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
-  //     for (int id=0;id<npid;id++){
-  //       delete hv2EP[icent][ipt][id];
-  //       delete hPT[icent][ipt][id];
-  //       delete hv22pt[icent][ipt][id];
-  //       delete hv24pt[icent][ipt][id];
-  //       delete hcov22prime[icent][ipt][id];
-  //       delete hcov24prime[icent][ipt][id];
-  //       delete hcov42prime[icent][ipt][id];
-  //       delete hcov44prime[icent][ipt][id];
-  //       delete hcov2prime4prime[icent][ipt][id];
-  //       delete hv22ptGap[icent][ipt][id];
-  //       delete hcov22primeGap[icent][ipt][id];
-  //       delete hcounter[icent][ipt][id];
-  //     }
-  //   } // end of loop over pt bin
-  // } // end of loop over centrality classes
-  // inFile->Close();
+  for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
+    delete HRes[icent];
+    delete hv22[icent];
+    delete hv24[icent];
+    delete hcov24[icent];
+    delete hv22Gap[icent];
+    for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+      for (int id=0;id<npid;id++){
+        delete hv2EP[icent][ipt][id];
+        delete hPT[icent][ipt][id];
+        delete hv22pt[icent][ipt][id];
+        delete hv24pt[icent][ipt][id];
+        delete hcov22prime[icent][ipt][id];
+        delete hcov24prime[icent][ipt][id];
+        delete hcov42prime[icent][ipt][id];
+        delete hcov44prime[icent][ipt][id];
+        delete hcov2prime4prime[icent][ipt][id];
+        delete hv22ptGap[icent][ipt][id];
+        delete hcov22primeGap[icent][ipt][id];
+        delete hcounter[icent][ipt][id];
+      }
+    } // end of loop over pt bin
+  } // end of loop over centrality classes
+  inFile->Close();
 }

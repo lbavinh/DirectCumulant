@@ -1,4 +1,4 @@
-void Compare_fluctuation(){
+void Fluctuations(){
   const int nenergy = 5; // 7.7, 11.5, 19.6, 27, 39 GeV
   const int nmodel = 6; // "STAR data","UrQMD","SMASH","AMPT15","AMPT08","vHLLE+UrQMD"
   const int nmethod = 4; // v22, v24, v2(eta-sub), v22(eta-gap)
@@ -13,6 +13,7 @@ void Compare_fluctuation(){
   const float titleSize1 = 0.08;
   const float markerSize = 2.0;
   const float textFont = 42;
+  const int ratioToMethod = 0;
   TString legendEntries[nmodel]={"STAR data","UrQMD","SMASH","AMPT, #sigma_{p}=1.5mb","AMPT, #sigma_{p}=0.8mb","vHLLE+UrQMD"}; //(Phys.Rev.C.86.054908)
   TString energy[nenergy]={"7.7","11.5","19.6","27","39"};
   TString model[nmodel]={"STAR data","UrQMD","SMASH","AMPT15","AMPT08","vHLLEUrQMD"};
@@ -68,14 +69,14 @@ void Compare_fluctuation(){
       else if (ien==4 && imod!=3 && imod!=5) grRatioV2[ien][imod] = new TGraphErrors(2,xx,yy,xx,yy);  // at 39 GeV ony AMPT15 & vHLLE+UrQMD
       else{
         
-        for (int i=0;i<nbins[ien][imod][3];i++){
+        for (int i=0;i<nbins[ien][imod][ratioToMethod];i++){
           
-          Double_t ratio = vy_gr[ien][imod][1][i]/vy_gr[ien][imod][3][i];
-          Double_t ratioErr = ratio*(TMath::Sqrt(TMath::Power(ey_gr[ien][imod][3][i]/vy_gr[ien][imod][3][i],2)+TMath::Power(ey_gr[ien][imod][1][i]/vy_gr[ien][imod][1][i],2)));
+          Double_t ratio = vy_gr[ien][imod][1][i]/vy_gr[ien][imod][ratioToMethod][i];
+          Double_t ratioErr = ratio*(TMath::Sqrt(TMath::Power(ey_gr[ien][imod][ratioToMethod][i]/vy_gr[ien][imod][ratioToMethod][i],2)+TMath::Power(ey_gr[ien][imod][1][i]/vy_gr[ien][imod][1][i],2)));
           vRatioV22GappedV24[ien][imod].push_back(ratio);
           vRatioV22GappedV24Err[ien][imod].push_back(ratioErr);
         }
-        grRatioV2[ien][imod] = new TGraphErrors(nbins[ien][imod][3],vx_gr[ien][imod][3],&vRatioV22GappedV24[ien][imod][0],ex_gr[ien][imod][3],&vRatioV22GappedV24Err[ien][imod][0]);      
+        grRatioV2[ien][imod] = new TGraphErrors(nbins[ien][imod][ratioToMethod],vx_gr[ien][imod][ratioToMethod],&vRatioV22GappedV24[ien][imod][0],ex_gr[ien][imod][ratioToMethod],&vRatioV22GappedV24Err[ien][imod][0]);      
       }
     }
   }
@@ -200,7 +201,7 @@ void Compare_fluctuation(){
   TH2F *h[nenergy];
   for (int ipad=0;ipad<nenergy;ipad++){
     can->cd(ipad+1);
-    if (ipad==0) h[ipad] = new TH2F(Form("pad_%i",ipad+1),";;v_{2}{4}/v_{2}{2,#eta-gap}",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
+    if (ipad==0) h[ipad] = new TH2F(Form("pad_%i",ipad+1),";;v_{2}{4}/v_{2}{2}",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
     else if (ipad==2) h[ipad] = new TH2F(Form("pad_%i",ipad+1),";p_{T} (GeV/c);",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
     else h[ipad] = new TH2F(Form("pad_%i",ipad+1),"",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
     
@@ -280,9 +281,9 @@ void Compare_fluctuation(){
       
     }
   }
-  can->SaveAs("Figure_Ratiov24v22_vs_pt_20-30_7.7-39GeV_CH.pdf");
+  can->SaveAs("Figure_Ratiov24v22withoutEtagap_vs_pt_20-30_7.7-39GeV_CH.pdf");
   // gROOT->SetStyle("Pub");
-  can->SaveAs("Figure_Ratiov24v22_vs_pt_20-30_7.7-39GeV_CH.png");
+  can->SaveAs("Figure_Ratiov24v22withoutEtagap_vs_pt_20-30_7.7-39GeV_CH.png");
 
 
 }

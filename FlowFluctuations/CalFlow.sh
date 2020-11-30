@@ -6,7 +6,7 @@
 # Tell SGE that we will work in the woeking directory
 #$ -cwd
 # Specify job name
-#$ -N Hybrid77
+#$ -N UrQMD77
 # Specify SGE queue
 #$ -q all.q
 # Set hard time limit. If it is exceeded, SGE shuts the job
@@ -21,14 +21,14 @@
 # 1.5mb: 474 for 7.7 ; 782 for 11.5 ; 367 for 27 ; 575 for 39
 # vHLLE+UrQMD:  7.7 = 342 ; 11.5 = 379 ; 19.6 = 163 ; 27 = 252 ; 39 = 162
 # error reason         42:      can't get password entry for user "lbavinh". Either user does not exist or error with NIS/LDAP etc.
-#$ -t 1-342
+#$ -t 1-584
 # Specify directory where output and error logs from SGE will be stored
 #$ -o /dev/null
 #$ -e /dev/null
 #
 
 #Main directory
-model=vHLLEUrQMD
+model=UrQMD
 energy=7.7
 macro=${model}
 export MAIN_DIR=/weekly/${USER}/lbavinh/FlowFluctuations

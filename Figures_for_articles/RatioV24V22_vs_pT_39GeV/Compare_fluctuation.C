@@ -3,7 +3,7 @@ void Compare_fluctuation(){
   const int nmodel = 3; // "STAR data","AMPT15","vHLLE+UrQMD"
   const int nmethod = 4; // v22, v24, v2(eta-sub), v22(eta-gap)
   const float minpt = -0.1;
-  const float maxpt = 3.2;
+  const float maxpt = 2.2;
   const float maxV2Ratio = 1.3;
   const float minV2Ratio = 0.5;
   const float leg_coordinate[4]={0.07,0.2,0.45,0.4}; //  0.05,0.7,0.35,0.99

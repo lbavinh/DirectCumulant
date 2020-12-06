@@ -28,7 +28,7 @@ struct term{ // structure for "Mean squared error of MEAN" calculation, using un
   double mMSE; // Mean squared error of mean, https://en.wikipedia.org/wiki/Mean_squared_error
 };
 
-void plot(TString model ="Glauber", TString energy = "7.7GeV") {
+void plot(TString model ="Glissando", TString energy = "7.7GeV") {
   
   TString inFileName = (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
   TFile *outFile = new TFile(Form("./ecc_%s_%s.root",model.Data(),energy.Data()),"recreate");
@@ -75,7 +75,8 @@ void plot(TString model ="Glauber", TString energy = "7.7GeV") {
     // cout << ecc2e[0][icent] <<", ";
     term cor4 = term(prEcc24,icent);
     double cov24 = Covariance(prCov24,prEcc22,prEcc24,icent,icent,icent);
-    double ecc24 = pow(2*pow(cor2.mVal,2)-cor4.mVal,0.25);
+    // double ecc24 = pow(2*pow(cor2.mVal,2)-cor4.mVal,0.25);
+    double ecc24 = pow(2*pow(prEcc22->GetBinContent(icent+1),2.)-prEcc24->GetBinContent(icent+1),.25);
     ecc2[1][icent]  = ecc24;
     ecc2e[1][icent] = sqrt( 1./pow(ecc24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) );
     ecc2[2][icent] = ecc2vsCent -> GetBinContent(icent+1);
@@ -113,7 +114,7 @@ void plot(TString model ="Glauber", TString energy = "7.7GeV") {
       Double_t ratio = vy_gr[m][i]/vy_gr[ratioToMethod][i];
       Double_t ratioErr = ratio*(TMath::Sqrt(TMath::Power(ey_gr[ratioToMethod][i]/vy_gr[ratioToMethod][i],2)+TMath::Power(ey_gr[m][i]/vy_gr[m][i],2)));
       vRatio.push_back(ratio);
-      if (m==2) cout <<vRatio.at(i) <<", ";
+      if (m==1) cout <<ratio <<", ";
       vRatioErr.push_back(ratioErr);
       // if (m==2) cout <<vRatioErr.at(i) <<", ";
     }
@@ -142,7 +143,7 @@ void plot(TString model ="Glauber", TString energy = "7.7GeV") {
   c->SetLeftMargin(0.12);
   c->Divide(1,2,0,0);
   c->cd(1);
-  TH2F *h = new TH2F("h",Form("Glauber, Au+Au at #sqrt{s_{NN}} = %s;centrality (%%);#epsilon_{2}", energy.Data()),ncent,mincent,maxcent,1,minV2int,maxV2int);
+  TH2F *h = new TH2F("h",Form("%s, Au+Au at #sqrt{s_{NN}} = %s;centrality (%%);#epsilon_{2}", model.Data(), energy.Data()),ncent,mincent,maxcent,1,minV2int,maxV2int);
   // h->GetXaxis()->SetNdivisions(504);
   h->GetYaxis()->SetNdivisions(504);
   h->GetYaxis()->SetTitleOffset(0.8);

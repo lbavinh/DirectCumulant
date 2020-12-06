@@ -31,7 +31,7 @@ struct term{ // structure for "Mean squared error of MEAN" calculation, using un
 void plotE2vsB(TString model ="Glauber", TString energy = "7.7GeV") {
   
   TString inFileName = (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
-  TFile *outFile = new TFile(Form("./ecc_%s_%s.root",model.Data(),energy.Data()),"recreate");
+  TFile *outFile = new TFile(Form("./ecc_%s_%s_vsBimp.root",model.Data(),energy.Data()),"recreate");
   TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
 
   // Flags

@@ -8,7 +8,7 @@ TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energ
 
 // Flags
 bool drawDistributions = false; // auxiliary plots: eta, bimp, mult, etc.
-bool bMergeCharged = false; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
+bool bMergeCharged = true; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
 bool saveAsPNG = false;
 int excludeMethod = 0; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively
 int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
@@ -720,7 +720,7 @@ void v2plot_integrated_flow_for_CH(){ // v2int = v2 reference
     vV24.push_back(v24);
     eV24.push_back( sqrt( 1./pow(v24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) ) );
     // cout << vV24.at(icent) << endl;
-    cout << eV24.at(icent) << endl;
+    // cout << eV24.at(icent) << endl;
     term cor2Gap = term(hv22Gap[icent]);
     vV22Gap.push_back(sqrt(cor2Gap.mVal));
     eV22Gap.push_back(sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE));
@@ -872,7 +872,7 @@ void v2plot_integrated_flow_for_PID(){
     std::vector<double> eV2EP, eV22, eV24, eV22int, eV24int, eV22Gap, eV22Gapint;
 
     for (int icent=0;icent<ncent;icent++){
-      if (id==0) cout << sqrt( HRes[icent]->GetBinContent(1) ) << endl;  
+      // if (id==0) cout << sqrt( HRes[icent]->GetBinContent(1) ) << endl;  
       // EP
       vV2EP.push_back( hv22EP[icent][id]->GetBinContent(1) / sqrt( HRes[icent]->GetBinContent(1) ) );
       eV2EP.push_back( hv22EP[icent][id]->GetBinError(1)   / sqrt( HRes[icent]->GetBinContent(1) ) );

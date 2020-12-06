@@ -3,9 +3,9 @@ void Ecc2vsB()
   
   vector<double> bimp_binning={0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,20};
   int nBbins = bimp_binning.size()-1;
-  const int nenergy = 3;
+  const int nenergy = 4;
   const int nmodel = 2;
-  const TString energy[nenergy]={"4.5","7.7","11.5"};
+  const TString energy[nenergy]={"4.5","7.7","11.5","200"};
   const TString model[nmodel]={"UrQMD","Glauber"};
   TGraphErrors *gr[nenergy][nmodel];
   for (int e=0; e<nenergy; e++){
@@ -44,6 +44,7 @@ void Ecc2vsB()
     gr[0][m]->SetMarkerStyle(20+4*m);
     gr[1][m]->SetMarkerStyle(21+4*m);
     gr[2][m]->SetMarkerStyle(22+4*m);
+    gr[3][m]->SetMarkerStyle(24+4*m);
   }
   for (int e=0; e<nenergy; e++)
   {
@@ -63,6 +64,7 @@ void Ecc2vsB()
     for (int m=0; m<nmodel; m++)
     {
       if (e==0 && m==0) continue;
+      if (m==0 && e==3) continue;
       gr[e][m] -> Draw("P PLC PMC");
     }
   }
@@ -80,7 +82,7 @@ void Ecc2vsB()
   for (int m=0; m<nmodel; m++)
   {
     for (int e=0; e<nenergy; e++){
-
+      if (m==0 && e==3) continue;
       l->AddEntry(gr[e][m],Form("%s GeV (%s)",energy[e].Data(),model[m].Data()),"p");
     }
   }

@@ -1,4 +1,4 @@
-void res2(TString infile="flow_charged_model.root")
+void res2(TString infile="UrQMD_7.7GeV_res.root")
 {
   TFile *fi = new TFile(infile.Data(),"read");
   

@@ -1,16 +1,16 @@
 #include <TROOT.h>
 #include <TString.h>
 
-#include "GlauberEccReader.C"
+#include "Glissando.C"
 
-void readGlauber(TString inFileName, TString outFileName)
+void readGlissando(TString inFileName, TString outFileName)
 {
   //const char *treeName = "nt_Bi_Bi";
-  const char *treeName = "nt_Au3_Au3";
+  const char *treeName = "events";
   TFile *fi = new TFile(inFileName.Data(),"read");
   TTree *tree = (TTree*) fi->Get(treeName);
   if (!tree) return;
-  GlauberEccReader *t = new GlauberEccReader(tree);
+  Glissando *t = new Glissando(tree);
   t->SetOutputName(outFileName);
   t->Loop();
 }

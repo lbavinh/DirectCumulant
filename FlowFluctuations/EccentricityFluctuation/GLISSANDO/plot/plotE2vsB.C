@@ -28,30 +28,33 @@ struct term{ // structure for "Mean squared error of MEAN" calculation, using un
   double mMSE; // Mean squared error of mean, https://en.wikipedia.org/wiki/Mean_squared_error
 };
 
-void plot(TString model ="Glauber", TString energy = "7.7GeV") {
+void plotE2vsB(TString model ="Glissando", TString energy = "7.7GeV") {
   
   TString inFileName = (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
-  TFile *outFile = new TFile(Form("./ecc_%s_%s.root",model.Data(),energy.Data()),"recreate");
+  TFile *outFile = new TFile(Form("./ecc_%s_%s_vsBimp.root",model.Data(),energy.Data()),"recreate");
   TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
 
   // Flags
   bool bMergeCharged = false; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
   bool saveAsPNG = true;
   // Constant
-  const int ncent = 9; // 0-80 %
-  const double bin_cent[ncent] = {2.5,7.5,15.,25.,35.,45.,55.,65.,75.};
-  const double bin_centE[ncent] = {0};
+
+
+  
   const int nmethod = 3;
   const int ratioToMethod = 0;
   const double mincent = 0.;  // for v2 vs centrality
-  const double maxcent = 82.; // for v2 vs centrality
+  const double maxcent = 12.6; // for v2 vs centrality
 
   const double minV2int = -0.05; // for v2 vs centrality plotting
   const double maxV2int = 1.05; // for v2 vs centrality plotting
   const TString title[] = {"#epsilon_{2}{2}","#epsilon_{2}{4}","#epsilon_{2}{part}"};
   vector <Double_t> coordinateLeg = {0.18,0.63,0.45,0.889};
   int marker[]={21,20,22,25}; // 2QC, 4QC, EP, 2QC-gapped
-
+  vector<double> bimp_binning={0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,20};
+  int nBbins = bimp_binning.size()-1;
+  double bin_b[17] = {0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5,12.5,13.5,14.5,15.5,18.};
+  double bin_bE[17] = {0};
   // gSystem->Exec(Form("mkdir -p ./%s/",outDirName.Data()));
   TFile *inFile = new TFile(inFileName.Data(),"read");
   // TFile *inFile = new TFile("../ROOTFile/UrQMD_7.7GeV.root","read");
@@ -60,29 +63,31 @@ void plot(TString model ="Glauber", TString energy = "7.7GeV") {
   TGraphErrors *gr[nmethod], *grRatio[nmethod];
   
   // Histogram input
-  TProfile *prEcc22 = (TProfile*)inFile->Get(Form("prEcc22vsCent"));
-  TProfile *prEcc24 = (TProfile*)inFile->Get(Form("prEcc24vsCent"));
-  TProfile *prCov24 = (TProfile*)inFile->Get(Form("prCov24vsCent"));
-  TProfile *ecc2vsCent = (TProfile *) inFile -> Get("prEcc2vsCent");
+  TProfile *prEcc22 = (TProfile*)inFile->Get(Form("prEcc22vsB"));
+  TProfile *prEcc24 = (TProfile*)inFile->Get(Form("prEcc24vsB"));
+  TProfile *prCov24 = (TProfile*)inFile->Get(Form("prCov24vsB"));
+  TProfile *ecc2vsB = (TProfile *) inFile -> Get("prEcc2vsB");
+  prEcc22 = (TProfile*)prEcc22->Rebin(nBbins,"prEcc22_rebin",&bimp_binning[0]);
+  prEcc24 = (TProfile*)prEcc24->Rebin(nBbins,"prEcc24_rebin",&bimp_binning[0]);
+  prCov24 = (TProfile*)prCov24->Rebin(nBbins,"prCov24_rebin",&bimp_binning[0]);
+  ecc2vsB = (TProfile*)ecc2vsB->Rebin(nBbins,"ecc2vsB_rebin",&bimp_binning[0]);
+  double ecc2[nmethod][nBbins], ecc2e[nmethod][nBbins];
 
-  double ecc2[nmethod][ncent], ecc2e[nmethod][ncent];
-
-  for (int icent=0;icent<ncent;icent++){
+  for (int icent=0;icent<nBbins;icent++){
     term cor2 = term(prEcc22,icent);
     ecc2[0][icent]  = sqrt(cor2.mVal);
     ecc2e[0][icent] = sqrt(1./(4.*cor2.mVal)*cor2.mMSE);
-    // cout << ecc2[0][icent] <<", ";
-    // cout << ecc2e[0][icent] <<", ";
+    // cout << ecc2[0][icent] << endl;
     term cor4 = term(prEcc24,icent);
     double cov24 = Covariance(prCov24,prEcc22,prEcc24,icent,icent,icent);
     double ecc24 = pow(2*pow(cor2.mVal,2)-cor4.mVal,0.25);
     ecc2[1][icent]  = ecc24;
     ecc2e[1][icent] = sqrt( 1./pow(ecc24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) );
-    ecc2[2][icent] = ecc2vsCent -> GetBinContent(icent+1);
-    ecc2e[2][icent] = ecc2vsCent -> GetBinError(icent+1);
+    ecc2[2][icent] = ecc2vsB -> GetBinContent(icent+1);
+    ecc2e[2][icent] = ecc2vsB -> GetBinError(icent+1);
   }
   for (int m=0; m<nmethod; m++){
-    gr[m] = new TGraphErrors(ncent,bin_cent,ecc2[m],bin_centE,ecc2e[m]);
+    gr[m] = new TGraphErrors(nBbins,bin_b,ecc2[m],bin_bE,ecc2e[m]);
     gr[m] -> SetMarkerStyle(marker[m]);
     gr[m] -> SetMarkerSize(2.);
     gr[m] -> SetTitle(title[m].Data());
@@ -113,9 +118,7 @@ void plot(TString model ="Glauber", TString energy = "7.7GeV") {
       Double_t ratio = vy_gr[m][i]/vy_gr[ratioToMethod][i];
       Double_t ratioErr = ratio*(TMath::Sqrt(TMath::Power(ey_gr[ratioToMethod][i]/vy_gr[ratioToMethod][i],2)+TMath::Power(ey_gr[m][i]/vy_gr[m][i],2)));
       vRatio.push_back(ratio);
-      if (m==2) cout <<vRatio.at(i) <<", ";
       vRatioErr.push_back(ratioErr);
-      // if (m==2) cout <<vRatioErr.at(i) <<", ";
     }
     grRatio[m] = new TGraphErrors(nbins[ratioToMethod],vx_gr[ratioToMethod],&vRatio[0],ex_gr[ratioToMethod],&vRatioErr[0]);
     grRatio[m] -> SetMarkerStyle(gr[m]->GetMarkerStyle());
@@ -142,7 +145,7 @@ void plot(TString model ="Glauber", TString energy = "7.7GeV") {
   c->SetLeftMargin(0.12);
   c->Divide(1,2,0,0);
   c->cd(1);
-  TH2F *h = new TH2F("h",Form("Glauber, Au+Au at #sqrt{s_{NN}} = %s;centrality (%%);#epsilon_{2}", energy.Data()),ncent,mincent,maxcent,1,minV2int,maxV2int);
+  TH2F *h = new TH2F("h",Form("%s, Au+Au at #sqrt{s_{NN}} = %s;centrality (%%);#epsilon_{2}", model.Data(), energy.Data()),nBbins,mincent,maxcent,1,minV2int,maxV2int);
   // h->GetXaxis()->SetNdivisions(504);
   h->GetYaxis()->SetNdivisions(504);
   h->GetYaxis()->SetTitleOffset(0.8);
@@ -161,7 +164,7 @@ void plot(TString model ="Glauber", TString energy = "7.7GeV") {
   }
   leg->Draw();
   c->cd(2);
-  TH2F *hRatio = new TH2F("hRatio",Form(";centrality (%%);Ratio to #epsilon_{2}{2}"),ncent,mincent,maxcent,1,0.3,1.4);
+  TH2F *hRatio = new TH2F("hRatio",Form(";b, fm;Ratio to #epsilon_{2}{2}"),nBbins,mincent,maxcent,1,0.3,1.4);
   // hRatio->GetXaxis()->SetNdivisions(504);
   hRatio->GetYaxis()->SetNdivisions(504);
   hRatio->GetYaxis()->SetTitleOffset(0.8);
@@ -181,7 +184,7 @@ void plot(TString model ="Glauber", TString energy = "7.7GeV") {
   outFile->cd();
   grRatio[1]->Write("gr_e24e22");
   // c->SaveAs(Form("Eccentricity2_%s_%s.pdf",model.Data(),energy.Data()));
-  c->SaveAs(Form("Eccentricity2_%s_%s.png",model.Data(),energy.Data()));
+  c->SaveAs(Form("Eccentricity2_%s_%s_vsBimp.png",model.Data(),energy.Data()));
   delete prEcc22;
   delete prEcc24;
   delete prCov24;

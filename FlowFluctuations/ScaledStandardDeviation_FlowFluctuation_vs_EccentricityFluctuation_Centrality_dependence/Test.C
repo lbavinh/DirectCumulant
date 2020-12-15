@@ -2,34 +2,49 @@
 using namespace std;
 void Test()
 {
-  TString iFileModel = "flow_model.root";
+  const float maxY = 14.;
+  const float minY = 0.;
+  const float minX = 0;
+  const float maxX = 60;
+
+  TString iFileModel = "UrQMD_7.7GeV_res.root";
 
   TFile *fiModel = new TFile(iFileModel.Data(), "read");
 
   TProfile2D *tmp;
+  TProfile *pV2EbE = (TProfile *) fiModel -> Get("pV2EbE");
 
-  const int npid = 8;
-  const int ncent = 8;
-  TProfile *pv2_model[npid];
-
-  // Get Model results
-  for (int i = 0; i < npid; i++)
-  {
-    tmp = (TProfile2D *)fiModel->Get(Form("pv2TPC_pid%i", i));
-    int lowPtBin = tmp->GetXaxis()->FindBin(0.2);
-    int highPtBin = tmp->GetXaxis()->FindBin(3.0);
-    pv2_model[i] = (TProfile *)tmp->ProfileY(Form("%s_integrated_over_pt", tmp->GetName()), lowPtBin, highPtBin);
-    delete tmp;
-  }
-  pv2_model[0] -> Add(pv2_model[4]);
-  pv2_model[0] ->SetErrorOption("s");
+  const int ncent = 20;
+  pV2EbE -> SetErrorOption("s");
+  double vStdDevScaled[ncent];
+  double bincent[ncent];
+  double bincentE[ncent]={0.};
   for (int ic=0; ic<ncent; ic++)
   {
-    double stdDevV2 = pv2_model[0]->GetBinError(ic+1);
-    double meanV2 = pv2_model[0]->GetBinContent(ic+1);
-    double stdDevScaled = stdDevV2 / meanV2;
-    cout << meanV2 << " " << stdDevV2 << " " << stdDevScaled << endl;
+    bincent[ic] = (ic*5.) + 2.5;
   }
+
+  for (int ic=0; ic<ncent; ic++)
+  {
+    double stdDevV2 = pV2EbE->GetBinError(ic+1);
+    double meanV2 = pV2EbE->GetBinContent(ic+1);
+    double stdDevScaled = stdDevV2 / meanV2;
+    vStdDevScaled[ic] = stdDevScaled;
+    // cout << ic*5<<"-"<<(ic+1)*5 << ": " << meanV2 << " " << stdDevV2 << " " << stdDevScaled << endl;
+  }
+  TGraphErrors *gr = new TGraphErrors(ncent, bincent, vStdDevScaled, bincentE, bincentE);
+  gr->SetMarkerStyle(20);
+  gr->SetMarkerColor(kRed+2);
+  gr->SetMarkerSize(1.2);
+  gr->SetTitle(";centrality, %;#sigma_{v_{2}}/#bar{v_{2}}");
+
+  gr->GetXaxis()->SetRangeUser(minX,maxX);
+  gr->SetMinimum(minY);
+  gr->SetMaximum(maxY);
+
+  TCanvas c;
+  gr->Draw("AP");
+  c.SaveAs("trueFlowFluctuations.png");
 }
   
 

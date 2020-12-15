@@ -12,7 +12,9 @@ void TwoEnergy(){
   const float labelSize1 = 0.08;
   const float titleSize1 = 0.09;
   const float markerSize = 2.5;
-  const float textFont = 42;
+  const float textFont = 132;
+  // const TString axisNameY = "#font[132]{#it{v}_{2}{4}/#it{v}_{2}{2}}";
+  const TString axisNameY = "#it{v}_{2}{4}/#it{v}_{2}{2}";
   TString legendEntries[nmodel]={"STAR data","UrQMD","SMASH","AMPT, #sigma_{p}=1.5mb","AMPT, #sigma_{p}=0.8mb","vHLLE+UrQMD"}; //(Phys.Rev.C.86.054908)
   TString energy[nenergy]={"7.7","11.5"};
   TString model[nmodel]={"#STAR data","UrQMD","SMASH","AMPT15","AMPT08","vHLLEUrQMD"};
@@ -138,6 +140,10 @@ void TwoEnergy(){
       ratiov24v22[ipt] = ratio;
       ratiov24v22e[ipt] = ratioErr;
     }
+    for (int i=ncent-1; i>=0; i--)
+    {
+      if (iener==1) cout << v24e[i] <<", ";
+    }
     // STAR
     grRatioV2[iener][0] = new TGraphErrors(ncent,cent,ratiov24v22,centE,ratiov24v22e);
     grRatioV2[iener][0] -> SetMarkerStyle(kFullStar);
@@ -178,7 +184,7 @@ void TwoEnergy(){
   can->SetBottomMargin(0.15);
   can->SetTopMargin(0.1);
 
-  TPaveLabel* title = new TPaveLabel(0.1,0.935,0.9,0.965,"Au+Au, Ch. hadrons, 0.2<p_{T}^{}<3.0 GeV/c");
+  TPaveLabel* title = new TPaveLabel(0.1,0.935,0.9,0.965,"Au+Au, 0.2 < #it{p_{T}}^{}< 3.0 GeV/c, charged hadrons");
   title->SetBorderSize(0);
   title->SetFillColor(0);
   title->SetTextFont(textFont);
@@ -192,13 +198,14 @@ void TwoEnergy(){
   TH2F *h[nenergy];
   for (int ipad=0;ipad<nenergy;ipad++){
     can->cd(ipad+1);
-    if (ipad==0) h[ipad] = new TH2F(Form("pad_%i",ipad+1),";;v_{2}{4}/v_{2}{2}",1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
+    if (ipad==0) h[ipad] = new TH2F(Form("pad_%i",ipad+1),Form(";;%s",axisNameY.Data()),1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
     else if (ipad==1) h[ipad] = new TH2F(Form("pad_%i",ipad+1),";Centrality (%);",1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
     else h[ipad] = new TH2F(Form("pad_%i",ipad+1),"",1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
     
     h[ipad]->GetXaxis()->SetLabelSize(labelSize);
     h[ipad]->GetXaxis()->SetTitleSize(titleSize);
     h[ipad]->GetXaxis()->SetLabelFont(textFont);
+    h[ipad]->GetXaxis()->SetTitleFont(textFont);
     h[ipad]->GetXaxis()->SetNdivisions(504);
     h[ipad]->GetXaxis()->SetTitleOffset(0.8);
     h[ipad]->GetXaxis()->SetLabelOffset(0.000005);
@@ -207,6 +214,7 @@ void TwoEnergy(){
     h[ipad]->GetYaxis()->SetLabelSize(labelSize);
     h[ipad]->GetYaxis()->SetTitleSize(titleSize);
     h[ipad]->GetYaxis()->SetLabelFont(textFont);
+    h[ipad]->GetYaxis()->SetTitleFont(textFont);
     h[ipad]->GetYaxis()->SetNdivisions(504);
     h[ipad]->GetYaxis()->SetTitleOffset(0.8);
     h[ipad]->GetYaxis()->CenterTitle(true);
@@ -226,7 +234,7 @@ void TwoEnergy(){
     tex.SetTextSize(labelSize);
     if (ipad==0) tex.SetTextSize(labelSize1);
     tex.DrawLatex(mincent+2,maxV2Ratio*0.98,padName[ipad].Data());
-    tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("#sqrt{s_{NN}} = %s GeV",energy[ipad].Data())); // #sqrt{s_{NN}}=
+    tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("#it{#sqrt{s_{NN}}} = %s GeV",energy[ipad].Data())); // #sqrt{s_{NN}}=
     if (ipad==0) {
       // tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Au+Au at"));
       TLegend *leg_pt = new TLegend(leg_coordinate[0]+0.15,leg_coordinate[1],leg_coordinate[2]+0.15,leg_coordinate[3]);
@@ -235,7 +243,7 @@ void TwoEnergy(){
       leg_pt->SetTextSize(labelSize1-0.02);
       leg_pt->AddEntry(grRatioV2[0][1],legendEntries[1].Data(),"p");
       leg_pt->AddEntry(grRatioV2[0][2],legendEntries[2].Data(),"p");
-      leg_pt->AddEntry(grRatioV2[0][0],legendEntries[0].Data(),"p");
+      
       leg_pt->Draw();
       tex.SetTextSize(labelSize1-0.02);
       tex.SetTextAlign(11);
@@ -250,9 +258,10 @@ void TwoEnergy(){
       leg_pt->SetBorderSize(0);
       leg_pt->SetTextFont(textFont);
       leg_pt->SetTextSize(labelSize-0.02);
-      leg_pt->AddEntry(grRatioV2[0][5],legendEntries[5].Data(),"p");
-      leg_pt->AddEntry(grRatioV2[0][3],legendEntries[3].Data(),"p");
-      leg_pt->AddEntry(grRatioV2[0][4],legendEntries[4].Data(),"p");
+      leg_pt->AddEntry(grRatioV2[0][0],legendEntries[0].Data(),"p");
+      // leg_pt->AddEntry(grRatioV2[0][5],legendEntries[5].Data(),"p");
+      leg_pt->AddEntry(grRatioV2[0][3],"AMPT","p");//legendEntries[3].Data()
+      // leg_pt->AddEntry(grRatioV2[0][4],legendEntries[4].Data(),"p");
       
 
       leg_pt->Draw();
@@ -271,7 +280,7 @@ void TwoEnergy(){
     lineOne.SetLineStyle(2);
     lineOne.DrawLine(mincent,1.,maxcent,1.);
 
-    for (int imod=0;imod<nmodel;imod++){
+    for (int imod=0;imod<nmodel-2;imod++){
       
       grRatioV2[ipad][imod]->Draw("P");
       

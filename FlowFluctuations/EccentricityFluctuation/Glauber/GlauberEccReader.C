@@ -105,6 +105,13 @@ void GlauberEccReader::Loop()
   TProfile *prCov24vsB = new TProfile(Form("prCov24vsB"),Form("prCov24vsB"),200,0.,20);
   TProfile *prEcc2vsB = new TProfile(Form("prEcc2vsB"),Form("prEcc2vsB"),200,0.,20);
 
+
+  const int nNpartBin = 7;
+  TProfile *prEcc22vsNpart = new TProfile(Form("prEcc22vsNpart"),Form("prEcc22vsNpart"),nNpartBin,0.,350.);
+  TProfile *prEcc24vsNpart = new TProfile(Form("prEcc24vsNpart"),Form("prEcc24vsNpart"),nNpartBin,0.,350.);
+  TProfile *prCov24vsNpart = new TProfile(Form("prCov24vsNpart"),Form("prCov24vsNpart"),nNpartBin,0.,350.);
+  TProfile *prEcc2vsNpart  = new TProfile(Form("prEcc2vsNpart"),Form("prEcc2vsNpart"),nNpartBin,0.,350.);
+
   // TFile *foTree = new TFile("output_ecc.tree.root","recreate");
   // TTree *eccTree = new TTree("eccTree","Eccentricity and Npart tree");
 
@@ -150,6 +157,11 @@ void GlauberEccReader::Loop()
     prEcc24vsB->Fill(B, ecc24);  // <Ecc2^4>
     prCov24vsB->Fill(B, ecc22*ecc24); // <Ecc2^2*Ecc2^4>
 
+    prEcc2vsNpart->Fill(Npart, Ecc2);
+    prEcc22vsNpart->Fill(Npart, ecc22);  // <Ecc2^2>
+    prEcc24vsNpart->Fill(Npart, ecc24);  // <Ecc2^4>
+    prCov24vsNpart->Fill(Npart, ecc22*ecc24); // <Ecc2^2*Ecc2^4>
+
     float cent = CentB(B);
     int fcent = GetCentBin(cent);
     if (fcent!=-1)
@@ -190,6 +202,11 @@ void GlauberEccReader::Loop()
   prEcc22vsCent->Write();
   prEcc24vsCent->Write();
   prCov24vsCent->Write();
+
+  prEcc2vsNpart->Write();
+  prEcc22vsNpart->Write();
+  prEcc24vsNpart->Write();
+  prCov24vsNpart->Write();
 
   pEcc2vsB->Write();
   pEcc3vsB->Write();

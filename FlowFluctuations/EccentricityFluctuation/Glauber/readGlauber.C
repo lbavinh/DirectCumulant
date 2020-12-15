@@ -18,4 +18,9 @@ void readGlauber(TString inFileName, TString outFileName)
 // root -l -b -q readGlauber.C+'("/mnt/pool/nica/6/parfenovpeter/CentralityGlauber/Glauber_gen_5gev/merge_glaub_5gev.root","Glauber_4.5GeV.root")'
 // root -l -b -q readGlauber.C+'("/mnt/pool/nica/6/parfenovpeter/CentralityGlauber/Glauber_gen_7gev/merge_glaub_7gev.root","Glauber_7.7GeV.root")'
 // root -l -b -q readGlauber.C+'("/mnt/pool/nica/6/parfenovpeter/CentralityGlauber/Glauber_gen_11gev/merge_glaub_11gev.root","Glauber_11.5GeV.root")'
+// root -l -b -q readGlauber.C+'("/mnt/pool/nica/6/parfenovpeter/CentralityGlauber/Glauber_gen_19gev/merge_glaub_19gev.root","Glauber_19.6GeV.root")'
+// root -l -b -q readGlauber.C+'("/mnt/pool/nica/6/parfenovpeter/CentralityGlauber/Glauber_gen_27gev/merge_glaub_27gev.root","Glauber_27GeV.root")'
+// root -l -b -q readGlauber.C+'("/mnt/pool/nica/6/parfenovpeter/CentralityGlauber/Glauber_gen_39gev/merge_glaub_39gev.root","Glauber_39GeV.root")'
+
+
 // root -l -b -q readGlauber.C+'("/mnt/pool/nica/6/parfenovpeter/CentralityGlauber/Glauber_gen_200gev/merge_glaub_200gev.root","Glauber_200GeV.root")'

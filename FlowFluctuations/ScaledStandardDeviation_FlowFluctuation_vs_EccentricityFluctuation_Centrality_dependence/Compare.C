@@ -45,7 +45,9 @@ void Compare()
     double v2StdDev = StandardDeviation(prV2[ic][0]) / sqrt(Mean(prRes[ic])); // 
     stdDevScaled[0][ic] = v2StdDev/v2Mean;
     // cout << v2Mean << ", " << v2StdDev << endl;
+    double ecc2StdDev = StandardDeviation(prEcc2vsCent, ic);
+    cout << ecc2StdDev << endl;
     stdDevScaled[1][ic] = StandardDeviationScaled(prEcc2vsCent, ic);
-    cout << stdDevScaled[0][ic] << " " << stdDevScaled[1][ic] << endl;
+    // cout << stdDevScaled[0][ic] << " " << stdDevScaled[1][ic] << endl;
   }
 }

@@ -67,9 +67,9 @@ void get_flow_model(TString inputFileName, TString outputFileName)
 
   // PID - reco tracks
   // const float PidProb_cut = 0.9;
-
+  const std::vector<float> vResTpc     = {1.7845, 2.80055, 2.46152, 1.80991, 1.15575, 0.6425, 0.367597, 0.282332}; // 4.5
   // const std::vector<float> vResTpc     = {6.27383, 8.52203, 7.73442, 5.99234, 4.13289, 2.57332, 1.55835, 1.06316}; // 7.7
-  const std::vector<float> vResTpc     = {8.57096, 10.8675, 9.73692, 7.45796, 5.10023, 3.16144, 1.87627, 1.22423}; // 11.5
+  // const std::vector<float> vResTpc     = {8.57096, 10.8675, 9.73692, 7.45796, 5.10023, 3.16144, 1.87627, 1.22423}; // 11.5
   // Configure input information
   TChain *chain = new TChain("mctree");
 
@@ -336,3 +336,4 @@ int GetCentBin(float cent)
   return -1;
 }
 // root -l -b -q get_flow_model.C+'("/weekly/lbavinh/lbavinh/ScalarProduct/split/UrQMD_7.7/runlist_UrQMD_7.7_9639.list","test.root")'
+// root -l -b -q UrQMD.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/UrQMD_7.7/runlist_UrQMD_7.7_00.list","test.root")'

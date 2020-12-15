@@ -1,4 +1,4 @@
-void CompareV2PT_withRatio(){
+void Figure_1_Compare_methods_v2pt(){
 
   // const
   const int nenergy = 2; // 7.7, 11.5 GeV

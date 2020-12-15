@@ -12,11 +12,14 @@ const int n_pt_bins = pt_binning.size() - 1;
 
 const std::pair<double, double> ratio_y_region = {0.79, 1.21};
 // const std::pair<double,double> ratio_y_region = {0.64, 1.36}; // for kaons specifically
+
+// const std::vector<float> vResTpc     = {1.7845, 2.80055, 2.46152, 1.80991, 1.15575, 0.6425, 0.367597, 0.282332}; // 4.5 model
+
 // const std::vector<float> vResTpc     = {6.27383, 8.52203, 7.73442, 5.99234, 4.13289, 2.57332, 1.55835, 1.06316}; // 7.7 model
 // const std::vector<float> vResTpc     = {8.57096, 10.8675, 9.73692, 7.45796, 5.10023, 3.16144, 1.87627, 1.22423}; // 11.5 model
 // const std::vector<float> vResTpc     = {3.27113, 4.49237, 4.1123, 3.19177, 2.20674, 1.36977, 0.806919, 0.535048}; // 7.7 pico
 // const std::vector<float> vResTpc     = {4.62534, 5.86391, 5.28431, 4.07091, 2.76921, 1.69137, 0.99504, 0.654555}; // 11.5 pico
-void GetGraphs(TString iFileModel="Reco_UrQMD_7.7GeV.root", TString oFile="v2_Reco_UrQMD_7.7GeV_V2SP.root")
+void GetGraphs(TString iFileModel="UrQMD_4.5GeV.root", TString oFile="v2_UrQMD_4.5GeV_V2SP.root")
 {
   gROOT->SetStyle("Pub");
   gStyle->SetErrorX(0);

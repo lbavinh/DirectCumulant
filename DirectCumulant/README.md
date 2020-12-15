@@ -2,25 +2,36 @@
 A code for elliptic flow v2 measurements using Q-Cumulant proposed by Ante Bilandzic in https://arxiv.org/abs/1010.0233
 Implemeted for PicoDst format: https://dev.ut.mephi.ru/PEParfenov/PicoDst
 ## Usage (for MEPhI HPC - Cherenkov cluster)
-1. Clone repository
+Clone repository
+
 ```bash
 git clone https://github.com/lbavinh/QCumulant.git
 cd QCumulant
 ```
-2. Set environment variables for ROOT and PicoDst libraries
+
+Install project via cmake
+
 ```bash
-source /mnt/pool/4/anikeev/root-6.18.02/builddir/bin/thisroot.sh
-source /mnt/pool/2/lbavinh/Soft/PicoDst/build/setPicoDst.sh
+mkdir build
+cd build
+cmake ..
+make
 ```
-3. Run `FlowQCumulant.C` in interative regime
+
+Execute `FlowQCumulant`
+
 ```bash
-root -l -b -q FlowQCumulant.C+'("runlist.list","test.root")'
+./FlowQCumulant -i runlist.list -o test.root
 ```
-or run job (need to change variable `MAIN_DIR` in `Job.sh` to one's working directory path) by SLURM Workload Manager
+
+or run job (need to change variable `MAIN_DIR` in `Job.sh` to one's working directory path) by SLURM Workload Manager (not yet optimized)
+
 ```bash
 sbatch Job.sh
 ```
-4. Use output ROOT file (`test.root` in this example) to draw graphics by `v2plot.C`. On one's local computer or cluster:
+
+Use output ROOT file (`test.root` in this example) to draw graphics by `v2plot.C`. On one's local computer or cluster:
+
 ```bash
 root -l -b -q v2plot.C'("test.root")'
 ```

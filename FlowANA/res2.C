@@ -51,7 +51,7 @@ gSystem->Load(libMathMore.so);
 
 // TFile *file = new TFile("./OUT/urqmd/7.7gev/res.root","read");
 // TFile *file = new TFile("UrQMD_7.7GeV_V2R1.root","read");
-TFile *file = new TFile("Urqmd_11.5GeV_V2R1.root","read");
+TFile *file = new TFile("UrQMD_4.5GeV_V2R1.root","read");
 
 //TFile *file = new TFile("./OUT/ampt/7.7gev_melt_6mb/res_ampt_7.7gev.root");
   

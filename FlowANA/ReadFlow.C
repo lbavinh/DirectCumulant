@@ -6,7 +6,7 @@ struct coord
     float yup;
 };
 
-void ReadFlow(const char *inFileName)
+void ReadFlow(const char *inFileName = "UrQMD_4.5GeV_V2R1.root", TString outFileName = "./v2_graphs.root")
 {
     // Setting up global variables for the plot
     gROOT->SetStyle("Pub");
@@ -233,7 +233,7 @@ void ReadFlow(const char *inFileName)
     }
     canv2->SaveAs("./v2_cent1040.pdf");
     
-    TFile *fo = new TFile("./v2_graphs.root","recreate");
+    TFile *fo = new TFile(outFileName.Data(),"recreate");
     fo->cd();
    
     for (int icent=0; icent<ncent; icent++)

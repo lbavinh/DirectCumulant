@@ -17,6 +17,7 @@
 #include "Bessel.c"
 float CentB(float bimp);
 int GetCentBin(float cent);
+Double_t GetR0(TH1F *const &hist);
 
 #define MAX_TRACKS 10000
 
@@ -27,12 +28,7 @@ int GetCentBin(float cent);
 #define J2rootJ0 0.431755 /* J2(rootJ0) */
 
 /* PARAMETERS USED IN THE RECONSTRUCTION */
-/* kr*kt is the number of points at which one computes the 
-   generating function 
-   kt possible values for the angle 
-   kr possible values for the radius */ 
-#define kt 5
-#define kr 1000
+
 
 #define vmax 0.101 /* maximal possible integrated flow value */
 #define vstep 0.001
@@ -47,6 +43,12 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
     timer.Start();
 
     // Constant declaration
+    /* kr*kt is the number of points at which one computes the 
+    generating function 
+    kt possible values for the angle 
+    kr possible values for the radius */ 
+    const int kt = 5;
+    const int kr = 1000;
     const int npid = 8;  // h+, pions+, kaons+, protons+, h-, pions-, kaons-, protons-
     const int ncent = 9; // 0-80%
     // const double bin_cent[ncent] = {2.5,7.5,15.,25.,35.,45.,55.,65.,75.};
@@ -127,12 +129,33 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
     TH1F *hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -10, 10);
 
     // Flow Analysis with Lee Yang Zeros Method
-    TProfile *prTest = new TProfile("prTest","",kr,0,1);
+  TProfile *prReGthetaSum[ncent][kt];
+  TProfile *prImGthetaSum[ncent][kt];
+  TProfile *prReGthetaProduct[ncent][kt];
+  TProfile *prImGthetaProduct[ncent][kt];
+  TH1F *hGthetaSum[ncent][kt];
+  TH1F *hGthetaProduct[ncent][kt];
+  TProfile *prRefMult = new TProfile("prRefMult","",ncent,0,ncent);
+  for (int i = 0; i < ncent; ++i)
+  {
+    for (int j = 0; j < kt; ++j)
+    {
+      prReGthetaSum[i][j] = new TProfile(Form("prReGthetaSum_mult%d_theta%d", i, j), "", kr, 0, 1);
+      prImGthetaSum[i][j] = new TProfile(Form("prImGthetaSum_mult%d_theta%d", i, j), "", kr, 0, 1);
+      prReGthetaProduct[i][j] = new TProfile(Form("prReGthetaProduct_mult%d_theta%d", i, j), "", kr, 0, 1);
+      prImGthetaProduct[i][j] = new TProfile(Form("prImGthetaProduct_mult%d_theta%d", i, j), "", kr, 0, 1);
+
+      hGthetaSum[i][j] = new TH1F(Form("hGthetaSum_mult%d_theta%d", i, j), "", kr, 0, 1);
+      hGthetaProduct[i][j] = new TH1F(Form("hGthetaProduct_mult%d_theta%d", i, j), "", kr, 0, 1);
+    }
+  }
+
+
   // const complex<double> i(0,1);
 
   int neve=0; /* Number of events */
   int rmult;  /* Detected multiplicity in an event */
-  double rpmult[Nbins]; /* Detected multiplicity per bin */
+  // double rpmult[Nbins]; /* Detected multiplicity per bin */
   double rmultmean; /* Average detected multiplicity */
   float phi, pT; /* particle azimuth and transverse momentum */
   int binpT;
@@ -141,8 +164,8 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
   double RZ[kr]; /* tabulation points for each theta value */
 
   /* Generating functions evaluated at the tabulation points: 
-     - g2[k1][k2] is the generating function g in the harmonic 2, 
-       for theta=arg[k1], evaluated at RZ[k2];
+     - g2[it][ir] is the generating function g in the harmonic 2, 
+       for theta=arg[it], evaluated at RZ[ir];
      - G2[][] is its average over events;
      - modG2sq is the squared modulus of the averaged G2. */
   // complex<double> g2[kt][kr], G2[kt][kr];
@@ -173,7 +196,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
   TComplex dlng2_dw2[kt][Nbins], dG2_dw2[kt][Nbins]; 
   // complex<double> basenum42[kt][Nbins], num42[kt][Nbins];
   TComplex basenum42[kt][Nbins], num42[kt][Nbins];
-  /* V2[] are the reconstructed integrated flow values for each angle arg[k1],
+  /* V2[] are the reconstructed integrated flow values for each angle arg[it],
      i.e. the various V2^theta{infty} in the notations of Refs.[A,B]; 
      V2mean is their average value, denoted by V2{infty} in the Refs.
      vd22[][], vd42[][] are the differential flows for each angle, 
@@ -195,34 +218,34 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
   Vmax=vmax*rmult;
   Vstep=vstep*rmult;
 
-  for(int k1=0; k1<kt; k1++)
+  for(int it=0; it<kt; it++)
   { /* Loop over angles */
-    arg[k1]=((float) k1)*Pi/(kt-1.); 
+    arg[it]=((float) it)*Pi/(kt-1.); 
     /* kt arguments equally spaced between 0 and Pi (radians).
        Please note that arg[] in this program is n*theta the Refs. */
-    for(int k2=0; k2<kr; k2++)
+    for(int ir=0; ir<kr; ir++)
     { 
-      // RZ[k2]=rootJ0/(Vmax-Vstep*k2);
-      // RZ[k2] = (float)k2/kr*0.25;
-      RZ[k2] = (float)k2/kr;
+      // RZ[ir]=rootJ0/(Vmax-Vstep*ir);
+      // RZ[ir] = (float)ir/kr*0.25;
+      RZ[ir] = (float)ir/kr;
 
-      if (k1==0) cout << RZ[k2] << " ";
+      // if (it==0) cout << RZ[ir] << " ";
       /* The moduli of the interpolation points are chosen so that they 
          correspond to equally spaced (with step vstep) flow values. */
 
-      G2[k1][k2]= 0.;
+      G2[it][ir]= 0.;
       /* Initialization of the average generating functions */ 
     } 
-    if (k1==0) cout << endl;
+    if (it==0) cout << endl;
   } /* End of loop over angles */
 
   /* In this program, rmultmean is used to estimate statistical errors. */
   rmultmean=0.;
-  for(int bin=0;bin<Nbins;bin++) 
-  {
-    rpmult[bin]=0.;
-    w2[bin]=1.; /* unit weights for the moment... */
-  }
+  // for(int bin=0;bin<Nbins;bin++) 
+  // {
+  //   rpmult[bin]=0.;
+  //   w2[bin]=1.; /* unit weights for the moment... */
+  // }
 
   /* Averages of the (complex!) event flow vectors and their squared moduli. */
   Q2mean=0.;
@@ -243,6 +266,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
         hEvt->Fill(0);
         // Get centrality
         float cent = CentB(bimp);
+        // if (cent == -1)
         if (cent != 25.)
             continue;
         mult = 0;
@@ -251,11 +275,11 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
 
     
 
-    /* Initialization of the generating functions gn[k1][k2]. */
-    for(int k1=0; k1<kt; k1++) for(int k2=0; k2<kr; k2++) g2[k1][k2]=1.;
+    /* Initialization of the generating functions gn[it][ir]. */
+    for(int it=0; it<kt; it++) for(int ir=0; ir<kr; ir++) g2[it][ir]=1.;
     /* Initialization of the event flow vector */
     Q2=0.;
-    for(int k1=0; k1<kt; k1++) Qtheta[k1] = 0.;
+    for(int it=0; it<kt; it++) Qtheta[it] = 0.;
         
         for (int iTrk = 0; iTrk < nh; iTrk++)
         {
@@ -303,11 +327,11 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
             // --- calculate the product generating function
             // ---
 
-      for(int k1=0; k1<kt; k1++) /* Loop over theta values */
+      for(int it=0; it<kt; it++) /* Loop over theta values */
       { 
-        temp=cos(2.*phi-arg[k1]);
-        // for(int k2=0; k2<kr; k2++) g2[k1][k2]*=(1.+i*RZ[k2]*temp);
-        for(int k2=0; k2<kr; k2++) g2[k1][k2]*=TComplex(1.,RZ[k2]*temp);
+        temp=TMath::Cos(2.*phi-arg[it]);
+        // for(int ir=0; ir<kr; ir++) g2[it][ir]*=(1.+i*RZ[ir]*temp);
+        for(int ir=0; ir<kr; ir++) g2[it][ir]*=TComplex(1.,RZ[ir]*temp);
       }/* End of the loop over theta values */
 
       /* Compute the event flow vectors: Ref.[B], Eq.(4), with Q = Qx + i Qy. */
@@ -318,35 +342,77 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
         } // end of track loop
 
         rmultmean+=((float) mult); /* and compute the average multiplicity. */
-    for(int k1=0; k1<kt; k1++) for(int k2=0; k2<kr; k2++) 
-      /* Compute the generating functions G2[k1], G4[k1], 
+        prRefMult->Fill(fcent, mult);
+    for(int it=0; it<kt; it++) for(int ir=0; ir<kr; ir++) 
+      /* Compute the generating functions G2[it], G4[it], 
          averaged over events at the points RZ for each angle theta. */
-      G2[k1][k2]+=g2[k1][k2];
-
+    {
+      G2[it][ir]+=g2[it][ir];
+      prReGthetaSum[fcent][it]->Fill(RZ[ir], g2[it][ir].Re());
+      prImGthetaSum[fcent][it]->Fill(RZ[ir], g2[it][ir].Im());
+    }
     Q2mean+=Q2;     /* Compute the average event flow vector... */ 
     // modQ2sqmean+=sqr(abs(Q2)); /* and the average of its square modulus */
     modQ2sqmean+=sqr(Q2.Rho()); /* and the average of its square modulus */
     
-    // for(int k2=0;k2<kr;k2++) 
-    // {
-    //   modG2sq[0][k2] = abs(g2[0][k2]);
-    //   if (iEv % 10000 == 0) cout << modG2sq[0][k2] << endl;
-    //   prTest->Fill((float)k2/kr,modG2sq[0][k2]);
-    // }
-    
-    // modG2sq[k1][k2]=sqr(abs(G2[k1][k2])/neve);
-    for(int k1=0; k1<kt; k1++) 
+    for(int it=0; it<kt; it++) 
     {
-      Qtheta[k1] = Q2.Re()*cos(arg[k1]) + Q2.Im()*sin(arg[k1]);
-      for(int k2=0; k2<kr; k2++) 
+      Qtheta[it] = Q2.Re()*cos(arg[it]) + Q2.Im()*sin(arg[it]);
+      for(int ir=0; ir<kr; ir++) 
       {
-        cExp = TComplex(0., RZ[k2]*Qtheta[k1]);
-        g2P[k1][k2] = TComplex::Exp(cExp);
-        G2P[k1][k2] += g2P[k1][k2];
+        cExp = TComplex(0., RZ[ir]*Qtheta[it]);
+        g2P[it][ir] = TComplex::Exp(cExp);
+        G2P[it][ir] += g2P[it][ir];
+
+        prReGthetaProduct[fcent][it]->Fill(RZ[ir], g2P[it][ir].Re());
+        prImGthetaProduct[fcent][it]->Fill(RZ[ir], g2P[it][ir].Im());
+
       }
     }
     neve++;
     } // end event loop
+
+  for (int ic = 0; ic < ncent; ic++)
+  {
+    for (int it = 0; it < kt; it++)
+    {  
+      for (int rbin = 0; rbin < kr; rbin++)
+      {
+        // get bincentre of bins in histogram
+        Double_t dRe = prReGthetaSum[ic][it]->GetBinContent(rbin+1);
+        Double_t dIm = prImGthetaSum[ic][it]->GetBinContent(rbin+1);
+        TComplex cGtheta(dRe,dIm);
+        //fill fHistGtheta with the modulus squared of cGtheta
+        //to avoid errors when using a merged outputfile use SetBinContent() and not Fill()
+        if (cGtheta.Rho2()>1.1) hGthetaSum[ic][it]->SetBinContent(rbin+1,0);
+        else hGthetaSum[ic][it]->SetBinContent(rbin+1,cGtheta.Rho2());
+        // if (ic == 3 && it == 0) cout << cGtheta.Rho2() << " ";
+        hGthetaSum[ic][it]->SetBinError(rbin+1,0.0);
+      }
+    }
+  }
+  cout << endl;
+
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      for (int it = 0; it < kt; it++)
+      {  
+        for (int rbin = 0; rbin < kr; rbin++)
+        {
+          // get bincentre of bins in histogram
+          Double_t dRe = prReGthetaProduct[ic][it]->GetBinContent(rbin+1);
+          Double_t dIm = prImGthetaProduct[ic][it]->GetBinContent(rbin+1);
+          TComplex cGtheta(dRe,dIm);
+          //fill fHistGtheta with the modulus squared of cGtheta
+          //to avoid errors when using a merged outputfile use SetBinContent() and not Fill()
+          if (ic == 3 && it == 0) cout << cGtheta.Rho2() << " ";
+          hGthetaProduct[ic][it]->SetBinContent(rbin+1,cGtheta.Rho2());
+          hGthetaProduct[ic][it]->SetBinError(rbin+1,0.0);
+        }
+      }
+    }
+    cout << endl;
+
 
   rmultmean/=neve; /* Average detected particle multiplicity */
 
@@ -359,46 +425,68 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
 
   /* RECONSTRUCTION OF INTEGRATED FLOW */
   V2mean=0.;
-  for(int k1=0; k1<kt; k1++) 
+  for(int it=0; it<kt; it++) 
   { /* Loop over theta angles */
 
-    for(int k2=0;k2<kr;k2++) 
+    for(int ir=0;ir<kr;ir++) 
     {
-      // modG2sq[k1][k2]=sqr(abs(G2[k1][k2])/neve);
-      modG2sq[k1][k2]=sqr(G2[k1][k2].Rho()/neve);
-      // if (k1 == 0) std::cout << modG2sq[k1][k2] <<" ";
-      if (k1 == 0) std::cout << G2P[k1][k2].Rho()/neve << " ";
+      // modG2sq[it][ir]=sqr(abs(G2[it][ir])/neve);
+      modG2sq[it][ir]=sqr(G2[it][ir].Rho()/neve);
+      // if (it == 0) std::cout << modG2sq[it][ir] <<" ";
+      if (it == 0) std::cout << sqr(G2P[it][ir].Rho()/neve) << " ";
     }  
-    if (k1 == 0) std::cout << endl;  
+    if (it == 0) std::cout << endl;  
     /* Compute the squared moduli of G2, G4 at each point */
     
     /* Looking for the first minimum of |G2|^2 */
     k=0;
-    while (modG2sq[k1][k]>modG2sq[k1][k+1]) k++;
-    /* Interpolate the value of V2[k1], see footnote 3 in Ref.[A],
+    while (modG2sq[it][k]>modG2sq[it][k+1]) k++;
+    /* Interpolate the value of V2[it], see footnote 3 in Ref.[A],
        and derive the corresponding position of the first zero of G2 */
-    V2[k1]=Vmax-Vstep*(k+(modG2sq[k1][k-1]-modG2sq[k1][k+1])/2./
-	   (modG2sq[k1][k-1]-2.*modG2sq[k1][k]+modG2sq[k1][k+1]));
-    r02[k1]=rootJ0/V2[k1];
-    V2mean+=V2[k1]; /* Average V2 */
+    V2[it]=Vmax-Vstep*(k+(modG2sq[it][k-1]-modG2sq[it][k+1])/2./
+	   (modG2sq[it][k-1]-2.*modG2sq[it][k]+modG2sq[it][k+1]));
+    r02[it]=rootJ0/V2[it];
+    V2mean+=V2[it]; /* Average V2 */
   } /* End of the loop over theta angles */
+  
+  float v2int[ncent];
+  cout << "My flow" << endl;
+  for (int ic = 0; ic < ncent; ic++){
+    for (int it = 0; it < kt; it++)
+    {
+      // float r0theta = GetR0(hGthetaProduct[ic][it]);
+      float r0theta = GetR0(hGthetaSum[ic][it]);
+      // float r0theta = hGthetaSum[ic][it]->GetBinCenter(hGthetaSum[ic][it]->GetMinimumBin());
+      if (!TMath::AreEqualAbs(r0theta, 0., 1e-100)) { 
+	   
+        // if (ic == 3 && it == 0) cout << "r0theta = " << r0theta << endl;
+        float refmult = prRefMult->GetBinContent(ic+1);
+        v2int[ic] = rootJ0 / r0theta / refmult;
+      }
+      else { cout<<"r0 is not found!"<<endl;}
+    }
+    v2int[ic] /= (float)kt;
+    // cout << v2int[ic] << " ";
+  }
+  cout << endl;
 
   V2mean/=((float) kt); /* Average V2 */
   /* Compute the resolution parameters chi, using Eqs.(59),(62) of Ref.[A] */
   chi2=V2mean/
     // sqrt(modQ2sqmean-sqr(real(Q2mean)/neve)-sqr(imag(Q2mean)/neve)-sqr(V2mean));
     sqrt(modQ2sqmean-sqr(Q2mean.Re()/neve)-sqr(Q2mean.Im()/neve)-sqr(V2mean));
+    cout << "chi2 = " << chi2 << endl;
 
   // plotVint=fopen("plots_Vint.grf","w");
-  for(int k1=0; k1<kt; k1++) 
+  for(int it=0; it<kt; it++) 
   { /* Loop over theta angles */
     /* Compute the statistical error bar on the estimates Vn^theta{infty}, 
        using Eq.(90) of Ref.[A] = Eq.(8) of Ref.[B]. */
-    err2[k1]=V2[k1]*sqrt((exp(-sqr(rootJ0/chi2)/2.)*BesselJ0(2.*rootJ0)+
+    err2[it]=V2[it]*sqrt((exp(-sqr(rootJ0/chi2)/2.)*BesselJ0(2.*rootJ0)+
 			  exp(sqr(rootJ0/chi2)/2.))/2./neve)/rootJ0/J1rootJ0;
-    cout << arg[k1] << V2[k1]/rmultmean << err2[k1]/rmultmean << endl;
-    // fprintf(plotVint, "%.3g\t%.4g\t%.4g\n", arg[k1], V2[k1]/rmultmean, 
-    //   err2[k1]/rmultmean);
+    cout << arg[it] << " " << V2[it]/rmultmean << " " << err2[it]/rmultmean << endl;
+    // fprintf(plotVint, "%.3g\t%.4g\t%.4g\n", arg[it], V2[it]/rmultmean, 
+    //   err2[it]/rmultmean);
   }
   // fclose(plotVint);
 
@@ -406,16 +494,16 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
   // fprintf(output,"INTEGRATED ELLIPTIC FLOW:");
   
   temp=0.;
-  for(int k1=0; k1<kt; k1++) 
+  for(int it=0; it<kt; it++) 
     /* Loop over the angles of the interpolation points,     
        to compute the statistical error bar on the average estimate V2{infty}, 
        with the help of Eqs.(89) of Ref.[A]. */
-    temp+=exp(sqr(rootJ0/chi2)*cos(arg[k1])/2.)*
-      BesselJ0(2.*rootJ0*sin(arg[k1]/2.))+
-      exp(-sqr(rootJ0/chi2)*cos(arg[k1])/2.)*
-      BesselJ0(2.*rootJ0*cos(arg[k1]/2.));
+    temp+=exp(sqr(rootJ0/chi2)*cos(arg[it])/2.)*
+      BesselJ0(2.*rootJ0*sin(arg[it]/2.))+
+      exp(-sqr(rootJ0/chi2)*cos(arg[it])/2.)*
+      BesselJ0(2.*rootJ0*cos(arg[it]/2.));
   err2mean=V2mean*sqrt(temp/2./neve/kt)/rootJ0/J1rootJ0;
-  cout << V2mean/rmultmean << err2mean/rmultmean << endl;
+  cout << V2mean/rmultmean << " " << err2mean/rmultmean << endl;
   // fprintf(output, " V2/<M>=%.3g +/- %.3g", V2mean/rmultmean, 
   //   err2mean/rmultmean);
 
@@ -480,6 +568,38 @@ int GetCentBin(float cent)
     if (cent == 75.)
         return 8;
     return -1;
+}
+
+Double_t GetR0(TH1F *const &hist)
+{
+  //find the first minimum of the square of the modulus of Gtheta 
+
+  Int_t iNbins = hist->GetNbinsX();
+  Double_t dR0 = 0.; 
+
+  for (Int_t b=2;b<iNbins;b++)
+  {
+    Double_t dG0 = hist->GetBinContent(b);
+    Double_t dGnext = hist->GetBinContent(b+1);
+    Double_t dGnextnext = hist->GetBinContent(b+2);
+    
+    if (dGnext > dG0 && dGnextnext > dG0)
+    {
+      Double_t dGlast = hist->GetBinContent(b-1);
+      Double_t dXlast = hist->GetBinCenter(b-1);
+      Double_t dX0 = hist->GetBinCenter(b);
+      Double_t dXnext = hist->GetBinCenter(b+1);
+
+      dR0 = dX0 - ((dX0-dXlast)*(dX0-dXlast)*(dG0-dGnext) - (dX0-dXnext)*(dX0-dXnext)*(dG0-dGlast))/
+        (2.*((dX0-dXlast)*(dG0-dGnext) - (dX0-dXnext)*(dG0-dGlast))); //parabolic interpolated minimum
+      
+      break; //stop loop if minimum is found
+    } //if
+
+  }//b
+
+      
+  return dR0;
 }
 
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/UrQMD_7.7/runlist_UrQMD_7.7_00.list","test.root")'

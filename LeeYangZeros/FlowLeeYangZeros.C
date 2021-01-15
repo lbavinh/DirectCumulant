@@ -15,6 +15,7 @@
 
 float CentB(float bimp);
 int GetCentBin(float cent);
+Double_t GetR0(TH1F *const &hist);
 
 using std::cout;
 using std::endl;
@@ -108,7 +109,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
   TH1F *hQtheta = new TH1F("hQtheta", "", 300, -20, 20);
   TProfile *pQtheta = new TProfile("pQtheta", "", 1, 0, 1);
   // Flow Analysis with Lee Yang Zeros Method
-  const int rbins = 100;
+  const int rbins = 500;
   const int thetabins = 5;
   const float rootJ0 = 2.4048256;
   const int rmult = 290;
@@ -117,12 +118,12 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
   {
     // float theta_width = TMath::Pi() / (2.0 * thetabins);
     theta[thetabin] = thetabin * TMath::Pi() / (2.0 * thetabins);
-    cout << theta[thetabin] << endl;
+    // cout << theta[thetabin] << endl;
   }
   Double_t r[rbins];
   for (int rbin = 0; rbin < rbins; ++rbin)
   {
-    r[rbin] = (double(rbin) / rbins)*0.25;
+    r[rbin] = (double(rbin) / rbins);
     // r[rbin] = rootJ0/((0.15-0.001*rbin)*rmult);
   }
 
@@ -132,21 +133,36 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
   TComplex genfunP[rbins][thetabins]; // product
   TComplex cExpo;
   // const int multbins = 10; // we'll do just a few for now, may do more later
-  TProfile *LeeYangHistosS[ncent][thetabins];
-  TH2F *hLeeYangHistosS[ncent][thetabins];
-  TProfile *LeeYangHistosP[ncent][thetabins];
-  TH2F *hLeeYangHistosP[ncent][thetabins];
+  TProfile *prReGthetaSum[ncent][thetabins];
+  TProfile *prImGthetaSum[ncent][thetabins];
+  TProfile *prReGthetaProduct[ncent][thetabins];
+  TProfile *prImGthetaProduct[ncent][thetabins];
+
+
+
+  TH1F *hGthetaSum[ncent][thetabins];
+  TH1F *hGthetaProduct[ncent][thetabins];
+  TProfile *prRefMult = new TProfile("prRefMult","",ncent,0,ncent);
+  TProfile *prQ2x = new TProfile("prQ2x","",ncent,0,ncent);
+  TProfile *prQ2y = new TProfile("prQ2y","",ncent,0,ncent);
+  TProfile *prQ2ModSq = new TProfile("prQ2ModSq","",ncent,0,ncent);
 
   for (int i = 0; i < ncent; ++i)
   {
     for (int j = 0; j < thetabins; ++j)
     {
-      LeeYangHistosS[i][j] = new TProfile(Form("LeeYangS_mult%d_theta%d", i, j), "", rbins-1, &r[0]);
-      hLeeYangHistosS[i][j] = new TH2F(Form("hLeeYangS_mult%d_theta%d", i, j), "", rbins, 0, 0.25, 120, 0., 1.2);
-      LeeYangHistosP[i][j] = new TProfile(Form("LeeYangP_mult%d_theta%d", i, j), "", rbins-1, &r[0]);
-      hLeeYangHistosP[i][j] = new TH2F(Form("hLeeYangP_mult%d_theta%d", i, j), "", rbins, 0, 0.25, 120, 0., 1.2);
+      prReGthetaSum[i][j] = new TProfile(Form("prReGthetaSum_mult%d_theta%d", i, j), "", rbins, 0, 1);
+      prImGthetaSum[i][j] = new TProfile(Form("prImGthetaSum_mult%d_theta%d", i, j), "", rbins, 0, 1);
+      prReGthetaProduct[i][j] = new TProfile(Form("prReGthetaProduct_mult%d_theta%d", i, j), "", rbins, 0, 1);
+      prImGthetaProduct[i][j] = new TProfile(Form("prImGthetaProduct_mult%d_theta%d", i, j), "", rbins, 0, 1);
+
+
+
+      hGthetaSum[i][j] = new TH1F(Form("hGthetaSum_mult%d_theta%d", i, j), "", rbins, 0, 1);
+      hGthetaProduct[i][j] = new TH1F(Form("hGthetaProduct_mult%d_theta%d", i, j), "", rbins, 0, 1);
     }
   }
+
   float Q2x, Q2y;
   // Start event loop
   int n_entries = chain->GetEntries();
@@ -160,8 +176,8 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
 
     // Get centrality
     float cent = CentB(bimp);
-    // if (cent == -1)
-    if (cent != 25.)
+    if (cent == -1)
+    // if (cent != 25.)
       continue;
     int mult = 0;
     int fcent = GetCentBin(cent);
@@ -234,25 +250,24 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
         for (int thetabin = 0; thetabin < thetabins; ++thetabin)
         {
           genfunP[rbin][thetabin] *= TComplex(1.0, r[rbin] * TMath::Cos(2. * (phi - theta[thetabin])));
-          
         }
       }
-      
-      // Reference Flow
-      //   if (pt > minptRF && pt < maxptRF)
-      //   {
-      //   }
-
       mult++;
     } // end of track loop
     // if (iEv % 10000 == 0) for (int thetabin = 0; thetabin < thetabins; ++thetabin) cout << genfunP[0][thetabin].Rho2() << endl;
     hMult->Fill(mult);
+    prRefMult->Fill(fcent, mult);
+    prQ2x->Fill(fcent, Q2x);
+    prQ2y->Fill(fcent, Q2y);
+    TComplex Q2(Q2x, Q2y);
+    prQ2ModSq->Fill(fcent, Q2.Rho2());
+
 
     // -------------------------------------------
     // --- fill the generating function histograms
     // ---
-    Q2x /= mult;
-    Q2y /= mult;
+    // Q2x /= mult;
+    // Q2y /= mult;
     for (int thetabin = 0; thetabin < thetabins; ++thetabin)
     {
 
@@ -267,15 +282,69 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
       {
         cExpo = TComplex(0., r[rbin] * Qtheta[thetabin]);
         genfunS[rbin][thetabin] = TComplex::Exp(cExpo); // generating function from Q-vectors
-        LeeYangHistosS[fcent][thetabin]->Fill(r[rbin], genfunS[rbin][thetabin].Rho());
-        hLeeYangHistosS[fcent][thetabin]->Fill(r[rbin], genfunS[rbin][thetabin].Rho());
-        if (genfunP[rbin][thetabin].Rho() > 100.) continue;
-        LeeYangHistosP[fcent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Rho());
-        hLeeYangHistosP[fcent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Rho());
+        prReGthetaSum[fcent][thetabin]->Fill(r[rbin], genfunS[rbin][thetabin].Re());
+        prImGthetaSum[fcent][thetabin]->Fill(r[rbin], genfunS[rbin][thetabin].Im());
+        // if (genfunP[rbin][thetabin].Rho2() > 100.) continue;
+        prReGthetaProduct[fcent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re());
+        prImGthetaProduct[fcent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Im());
       }
     }
 
   } // end event loop
+  for (int icent = 0; icent < ncent; icent++)
+  {
+    for (int thetabin = 0; thetabin < thetabins; thetabin++)
+    {  
+      for (int rbin = 0; rbin < rbins; rbin++)
+      {
+        // get bincentre of bins in histogram
+        Double_t dRe = prReGthetaSum[icent][thetabin]->GetBinContent(rbin+1);
+        Double_t dIm = prImGthetaSum[icent][thetabin]->GetBinContent(rbin+1);
+        TComplex cGtheta(dRe,dIm);
+        //fill fHistGtheta with the modulus squared of cGtheta
+        //to avoid errors when using a merged outputfile use SetBinContent() and not Fill()
+        hGthetaSum[icent][thetabin]->SetBinContent(rbin+1,cGtheta.Rho2());
+        // if (icent == 3 && thetabin == 0) cout << cGtheta.Rho2() << " ";
+        hGthetaSum[icent][thetabin]->SetBinError(rbin+1,0.0);
+      }
+    }
+  }
+  cout << endl;
+
+    for (int icent = 0; icent < ncent; icent++)
+    {
+      for (int thetabin = 0; thetabin < thetabins; thetabin++)
+      {  
+        for (int rbin = 0; rbin < rbins; rbin++)
+        {
+          // get bincentre of bins in histogram
+          Double_t dRe = prReGthetaProduct[icent][thetabin]->GetBinContent(rbin+1);
+          Double_t dIm = prImGthetaProduct[icent][thetabin]->GetBinContent(rbin+1);
+          TComplex cGtheta(dRe,dIm);
+          //fill fHistGtheta with the modulus squared of cGtheta
+          //to avoid errors when using a merged outputfile use SetBinContent() and not Fill()
+          hGthetaProduct[icent][thetabin]->SetBinContent(rbin+1,cGtheta.Rho2());
+          // if (icent == 3 && thetabin == 0) cout << cGtheta.Rho2() << " ";
+          hGthetaProduct[icent][thetabin]->SetBinError(rbin+1,0.0);
+        }
+      }
+    }
+    cout << endl;
+
+  float v2int[ncent];
+  cout << "My flow" << endl;
+  for (int ic = 0; ic < ncent; ic++){
+    for (int it = 0; it < thetabins; it++)
+    {
+      float r0theta = GetR0(hGthetaProduct[ic][it]);
+      if (ic == 3 && it == 0) cout << "r0theta = " << r0theta << endl;
+      float refmult = prRefMult->GetBinContent(ic+1);
+      v2int[ic] = rootJ0 / r0theta / refmult;
+    }
+    v2int[ic] /= (float)thetabins;
+    cout << v2int[ic] << " ";
+  }
+  cout << endl;
 
   // Writing output
   fo->cd();
@@ -337,6 +406,38 @@ int GetCentBin(float cent)
   if (cent == 75.)
     return 8;
   return -1;
+}
+
+Double_t GetR0(TH1F *const &hist)
+{
+  //find the first minimum of the square of the modulus of Gtheta 
+
+  Int_t iNbins = hist->GetNbinsX();
+  Double_t dR0 = 0.; 
+
+  for (Int_t b=2;b<iNbins;b++)
+  {
+    Double_t dG0 = hist->GetBinContent(b);
+    Double_t dGnext = hist->GetBinContent(b+1);
+    Double_t dGnextnext = hist->GetBinContent(b+2);
+    
+    if (dGnext > dG0 && dGnextnext > dG0)
+    {
+      Double_t dGlast = hist->GetBinContent(b-1);
+      Double_t dXlast = hist->GetBinCenter(b-1);
+      Double_t dX0 = hist->GetBinCenter(b);
+      Double_t dXnext = hist->GetBinCenter(b+1);
+
+      dR0 = dX0 - ((dX0-dXlast)*(dX0-dXlast)*(dG0-dGnext) - (dX0-dXnext)*(dX0-dXnext)*(dG0-dGlast))/
+        (2.*((dX0-dXlast)*(dG0-dGnext) - (dX0-dXnext)*(dG0-dGlast))); //parabolic interpolated minimum
+      
+      break; //stop loop if minimum is found
+    } //if
+
+  }//b
+
+      
+  return dR0;
 }
 
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/UrQMD_7.7/runlist_UrQMD_7.7_00.list","test.root")'

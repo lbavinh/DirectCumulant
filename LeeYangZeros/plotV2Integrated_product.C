@@ -50,7 +50,7 @@ TH1F* FillHistGtheta(TProfile *const &prReGtheta, TProfile *const &prImGtheta)
 }
 void plotV2Integrated_product()
 {
-  TFile *fi = new TFile("test.root","read");
+  TFile *fi = new TFile("LYZ_Product.root","read");
   const int ncent = 9;
   const int rbins = 500;
   const int thetabins = 5;
@@ -77,14 +77,14 @@ void plotV2Integrated_product()
   }
 
 
-  TH1F *test = FillHistGtheta(prReGthetaProduct[1][2], prImGthetaProduct[1][2]);
-  // // TH1F *test = FillHistGtheta(prReGthetaSum[7][0], prImGthetaSum[7][0]);
-  test -> SetMarkerStyle(kFullCircle);
-  test -> SetMarkerColor(kRed+2);
-  test -> SetMarkerSize(1.2);
-  test -> Draw("P");
-  Double_t r0 = GetR0(test);
-  cout << "r0 = " << r0 << endl;
+  // TH1F *test = FillHistGtheta(prReGthetaProduct[1][2], prImGthetaProduct[1][2]);
+  // // // TH1F *test = FillHistGtheta(prReGthetaSum[7][0], prImGthetaSum[7][0]);
+  // test -> SetMarkerStyle(kFullCircle);
+  // test -> SetMarkerColor(kRed+2);
+  // test -> SetMarkerSize(1.2);
+  // test -> Draw("P");
+  // Double_t r0 = GetR0(test);
+  // cout << "r0 = " << r0 << endl;
 
   // TH1F *hGthetaSum[ncent][thetabins];
   TH1F *hGthetaProduct[ncent][thetabins];
@@ -100,12 +100,11 @@ void plotV2Integrated_product()
       TH1F *hGtheta = FillHistGtheta(prReGthetaProduct[ic][it], prImGthetaProduct[ic][it]);
       float r0theta = GetR0(hGtheta);
       // if (ic == 3 && it == 0) cout << "r0theta = " << r0theta << endl;
-      cout << "cent:" << ic <<", theta =" << it << ", r0theta = " << r0theta << endl;
-      
-      // if (it == 0) cout << rootJ0 / r0theta / refmult << " ";
-      v2int[ic] += rootJ0 / r0theta / refmult;
+      // cout << "cent:" << ic <<", theta =" << it << ", r0theta = " << r0theta << endl;
+      // if (it == 0) cout << rootJ0 <<"/"<< r0theta <<"/"<< refmult << " ";
+      v2int[ic] += rootJ0 / r0theta;
     }
-    v2int[ic] /= (float)thetabins;
+    v2int[ic] /= (float)thetabins*refmult;//
     // cout << v2int[ic] << " ";
     float modQ2sqmean = prQ2ModSq->GetBinContent(ic+1);
     float Q2xmean = prQ2x->GetBinContent(ic+1);
@@ -127,7 +126,12 @@ void plotV2Integrated_product()
     }
     float neve = prRefMult->GetBinEntries(ic+1);
     float err2mean = v2int[ic]*sqrt(temp/2./neve/thetabins)/rootJ0/J1rootJ0;
-    // cout << err2mean << " ";
+    // cout << err2mean << ", ";
+  }
+  cout << endl;
+  for (int ic=0; ic<ncent; ic++)
+  {
+    cout << v2int[ic] << ", ";
   }
   cout << endl;
   cout << "True flow:" << endl;

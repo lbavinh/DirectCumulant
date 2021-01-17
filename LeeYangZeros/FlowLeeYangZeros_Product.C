@@ -255,27 +255,27 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
 
 
 
-  // for (int icent = 0; icent < ncent; icent++)
-  // {
-  //   for (int thetabin = 0; thetabin < thetabins; thetabin++)
-  //   {  
-  //     for (int rbin = 0; rbin < rbins; rbin++)
-  //     {
-  //       // get bincentre of bins in histogram
-  //       double dRe = prReGthetaProduct[icent][thetabin]->GetBinContent(rbin+1);
-  //       double dIm = prImGthetaProduct[icent][thetabin]->GetBinContent(rbin+1);
-  //       TComplex cGtheta(dRe,dIm);
-  //       //fill fHistGtheta with the modulus squared of cGtheta
-  //       //to avoid errors when using a merged outputfile use SetBinContent() and not Fill()
-  //       if (cGtheta.Rho2()>100.) hGthetaProduct[icent][thetabin]->SetBinContent(rbin+1,0);
-  //       else{ hGthetaProduct[icent][thetabin]->SetBinContent(rbin+1,cGtheta.Rho2());
-  //         // if (icent == 3 && thetabin == 0) cout << cGtheta.Rho2() << " ";
-  //       }
-  //       hGthetaProduct[icent][thetabin]->SetBinError(rbin+1,0.0);
-  //     }
-  //   }
-  // }
-  // cout << endl;
+  for (int icent = 0; icent < ncent; icent++)
+  {
+    for (int thetabin = 0; thetabin < thetabins; thetabin++)
+    {  
+      for (int rbin = 0; rbin < rbins; rbin++)
+      {
+        // get bincentre of bins in histogram
+        double dRe = prReGthetaProduct[icent][thetabin]->GetBinContent(rbin+1);
+        double dIm = prImGthetaProduct[icent][thetabin]->GetBinContent(rbin+1);
+        TComplex cGtheta(dRe,dIm);
+        //fill fHistGtheta with the modulus squared of cGtheta
+        //to avoid errors when using a merged outputfile use SetBinContent() and not Fill()
+        if (cGtheta.Rho2()>100.) hGthetaProduct[icent][thetabin]->SetBinContent(rbin+1,0);
+        else{ hGthetaProduct[icent][thetabin]->SetBinContent(rbin+1,cGtheta.Rho2());
+          if (icent == 2 && thetabin == 0) cout << cGtheta.Rho2() << " ";
+        }
+        hGthetaProduct[icent][thetabin]->SetBinError(rbin+1,0.0);
+      }
+    }
+  }
+  cout << endl;
 
   // double v2int[ncent] = {0.};
   // cout << "My flow" << endl;

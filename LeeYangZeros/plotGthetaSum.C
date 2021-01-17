@@ -1,23 +1,23 @@
 #include "Bessel.c"
-Double_t GetR0(TH1F *const &hist)
+double GetR0(TH1F *const &hist)
 {
   //find the first minimum of the square of the modulus of Gtheta 
 
-  Int_t iNbins = hist->GetNbinsX();
-  Double_t dR0 = 0.; 
+  int iNbins = hist->GetNbinsX();
+  double dR0 = 0.; 
 
-  for (Int_t b=2;b<iNbins;b++)
+  for (int b=2;b<iNbins;b++)
   {
-    Double_t dG0 = hist->GetBinContent(b);
-    Double_t dGnext = hist->GetBinContent(b+1);
-    Double_t dGnextnext = hist->GetBinContent(b+2);
+    double dG0 = hist->GetBinContent(b);
+    double dGnext = hist->GetBinContent(b+1);
+    double dGnextnext = hist->GetBinContent(b+2);
     
     if (dGnext > dG0 && dGnextnext > dG0 && dG0 < 1.)
     {
-      Double_t dGlast = hist->GetBinContent(b-1);
-      Double_t dXlast = hist->GetBinCenter(b-1);
-      Double_t dX0 = hist->GetBinCenter(b);
-      Double_t dXnext = hist->GetBinCenter(b+1);
+      double dGlast = hist->GetBinContent(b-1);
+      double dXlast = hist->GetBinCenter(b-1);
+      double dX0 = hist->GetBinCenter(b);
+      double dXnext = hist->GetBinCenter(b+1);
 
       dR0 = dX0 - ((dX0-dXlast)*(dX0-dXlast)*(dG0-dGnext) - (dX0-dXnext)*(dX0-dXnext)*(dG0-dGlast))/
         (2.*((dX0-dXlast)*(dG0-dGnext) - (dX0-dXnext)*(dG0-dGlast))); //parabolic interpolated minimum
@@ -29,15 +29,15 @@ Double_t GetR0(TH1F *const &hist)
 }
 TH1F* FillHistGtheta(TProfile *const &prReGtheta, TProfile *const &prImGtheta)
 {
-  Int_t iNbins = prReGtheta->GetNbinsX();
-  Double_t xMin = prReGtheta->GetXaxis()->GetBinLowEdge(1);
-  Double_t xMax = prReGtheta->GetXaxis()->GetBinLowEdge(iNbins) + prReGtheta->GetXaxis()->GetBinWidth(iNbins);
+  int iNbins = prReGtheta->GetNbinsX();
+  double xMin = prReGtheta->GetXaxis()->GetBinLowEdge(1);
+  double xMax = prReGtheta->GetXaxis()->GetBinLowEdge(iNbins) + prReGtheta->GetXaxis()->GetBinWidth(iNbins);
   TH1F* hGtheta = new TH1F(Form("hist_%s",prReGtheta->GetName()),"",iNbins,xMin,xMax);
   for (int rbin = 0; rbin < iNbins; rbin++)
   {
     // get bincentre of bins in histogram
-    Double_t dRe = prReGtheta->GetBinContent(rbin+1);
-    Double_t dIm = prImGtheta->GetBinContent(rbin+1);
+    double dRe = prReGtheta->GetBinContent(rbin+1);
+    double dIm = prImGtheta->GetBinContent(rbin+1);
     TComplex cGtheta(dRe,dIm);
     //fill fHistGtheta with the modulus squared of cGtheta
     //to avoid errors when using a merged outputfile use SetBinContent() and not Fill()
@@ -48,9 +48,9 @@ TH1F* FillHistGtheta(TProfile *const &prReGtheta, TProfile *const &prImGtheta)
   }
   return hGtheta;
 }
-void plotV2Integrated_product()
+void plotGthetaSum()
 {
-  TFile *fi = new TFile("LYZ_Product.root","read");
+  TFile *fi = new TFile("LYZ_Sum.root","read");
   const int ncent = 9;
   const int rbins = 500;
   const int thetabins = 5;
@@ -61,18 +61,18 @@ void plotV2Integrated_product()
   TProfile *prQ2y = (TProfile*) fi ->Get("prQ2y");
   TProfile *prQ2ModSq = (TProfile*) fi ->Get("prQ2ModSq");
   TProfile *prV2RP = (TProfile*) fi ->Get("prV2RP");
-  // TProfile *prReGthetaSum[ncent][thetabins];
-  // TProfile *prImGthetaSum[ncent][thetabins];
-  TProfile *prReGthetaProduct[ncent][thetabins];
-  TProfile *prImGthetaProduct[ncent][thetabins];
+  TProfile *prReGthetaSum[ncent][thetabins];
+  TProfile *prImGthetaSum[ncent][thetabins];
+  // TProfile *prReGthetaProduct[ncent][thetabins];
+  // TProfile *prImGthetaProduct[ncent][thetabins];
   for (int i = 0; i < ncent; ++i)
   {
     for (int j = 0; j < thetabins; ++j)
     {
-      // prReGthetaSum[i][j] = (TProfile*) fi -> Get(Form("prReGthetaSum_mult%d_theta%d", i, j));
-      // prImGthetaSum[i][j] = (TProfile*) fi -> Get(Form("prImGthetaSum_mult%d_theta%d", i, j));
-      prReGthetaProduct[i][j] = (TProfile*) fi -> Get(Form("prReGthetaProduct_mult%d_theta%d", i, j));
-      prImGthetaProduct[i][j] = (TProfile*) fi -> Get(Form("prImGthetaProduct_mult%d_theta%d", i, j));
+      prReGthetaSum[i][j] = (TProfile*) fi -> Get(Form("prReGthetaSum_mult%d_theta%d", i, j));
+      prImGthetaSum[i][j] = (TProfile*) fi -> Get(Form("prImGthetaSum_mult%d_theta%d", i, j));
+      // prReGthetaProduct[i][j] = (TProfile*) fi -> Get(Form("prReGthetaProduct_mult%d_theta%d", i, j));
+      // prImGthetaProduct[i][j] = (TProfile*) fi -> Get(Form("prImGthetaProduct_mult%d_theta%d", i, j));
     }
   }
 
@@ -83,35 +83,34 @@ void plotV2Integrated_product()
   // test -> SetMarkerColor(kRed+2);
   // test -> SetMarkerSize(1.2);
   // test -> Draw("P");
-  // Double_t r0 = GetR0(test);
+  // double r0 = GetR0(test);
   // cout << "r0 = " << r0 << endl;
 
-  // TH1F *hGthetaSum[ncent][thetabins];
-  TH1F *hGthetaProduct[ncent][thetabins];
+  TH1F *hGthetaSum[ncent][thetabins];
+  // TH1F *hGthetaProduct[ncent][thetabins];
 
   float v2int[ncent]={0.}, v2e[ncent]={0.};
   
   for (int ic = 0; ic < ncent; ic++)
   {
-    float refmult = prRefMult->GetBinContent(ic+1);
+    // float refmult = prRefMult->GetBinContent(ic+1);
     for (int it = 0; it < thetabins; it++)
     {
-      // TH1F *hGtheta = FillHistGtheta(prReGthetaSum[ic][it], prImGthetaSum[ic][it]);
-      TH1F *hGtheta = FillHistGtheta(prReGthetaProduct[ic][it], prImGthetaProduct[ic][it]);
-      float r0theta = GetR0(hGtheta);
+      hGthetaSum[ic][it] = FillHistGtheta(prReGthetaSum[ic][it], prImGthetaSum[ic][it]);
+      // TH1F *hGtheta = FillHistGtheta(prReGthetaProduct[ic][it], prImGthetaProduct[ic][it]);
+      float r0theta = GetR0(hGthetaSum[ic][it]);
       // if (ic == 3 && it == 0) cout << "r0theta = " << r0theta << endl;
-      // cout << "cent:" << ic <<", theta =" << it << ", r0theta = " << r0theta << endl;
+      cout << "cent:" << ic <<", theta =" << it << ", r0theta = " << r0theta << endl;
       // if (it == 0) cout << rootJ0 <<"/"<< r0theta <<"/"<< refmult << " ";
-      // if (ic == 2) cout << r0theta << ", ";
       v2int[ic] += rootJ0 / r0theta;
-      if (ic == 2) cout << rootJ0 / r0theta / refmult<< ", ";
     }
-    v2int[ic] /= (float)thetabins*refmult;//
+    v2int[ic] /= (float)thetabins;//refmult
     // cout << v2int[ic] << " ";
     float modQ2sqmean = prQ2ModSq->GetBinContent(ic+1);
     float Q2xmean = prQ2x->GetBinContent(ic+1);
     float Q2ymean = prQ2y->GetBinContent(ic+1);
-    float chi2 = v2int[ic]*refmult/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2));
+    // float chi2 = v2int[ic]*refmult/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2));
+    float chi2 = v2int[ic]/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic],2));
     // cout << chi2 << " ";
     // if (ic==8) cout << modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2) << endl;
     float temp=0.;
@@ -128,7 +127,7 @@ void plotV2Integrated_product()
     }
     float neve = prRefMult->GetBinEntries(ic+1);
     float err2mean = v2int[ic]*sqrt(temp/2./neve/thetabins)/rootJ0/J1rootJ0;
-    
+
     double dRelErr2comb = 0.;
     int iNtheta = thetabins;
     int iEvts = neve;
@@ -150,8 +149,9 @@ void plotV2Integrated_product()
       dRelErr2comb /= iNtheta;
     }
     double dRelErrcomb = TMath::Sqrt(dRelErr2comb);
-    // float err2mean = v2int[ic] * dRelErrcomb;    
-    
+    // float err2mean = v2int[ic] * dRelErrcomb;
+
+
     // cout << err2mean << ", ";
   }
   cout << endl;
@@ -167,5 +167,51 @@ void plotV2Integrated_product()
     cout << prV2RP->GetBinContent(ic+1) <<" ";
   }
   cout << endl;
+  // ==== //
+  double rmax = 200;
+  int thetaDraw = 0;
+  int edge[ncent] = {159,130,110,100,85,65,77,45,40};
+  TH1F *hGtheta[ncent];
+  for (int ic=0; ic<ncent; ic++)
+  {
+    hGtheta[ic] = new TH1F(Form("hGtheta_%i",ic),"",rmax,0,rmax);
+    for (int iBin=1; iBin<edge[ic]; iBin++)
+    {
+      hGtheta[ic] -> SetBinContent(iBin,hGthetaSum[ic][thetaDraw]->GetBinContent(iBin));
+    }
+  }
+  TCanvas c;
+  
+  for (int ic=0; ic<ncent; ic++)
+  {
+    hGtheta[ic] -> SetMarkerStyle(24);
+    hGtheta[ic] -> SetMarkerSize(1.2);
+  }
+  gStyle->SetPalette(kDarkRainBow);
+  // hGthetaSum[0][thetaDraw] -> GetYaxis()->SetRangeUser(0,1);
+  
+  hGtheta[6]->SetTitle("UrQMD, Au+Au #sqrt{s_{NN}}=7.7 GeV, h^{#pm}, 0.2<p_{T}<3.0 GeV/c, |#eta|<1.5;r;|G^{#theta}(ir)|");
+  hGtheta[6]->Draw("P PLC PMC");
+  hGtheta[6]->GetXaxis()->SetLimits(0,rmax);
+  for (int ic=0; ic<ncent-3; ic++)
+  {
+    hGtheta[ic] -> Draw("P PLC PMC SAME");
+  }
+  TString legEntry[ncent] = {"0-5%","5-10%","10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%"};
+
+  TLegend *leg = new TLegend(0.7,0.5,0.85,0.85);
+  leg->SetBorderSize(0);
+  leg->SetHeader("\\theta=0");
+  for (int i=0;i<ncent-2;i++)
+  {
+    leg -> AddEntry(hGtheta[i],legEntry[i].Data(),"lp");
+  }
+  leg -> Draw();
+
+  gPad->SetLogy();
+  gStyle->SetOptStat(0);
+  c.SaveAs("Gtheta.pdf");
+  c.SaveAs("Gtheta.png");
+  c.SaveAs("Gtheta.eps");
 }
 // hGthetaProduct[1][3]->Draw()

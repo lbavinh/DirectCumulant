@@ -8,8 +8,8 @@ TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energ
 
 // Flags
 bool drawDistributions = false; // auxiliary plots: eta, bimp, mult, etc.
-bool bMergeCharged = false; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
-bool saveAsPNG = true;
+bool bMergeCharged = true; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
+bool saveAsPNG = false;
 int excludeMethod = 0; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively
 int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
 // Constants
@@ -465,7 +465,7 @@ void v2plot_differential_flow(){
                             + 4*pow(cor2Gap.mVal,2)*cor2redGap.mMSE - 4*cor2Gap.mVal*cor2redGap.mVal*cov22primeGap));
         vV22DifGap.push_back(v22DifGap);
         eV22DifGap.push_back(ev22DifGap);
-
+        if (icent==1 && id == 0) cout << ev2EP << ", ";
         prV22int[icent][id] -> Fill(0.5,v22Dif,hcounter[icent][ipt][id] -> GetBinEntries(1));
         prV24int[icent][id] -> Fill(0.5,v24Dif,hcounter[icent][ipt][id] -> GetBinEntries(1));
         prV2EPint[icent][id] -> Fill(0.5,v2EPDif,hcounter[icent][ipt][id] -> GetBinEntries(3));

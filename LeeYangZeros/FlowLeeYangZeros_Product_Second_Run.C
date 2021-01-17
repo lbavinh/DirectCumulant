@@ -303,7 +303,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName)
       Int_t ipt = -1;
       for(int j=0; j<npt;j++) {if (pt>=bin_pT[j] && pt<bin_pT[j+1]) {ipt = j;}}
       rpmult[ipt]++; 
-
+      prRefMultPOI[fcent]->Fill(pt,pt);
       for(int k1=0; k1<thetabins; k1++)
       {
         /* For each value of theta, compute the generating functions g2, g4

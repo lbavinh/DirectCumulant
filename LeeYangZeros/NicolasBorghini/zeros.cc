@@ -135,9 +135,9 @@ int main()
     for(int k2=0; k2<kr; k2++)
     { 
       // RZ[k2]=rootJ0/(Vmax-Vstep*k2);
-      RZ[k2]=(float)k2/kr;
+      RZ[k2]=(float)k2/kr*0.05+0.05;
 
-      // if (k1==0) cout << RZ[k2] << " ";
+      if (k1==0) cout << RZ[k2] << " ";
       /* The moduli of the interpolation points are chosen so that they 
          correspond to equally spaced (with step vstep) flow values. */
 
@@ -247,7 +247,7 @@ int main()
        and derive the corresponding position of the first zero of G2 */
     V2[k1]=Vmax-Vstep*(k+(modG2sq[k1][k-1]-modG2sq[k1][k+1])/2./
 	   (modG2sq[k1][k-1]-2.*modG2sq[k1][k]+modG2sq[k1][k+1]));
-    r02[k1]=rootJ0/V2[k1];
+    r02[k1]=rootJ0/V2[k1]; cout << "r02["<<k1<<"]="<<r02[k1]<<endl;
     V2mean+=V2[k1]; /* Average V2 */
   } /* End of the loop over theta angles */
 

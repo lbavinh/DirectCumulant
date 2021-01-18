@@ -15,6 +15,7 @@
 
 using std::cout;
 using std::endl;
+using std::cerr;
 #define sqr(x) ((x)*(x))
 double CentB(double bimp)
 {
@@ -71,7 +72,7 @@ int GetCentBin(double cent)
 
 void GetRes(TProfile *const &pr)
 {
-  cout << "const double res2 = {";
+  cout << "const double res2[" << pr->GetNbinsX() <<"] = {";
   for (int i=0; i<pr->GetNbinsX(); i++)
   {
     cout << TMath::Sqrt(pr->GetBinContent(i+1)) <<", ";
@@ -177,13 +178,40 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
   const int rbins = 100;
   const double rMax = 0.5;
   const double rMin = 0.005;
-
   const double rMaxSum = 0.5;
   const double rMinSum = 0.005;
-
   const int thetabins = 5;
   const double rootJ0 = 2.4048256;
   const double J1rootJ0 = 0.519147;
+  double theta[thetabins];
+  for (int thetabin = 0; thetabin < thetabins; ++thetabin)
+  {
+    theta[thetabin] = thetabin * TMath::Pi() / (2.0 * thetabins);
+  }
+
+  double Qtheta[thetabins];
+  TComplex genfunS[rbins][thetabins]; // sum
+  TComplex genfunP[rbins][thetabins]; // product
+  TComplex cExpo;
+  double Q2x, Q2y;
+  int mult;
+  // Differential LYZ
+  const double r02[ncent][thetabins] = {{0.0394293, 0.0612411, 0.0567886, 0.0387612, 0.0393322},
+                                        {0.032696, 0.0333119, 0.0339629, 0.0338644, 0.0323053},
+                                        {0.0294134, 0.0292616, 0.0293481, 0.0295598, 0.0294885},
+                                        {0.0323116, 0.0324761, 0.0320185, 0.0318262, 0.0319852},
+                                        {0.0386181, 0.0390448, 0.038841, 0.0386988, 0.0386965},
+                                        {0.0537552, 0.0529162, 0.0527976, 0.0533032, 0.0536851},
+                                        {0.0831727, 0.0836059, 0.0846148, 0.0839589, 0.0838692},
+                                        {0.156505, 0.168634, 0.177089, 0.165882, 0.186232},
+                                        {0.425309, 0.379876, 0.357246, 0.434813, 0.367741}};
+  const double chisq[9] = {0.771347, 1.16186, 1.5572, 1.58317, 1.62168, 1.43933, 1.14193, 0.701679, 0.442298};
+  double multPOI[npt];
+  // TComplex g2r0[thetabins];   
+  // TComplex dlng2_dz[thetabins], dG2_dz[thetabins];
+  // TComplex dlng2_dw2[thetabins][npt], dG2_dw2[thetabins][npt]; 
+  TComplex cDenominator;
+  TComplex cExponent[thetabins];
   TFile *d_outfile = new TFile(outFile.Data(), "recreate");
 
   TH1I *hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
@@ -236,26 +264,33 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
       }
     }
   }
-
-  // Variables
-  double theta[thetabins];
-  for (int thetabin = 0; thetabin < thetabins; ++thetabin)
+  // Differential flow
+  TProfile *prReDenom[thetabins];
+  TProfile *prImDenom[thetabins];
+  TProfile *prReNumer[thetabins][ncent];
+  TProfile *prImNumer[thetabins][ncent];
+  for (int i = 0; i < thetabins; i++)
   {
-    theta[thetabin] = thetabin * TMath::Pi() / (2.0 * thetabins);
+    prReDenom[i] = new TProfile(Form("prReDenom_theta%i",i),"", ncent, &bin_cent[0]);
+    prImDenom[i] = new TProfile(Form("prImDenom_theta%i",i),"", ncent, &bin_cent[0]);
+
+    for (int j = 0; j < ncent; j++)
+    {
+      prReNumer[i][j] = new TProfile(Form("prReNumer_theta%i_cent%i", i, j),"", npt, &bin_pT[0]);
+      prImNumer[i][j] = new TProfile(Form("prImNumer_theta%i_cent%i", i, j),"", npt, &bin_pT[0]);
+    }
+  }
+  TProfile *prMultPOI[ncent];
+  for (int ic = 0; ic < ncent; ic++)
+  {
+    prMultPOI[ic] = new TProfile(Form("prMultPOI_cent%i",ic),"", npt, 0, npt);
   }
   double r[rbins], rSum[rbins];
   for (int rbin = 0; rbin < rbins; ++rbin)
   {
-    if (bUseProduct) r[rbin] = (double) hGthetaProduct[0][0]->GetBinCenter(rbin+1);
-    rSum[rbin] = (double) hGthetaSum[0][0]->GetBinCenter(rbin+1);
+    if (bUseProduct) {r[rbin] = (double) hGthetaProduct[0][0]->GetBinCenter(rbin+1);}
+    else{rSum[rbin] = (double) hGthetaSum[0][0]->GetBinCenter(rbin+1);}
   }
-
-  double Qtheta[thetabins];
-  TComplex genfunS[rbins][thetabins]; // sum
-  TComplex genfunP[rbins][thetabins]; // product
-  TComplex cExpo;
-  double Q2x, Q2y;
-  int mult;
 
   // cout << "Histograms have been initialized" << endl;
 
@@ -315,6 +350,7 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
     for (int i = 0; i < thetabins; ++i)
     {
       Qtheta[i] = 0.;
+      cExponent[i] = TComplex(0.0,0.0);
     }
     for (int i = 0; i < rbins; ++i)
     {
@@ -326,7 +362,7 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
     }
     Q2x = 0.;
     Q2y = 0.;
-
+    for (int ipt = 0; ipt < npt; ipt++) multPOI[ipt] = 0.;
     for (int i = 0; i < nh; i++)
     { // track loop
       double pT = pt[i];
@@ -347,9 +383,12 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
       for (int j = 0; j < npt; j++)
         if (pT >= bin_pT[j] && pT < bin_pT[j + 1])
           ipt = j;
+    
 
+      multPOI[ipt]++;
       Double_t v2 = TMath::Cos(2 * (phi - rp));
 
+      
       if (bFlow[i])
       {
         hv2MC->Fill(cent, v2);        // calculate reference v2 from MC toy
@@ -383,30 +422,13 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
 
     } // end of track loop
 
-    // Eta sub-event method
-    double fEP[2]; // [eta-,eta+]
-    double fQv[2];
-    for (int ieta = 0; ieta < neta; ieta++)
-    {
-      if (multQv[ieta] > 5)
-      { // multiplicity > 5
-        fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
-        fEP[ieta] = TMath::ATan2(sin(2.0 * fEP[ieta]), cos(2.0 * fEP[ieta])); // what for?
-        fEP[ieta] /= 2.0;
-        fQv[ieta] = TMath::Sqrt(TMath::Power(sumQxy[ieta][0], 2.0) + TMath::Power(sumQxy[ieta][1], 2.0)) / TMath::Sqrt(multQv[ieta]);
-      }
-      else
-      {
-        fEP[ieta] = -9999;
-        fQv[ieta] = -9999;
-      }
-    }
 
     if (mult != 0) 
     {
       hMult->Fill(mult);
       prRefMult->Fill(icent, mult);
-
+      for (int ipt = 0; ipt < npt; ipt++) 
+      {prMultPOI[icent]->Fill(ipt+0.5,multPOI[ipt]);}
       // Q2x /= (double) mult;
       // Q2y /= (double) mult;
 
@@ -435,57 +457,95 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
           }
         }
       }
-    }
+      // Differential LYZ
+      for (int thetabin = 0; thetabin < thetabins; thetabin++)
+      {
+        cExponent[thetabin] = TComplex(0., r02[icent][thetabin] * Qtheta[thetabin]);
+        cDenominator = Qtheta[thetabin]*(TComplex::Exp(cExponent[thetabin])); // BP eq 12
+        prReDenom[thetabin]->Fill(cent, cDenominator.Re());
+        prImDenom[thetabin]->Fill(cent, cDenominator.Im());
+      }
+    } // end of if (mult!=0)
 
+    // Eta sub-event method
+    double fEP[2] = {0.}; // [eta-,eta+]
+    for (int ieta = 0; ieta < neta; ieta++)
+    {
+      if (multQv[ieta] > 5)
+      { // multiplicity > 5
+        fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
+        fEP[ieta] = TMath::ATan2(sin(2.0 * fEP[ieta]), cos(2.0 * fEP[ieta])); // what for?
+        fEP[ieta] /= 2.0;
+        
+      }
+      else
+      {
+        fEP[ieta] = -9999.;
+      }
+    }
+    if (fEP[0] != -9999. && fEP[1] != -9999.)
+    {
+      HRes->Fill(cent, TMath::Cos(2.0 * (fEP[0] - fEP[1])));
+    }
     // Estimate the event plane resolution of 2nd harmonic by the correlation between the azimuthal
     // angles of two subset groups of tracks, called sub-events \eta- and \eta+
-    double psi1, psi2, fq1, fq2;
-    psi1 = fEP[0]; // eta-
-    psi2 = fEP[1]; // eta+
-    fq1 = fQv[0];
-    fq2 = fQv[1];
-    if (psi1 < -9000 || psi2 < -9000)
-      continue;
-    if (fq1 < 0 || fq2 < 0)
-      continue;
-    HRes->Fill(cent, TMath::Cos(2.0 * (fEP[0] - fEP[1])));
+
+
     for (int itrk = 0; itrk < nh; itrk++)
     { //track loop
       double pT = pt[itrk];
       if (pT < minpt || pT > maxpt || eta[itrk] > eta_cut)
         continue;
-
-      // Int_t ipt = 0;
-      // for (int j = 0; j < npt; j++) if (pT >= bin_pT[j] && pT < bin_pT[j + 1]) ipt = j;
-      float v2 = -999.0;
-      if (eta[itrk] > 0)
-      { // eta+
-        v2 = cos(2.0 * (phi0[itrk] - psi1)) / res2[icent];
-      }
-      if (eta[itrk] < 0)
-      { // eta-
-        v2 = cos(2.0 * (phi0[itrk] - psi2)) / res2[icent];
-      }
-      // if(fabs(eta[itrk])<1.0){ // eliminate spectators
-      if (v2 != 999.0)
+      double phi = phi0[itrk];
+  
+      if (fEP[0] != -9999. && fEP[1] != -9999.)
       {
-        hv2EPpt[icent]->Fill(pT, v2);
-        hv2EP->Fill(cent, v2);
+        float v2 = -999.0;
+        if (eta[itrk] > 0)
+        { // eta+
+          v2 = TMath::Cos(2.0 * (phi - fEP[0])) / res2[icent];
+        }
+        if (eta[itrk] < 0)
+        { // eta-
+          v2 = TMath::Cos(2.0 * (phi - fEP[1])) / res2[icent];
+        }
+        // if(fabs(eta[itrk])<1.0){ // eliminate spectators
+        if (v2 != 999.0)
+        {
+          hv2EPpt[icent]->Fill(pT, v2);
+          hv2EP->Fill(cent, v2);
+        }
       }
+      
+      // if (mult != 0)
+      // {
+        for (int thetabin = 0; thetabin < thetabins; ++thetabin)
+        {
+          TComplex cNumeratorPOI = TMath::Cos(2.0 * (phi - theta[thetabin]))*(TComplex::Exp(cExponent[thetabin]));    
+          prReNumer[thetabin][icent]->Fill(pT, cNumeratorPOI.Re());
+          prImNumer[thetabin][icent]->Fill(pT, cNumeratorPOI.Im());
+        }
+      // }
     } // end of the track loop
   }   // end of event loop
+
+
+
 
   //============================================================================================================
   cout << file << " file processed" << endl;
   cout << "Resolution:" << endl;
   GetRes(HRes);
   GetMultMean(prRefMult);
-
+  double dChi2[ncent];
   float v2int[ncent]={0.}, v2e[ncent]={0.};
+  double dVtheta[ncent][thetabins] = {0.};
+  cout << "const double r02[ncent][thetabins] = {";
   for (int ic = 0; ic < ncent; ic++)
   {
     float refmult = prRefMult->GetBinContent(ic+1);
     int thetacount = 0;
+    cout <<"{";
     for (int it = 0; it < thetabins; it++)
     {
       TH1F *hGtheta = NULL;
@@ -495,10 +555,16 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
       // if (ic == 3 && it == 0) cout << "r0theta = " << r0theta << endl;
       // cout << "cent:" << ic <<", theta =" << it << ", r0theta = " << r0theta << endl;
       // if (it == 0) cout << rootJ0 <<"/"<< r0theta <<"/"<< refmult << " ";
-      // if (ic == 2) cout << r0theta << ", ";
-      if (r0theta!=0) {v2int[ic] += rootJ0 / r0theta;thetacount++;}
+      cout << r0theta << ", ";
+      if (r0theta!=0) 
+      {
+        v2int[ic] += rootJ0 / r0theta;
+        dVtheta[ic][it] = rootJ0 / r0theta;
+        thetacount++;
+      }
       // if (ic == 2) cout << rootJ0 / r0theta / refmult<< ", ";
     }
+    cout << "}," << endl;
     if (thetacount!=0) v2int[ic] /= (float)thetacount*refmult;
     else {v2int[ic]=0.;}
     
@@ -507,6 +573,7 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
     float Q2xmean = prQ2x->GetBinContent(ic+1);
     float Q2ymean = prQ2y->GetBinContent(ic+1);
     float chi2 = v2int[ic]*refmult/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2));
+    dChi2[ic] = chi2;
     // cout << chi2 << " ";
     // if (ic==8) cout << modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2) << endl;
     float temp=0.;
@@ -515,7 +582,8 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
         to compute the statistical error bar on the average estimate V2{infty}, 
         with the help of Eqs.(89) of Ref.[A]. */
     {    
-      float arg=((float) it)*TMath::Pi()/(thetabins-1.); 
+      // float arg=((float) it)*TMath::Pi()/(thetabins-1.);
+      double arg = theta[it];
       temp+=exp(sqr(rootJ0/chi2)*cos(arg)/2.)*
         BesselJ0(2.*rootJ0*sin(arg/2.))+
         exp(-sqr(rootJ0/chi2)*cos(arg)/2.)*
@@ -524,32 +592,16 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
     float neve = prRefMult->GetBinEntries(ic+1);
     float err2mean = v2int[ic]*sqrt(temp/2./neve/thetabins)/rootJ0/J1rootJ0;
     v2e[ic] = err2mean;
-    double dRelErr2comb = 0.;
-    int iNtheta = thetabins;
-    int iEvts = neve;
-    double dJ01 = rootJ0;
-    double dChi = chi2;
-    if (iEvts!=0) {
-      for (int theta=0;theta<iNtheta;theta++)
-      {
-	      double dTheta = ((double)theta/iNtheta)*TMath::Pi(); 
-	      double dApluscomb = TMath::Exp((dJ01*dJ01)/(2*dChi*dChi)*
-				       TMath::Cos(dTheta));
-	      double dAmincomb = TMath::Exp(-(dJ01*dJ01)/(2*dChi*dChi)*
-				       TMath::Cos(dTheta));
-	             dRelErr2comb += (1/(2*iEvts*(dJ01*dJ01)*TMath::BesselJ1(dJ01)*
-			         TMath::BesselJ1(dJ01)))*
-	             (dApluscomb*TMath::BesselJ0(2*dJ01*TMath::Sin(dTheta/2)) + 
-	             dAmincomb*TMath::BesselJ0(2*dJ01*TMath::Cos(dTheta/2)));
-      }
-      dRelErr2comb /= iNtheta;
-    }
-    double dRelErrcomb = TMath::Sqrt(dRelErr2comb);
-    // float err2mean = v2int[ic] * dRelErrcomb;    
-    
     // cout << err2mean << ", ";
+  } // end of V2RP calculation
+  
+  cout << " };" << endl;
+  cout << "const double chisq[" << ncent << "] = {";
+  for (int ic = 0; ic < ncent-1; ic++)
+  {
+    cout << dChi2[ic] <<", ";
   }
-  cout << endl;
+  cout << dChi2[ncent-1] << "};" << endl;
   cout << "My flow" << endl;
   for (int ic=0; ic<ncent; ic++)
   {
@@ -561,6 +613,63 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
     hLYZ->SetBinContent(ic+1,v2int[ic]);
     hLYZ->SetBinError(ic+1,v2e[ic]);
   }
+
+  
+  // Differential v2 LYZ
+  TComplex cNumeratorPOI;
+  double re, im, reRatio;
+  double v2diff[ncent][npt]={0.};
+  double v2diffe[ncent][npt]={0.};
+  for (int ic = 0; ic < ncent; ic++)
+  {
+    /* Computation of statistical error bars on the average estimates */
+    double temp = 0.;
+    double arg[thetabins];
+    for(int k1=0; k1<thetabins; k1++)
+    {
+      // float arg=((float) it)*TMath::Pi()/(thetabins-1.);
+      arg[k1] = theta[k1];
+
+      /* Loop over the theta angles, to compute the statistical error */
+      temp += (exp(sqr(rootJ0/dChi2[ic])*cos(arg[k1])/2.)*
+      BesselJ0(2.*rootJ0*sin(arg[k1]/2.)) -
+      exp(-sqr(rootJ0/dChi2[ic])*cos(arg[k1])/2.)*
+      BesselJ0(2.*rootJ0*cos(arg[k1]/2.)))*cos(arg[k1]);
+    }
+    for (int thetabin = 0; thetabin < thetabins; thetabin++)
+    {
+      re = prReDenom[thetabin]->GetBinContent(ic+1);
+      im = prImDenom[thetabin]->GetBinContent(ic+1);
+      cDenominator = TComplex(re, im);
+      if (cDenominator.Rho()==0) {
+	      cerr<<"WARNING: modulus of cDenominator is zero"<<endl;
+	    }
+      for (int ipt = 0; ipt < npt; ipt++)
+      {
+        re = prReNumer[thetabin][ic]->GetBinContent(ipt+1);
+        im = prImNumer[thetabin][ic]->GetBinContent(ipt+1);
+        cNumeratorPOI = TComplex(re, im);
+        if (cDenominator.Rho()!=0) {
+          reRatio = (cNumeratorPOI/cDenominator).Re();
+          double dVetaPOI = reRatio * dVtheta[ic][thetabin];
+          // cout << "reRatio * dVtheta[ic][thetabin] = " << reRatio <<" * "<< dVtheta[ic][thetabin] << endl;
+          v2diff[ic][ipt] += dVetaPOI;
+        }
+
+      }
+    }
+    double neve = prReDenom[0]->GetBinEntries(ic+1);
+    for (int ipt = 0; ipt < npt; ipt++)
+    {    
+      v2diff[ic][ipt] /= thetabins;
+      double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
+      v2diffe[ic][ipt] = sqrt(temp/rpmult/neve/thetabins)/2./J1rootJ0;
+      if (ic == 2) cout << v2diffe[ic][ipt] << ", ";
+    }
+
+  }
+
+
   //================= Drawing =========================
   TCanvas c;
 
@@ -590,6 +699,45 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
   gStyle->SetOptStat(0);
   c.SaveAs("Flow.png");
   //================= Drawing =========================
+  TCanvas c2;
+  // int centrality = 4; // 10-20%
+  TString legHeader[] = {"0-5%","5-10%","10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%"};
+  for (int centrality = 1; centrality < 7; centrality++){
+  TH1F *hLYZDiff = new TH1F("hLYZDiff","",npt,&bin_pT[0]);
+  for (int ipt=0; ipt<npt; ipt++)
+  {
+    hLYZDiff->SetBinContent(ipt+1,v2diff[centrality][ipt]);
+    hLYZDiff->SetBinError(ipt+1,v2diffe[centrality][ipt]);
+  }
+  hLYZDiff->SetMarkerStyle(23);
+  hLYZDiff->SetMarkerColor(kBlue+2);
+  hLYZDiff->SetLineColor(kBlue+2);
+
+  hv2EPpt[centrality]->SetMarkerStyle(20);
+  hv2EPpt[centrality]->SetMarkerColor(kRed+2);
+  hv2EPpt[centrality]->SetLineColor(kRed+2);
+
+  hv2MCpt[centrality]->SetMarkerStyle(25);
+  hv2MCpt[centrality]->SetMarkerColor(kBlack);
+  hv2MCpt[centrality]->SetLineColor(kBlack);
+  hv2MCpt[centrality]->SetTitle(";p_{T}, GeV/c;v_{2}");
+  hv2MCpt[centrality]->GetYaxis()->SetRangeUser(0,0.25);
+  hv2MCpt[centrality]->GetXaxis()->SetLimits(0,3.5);
+  hv2MCpt[centrality]->Draw();
+  hv2EPpt[centrality]->Draw("same");
+  hLYZDiff->Draw("P same");
+  TLegend *leg2 = new TLegend(0.7,0.15,0.85,0.35);
+  leg2->SetBorderSize(0);
+  leg2->SetHeader(legHeader[centrality].Data());
+  leg2->AddEntry(hv2MCpt[centrality],"MC","p");
+  leg2->AddEntry(hv2EPpt[centrality],"EP","p");
+  leg2->AddEntry(hLYZDiff,"LYZ","p");
+  // leg2->AddEntry(hLYZ,"LYZ","p");
+  leg2->Draw();
+  c2.SaveAs(Form("DifFlow_%i.png",centrality));
+  }
+  //================= Drawing =========================
+
   d_outfile->cd();
   d_outfile->Write();
   d_outfile->Close();

@@ -205,7 +205,7 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
                                         {0.0831727, 0.0836059, 0.0846148, 0.0839589, 0.0838692},
                                         {0.156505, 0.168634, 0.177089, 0.165882, 0.186232},
                                         {0.425309, 0.379876, 0.357246, 0.434813, 0.367741}};
-  const double chisq[9] = {0.771347, 1.16186, 1.5572, 1.58317, 1.62168, 1.43933, 1.14193, 0.701679, 0.442298};
+  // const double chisq[9] = {0.771347, 1.16186, 1.5572, 1.58317, 1.62168, 1.43933, 1.14193, 0.701679, 0.442298};
   double multPOI[npt];
   // TComplex g2r0[thetabins];   
   // TComplex dlng2_dz[thetabins], dG2_dz[thetabins];
@@ -596,12 +596,12 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
   } // end of V2RP calculation
   
   cout << " };" << endl;
-  cout << "const double chisq[" << ncent << "] = {";
-  for (int ic = 0; ic < ncent-1; ic++)
-  {
-    cout << dChi2[ic] <<", ";
-  }
-  cout << dChi2[ncent-1] << "};" << endl;
+  // cout << "const double chisq[" << ncent << "] = {";
+  // for (int ic = 0; ic < ncent-1; ic++)
+  // {
+  //   cout << dChi2[ic] <<", ";
+  // }
+  // cout << dChi2[ncent-1] << "};" << endl;
   cout << "My flow" << endl;
   for (int ic=0; ic<ncent; ic++)
   {
@@ -696,13 +696,24 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
   leg->AddEntry(hv2EP,"EP","p");
   leg->AddEntry(hLYZ,"LYZ","p");
   leg->Draw();
+  gStyle->SetPadTickX(1);
+  gStyle->SetPadTickY(1);
   gStyle->SetOptStat(0);
-  c.SaveAs("Flow.png");
+  c.SaveAs("Flow.pdf");
   //================= Drawing =========================
   TCanvas c2;
+  // TPaveLabel* title = new TPaveLabel(0.1,0.95,0.9,0.98,"Toy Model");
+  // title->SetBorderSize(0);
+  // title->SetFillColor(0);
+  // title->SetTextFont(textFont);
+  // title->SetTextSize(2.);
+  // title->Draw();
   // int centrality = 4; // 10-20%
+  // c2.SetLeftMargin(0.17);
   TString legHeader[] = {"0-5%","5-10%","10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%"};
+  c2.Divide(3,2,0,0);
   for (int centrality = 1; centrality < 7; centrality++){
+  c2.cd(centrality);
   TH1F *hLYZDiff = new TH1F("hLYZDiff","",npt,&bin_pT[0]);
   for (int ipt=0; ipt<npt; ipt++)
   {
@@ -721,12 +732,12 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
   hv2MCpt[centrality]->SetMarkerColor(kBlack);
   hv2MCpt[centrality]->SetLineColor(kBlack);
   hv2MCpt[centrality]->SetTitle(";p_{T}, GeV/c;v_{2}");
-  hv2MCpt[centrality]->GetYaxis()->SetRangeUser(0,0.25);
-  hv2MCpt[centrality]->GetXaxis()->SetLimits(0,3.5);
+  hv2MCpt[centrality]->GetYaxis()->SetRangeUser(0,0.26);
+  hv2MCpt[centrality]->GetXaxis()->SetLimits(-0.05,3.55);
   hv2MCpt[centrality]->Draw();
   hv2EPpt[centrality]->Draw("same");
   hLYZDiff->Draw("P same");
-  TLegend *leg2 = new TLegend(0.7,0.15,0.85,0.35);
+  TLegend *leg2 = new TLegend(0.15,0.6,0.5,0.85);
   leg2->SetBorderSize(0);
   leg2->SetHeader(legHeader[centrality].Data());
   leg2->AddEntry(hv2MCpt[centrality],"MC","p");
@@ -734,8 +745,9 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
   leg2->AddEntry(hLYZDiff,"LYZ","p");
   // leg2->AddEntry(hLYZ,"LYZ","p");
   leg2->Draw();
-  c2.SaveAs(Form("DifFlow_%i.png",centrality));
+  // c2.SaveAs(Form("DifFlow_%i.png",centrality));
   }
+  c2.SaveAs(Form("DifFlow.pdf"));
   //================= Drawing =========================
 
   d_outfile->cd();

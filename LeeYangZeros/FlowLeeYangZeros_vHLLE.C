@@ -32,13 +32,13 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, Bool_t bFir
 
   // Configure input information
   TChain *chain = new TChain("mctree");
-
-  std::ifstream file(inputFileName.Data());
-  std::string line;
-  while (std::getline(file, line))
-  {
-    chain->Add(line.c_str());
-  }
+  chain->Add(inputFileName.Data());
+  // std::ifstream file(inputFileName.Data());
+  // std::string line;
+  // while (std::getline(file, line))
+  // {
+  //   chain->Add(line.c_str());
+  // }
 
   Float_t bimp;
   Float_t phi2;
@@ -106,7 +106,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, Bool_t bFir
   const double rMin = 0.005;
   const double rMaxSum = 0.9;
   const double rMinSum = 0.0005;
-  const int thetabins = 5;
+  const int thetabins = 10;
   const double rootJ0 = 2.4048256;
   const double J1rootJ0 = 0.519147;
   double theta[thetabins];
@@ -126,18 +126,18 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, Bool_t bFir
   TComplex cExponent[thetabins];
 
   // from 1-st run
-const double res2[9] = {0.160595, 0.272198, 0.350073, 0.368082, 0.336855, 0.280703, 0.224385, 0.192086, 0.191679 };
-const double r02[ncent][thetabins] = {{0.305467, 0.282701, 0.265967, 0.265189, 0.257185 },
-{0.288774, 0.276923, 0.384326, 0.265875, 0.287433 },
-{0.360413, 0.453303, 0.356505, 0.322878, 0.374696 },
-{0.428619, 0.604668, 0.41714, 0.380627, 0.368971 },
-{0.481811, 0.480452, 0.658171, 0.598946, 0.476369 },
-{0.77789, 0.6112, 0.558664, 0.789105, 0.698476 },
-{0.834256, 0, 0.832594, 0.746568, 0 },
-{0, 0, 0, 0, 0},
-{0, 0, 0, 0, 0},
+const double res2[9] = {0.3872, 0.498813, 0.604171, 0.629951, 0.600002, 0.534153, 0.427024, 0.300824, 0.195141 };
+const double r02[ncent][thetabins] = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+{0.114015, 0.116277, 0, 0, 0, 0, 0, 0, 0, 0.122012 },
+{0.10385, 0.106375, 0.11648, 0, 0, 0, 0, 0.152084, 0.116449, 0.106778 },
+{0.120191, 0.123039, 0.134209, 0, 0, 0, 0, 0, 0.136188, 0.124 },
+{0.151126, 0.155544, 0.173591, 0, 0, 0, 0, 0, 0.174351, 0.15612 },
+{0.217719, 0.228114, 0, 0, 0, 0, 0, 0, 0, 0.22895 },
+{0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+{0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+{0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
  };
-const double chisq[9] = {0.525641, 0.442347, 0.498857, 0.538761, 0.596172, 0.530266, 0.459172, 0.536333, 0};
+const double chisq[9] = {0, 0.930226, 1.19355, 1.39133, 1.2499, 0.981304, 0, 0, 0};
 
 
   // Configure output information
@@ -569,4 +569,4 @@ int GetCentBin(float cent)
   return -1;
 }
 
-// root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/UrQMD_7.7/runlist_UrQMD_7.7_00.list","test.root")'
+// root -l -b -q FlowLeeYangZeros.C+'("weekly/demanov/mchybrid/39GeVxpt500new/hybrid39GeV500Evrun022.root","test.root",0)'

@@ -162,7 +162,7 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
   bool bUseProduct = 0; 
   const int ncent = 9; // 0-80%
   const double res2[ncent] = {0.574529, 0.716237, 0.815169, 0.852812, 0.849012, 0.814938, 0.745442, 0.620791, 0.49103};
-  const double dMultMean[ncent] = {3866.61, 3225.48, 2453.03, 1680.19, 1130.98, 734.467, 446.53, 253.215, 130.785};
+  // const double dMultMean[ncent] = {3866.61, 3225.48, 2453.03, 1680.19, 1130.98, 734.467, 446.53, 253.215, 130.785};
   const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
 
   const double maxpt = 3.5; // max pt

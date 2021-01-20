@@ -85,54 +85,27 @@ double BesselJ0(double x)
   }
   return temp;
 }
-
-void PlotV2()
+void GetFlow()
 {
-  bool bUseProduct = 0; 
-  const int ncent = 9; // 0-80%
+  TFile *fi = new TFile("FirstRun.root","read");
+  
+  const int ncent = 9;
   const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
-  const int npt = 12; // 0.2 - 3.5 GeV/c
-  const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
-  // LYZ
-  const int rbins = 100;
-  const double rMax = 0.5;
-  const double rMin = 0.005;
-  const double rMaxSum = 0.5;
-  const double rMinSum = 0.005;
   const int thetabins = 5;
-  const double rootJ0 = 2.4048256;
-  const double J1rootJ0 = 0.519147;
   double theta[thetabins];
-  TComplex cDenominator;
   for (int thetabin = 0; thetabin < thetabins; ++thetabin)
   {
     theta[thetabin] = thetabin * TMath::Pi() / (2.0 * thetabins);
   }
-
-  TFile *fi = new TFile("LYZ.root", "read");
-
-  TProfile *hv2MC = (TProfile*) fi->Get("hv2MC");
-  TProfile *hv2EP = (TProfile*) fi->Get("hv2EP");
+  bool bUseProduct = 0;
+  const double rootJ0 = 2.4048256;
   TProfile *HRes = (TProfile*) fi->Get("HRes");
-
-  TProfile *hv2MCpt[ncent];
-  TProfile *hv2EPpt[ncent];
-
-  for (int icent = 0; icent < ncent; icent++)
-  { // loop over centrality classes
-    hv2EPpt[icent] = (TProfile*) fi->Get(Form("hv2EPpt_%i", icent));
-    hv2MCpt[icent] = (TProfile*) fi->Get(Form("hv2MCpt_%i", icent));
-  } // end of loop over centrality classes
-
+  TProfile *hv2MC = (TProfile*) fi->Get("hv2MC");
+  
   TProfile *prReGthetaSum[ncent][thetabins];
   TProfile *prImGthetaSum[ncent][thetabins];
-  TH1F *hGthetaSum[ncent][thetabins];
-
   TProfile *prReGthetaProduct[ncent][thetabins];
   TProfile *prImGthetaProduct[ncent][thetabins];
-  TH1F *hGthetaProduct[ncent][thetabins];
-
-
   TProfile *prRefMult = (TProfile*) fi->Get("prRefMult");
   TProfile *prQ2x = (TProfile*) fi->Get("prQ2x");
   TProfile *prQ2y = (TProfile*) fi->Get("prQ2y");
@@ -143,15 +116,19 @@ void PlotV2()
     {
       prReGthetaSum[i][j] = (TProfile*) fi->Get(Form("prReGthetaSum_mult%d_theta%d", i, j));
       prImGthetaSum[i][j] = (TProfile*) fi->Get(Form("prImGthetaSum_mult%d_theta%d", i, j));
-      hGthetaSum[i][j] = (TH1F*) fi->Get(Form("hGthetaSum_mult%d_theta%d", i, j));
       if (bUseProduct)
       {
         prReGthetaProduct[i][j] = (TProfile*) fi->Get(Form("prReGthetaProduct_mult%d_theta%d", i, j));
         prImGthetaProduct[i][j] = (TProfile*) fi->Get(Form("prImGthetaProduct_mult%d_theta%d", i, j));
-        hGthetaProduct[i][j] = (TH1F*) fi->Get(Form("hGthetaProduct_mult%d_theta%d", i, j));
-      }
+      }    
     }
   }
+  const double J1rootJ0 = 0.519147;
+  const int npt = 15;
+  const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.2, 3.6};
+  TComplex cDenominator, cExpo;
+  TFile *fi2 = new TFile("SecondRun.root","read");
+  TProfile *hv2EP = (TProfile*) fi2->Get("hv2EP");
   // Differential flow
   TProfile *prReDenom[thetabins];
   TProfile *prImDenom[thetabins];
@@ -159,22 +136,31 @@ void PlotV2()
   TProfile *prImNumer[thetabins][ncent];
   for (int i = 0; i < thetabins; i++)
   {
-    prReDenom[i] = (TProfile*) fi->Get(Form("prReDenom_theta%i",i));
-    prImDenom[i] = (TProfile*) fi->Get(Form("prImDenom_theta%i",i));
+    prReDenom[i] = (TProfile*) fi2->Get(Form("prReDenom_theta%i",i));
+    prImDenom[i] = (TProfile*) fi2->Get(Form("prImDenom_theta%i",i));
 
     for (int j = 0; j < ncent; j++)
     {
-      prReNumer[i][j] = (TProfile*) fi->Get(Form("prReNumer_theta%i_cent%i", i, j));
-      prImNumer[i][j] = (TProfile*) fi->Get(Form("prImNumer_theta%i_cent%i", i, j));
+      prReNumer[i][j] = (TProfile*) fi2->Get(Form("prReNumer_theta%i_cent%i", i, j));
+      prImNumer[i][j] = (TProfile*) fi2->Get(Form("prImNumer_theta%i_cent%i", i, j));
     }
   }
   TProfile *prMultPOI[ncent];
   for (int ic = 0; ic < ncent; ic++)
   {
-    prMultPOI[ic] = (TProfile*) fi->Get(Form("prMultPOI_cent%i",ic));
+    prMultPOI[ic] = (TProfile*) fi2->Get(Form("prMultPOI_cent%i",ic));
   }
+  TProfile *hv2MCpt[ncent];
+  TProfile *hv2EPpt[ncent];
 
-  // GetRes(HRes);
+  for (int icent = 0; icent < ncent; icent++)
+  { // loop over centrality classes
+    hv2EPpt[icent] = (TProfile*) fi2->Get(Form("hv2EPpt_%i", icent));
+    hv2MCpt[icent] = (TProfile*) fi2->Get(Form("hv2MCpt_%i", icent));
+  } // end of loop over centrality classes
+
+  cout << "Resolution:" << endl;
+  GetRes(HRes);
   // GetMultMean(prRefMult);
   double dChi2[ncent];
   float v2int[ncent]={0.}, v2e[ncent]={0.};
@@ -213,7 +199,7 @@ void PlotV2()
     float Q2ymean = prQ2y->GetBinContent(ic+1);
     float chi2 = v2int[ic]*refmult/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2));
     dChi2[ic] = chi2;
-    // cout << chi2 << " ";
+    // cout << chi2 << " ";  
     // if (ic==8) cout << modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2) << endl;
     float temp=0.;
     for(int it=0; it<thetabins; it++) 
@@ -232,15 +218,17 @@ void PlotV2()
     float err2mean = v2int[ic]*sqrt(temp/2./neve/thetabins)/rootJ0/J1rootJ0;
     v2e[ic] = err2mean;
     // cout << err2mean << ", ";
+
+
   } // end of V2RP calculation
   
   cout << " };" << endl;
-  // cout << "const double chisq[" << ncent << "] = {";
-  // for (int ic = 0; ic < ncent-1; ic++)
-  // {
-  //   cout << dChi2[ic] <<", ";
-  // }
-  // cout << dChi2[ncent-1] << "};" << endl;
+  cout << "const double chisq[" << ncent << "] = {";
+  for (int ic = 0; ic < ncent-1; ic++)
+  {
+    cout << dChi2[ic] <<", ";
+  }
+  cout << dChi2[ncent-1] << "};" << endl;
   cout << "My flow" << endl;
   for (int ic=0; ic<ncent; ic++)
   {
@@ -259,6 +247,7 @@ void PlotV2()
   double re, im, reRatio;
   double v2diff[ncent][npt]={0.};
   double v2diffe[ncent][npt]={0.};
+  double v2diff_check[ncent][npt][thetabins]={0.};
   for (int ic = 0; ic < ncent; ic++)
   {
     /* Computation of statistical error bars on the average estimates */
@@ -275,6 +264,7 @@ void PlotV2()
       exp(-sqr(rootJ0/dChi2[ic])*cos(arg[k1])/2.)*
       BesselJ0(2.*rootJ0*cos(arg[k1]/2.)))*cos(arg[k1]);
     }
+    int thetacount[npt] = {0};
     for (int thetabin = 0; thetabin < thetabins; thetabin++)
     {
       re = prReDenom[thetabin]->GetBinContent(ic+1);
@@ -283,6 +273,7 @@ void PlotV2()
       if (cDenominator.Rho()==0) {
 	      cerr<<"WARNING: modulus of cDenominator is zero"<<endl;
 	    }
+      
       for (int ipt = 0; ipt < npt; ipt++)
       {
         re = prReNumer[thetabin][ic]->GetBinContent(ipt+1);
@@ -292,15 +283,24 @@ void PlotV2()
           reRatio = (cNumeratorPOI/cDenominator).Re();
           double dVetaPOI = reRatio * dVtheta[ic][thetabin];
           // cout << "reRatio * dVtheta[ic][thetabin] = " << reRatio <<" * "<< dVtheta[ic][thetabin] << endl;
-          v2diff[ic][ipt] += dVetaPOI;
+          if (dVtheta[ic][thetabin] != 0)
+          { 
+            v2diff[ic][ipt] += dVetaPOI;
+            v2diff_check[ic][ipt][thetabin] += dVetaPOI;
+            thetacount[ipt]++;
+          }
         }
-
       }
     }
     double neve = prReDenom[0]->GetBinEntries(ic+1);
     for (int ipt = 0; ipt < npt; ipt++)
     {    
-      v2diff[ic][ipt] /= thetabins;
+      v2diff[ic][ipt] /= thetacount[ipt];
+      for (int thetabin = 0; thetabin < thetabins; thetabin++)
+      {
+        if (thetacount[ipt] != 0) v2diff_check[ic][ipt][thetabin] /= thetacount[ipt];
+        else{v2diff_check[ic][ipt][thetabin] = 999.;}
+      }
       double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
       v2diffe[ic][ipt] = sqrt(temp/rpmult/neve/thetabins)/2./J1rootJ0;
       // if (ic == 2) cout << v2diffe[ic][ipt] << ", ";
@@ -352,7 +352,7 @@ void PlotV2()
   hv2MC->SetMarkerStyle(25);
   hv2MC->SetMarkerColor(kBlack);
   hv2MC->SetLineColor(kBlack);
-  hv2MC->SetTitle("Toy Model, 1M events, <M>=1000;centrality, %;v_{2}");
+  hv2MC->SetTitle("UrQMD, Au+Au #sqrt{s_{NN}}=7.7 GeV, h^{#pm}, |#eta|<1.5, 0.2<p_{T}<3.0 GeV/c;centrality, %;v_{2}");
   hv2MC->GetYaxis()->SetRangeUser(0,0.1);
   hv2MC->GetXaxis()->SetLimits(0,60);
   hv2MC->Draw();
@@ -370,7 +370,7 @@ void PlotV2()
   c.SaveAs("Flow.pdf");
   //================= Drawing =========================
   TCanvas c2;
-  TPaveLabel* title = new TPaveLabel(0.1,0.96,0.9,0.99,"Toy Model, 1M events, <M>=1000");
+  TPaveLabel* title = new TPaveLabel(0.1,0.96,0.9,0.99,"UrQMD, Au+Au #sqrt{s_{NN}}=7.7 GeV, h^{#pm}, |#eta|<1.5");
   title->SetBorderSize(0);
   title->SetFillColor(0);
   // title->SetTextFont(textFont);
@@ -418,7 +418,7 @@ void PlotV2()
   c2.SaveAs(Form("DifFlow.pdf"));
   //================= Drawing =========================
   TCanvas c3("c3","",1400,700);
-  TPaveLabel* title3 = new TPaveLabel(0.1,0.96,0.9,0.99,"Toy Model, 1M events, <M>=1000");
+  TPaveLabel* title3 = new TPaveLabel(0.1,0.96,0.9,0.99,"UrQMD, Au+Au #sqrt{s_{NN}}=7.7 GeV, h^{#pm}, |#eta|<1.5");
   title3->SetBorderSize(0);
   title3->SetFillColor(0);
   // title3->SetTextFont(textFont);
@@ -495,4 +495,28 @@ void PlotV2()
     lineOne.DrawLine(0.2,1.,3.5,1.);
   }
   c3.SaveAs("RatioDiffFlow.pdf");
+  bool bDebug = 1;
+  if (bDebug)
+  {
+    // Cross check integrated flow
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      float refmult = prRefMult->GetBinContent(ic+1);
+      for (int thetabin = 0; thetabin < thetabins; thetabin++)
+      {
+        double integratedFlow = 0;
+        double denominator = 0;
+        for (int ipt = 0; ipt < npt; ipt++)
+        {
+          double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
+          integratedFlow += v2diff_check[ic][ipt][thetabin] * rpmult;
+          denominator += rpmult;
+        }
+        if (denominator != 0) integratedFlow /= denominator;
+        cout <<"cent: "<< ic << " " <<dVtheta[ic][thetabin]/refmult << "\t" << integratedFlow << endl;
+      }
+    }
+  }
+
+
 }

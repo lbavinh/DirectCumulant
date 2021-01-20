@@ -86,7 +86,7 @@ double BesselJ0(double x)
   return temp;
 }
 
-void PlotV2()
+void PlotV2(TString inputFileName = "LYZ.root")
 {
   bool bUseProduct = 0; 
   const int ncent = 9; // 0-80%
@@ -105,11 +105,9 @@ void PlotV2()
   double theta[thetabins];
   TComplex cDenominator;
   for (int thetabin = 0; thetabin < thetabins; ++thetabin)
-  {
-    theta[thetabin] = thetabin * TMath::Pi() / (2.0 * thetabins);
-  }
+  {theta[thetabin] = thetabin * TMath::Pi() / (2.0 * thetabins);}
 
-  TFile *fi = new TFile("LYZ.root", "read");
+  TFile *fi = new TFile(inputFileName.Data(), "read");
 
   TProfile *hv2MC = (TProfile*) fi->Get("hv2MC");
   TProfile *hv2EP = (TProfile*) fi->Get("hv2EP");
@@ -169,10 +167,7 @@ void PlotV2()
     }
   }
   TProfile *prMultPOI[ncent];
-  for (int ic = 0; ic < ncent; ic++)
-  {
-    prMultPOI[ic] = (TProfile*) fi->Get(Form("prMultPOI_cent%i",ic));
-  }
+  for (int ic = 0; ic < ncent; ic++) {prMultPOI[ic] = (TProfile*) fi->Get(Form("prMultPOI_cent%i",ic));}
 
   // GetRes(HRes);
   // GetMultMean(prRefMult);
@@ -235,17 +230,12 @@ void PlotV2()
   } // end of V2RP calculation
   
   cout << " };" << endl;
-  // cout << "const double chisq[" << ncent << "] = {";
-  // for (int ic = 0; ic < ncent-1; ic++)
-  // {
-  //   cout << dChi2[ic] <<", ";
-  // }
-  // cout << dChi2[ncent-1] << "};" << endl;
-  cout << "My flow" << endl;
-  for (int ic=0; ic<ncent; ic++)
-  {
-    cout << v2int[ic] << ", " << hv2MC->GetBinContent(ic+1) << endl;
-  }
+  // ===== Get Chi2 ===== //
+  cout << "const double chisq[" << ncent << "] = {";
+  for (int ic = 0; ic < ncent-1; ic++)
+  {cout << dChi2[ic] <<", ";}
+  cout << dChi2[ncent-1] << "};" << endl;
+  // ===== Get Chi2 ===== //
   TH1F *hLYZ = new TH1F("hLYZ","",ncent,&bin_cent[0]);
   for (int ic=0; ic<ncent; ic++)
   {
@@ -259,6 +249,7 @@ void PlotV2()
   double re, im, reRatio;
   double v2diff[ncent][npt]={0.};
   double v2diffe[ncent][npt]={0.};
+  double dV2thetaDif[ncent][npt][thetabins] = {0.};
   for (int ic = 0; ic < ncent; ic++)
   {
     /* Computation of statistical error bars on the average estimates */
@@ -290,9 +281,10 @@ void PlotV2()
         cNumeratorPOI = TComplex(re, im);
         if (cDenominator.Rho()!=0) {
           reRatio = (cNumeratorPOI/cDenominator).Re();
-          double dVetaPOI = reRatio * dVtheta[ic][thetabin];
+          double dVthetaPOI = reRatio * dVtheta[ic][thetabin];
           // cout << "reRatio * dVtheta[ic][thetabin] = " << reRatio <<" * "<< dVtheta[ic][thetabin] << endl;
-          v2diff[ic][ipt] += dVetaPOI;
+          v2diff[ic][ipt] += dVthetaPOI;
+          dV2thetaDif[ic][ipt][thetabin] = dVthetaPOI;
         }
 
       }
@@ -307,6 +299,24 @@ void PlotV2()
     }
 
   }
+  // Cross-check // => Result: Correct!
+  // for (int it = 0; it < thetabins; it++)
+  // {
+  //   cout << "Theta = " << theta[it] << endl;
+  //   for (int ic = 0; ic < ncent; ic++)
+  //   {
+  //     double v2IntOverPt = 0, w = 0, sumW = 0;
+  //     for (int ipt = 0; ipt < npt; ipt++)
+  //     {
+  //       w = prMultPOI[ic]->GetBinContent(ipt+1);
+  //       v2IntOverPt += dV2thetaDif[ic][ipt][it] * w;
+  //       sumW += w;
+  //     }
+  //     v2IntOverPt /= sumW;
+
+  //     cout << "Cent: " << ic << " " << v2IntOverPt << "\t" << dVtheta[ic][it] / prRefMult->GetBinContent(ic+1) << endl;
+  //   }
+  // }
   double v2diffMC[ncent][npt] = {0.}, v2diffeMC[ncent][npt] = {0.}, v2diffEP[ncent][npt] = {0.}, v2diffeEP[ncent][npt] = {0.};
   for (int ic = 0; ic < ncent; ic++)
   {

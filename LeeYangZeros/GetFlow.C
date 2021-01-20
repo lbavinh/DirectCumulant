@@ -286,7 +286,7 @@ void GetFlow()
           if (dVtheta[ic][thetabin] != 0)
           { 
             v2diff[ic][ipt] += dVetaPOI;
-            v2diff_check[ic][ipt][thetabin] += dVetaPOI;
+            v2diff_check[ic][ipt][thetabin] = dVetaPOI;
             thetacount[ipt]++;
           }
         }
@@ -296,11 +296,6 @@ void GetFlow()
     for (int ipt = 0; ipt < npt; ipt++)
     {    
       v2diff[ic][ipt] /= thetacount[ipt];
-      for (int thetabin = 0; thetabin < thetabins; thetabin++)
-      {
-        if (thetacount[ipt] != 0) v2diff_check[ic][ipt][thetabin] /= thetacount[ipt];
-        else{v2diff_check[ic][ipt][thetabin] = 999.;}
-      }
       double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
       v2diffe[ic][ipt] = sqrt(temp/rpmult/neve/thetabins)/2./J1rootJ0;
       // if (ic == 2) cout << v2diffe[ic][ipt] << ", ";
@@ -498,8 +493,8 @@ void GetFlow()
   bool bDebug = 1;
   if (bDebug)
   {
-    // Cross check integrated flow
-    for (int ic = 0; ic < ncent; ic++)
+    // Cross check integrated flow - correct!
+    for (int ic = 0; ic < ncent-2; ic++)
     {
       float refmult = prRefMult->GetBinContent(ic+1);
       for (int thetabin = 0; thetabin < thetabins; thetabin++)

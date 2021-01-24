@@ -85,12 +85,11 @@ double BesselJ0(double x)
   }
   return temp;
 }
-
-void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileName_sencondRun = "LYZ_M_3000_run2.root")
+void GetFlow()
 {
-  TFile *fi = new TFile(inputFileName.Data(), "read");
-
-  const int ncent = 9; // 0-80%
+  TFile *fi = new TFile("FirstRun.root","read");
+  
+  const int ncent = 9;
   const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
   const int thetabins = 5;
   double theta[thetabins];
@@ -99,19 +98,14 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
     theta[thetabin] = thetabin * TMath::Pi() / (2.0 * thetabins);
   }
   bool bUseProduct = 0;
-    const double rootJ0 = 2.4048256;
-    TProfile *HRes = (TProfile*) fi->Get("HRes");
+  const double rootJ0 = 2.4048256;
+  TProfile *HRes = (TProfile*) fi->Get("HRes");
   TProfile *hv2MC = (TProfile*) fi->Get("hv2MC");
-
+  
   TProfile *prReGthetaSum[ncent][thetabins];
   TProfile *prImGthetaSum[ncent][thetabins];
-  TH1F *hGthetaSum[ncent][thetabins];
-
   TProfile *prReGthetaProduct[ncent][thetabins];
   TProfile *prImGthetaProduct[ncent][thetabins];
-  TH1F *hGthetaProduct[ncent][thetabins];
-
-
   TProfile *prRefMult = (TProfile*) fi->Get("prRefMult");
   TProfile *prQ2x = (TProfile*) fi->Get("prQ2x");
   TProfile *prQ2y = (TProfile*) fi->Get("prQ2y");
@@ -122,20 +116,18 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
     {
       prReGthetaSum[i][j] = (TProfile*) fi->Get(Form("prReGthetaSum_mult%d_theta%d", i, j));
       prImGthetaSum[i][j] = (TProfile*) fi->Get(Form("prImGthetaSum_mult%d_theta%d", i, j));
-      hGthetaSum[i][j] = (TH1F*) fi->Get(Form("hGthetaSum_mult%d_theta%d", i, j));
       if (bUseProduct)
       {
         prReGthetaProduct[i][j] = (TProfile*) fi->Get(Form("prReGthetaProduct_mult%d_theta%d", i, j));
         prImGthetaProduct[i][j] = (TProfile*) fi->Get(Form("prImGthetaProduct_mult%d_theta%d", i, j));
-        hGthetaProduct[i][j] = (TH1F*) fi->Get(Form("hGthetaProduct_mult%d_theta%d", i, j));
-      }
+      }    
     }
   }
   const double J1rootJ0 = 0.519147;
-  const int npt = 12;
-  const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};  
+  const int npt = 15;
+  const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.2, 3.6};
   TComplex cDenominator, cExpo;
-  TFile *fi2 = new TFile(inputFileName_sencondRun.Data(),"read");
+  TFile *fi2 = new TFile("SecondRun.root","read");
   TProfile *hv2EP = (TProfile*) fi2->Get("hv2EP");
   // Differential flow
   TProfile *prReDenom[thetabins];
@@ -166,7 +158,9 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
     hv2EPpt[icent] = (TProfile*) fi2->Get(Form("hv2EPpt_%i", icent));
     hv2MCpt[icent] = (TProfile*) fi2->Get(Form("hv2MCpt_%i", icent));
   } // end of loop over centrality classes
-  // GetRes(HRes);
+
+  cout << "Resolution:" << endl;
+  GetRes(HRes);
   // GetMultMean(prRefMult);
   double dChi2[ncent];
   float v2int[ncent]={0.}, v2e[ncent]={0.};
@@ -205,7 +199,7 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
     float Q2ymean = prQ2y->GetBinContent(ic+1);
     float chi2 = v2int[ic]*refmult/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2));
     dChi2[ic] = chi2;
-    // cout << chi2 << " ";
+    // cout << chi2 << " ";  
     // if (ic==8) cout << modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2) << endl;
     float temp=0.;
     for(int it=0; it<thetabins; it++) 
@@ -224,15 +218,22 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
     float err2mean = v2int[ic]*sqrt(temp/2./neve/thetabins)/rootJ0/J1rootJ0;
     v2e[ic] = err2mean;
     // cout << err2mean << ", ";
+
+
   } // end of V2RP calculation
   
   cout << " };" << endl;
-  // ===== Get Chi2 ===== //
   cout << "const double chisq[" << ncent << "] = {";
   for (int ic = 0; ic < ncent-1; ic++)
-  {cout << dChi2[ic] <<", ";}
+  {
+    cout << dChi2[ic] <<", ";
+  }
   cout << dChi2[ncent-1] << "};" << endl;
-  // ===== Get Chi2 ===== //
+  cout << "My flow" << endl;
+  for (int ic=0; ic<ncent; ic++)
+  {
+    cout << v2int[ic] << ", " << hv2MC->GetBinContent(ic+1) << endl;
+  }
   TH1F *hLYZ = new TH1F("hLYZ","",ncent,&bin_cent[0]);
   for (int ic=0; ic<ncent; ic++)
   {
@@ -246,7 +247,7 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
   double re, im, reRatio;
   double v2diff[ncent][npt]={0.};
   double v2diffe[ncent][npt]={0.};
-  double dV2thetaDif[ncent][npt][thetabins] = {0.};
+  double v2diff_check[ncent][npt][thetabins]={0.};
   for (int ic = 0; ic < ncent; ic++)
   {
     /* Computation of statistical error bars on the average estimates */
@@ -272,7 +273,7 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
       if (cDenominator.Rho()==0) {
 	      cerr<<"WARNING: modulus of cDenominator is zero"<<endl;
 	    }
-
+      
       for (int ipt = 0; ipt < npt; ipt++)
       {
         re = prReNumer[thetabin][ic]->GetBinContent(ipt+1);
@@ -280,12 +281,12 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
         cNumeratorPOI = TComplex(re, im);
         if (cDenominator.Rho()!=0) {
           reRatio = (cNumeratorPOI/cDenominator).Re();
-          double dVthetaPOI = reRatio * dVtheta[ic][thetabin];
+          double dVetaPOI = reRatio * dVtheta[ic][thetabin];
           // cout << "reRatio * dVtheta[ic][thetabin] = " << reRatio <<" * "<< dVtheta[ic][thetabin] << endl;
           if (dVtheta[ic][thetabin] != 0)
           { 
-            v2diff[ic][ipt] += dVthetaPOI;
-            dV2thetaDif[ic][ipt][thetabin] = dVthetaPOI;
+            v2diff[ic][ipt] += dVetaPOI;
+            v2diff_check[ic][ipt][thetabin] = dVetaPOI;
             thetacount[ipt]++;
           }
         }
@@ -301,24 +302,6 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
     }
 
   }
-  // Cross-check // => Result: Correct!
-  // for (int it = 0; it < thetabins; it++)
-  // {
-  //   cout << "Theta = " << theta[it] << endl;
-  //   for (int ic = 0; ic < ncent; ic++)
-  //   {
-  //     double v2IntOverPt = 0, w = 0, sumW = 0;
-  //     for (int ipt = 0; ipt < npt; ipt++)
-  //     {
-  //       w = prMultPOI[ic]->GetBinContent(ipt+1);
-  //       v2IntOverPt += dV2thetaDif[ic][ipt][it] * w;
-  //       sumW += w;
-  //     }
-  //     v2IntOverPt /= sumW;
-
-  //     cout << "Cent: " << ic << " " << v2IntOverPt << "\t" << dVtheta[ic][it] / prRefMult->GetBinContent(ic+1) << endl;
-  //   }
-  // }
   double v2diffMC[ncent][npt] = {0.}, v2diffeMC[ncent][npt] = {0.}, v2diffEP[ncent][npt] = {0.}, v2diffeEP[ncent][npt] = {0.};
   for (int ic = 0; ic < ncent; ic++)
   {
@@ -364,7 +347,7 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
   hv2MC->SetMarkerStyle(25);
   hv2MC->SetMarkerColor(kBlack);
   hv2MC->SetLineColor(kBlack);
-  hv2MC->SetTitle("Toy Model, 1M events, <M>=3000;centrality, %;v_{2}");
+  hv2MC->SetTitle("UrQMD, Au+Au #sqrt{s_{NN}}=7.7 GeV, h^{#pm}, |#eta|<1.5, 0.2<p_{T}<3.0 GeV/c;centrality, %;v_{2}");
   hv2MC->GetYaxis()->SetRangeUser(0,0.1);
   hv2MC->GetXaxis()->SetLimits(0,60);
   hv2MC->Draw();
@@ -382,7 +365,7 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
   c.SaveAs("Flow.pdf");
   //================= Drawing =========================
   TCanvas c2;
-  TPaveLabel* title = new TPaveLabel(0.1,0.96,0.9,0.99,"Toy Model, 1M events, <M>=3000");
+  TPaveLabel* title = new TPaveLabel(0.1,0.96,0.9,0.99,"UrQMD, Au+Au #sqrt{s_{NN}}=7.7 GeV, h^{#pm}, |#eta|<1.5");
   title->SetBorderSize(0);
   title->SetFillColor(0);
   // title->SetTextFont(textFont);
@@ -430,7 +413,7 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
   c2.SaveAs(Form("DifFlow.pdf"));
   //================= Drawing =========================
   TCanvas c3("c3","",1400,700);
-  TPaveLabel* title3 = new TPaveLabel(0.1,0.96,0.9,0.99,"Toy Model, 1M events, <M>=3000");
+  TPaveLabel* title3 = new TPaveLabel(0.1,0.96,0.9,0.99,"UrQMD, Au+Au #sqrt{s_{NN}}=7.7 GeV, h^{#pm}, |#eta|<1.5");
   title3->SetBorderSize(0);
   title3->SetFillColor(0);
   // title3->SetTextFont(textFont);
@@ -507,4 +490,28 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
     lineOne.DrawLine(0.2,1.,3.5,1.);
   }
   c3.SaveAs("RatioDiffFlow.pdf");
+  bool bDebug = 1;
+  if (bDebug)
+  {
+    // Cross check integrated flow - correct!
+    for (int ic = 0; ic < ncent-2; ic++)
+    {
+      float refmult = prRefMult->GetBinContent(ic+1);
+      for (int thetabin = 0; thetabin < thetabins; thetabin++)
+      {
+        double integratedFlow = 0;
+        double denominator = 0;
+        for (int ipt = 0; ipt < npt; ipt++)
+        {
+          double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
+          integratedFlow += v2diff_check[ic][ipt][thetabin] * rpmult;
+          denominator += rpmult;
+        }
+        if (denominator != 0) integratedFlow /= denominator;
+        cout <<"cent: "<< ic << " " <<dVtheta[ic][thetabin]/refmult << "\t" << integratedFlow << endl;
+      }
+    }
+  }
+
+
 }

@@ -29,9 +29,9 @@ using std::endl;
 // const int npid = 8;  // h+, pions+, kaons+, protons+, h-, pions-, kaons-, protons-
 const int ncent = 9; // 0-80%
 const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
-const int npt = 15; // 0.5 - 3.6 GeV/c - number of pT bins
-const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.2, 3.6};
-const double maxpt = 3.;  // max pt
+const int npt = 14; // 0.5 - 3.6 GeV/c - number of pT bins
+const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
+const double maxpt = 3.0;  // max pt
 const double minpt = 0.2; // min pt
 const double maxptRF = 3.;
 const double minptRF = 0.2;
@@ -47,15 +47,17 @@ const double rMaxSum = 0.9;
 const double rMinSum = 0.0005;
 const int thetabins = 10;
 
-class CQVector{
- public:
+class CQVector
+{
+public:
   CQVector();
   virtual ~CQVector(){};
   void Reset();
   void CalQVector(double phi);
   double X() { return this->fQx; }
   double Y() { return this->fQy; }
- private:
+
+private:
   double fQx;
   double fQy;
 };
@@ -73,25 +75,39 @@ void CQVector::CalQVector(double phi)
 
 class CGtheta
 {
- public:
-  CGtheta(bool bUseProduct);
-  virtual ~CGtheta(){}
+public:
+  CGtheta(bool bFirstRun, bool bUseProduct);
+  virtual ~CGtheta() {}
+  void SetDebugFlag(bool bDebug) {this->fDebug = bDebug;}
   void SetUseProduct(bool kt) { this->fUseProduct = kt; }
   bool GetUseProduct() const { return this->fUseProduct; }
   // TH1F* GetHistGthetaSum() const { return this->fHistGthetaSum[0][0]; }
   // TH1F* GetHistGthetaProduct() const { return this->fHistGthetaProduct[0][0]; }
-  void FillHistS(int icent, int mult, CQVector* Q);
-  void FillHistSP(int icent, int mult, CQVector* Q);
+  void FillHistGF(int icent, CQVector *Q);
   void SaveHist();
 
-  void Reset();                                               // Set GFPro to 1, GFSum and Qtheta to 0
-  void CalQtheta(CQVector* Q);
-  double* GetQtheta();
-  void CalGFProduct(double phi);
+  void Reset(); // Set GFPro to 1, GFSum and Qtheta to 0
+  void CalQtheta(CQVector *Q);
+  void CalGFProduct(double phi, int icent);
   void CalGFSum();
 
- private:
+  void ProcessRootFileWithHistFromFirstRun(TString inputFileNameFromFirstRun);
+  TH1F *FillHistGtheta(TProfile *const &prReGtheta, TProfile *const &prImGtheta);
+  double GetR0(TH1F *const &hist);
+  void CalMult();
+  void CalMult(double pt);
+  double GetMult() const { return this->fMult; }
+  void CalDenominatorPOI(int icent);
+  void CalNumeratorPOI(int icent, double phi, double pt);
+
+private:
+  bool fDebug;
   bool fUseProduct;
+  bool fFirstRun;
+  double fTheta[thetabins];
+  double fQtheta[thetabins];
+
+  // First run
   TProfile *fPrReGthetaSum[ncent][thetabins];
   TProfile *fPrImGthetaSum[ncent][thetabins];
   TH1F *fHistGthetaSum[ncent][thetabins];
@@ -102,8 +118,7 @@ class CGtheta
 
   double fRSum[rbins];
   double fRProduct[rbins];
-  double fTheta[thetabins];
-  double fQtheta[thetabins];
+  double fMult;
   TComplex fGenFunS[rbins][thetabins]; // sum
   TComplex fGenFunP[rbins][thetabins]; // product
 
@@ -112,87 +127,301 @@ class CGtheta
   TProfile *prQ2y;
   TProfile *prQ2ModSq;
 
-
+  // Second run
+  // Differential flow
+  TProfile *prReDenom[thetabins];
+  TProfile *prImDenom[thetabins];
+  TProfile *prReNumer[thetabins][ncent];
+  TProfile *prImNumer[thetabins][ncent];
+  TProfile *prMultPOI[ncent];
+  TProfile *prReDenomPro[thetabins];
+  TProfile *prImDenomPro[thetabins];
+  TProfile *prReNumerPro[thetabins][ncent];
+  TProfile *prImNumerPro[thetabins][ncent];
+  double fMultPOI[npt];
+  TComplex fExponent[thetabins];
+  TComplex fdGr0[thetabins];
+  TComplex fGenfunPror0[thetabins];
+  double fR02Sum[ncent][thetabins];
+  double fR02Pro[ncent][thetabins];
 };
-CGtheta::CGtheta(bool bUseProduct) : fUseProduct(bUseProduct)
+
+void CGtheta::CalNumeratorPOI(int icent, double phi, double pt)
 {
-  for (int i = 0; i < ncent; ++i)
+  for (int it = 0; it < thetabins; ++it)
   {
-    for (int j = 0; j < thetabins; ++j)
-    {
-      fPrReGthetaSum[i][j] = new TProfile(Form("prReGthetaSum_mult%d_theta%d", i, j), "", rbins, rMinSum, rMaxSum);
-      fPrImGthetaSum[i][j] = new TProfile(Form("prImGthetaSum_mult%d_theta%d", i, j), "", rbins, rMinSum, rMaxSum);
-      fHistGthetaSum[i][j] = new TH1F(Form("hGthetaSum_mult%d_theta%d", i, j), "", rbins, rMinSum, rMaxSum);
-      if (fUseProduct)
-      {
-        fPrReGthetaProduct[i][j] = new TProfile(Form("prReGthetaProduct_mult%d_theta%d", i, j), "", rbins, rMin, rMax);
-        fPrImGthetaProduct[i][j] = new TProfile(Form("prImGthetaProduct_mult%d_theta%d", i, j), "", rbins, rMin, rMax);
-        fHistGthetaProduct[i][j] = new TH1F(Form("hGthetaProduct_mult%d_theta%d", i, j), "", rbins, rMin, rMax);
-      }
+    double dCosTerm = TMath::Cos(2.0 * (phi - fTheta[it]));
+    TComplex cNumeratorPOI = dCosTerm * (TComplex::Exp(fExponent[it]));
+    prReNumer[it][icent]->Fill(pt, cNumeratorPOI.Re());
+    prImNumer[it][icent]->Fill(pt, cNumeratorPOI.Im());
+    if (fUseProduct){
+      TComplex cCosTermComplex(1., fR02Pro[icent][it] * dCosTerm);
+      TComplex cNumeratorPOIPro = fGenfunPror0[it] * dCosTerm / cCosTermComplex;   
+      prReNumerPro[it][icent]->Fill(pt, cNumeratorPOIPro.Re());
+      prImNumerPro[it][icent]->Fill(pt, cNumeratorPOIPro.Im());          
     }
   }
+}
 
-  prRefMult = new TProfile("prRefMult", "", ncent, 0, ncent);
-  prQ2x = new TProfile("prQ2x", "", ncent, 0, ncent);
-  prQ2y = new TProfile("prQ2y", "", ncent, 0, ncent);
-  prQ2ModSq = new TProfile("prQ2ModSq", "", ncent, 0, ncent);
+void CGtheta::CalMult()
+{
+  fMult++;
+}
 
+void CGtheta::CalMult(double pt)
+{
+  Int_t ipt = -1;
+  for (int j = 0; j < npt; j++)
+    if (pt >= bin_pT[j] && pt < bin_pT[j + 1])
+      ipt = j;
+  fMultPOI[ipt]++;
+}
+
+void CGtheta::CalDenominatorPOI(int icent)
+{
+  for (int ipt = 0; ipt < npt; ipt++)
+  {
+    prMultPOI[icent]->Fill(ipt + 0.5, fMultPOI[ipt]);
+  }
+  // Differential LYZ
+
+  for (int it = 0; it < thetabins; it++)
+  {
+
+    fExponent[it] = TComplex(0., fR02Sum[icent][it] * fQtheta[it]);
+    TComplex cDenominator = fQtheta[it] * (TComplex::Exp(fExponent[it])); // BP eq 12
+
+    prReDenom[it]->Fill(icent, cDenominator.Re());
+    prImDenom[it]->Fill(icent, cDenominator.Im());
+  }
+  if (fUseProduct)
+  {
+    for (int it = 0; it < thetabins; it++)
+    {
+      prReDenomPro[it]->Fill(icent, (fGenfunPror0[it] * fdGr0[it]).Re());
+      prImDenomPro[it]->Fill(icent, (fGenfunPror0[it] * fdGr0[it]).Im());
+    }
+  }  
+}
+
+CGtheta::CGtheta(bool bFirstRun, bool bUseProduct) : fFirstRun(bFirstRun), fUseProduct(bUseProduct), fDebug(0)
+{
   for (int itheta = 0; itheta < thetabins; itheta++)
   {
     fTheta[itheta] = itheta * TMath::Pi() / (2.0 * thetabins);
   }
-  for (int rbin = 0; rbin < rbins; ++rbin)
+  if (fFirstRun)
   {
-    if (fUseProduct) fRProduct[rbin] = fHistGthetaProduct[0][0]->GetBinCenter(rbin + 1);
-    fRSum[rbin] = fHistGthetaSum[0][0]->GetBinCenter(rbin + 1);
-    // cout << r[rbin] << " ";
-  }
+    for (int i = 0; i < ncent; ++i)
+    {
+      for (int j = 0; j < thetabins; ++j)
+      {
+        fPrReGthetaSum[i][j] = new TProfile(Form("prReGthetaSum_mult%d_theta%d", i, j), "", rbins, rMinSum, rMaxSum);
+        fPrImGthetaSum[i][j] = new TProfile(Form("prImGthetaSum_mult%d_theta%d", i, j), "", rbins, rMinSum, rMaxSum);
+        fHistGthetaSum[i][j] = new TH1F(Form("hGthetaSum_mult%d_theta%d", i, j), "", rbins, rMinSum, rMaxSum);
+        if (fUseProduct)
+        {
+          fPrReGthetaProduct[i][j] = new TProfile(Form("prReGthetaProduct_mult%d_theta%d", i, j), "", rbins, rMin, rMax);
+          fPrImGthetaProduct[i][j] = new TProfile(Form("prImGthetaProduct_mult%d_theta%d", i, j), "", rbins, rMin, rMax);
+          fHistGthetaProduct[i][j] = new TH1F(Form("hGthetaProduct_mult%d_theta%d", i, j), "", rbins, rMin, rMax);
+        }
+      }
+    }
 
+    prRefMult = new TProfile("prRefMult", "", ncent, 0, ncent);
+    prQ2x = new TProfile("prQ2x", "", ncent, 0, ncent);
+    prQ2y = new TProfile("prQ2y", "", ncent, 0, ncent);
+    prQ2ModSq = new TProfile("prQ2ModSq", "", ncent, 0, ncent);
+
+    for (int rbin = 0; rbin < rbins; ++rbin)
+    {
+      if (fUseProduct)
+        fRProduct[rbin] = fHistGthetaProduct[0][0]->GetBinCenter(rbin + 1);
+      fRSum[rbin] = fHistGthetaSum[0][0]->GetBinCenter(rbin + 1);
+      // cout << r[rbin] << " ";
+    }
+  }
+  else
+  {
+    for (int i = 0; i < thetabins; i++)
+    {
+      prReDenom[i] = new TProfile(Form("prReDenom_theta%i", i), "", ncent, 0, ncent);
+      prImDenom[i] = new TProfile(Form("prImDenom_theta%i", i), "", ncent, 0, ncent);
+
+      for (int j = 0; j < ncent; j++)
+      {
+        prReNumer[i][j] = new TProfile(Form("prReNumer_theta%i_cent%i", i, j), "", npt, &bin_pT[0]);
+        prImNumer[i][j] = new TProfile(Form("prImNumer_theta%i_cent%i", i, j), "", npt, &bin_pT[0]);
+      }
+    }
+    if (fUseProduct)
+    {
+      for (int i = 0; i < thetabins; i++)
+      {
+        prReDenomPro[i] = new TProfile(Form("prReDenomPro_theta%i", i), "", ncent, 0, ncent);
+        prImDenomPro[i] = new TProfile(Form("prImDenomPro_theta%i", i), "", ncent, 0, ncent);
+
+        for (int j = 0; j < ncent; j++)
+        {
+          prReNumerPro[i][j] = new TProfile(Form("prReNumerPro_theta%i_cent%i", i, j), "", npt, &bin_pT[0]);
+          prImNumerPro[i][j] = new TProfile(Form("prImNumerPro_theta%i_cent%i", i, j), "", npt, &bin_pT[0]);
+        }
+      }
+    }
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      prMultPOI[ic] = new TProfile(Form("prMultPOI_cent%i", ic), "", npt, 0, npt);
+    }
+  }
 }
-void CGtheta::FillHistS(int icent, int mult, CQVector* Q)
+void CGtheta::FillHistGF(int icent, CQVector *Q)
 {
   for (int rbin = 0; rbin < rbins; rbin++)
   {
-    for (int thetabin = 0; thetabin < thetabins; thetabin++)
-    {    
-      fPrReGthetaSum[icent][thetabin]->Fill(fRSum[rbin], fGenFunS[rbin][thetabin].Re());
-      fPrImGthetaSum[icent][thetabin]->Fill(fRSum[rbin], fGenFunS[rbin][thetabin].Im());
+    for (int it = 0; it < thetabins; it++)
+    {
+      fPrReGthetaSum[icent][it]->Fill(fRSum[rbin], fGenFunS[rbin][it].Re());
+      fPrImGthetaSum[icent][it]->Fill(fRSum[rbin], fGenFunS[rbin][it].Im());
     }
   }
   double Qx = Q->X();
   double Qy = Q->Y();
   double QModSq = Qx * Qx + Qy * Qy;
-  prRefMult->Fill(icent, mult);
+  prRefMult->Fill(icent, fMult);
   prQ2x->Fill(icent, Qx);
   prQ2y->Fill(icent, Qy);
   prQ2ModSq->Fill(icent, QModSq);
-}
-
-void CGtheta::FillHistSP(int icent, int mult, CQVector* Q)
-{
+  if (fUseProduct){
   for (int rbin = 0; rbin < rbins; rbin++)
   {
-    for (int thetabin = 0; thetabin < thetabins; thetabin++)
-    {   
-      fPrReGthetaSum[icent][thetabin]->Fill(fRSum[rbin], fGenFunS[rbin][thetabin].Re());
-      fPrImGthetaSum[icent][thetabin]->Fill(fRSum[rbin], fGenFunS[rbin][thetabin].Im());
+    for (int it = 0; it < thetabins; it++)
+    {
+      fPrReGthetaProduct[icent][it]->Fill(fRProduct[rbin], fGenFunP[rbin][it].Re());
+      fPrImGthetaProduct[icent][it]->Fill(fRProduct[rbin], fGenFunP[rbin][it].Im());
+    }
+  }}
 
-      fPrReGthetaProduct[icent][thetabin]->Fill(fRSum[rbin], fGenFunP[rbin][thetabin].Re());
-      fPrImGthetaProduct[icent][thetabin]->Fill(fRSum[rbin], fGenFunP[rbin][thetabin].Im());
+}
+
+void CGtheta::ProcessRootFileWithHistFromFirstRun(TString inputFileNameFromFirstRun)
+{
+  TFile *fileHist = new TFile(inputFileNameFromFirstRun.Data(), "read");
+  TProfile *prReGthetaSum[ncent][thetabins];
+  TProfile *prImGthetaSum[ncent][thetabins];
+  TProfile *prReGthetaProduct[ncent][thetabins];
+  TProfile *prImGthetaProduct[ncent][thetabins];
+
+  for (int i = 0; i < ncent; ++i)
+  {
+    for (int j = 0; j < thetabins; ++j)
+    {
+      prReGthetaSum[i][j] = (TProfile *)fileHist->Get(Form("prReGthetaSum_mult%d_theta%d", i, j));
+      prImGthetaSum[i][j] = (TProfile *)fileHist->Get(Form("prImGthetaSum_mult%d_theta%d", i, j));
+      if (fUseProduct)
+      {
+        prReGthetaProduct[i][j] = (TProfile *)fileHist->Get(Form("prReGthetaProduct_mult%d_theta%d", i, j));
+        prImGthetaProduct[i][j] = (TProfile *)fileHist->Get(Form("prImGthetaProduct_mult%d_theta%d", i, j));
+      }
     }
   }
-
-  double Qx = Q->X();
-  double Qy = Q->Y();
-  double QModSq = Qx * Qx + Qy * Qy;
-  prRefMult->Fill(icent, mult);
-  prQ2x->Fill(icent, Qx);
-  prQ2y->Fill(icent, Qy);
-  prQ2ModSq->Fill(icent, QModSq);
+  for (int ic = 0; ic < ncent; ic++)
+  {
+    for (int it = 0; it < thetabins; it++)
+    {
+      TH1F *hGthetaSum = FillHistGtheta(prReGthetaSum[ic][it], prImGthetaSum[ic][it]);
+      fR02Sum[ic][it] = GetR0(hGthetaSum);
+      if (fUseProduct)
+      {
+        TH1F *hGthetaPro = FillHistGtheta(prReGthetaProduct[ic][it], prImGthetaProduct[ic][it]);
+        fR02Pro[ic][it] = GetR0(hGthetaPro);
+      }
+    }
+  }
+  if (fDebug)
+  {
+    cout << "Value of r02 from first run are:" << endl;
+    cout << "fR02Sum = " << endl;
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      cout << "Cent. " << bin_cent[ic] << "-" << bin_cent[ic+1] << "%: ";
+      for (int it = 0; it < thetabins; it++)
+      {
+        cout << fR02Sum[ic][it] << ", ";
+      }
+      cout << endl;
+    }
+    cout << "fR02Pro = " << endl;
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      cout << "Cent. " << bin_cent[ic] << "-" << bin_cent[ic+1] << "%: ";
+      for (int it = 0; it < thetabins; it++)
+      {
+        cout << fR02Pro[ic][it] << ", ";
+      }
+      cout << endl;
+    }    
+  }
 }
+
+TH1F *CGtheta::FillHistGtheta(TProfile *const &prReGtheta, TProfile *const &prImGtheta)
+{
+  Int_t iNbins = prReGtheta->GetNbinsX();
+  Double_t xMin = prReGtheta->GetXaxis()->GetBinLowEdge(1);
+  Double_t xMax = prReGtheta->GetXaxis()->GetBinLowEdge(iNbins) + prReGtheta->GetXaxis()->GetBinWidth(iNbins);
+  TH1F *hGtheta = new TH1F(Form("hist_%s", prReGtheta->GetName()), "", iNbins, xMin, xMax);
+  for (int rbin = 0; rbin < iNbins; rbin++)
+  {
+    // get bincentre of bins in histogram
+    Double_t dRe = prReGtheta->GetBinContent(rbin + 1);
+    Double_t dIm = prImGtheta->GetBinContent(rbin + 1);
+    TComplex cGtheta(dRe, dIm);
+    //fill fHistGtheta with the modulus squared of cGtheta
+    //to avoid errors when using a merged outputfile use SetBinContent() and not Fill()
+    if (cGtheta.Rho2() > 3.)
+      hGtheta->SetBinContent(rbin + 1, 0);
+    else
+      hGtheta->SetBinContent(rbin + 1, cGtheta.Rho2());
+    // hGtheta->SetBinContent(rbin+1,cGtheta.Rho2());
+    hGtheta->SetBinError(rbin + 1, 0.0);
+  }
+  return hGtheta;
+}
+
+double CGtheta::GetR0(TH1F *const &hist)
+{
+  //find the first minimum of the square of the modulus of Gtheta
+
+  int iNbins = hist->GetNbinsX();
+  double dR0 = 0.;
+
+  for (int b = 2; b < iNbins; b++)
+  {
+    double dG0 = hist->GetBinContent(b);
+    double dGnext = hist->GetBinContent(b + 1);
+    double dGnextnext = hist->GetBinContent(b + 2);
+    // cout << hist->GetBinCenter(b);
+    if (dGnext > dG0 && dGnextnext > dG0 && dG0 < 1.)
+    {
+      double dGlast = hist->GetBinContent(b - 1);
+      double dXlast = hist->GetBinCenter(b - 1);
+      double dX0 = hist->GetBinCenter(b);
+      double dXnext = hist->GetBinCenter(b + 1);
+
+      dR0 = dX0 - ((dX0 - dXlast) * (dX0 - dXlast) * (dG0 - dGnext) - (dX0 - dXnext) * (dX0 - dXnext) * (dG0 - dGlast)) /
+                      (2. * ((dX0 - dXlast) * (dG0 - dGnext) - (dX0 - dXnext) * (dG0 - dGlast))); //parabolic interpolated minimum
+      break;                                                                                      //stop loop if minimum is found
+    }                                                                                             //if
+
+  } //b
+
+  return dR0;
+}
+
+
 
 void CGtheta::SaveHist()
 {
+  if (fFirstRun){
   for (int i = 0; i < ncent; ++i)
   {
     for (int j = 0; j < thetabins; ++j)
@@ -210,65 +439,110 @@ void CGtheta::SaveHist()
   prQ2x->Write();
   prQ2y->Write();
   prQ2ModSq->Write();
+  }else{
+    for (int j = 0; j < thetabins; ++j)
+    {
+      prReDenom[j]->Write();
+      prImDenom[j]->Write();
+      for (int i = 0; i < ncent; i++)
+      {
+        prReNumer[j][i]->Write();
+        prImNumer[j][i]->Write();
+      }
+      if (fUseProduct){
+        prReDenomPro[j]->Write();
+        prImDenomPro[j]->Write();
+        for (int i = 0; i < ncent; i++)
+        {
+          prReNumerPro[j][i]->Write();
+          prImNumerPro[j][i]->Write();
+        }
+      }
+    }
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      prMultPOI[ic]->Write();
+    }
+  }
 }
 
-void CGtheta::Reset(){
+void CGtheta::Reset()
+{
+  fMult = 0.;
   for (int i = 0; i < thetabins; ++i)
   {
     fQtheta[i] = 0.;
   }
-  for (int i = 0; i < rbins; ++i)
+  if (fFirstRun)
   {
-    for (int j = 0; j < thetabins; ++j)
+    for (int i = 0; i < rbins; ++i)
     {
-      fGenFunS[i][j] = TComplex(0.0, 0.0); // initialize to 0, calculate directly
-      if (fUseProduct) { fGenFunP[i][j] = TComplex::One(); } // initialize to 1, calcualte via product
+      for (int j = 0; j < thetabins; ++j)
+      {
+        fGenFunS[i][j] = TComplex(0.0, 0.0); // initialize to 0, calculate directly
+        if (fUseProduct)
+        {
+          fGenFunP[i][j] = TComplex::One();
+        } // initialize to 1, calcualte via product
+      }
     }
   }
-
+  else
+  {
+    for (int ipt = 0; ipt < npt; ipt++)
+    {
+      fMultPOI[ipt] = 0.;
+    }
+    for (int it = 0; it < thetabins; it++)
+    {
+      fExponent[it] = TComplex(0.0, 0.0);
+      fdGr0[it] = TComplex(0.0, 0.0);
+      fGenfunPror0[it] = TComplex::One();
+    }
+  }
 }
-void CGtheta::CalQtheta(CQVector* Q)
+void CGtheta::CalQtheta(CQVector *Q)
 {
   for (int itheta = 0; itheta < thetabins; itheta++)
   {
-    fQtheta[itheta] =  Q->X() * TMath::Cos(2.0 * fTheta[itheta]) + Q->Y() * TMath::Sin(2.0 * fTheta[itheta]); 
+    fQtheta[itheta] = Q->X() * TMath::Cos(2.0 * fTheta[itheta]) + Q->Y() * TMath::Sin(2.0 * fTheta[itheta]);
   }
 }
-double* CGtheta::GetQtheta()
-{
-  // double Qtheta[thetabins];
-  // for (int itheta = 0; itheta < thetabins; itheta++)
-  // {
 
-  // }
-  return fQtheta;
-}
-void CGtheta::CalGFProduct(double phi)
+void CGtheta::CalGFProduct(double phi, int icent)
 {
-  for (int rbin = 0; rbin < rbins; ++rbin)
+  if (fFirstRun){
+  for (int it = 0; it < thetabins; ++it)
   {
-    for (int thetabin = 0; thetabin < thetabins; ++thetabin)
+    double dCosTerm = TMath::Cos(2. * (phi - fTheta[it]));
+    for (int rbin = 0; rbin < rbins; ++rbin)
     {
-
-      fGenFunP[rbin][thetabin] *= TComplex(1.0, fRProduct[rbin] * TMath::Cos(2. * (phi - fTheta[thetabin])));
+      fGenFunP[rbin][it] *= TComplex(1.0, fRProduct[rbin] * dCosTerm);
     }
+  }}
+  else{
+    for (int it = 0; it < thetabins; ++it)
+    {
+      double dCosTerm = TMath::Cos(2. * (phi - fTheta[it]));
+      fGenfunPror0[it] *= TComplex(1.0, fR02Pro[icent][it] * dCosTerm);
+      TComplex cCosTermComplex(1., fR02Pro[icent][it] * dCosTerm);
+      fdGr0[it] += (dCosTerm/cCosTermComplex); 
+    }    
   }
 }
 void CGtheta::CalGFSum()
 {
   for (int rbin = 0; rbin < rbins; rbin++)
   {
-    for (int thetabin = 0; thetabin < thetabins; thetabin++)
-    {  
-      TComplex cExpo = TComplex(0., fRSum[rbin] * fQtheta[thetabin]);
-      fGenFunS[rbin][thetabin] = TComplex::Exp(cExpo); // generating function from Q-vectors
+    for (int it = 0; it < thetabins; it++)
+    {
+      TComplex cExpo = TComplex(0., fRSum[rbin] * fQtheta[it]);
+      fGenFunS[rbin][it] = TComplex::Exp(cExpo); // generating function from Q-vectors
     }
   }
 }
 
-
-
-void FlowLeeYangZeros(TString inputFileName, TString outputFileName, Bool_t bFirstRun = 1)
+void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inputFileHistFromFirstRun, Bool_t bFirstRun = 1)
 {
   TStopwatch timer;
   timer.Start();
@@ -332,35 +606,18 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, Bool_t bFir
   const double rootJ0 = 2.4048256;
   const double J1rootJ0 = 0.519147;
   double theta[thetabins];
-  double multPOI[npt];
-  for (int thetabin = 0; thetabin < thetabins; ++thetabin)
+  // double multPOI[npt];
+  for (int it = 0; it < thetabins; ++it)
   {
-    theta[thetabin] = thetabin * TMath::Pi() / (2.0 * thetabins);
+    theta[it] = it * TMath::Pi() / (2.0 * thetabins);
   }
-  // double Qtheta[thetabins];
-  // TComplex genfunS[rbins][thetabins]; // sum
-  // TComplex genfunP[rbins][thetabins]; // product
-  // TComplex cExpo;
-  // double Q2x, Q2y;
+
   int mult;
   bool bUseProduct = 0;
-  TComplex cDenominator;
-  TComplex cExponent[thetabins];
+  // TComplex cExponent[thetabins];
 
   // from 1-st run
   const double res2[9] = {0.3872, 0.498813, 0.604171, 0.629951, 0.600002, 0.534153, 0.427024, 0.300824, 0.195141};
-  const double r02[ncent][thetabins] = {
-      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-      {0.114015, 0.116277, 0, 0, 0, 0, 0, 0, 0, 0.122012},
-      {0.10385, 0.106375, 0.11648, 0, 0, 0, 0, 0.152084, 0.116449, 0.106778},
-      {0.120191, 0.123039, 0.134209, 0, 0, 0, 0, 0, 0.136188, 0.124},
-      {0.151126, 0.155544, 0.173591, 0, 0, 0, 0, 0, 0.174351, 0.15612},
-      {0.217719, 0.228114, 0, 0, 0, 0, 0, 0, 0, 0.22895},
-      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-  };
-  const double chisq[9] = {0, 0.930226, 1.19355, 1.39133, 1.2499, 0.981304, 0, 0, 0};
 
   // Configure output information
   TFile *fo = new TFile(outputFileName.Data(), "recreate");
@@ -385,42 +642,19 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, Bool_t bFir
     hv2MCpt[icent] = new TProfile(Form("hv2MCpt_%i", icent), "", npt, &bin_pT[0]);
   } // end of loop over centrality classes
 
-
-  // Differential flow
-  TProfile *prReDenom[thetabins];
-  TProfile *prImDenom[thetabins];
-  TProfile *prReNumer[thetabins][ncent];
-  TProfile *prImNumer[thetabins][ncent];
-  TProfile *prMultPOI[ncent];
-
-  else
-  {
-    for (int i = 0; i < thetabins; i++)
-    {
-      prReDenom[i] = new TProfile(Form("prReDenom_theta%i", i), "", ncent, &bin_cent[0]);
-      prImDenom[i] = new TProfile(Form("prImDenom_theta%i", i), "", ncent, &bin_cent[0]);
-
-      for (int j = 0; j < ncent; j++)
-      {
-        prReNumer[i][j] = new TProfile(Form("prReNumer_theta%i_cent%i", i, j), "", npt, &bin_pT[0]);
-        prImNumer[i][j] = new TProfile(Form("prImNumer_theta%i_cent%i", i, j), "", npt, &bin_pT[0]);
-      }
-    }
-
-    for (int ic = 0; ic < ncent; ic++)
-    {
-      prMultPOI[ic] = new TProfile(Form("prMultPOI_cent%i", ic), "", npt, 0, npt);
-    }
-  }
-  CGtheta *Gtheta = new CGtheta(false);
+  CGtheta *Gtheta = new CGtheta(bFirstRun, true);
+  Gtheta->SetDebugFlag(true);
+  if (!bFirstRun) Gtheta->ProcessRootFileWithHistFromFirstRun(inputFileHistFromFirstRun);
+  
   CQVector *Q2 = new CQVector();
   // Start event loop
   int n_entries = chain->GetEntries();
   for (int iEv = 0; iEv < n_entries; iEv++)
   {
-    if (iEv % 10000 == 0)
+    if (iEv % 100 == 0)
       std::cout << "Event [" << iEv << "/" << n_entries << "]" << std::endl;
-    if (iEv == 20000) break;
+    if (iEv == 10000)
+      break;
     chain->GetEntry(iEv);
     hEvt->Fill(0);
 
@@ -435,25 +669,12 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, Bool_t bFir
     double sumQxy[neta][2] = {{0}}; // [eta-,eta+][x,y]
     double multQv[neta] = {0};      // [eta+,eta-]
 
-    for (int i = 0; i < thetabins; ++i)
-    {
-      // Qtheta[i] = 0.;
-      cExponent[i] = TComplex(0.0, 0.0);
-    }
     Q2->Reset();
-    if (bFirstRun)
-    {
-      Gtheta->Reset();
-    }
-
-    // Q2x = 0.;
-    // Q2y = 0.;
-    if (!bFirstRun)
-      for (int ipt = 0; ipt < npt; ipt++)
-        multPOI[ipt] = 0.;
+    Gtheta->Reset();
 
     for (int iTrk = 0; iTrk < nh; iTrk++)
     {
+    
       TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
       float pt = vect.Pt();
       float eta = vect.Eta();
@@ -483,17 +704,10 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, Bool_t bFir
       //   fId = 6; // kaon-
       // if (pdg[iTrk] == -2212)
       //   fId = 7; // anti-proton
-      // Q2x += TMath::Cos(2.0 * phi);
-      // Q2y += TMath::Sin(2.0 * phi);
+
       Q2->CalQVector(phi);
-      if (!bFirstRun)
-      {
-        Int_t ipt = -1;
-        for (int j = 0; j < npt; j++)
-          if (pt >= bin_pT[j] && pt < bin_pT[j + 1])
-            ipt = j;
-        multPOI[ipt]++;
-      }
+      if (bFirstRun) Gtheta->CalMult();
+      else Gtheta->CalMult(pt);
       Double_t v2 = TMath::Cos(2 * phi);
       hv2MC->Fill(dCent, v2);       // calculate reference v2 from MC toy
       hv2MCpt[icent]->Fill(pt, v2); // Calculate differential v2 from MC toy
@@ -511,8 +725,11 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, Bool_t bFir
         sumQxy[fEta][1] += pt * TMath::Sin(2.0 * phi);
         multQv[fEta]++;
       } // end of eta selection
-      if (bFirstRun && Gtheta->GetUseProduct()) { Gtheta->CalGFProduct(phi); }
-  
+      if (bFirstRun && Gtheta->GetUseProduct())
+      {
+        Gtheta->CalGFProduct(phi, icent);
+      }
+
       mult++;
     } // end of track loop
     if (mult != 0)
@@ -526,29 +743,11 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, Bool_t bFir
       if (bFirstRun)
       {
         Gtheta->CalGFSum();
-        if (!Gtheta->GetUseProduct()) {Gtheta->FillHistS(icent, Q2);}
-        else{Gtheta->FillHistSP(icent, Q2);}
+        Gtheta->FillHistGF(icent, Q2);
       }
       else
       {
-        for (int ipt = 0; ipt < npt; ipt++)
-        {
-          prMultPOI[icent]->Fill(ipt + 0.5, multPOI[ipt]);
-        }
-        // Differential LYZ
-        double *Qtheta = Gtheta->GetQtheta();
-        for (int thetabin = 0; thetabin < thetabins; thetabin++)
-        {
-          // cExponent[thetabin] = TComplex(0., r02[icent][thetabin] * Qtheta[thetabin]);
-          // cDenominator = Qtheta[thetabin] * (TComplex::Exp(cExponent[thetabin])); // BP eq 12
-
-          cExponent[thetabin] = TComplex(0., r02[icent][thetabin] * Qtheta[thetabin]);
-          cDenominator = Qtheta[thetabin] * (TComplex::Exp(cExponent[thetabin])); // BP eq 12
-          
-          
-          prReDenom[thetabin]->Fill(dCent, cDenominator.Re());
-          prImDenom[thetabin]->Fill(dCent, cDenominator.Im());
-        }
+        Gtheta->CalDenominatorPOI(icent);
       }
     } // end of if (mult!=0)
 
@@ -609,19 +808,15 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, Bool_t bFir
             hv2EP->Fill(dCent, v2);
           }
         }
+        Gtheta->CalNumeratorPOI(icent, phi, pt);
 
-        for (int thetabin = 0; thetabin < thetabins; ++thetabin)
-        {
-          TComplex cNumeratorPOI = TMath::Cos(2.0 * (phi - theta[thetabin])) * (TComplex::Exp(cExponent[thetabin]));
-          prReNumer[thetabin][icent]->Fill(pt, cNumeratorPOI.Re());
-          prImNumer[thetabin][icent]->Fill(pt, cNumeratorPOI.Im());
-        }
       } // end of track loop
     }
   } // end event loop
 
   // Writing output
   fo->cd();
+  Gtheta->SaveHist();
   if (bFirstRun)
   {
     hEvt->Write();
@@ -632,27 +827,11 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, Bool_t bFir
     hEta->Write();
     hv2MC->Write();
     HRes->Write();
-    Gtheta->SaveHist();
+    
   }
   else
   {
     hv2EP->Write();
-    for (int j = 0; j < thetabins; ++j)
-    {
-      prReDenom[j]->Write();
-      prImDenom[j]->Write();
-      for (int i = 0; i < ncent; i++)
-      {
-        prReNumer[j][i]->Write();
-        prImNumer[j][i]->Write();
-      }
-    }
-    for (int ic = 0; ic < ncent; ic++)
-    {
-      prMultPOI[ic]->Write();
-      hv2EPpt[ic]->Write();
-      hv2MCpt[ic]->Write();
-    }
   }
 
   fo->Close();
@@ -714,5 +893,5 @@ int GetCentBin(float cent)
   return -1;
 }
 
-// root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/39GeVxpt500new/hybrid39GeV500Evrun022.root","test.root",1)'
+// root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/39GeVxpt500new/hybrid39GeV500Evrun022.root","testrun2.root","HistFromFirstRun.root",0)'
 // prReGthetaSum_mult0_theta0->Draw()

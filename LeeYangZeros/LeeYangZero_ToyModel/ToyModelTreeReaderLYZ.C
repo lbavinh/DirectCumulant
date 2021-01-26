@@ -73,21 +73,21 @@ int GetCentBin(double cent)
 void GetRes(TProfile *const &pr)
 {
   cout << "const double res2[" << pr->GetNbinsX() <<"] = {";
-  for (int i=0; i<pr->GetNbinsX(); i++)
+  for (int i=0; i<pr->GetNbinsX()-1; i++)
   {
     cout << TMath::Sqrt(pr->GetBinContent(i+1)) <<", ";
   }
-  cout <<"};" << endl;
+  cout << TMath::Sqrt(pr->GetBinContent(pr->GetNbinsX())) <<"};" << endl;
 }
 
 void GetMultMean(TProfile *const &pr)
 {
   cout << "const double dMultMean[" << pr->GetNbinsX() <<"] = {";
-  for (int i=0; i<pr->GetNbinsX(); i++)
+  for (int i=0; i<pr->GetNbinsX()-1; i++)
   {
     cout << (pr->GetBinContent(i+1)) <<", ";
   }
-  cout <<"};" << endl;
+  cout <<(pr->GetBinContent(pr->GetNbinsX()))<<"};" << endl;
 }
 
 double GetR0(TH1F *const &hist)
@@ -157,8 +157,9 @@ double BesselJ0(double x)
   return temp;
 }
 
-void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LYZ.root", Bool_t bFirstRun = 0)
+void ToyModelTreeReaderLYZ(TString file = "ToyModel_M_1000.root", TString outFile = "LYZ_M_1000_run2_test2GF.root", Bool_t bFirstRun = 0)
 {
+  
   const int ncent = 9; // 0-80%
   const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
   const int npt = 12; // 0.2 - 3.5 GeV/c
@@ -166,13 +167,14 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
   const double maxpt = 3.5; // max pt
   const double minpt = 0.2; // min pt
   const double eta_cut = 2.0;
-  const double eta_gap = 0.05;
+  const double eta_gap = 0;
 
   const int neta = 2; // [eta-,eta+]
   const int max_nh = 20000;
 
   // LYZ
-  const int rbins = 2500;
+  bool bUseProduct = 1;
+  const int rbins = 1000;
   const double rMax = 0.5;
   const double rMin = 0.005;
   const double rMaxSum = 0.5;
@@ -189,10 +191,12 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
   double Qtheta[thetabins];
   TComplex genfunS[rbins][thetabins]; // sum
   TComplex genfunP[rbins][thetabins]; // product
+  TComplex genfunPr0[thetabins]; // product
+  TComplex cdGr0[thetabins];
   TComplex cExpo;
   double Q2x, Q2y;
   int mult;
-  bool bUseProduct = 0;
+  
   // Differential LYZ
   TComplex cDenominator;
   TComplex cExponent[thetabins];
@@ -213,31 +217,46 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel.root", TString outFile = "LY
   // const double chisq[9] = {0.671751, 0.927704, 1.16937, 1.29891, 1.24777, 1.07118, 0.786754, 0.438892, 0};
 
   // <M>=1000
-  // const double res2[9] = {0.578437, 0.718362, 0.811036, 0.851391, 0.84943, 0.814827, 0.739581, 0.625978, 0.484355};
-  // const double r02[ncent][thetabins] = {{0.0395415, 0.039422, 0.0395461, 0.039205, 0.0397545 },
-  // {0.0316243, 0.0316585, 0.0314996, 0.0315935, 0.0315527 },
-  // {0.0289243, 0.0289726, 0.0290406, 0.029086, 0.0290144 },
-  // {0.0309938, 0.0311135, 0.031145, 0.0309388, 0.0309227 },
-  // {0.0382666, 0.0381948, 0.0380794, 0.0380945, 0.0381503 },
-  // {0.0532608, 0.0530296, 0.0528141, 0.0529654, 0.0531268 },
-  // {0.0844554, 0.084631, 0.0843408, 0.0851151, 0.0845861 },
-  // {0.167994, 0.170527, 0.172763, 0.173792, 0.169574 },
-  // {0, 0.464946, 0, 0, 0.420858 },
-  // };
-  // const double chisq[9] = {0.974493, 1.33634, 1.6448, 1.80669, 1.7188, 1.47705, 1.12974, 0.698748, 0.381532};
+  const double res2[9] = {0.578437, 0.718362, 0.811036, 0.851391, 0.84943, 0.814827, 0.739581, 0.625978, 0.484355};
+  const double r02[ncent][thetabins] = {{0.0395415, 0.039422, 0.0395461, 0.039205, 0.0397545 },
+  {0.0316243, 0.0316585, 0.0314996, 0.0315935, 0.0315527 },
+  {0.0289243, 0.0289726, 0.0290406, 0.029086, 0.0290144 },
+  {0.0309938, 0.0311135, 0.031145, 0.0309388, 0.0309227 },
+  {0.0382666, 0.0381948, 0.0380794, 0.0380945, 0.0381503 },
+  {0.0532608, 0.0530296, 0.0528141, 0.0529654, 0.0531268 },
+  {0.0844554, 0.084631, 0.0843408, 0.0851151, 0.0845861 },
+  {0.167994, 0.170527, 0.172763, 0.173792, 0.169574 },
+  {0, 0.464946, 0, 0, 0.420858 },
+  };
+
+  const double r02Pro[ncent][thetabins] = {{0.0395415, 0.039422, 0.0395461, 0.039205, 0.0397545 },
+  {0.0316243, 0.0316585, 0.0314996, 0.0315935, 0.0315527 },
+  {0.0289243, 0.0289726, 0.0290406, 0.029086, 0.0290144 },
+  {0.0309938, 0.0311135, 0.031145, 0.0309388, 0.0309227 },
+  {0.0382666, 0.0381948, 0.0380794, 0.0380945, 0.0381503 },
+  {0.0532608, 0.0530296, 0.0528141, 0.0529654, 0.0531268 },
+  {0.0844554, 0.084631, 0.0843408, 0.0851151, 0.0845861 },
+  {0.167994, 0.170527, 0.172763, 0.173792, 0.169574 },
+  {0, 0.464946, 0, 0, 0.420858 },
+  };
+
+  const double chisq[9] = {0.974493, 1.33634, 1.6448, 1.80669, 1.7188, 1.47705, 1.12974, 0.698748, 0.381532};
   // <M>=3000
-const double res2[9] = {0.80617, 0.904051, 0.944131, 0.957846, 0.957002, 0.944363, 0.913649, 0.842632, 0.709414};
-const double r02[ncent][thetabins] = {{0.0131911, 0.0132969, 0.0132844, 0.0132302, 0.0131955 },
-{0.0105154, 0.01058, 0.0106124, 0.0105857, 0.0104958 },
-{0.00964134, 0.00964005, 0.00964694, 0.00964094, 0.00964315 },
-{0.0103116, 0.0102837, 0.010273, 0.0102814, 0.0103083 },
-{0.0126536, 0.0125789, 0.0125801, 0.0126597, 0.0127023 },
-{0.0174372, 0.0174505, 0.0174524, 0.0175054, 0.0174511 },
-{0.027267, 0.0271488, 0.0272176, 0.0273134, 0.0273194 },
-{0.049998, 0.0496425, 0.0496019, 0.0501025, 0.0502267 },
-{0.129129, 0.127812, 0.198605, 0.133782, 0.137957 },
- };
-const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.73514, 1.19749, 0.532146};
+  // const double res2[9] = {0.80617, 0.904051, 0.944131, 0.957846, 0.957002, 0.944363, 0.913649, 0.842632, 0.709414};
+  // const double r02[ncent][thetabins] = {{0.0131911, 0.0132969, 0.0132844, 0.0132302, 0.0131955 },
+  // {0.0105154, 0.01058, 0.0106124, 0.0105857, 0.0104958 },
+  // {0.00964134, 0.00964005, 0.00964694, 0.00964094, 0.00964315 },
+  // {0.0103116, 0.0102837, 0.010273, 0.0102814, 0.0103083 },
+  // {0.0126536, 0.0125789, 0.0125801, 0.0126597, 0.0127023 },
+  // {0.0174372, 0.0174505, 0.0174524, 0.0175054, 0.0174511 },
+  // {0.027267, 0.0271488, 0.0272176, 0.0273134, 0.0273194 },
+  // {0.049998, 0.0496425, 0.0496019, 0.0501025, 0.0502267 },
+  // {0.129129, 0.127812, 0.198605, 0.133782, 0.137957 },
+  //  };
+  // const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.73514, 1.19749, 0.532146};
+
+
+
 
   TFile *d_outfile = new TFile(outFile.Data(), "recreate");
 
@@ -282,6 +301,12 @@ const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.7
   TProfile *prImDenom[thetabins];
   TProfile *prReNumer[thetabins][ncent];
   TProfile *prImNumer[thetabins][ncent];
+
+  TProfile *prReDenomPro[thetabins];
+  TProfile *prImDenomPro[thetabins];
+  TProfile *prReNumerPro[thetabins][ncent];
+  TProfile *prImNumerPro[thetabins][ncent];
+
   TProfile *prMultPOI[ncent];
   if (bFirstRun){
   for (int i = 0; i < ncent; ++i)
@@ -311,6 +336,17 @@ const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.7
       prReNumer[i][j] = new TProfile(Form("prReNumer_theta%i_cent%i", i, j),"", npt, &bin_pT[0]);
       prImNumer[i][j] = new TProfile(Form("prImNumer_theta%i_cent%i", i, j),"", npt, &bin_pT[0]);
     }
+    if (bUseProduct){
+    prReDenomPro[i] = new TProfile(Form("prReDenomPro_theta%i",i),"", ncent, &bin_cent[0]);
+    prImDenomPro[i] = new TProfile(Form("prImDenomPro_theta%i",i),"", ncent, &bin_cent[0]);
+
+    for (int j = 0; j < ncent; j++)
+    {
+      prReNumerPro[i][j] = new TProfile(Form("prReNumerPro_theta%i_cent%i", i, j),"", npt, &bin_pT[0]);
+      prImNumerPro[i][j] = new TProfile(Form("prImNumerPro_theta%i_cent%i", i, j),"", npt, &bin_pT[0]);
+    }
+    }
+
   }
 
   for (int ic = 0; ic < ncent; ic++)
@@ -321,7 +357,10 @@ const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.7
   if (bFirstRun){
   for (int rbin = 0; rbin < rbins; ++rbin)
   {
-    if (bUseProduct) {r[rbin] = (double) hGthetaProduct[0][0]->GetBinCenter(rbin+1);}
+    if (bUseProduct) {
+      r[rbin] = (double) hGthetaProduct[0][0]->GetBinCenter(rbin+1);
+      rSum[rbin] = (double) hGthetaSum[0][0]->GetBinCenter(rbin+1);
+    }
     else{rSum[rbin] = (double) hGthetaSum[0][0]->GetBinCenter(rbin+1);}
   }}
 
@@ -386,6 +425,8 @@ const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.7
       Qtheta[i] = 0.;
       cExponent[i] = TComplex(0.0,0.0);
     }
+    Q2x = 0.;
+    Q2y = 0.;
     if (bFirstRun)
     {
       for (int i = 0; i < rbins; ++i)
@@ -397,9 +438,14 @@ const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.7
         }
       }
     }
-    Q2x = 0.;
-    Q2y = 0.;
-    if (!bFirstRun) for (int ipt = 0; ipt < npt; ipt++) multPOI[ipt] = 0.;
+    else{
+      
+      for (int it = 0; it < thetabins; it++){
+        genfunPr0[it] = TComplex::One();
+        cdGr0[it] = TComplex(0.0,0.0);
+      }
+      for (int ipt = 0; ipt < npt; ipt++) multPOI[ipt] = 0.;
+    } 
     for (int i = 0; i < nh; i++)
     { // track loop
       double pT = pt[i];
@@ -443,24 +489,30 @@ const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.7
         sumQxy[fEta][1] += pT * TMath::Sin(2.0 * phi);
         multQv[fEta]++;
       } // end of eta selection
-      if (bFirstRun){
-      if (bUseProduct)
-      {
-        for (int rbin = 0; rbin < rbins; ++rbin)
-        {
+      if (bUseProduct){
+        
+        if (bFirstRun){
           for (int thetabin = 0; thetabin < thetabins; ++thetabin)
           {
-            genfunP[rbin][thetabin] *= TComplex(1.0, r[rbin] * TMath::Cos(2. * (phi - theta[thetabin])));
+            double dCosTerm = TMath::Cos(2. * (phi - theta[thetabin]));
+            for (int rbin = 0; rbin < rbins; ++rbin)
+            {
+              genfunP[rbin][thetabin] *= TComplex(1.0, r[rbin] * dCosTerm);
+            }
+          }
+        }
+        else{
+          for (int thetabin = 0; thetabin < thetabins; ++thetabin)
+          {
+            double dCosTerm = TMath::Cos(2. * (phi - theta[thetabin]));
+            genfunPr0[thetabin] *= TComplex(1.0, r02Pro[icent][thetabin] * dCosTerm);
+            TComplex cCosTermComplex(1., r02Pro[icent][thetabin] * dCosTerm);
+            cdGr0[thetabin] += (dCosTerm/cCosTermComplex); 
           }
         }
       }
-      }
-
       mult++;
-
     } // end of track loop
-
-
     if (mult != 0) 
     {
       hMult->Fill(mult);
@@ -511,6 +563,14 @@ const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.7
           prReDenom[thetabin]->Fill(dCent, cDenominator.Re());
           prImDenom[thetabin]->Fill(dCent, cDenominator.Im());
         }
+        if (bUseProduct)
+        {
+          for (int thetabin = 0; thetabin < thetabins; thetabin++)
+          {
+            prReDenomPro[thetabin]->Fill(dCent, (genfunPr0[thetabin] * cdGr0[thetabin]).Re());
+            prImDenomPro[thetabin]->Fill(dCent, (genfunPr0[thetabin] * cdGr0[thetabin]).Im());
+          }
+        }
       }
     } // end of if (mult!=0)
 
@@ -523,7 +583,6 @@ const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.7
         fEP[ieta] = TMath::ATan2(sumQxy[ieta][1], sumQxy[ieta][0]) / 2.0;
         fEP[ieta] = TMath::ATan2(sin(2.0 * fEP[ieta]), cos(2.0 * fEP[ieta])); // what for?
         fEP[ieta] /= 2.0;
-        
       }
       else
       {
@@ -563,262 +622,136 @@ const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.7
           hv2EP->Fill(dCent, v2);
         }
       }
-      
-      // if (mult != 0)
-      // {
-        for (int thetabin = 0; thetabin < thetabins; ++thetabin)
-        {
-          TComplex cNumeratorPOI = TMath::Cos(2.0 * (phi - theta[thetabin]))*(TComplex::Exp(cExponent[thetabin]));    
-          prReNumer[thetabin][icent]->Fill(pT, cNumeratorPOI.Re());
-          prImNumer[thetabin][icent]->Fill(pT, cNumeratorPOI.Im());
+    
+      for (int thetabin = 0; thetabin < thetabins; ++thetabin)
+      {
+        double dCosTerm = TMath::Cos(2.0 * (phi - theta[thetabin]));
+        TComplex cNumeratorPOI = dCosTerm * (TComplex::Exp(cExponent[thetabin]));    
+        prReNumer[thetabin][icent]->Fill(pT, cNumeratorPOI.Re());
+        prImNumer[thetabin][icent]->Fill(pT, cNumeratorPOI.Im());
+        if (bUseProduct){
+          TComplex cCosTermComplex(1., r02Pro[icent][thetabin] * dCosTerm);
+          TComplex cNumeratorPOIPro = genfunPr0[thetabin] * dCosTerm / cCosTermComplex;   
+          prReNumerPro[thetabin][icent]->Fill(pT, cNumeratorPOIPro.Re());
+          prImNumerPro[thetabin][icent]->Fill(pT, cNumeratorPOIPro.Im());          
         }
-      // }
+      }
     } // end of the track loop
     }
   }   // end of event loop
 
-  // cout << "double v2EP[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << hv2EP->GetBinContent(ic+1) << ", ";
-  // }
-  // cout << hv2EP->GetBinContent(ncent) << "};" << endl;
 
-  // cout << "double v2eEP[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << hv2EP->GetBinError(ic+1) << ", ";
-  // }
-  // cout << hv2EP->GetBinError(ncent) << "};" << endl;
 
-  // //============================================================================================================
-  // cout << file << " file processed" << endl;
-  // cout << "Resolution:" << endl;
-  // GetRes(HRes);
-  // GetMultMean(prRefMult);
-  // double dChi2[ncent];
-  // float v2int[ncent]={0.}, v2e[ncent]={0.};
-  // double dVtheta[ncent][thetabins] = {0.};
-  // cout << "const double r02[ncent][thetabins] = {";
-  // for (int ic = 0; ic < ncent; ic++)
-  // {
-  //   float refmult = prRefMult->GetBinContent(ic+1);
-  //   int thetacount = 0;
-  //   cout <<"{";
-  //   for (int it = 0; it < thetabins; it++)
-  //   {
-  //     TH1F *hGtheta = NULL;
-  //     if (bUseProduct) {hGtheta = FillHistGtheta(prReGthetaProduct[ic][it], prImGthetaProduct[ic][it]);}
-  //     else {hGtheta = FillHistGtheta(prReGthetaSum[ic][it], prImGthetaSum[ic][it]);}
-  //     float r0theta = GetR0(hGtheta);
-  //     // if (ic == 3 && it == 0) cout << "r0theta = " << r0theta << endl;
-  //     // cout << "cent:" << ic <<", theta =" << it << ", r0theta = " << r0theta << endl;
-  //     // if (it == 0) cout << rootJ0 <<"/"<< r0theta <<"/"<< refmult << " ";
-  //     cout << r0theta << ", ";
-  //     if (r0theta!=0) 
-  //     {
-  //       v2int[ic] += rootJ0 / r0theta;
-  //       dVtheta[ic][it] = rootJ0 / r0theta;
-  //       thetacount++;
-  //     }
-  //     // if (ic == 2) cout << rootJ0 / r0theta / refmult<< ", ";
-  //   }
-  //   cout << "}," << endl;
-  //   if (thetacount!=0) v2int[ic] /= (float)thetacount*refmult;
-  //   else {v2int[ic]=0.;}
+  //============================================================================================================
+  cout << file << " file processed" << endl;
+  if (bFirstRun){
+    cout << "Resolution:" << endl;
+    GetRes(HRes);
+    GetMultMean(prRefMult);
+    double dChi2[ncent];
+    float v2int[ncent]={0.}, v2e[ncent]={0.};
+    double dVtheta[ncent][thetabins] = {0.};
     
-  //   // cout << v2int[ic] << " ";
-  //   float modQ2sqmean = prQ2ModSq->GetBinContent(ic+1);
-  //   float Q2xmean = prQ2x->GetBinContent(ic+1);
-  //   float Q2ymean = prQ2y->GetBinContent(ic+1);
-  //   float chi2 = v2int[ic]*refmult/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2));
-  //   dChi2[ic] = chi2;
-  //   // cout << chi2 << " ";
-  //   // if (ic==8) cout << modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2) << endl;
-  //   float temp=0.;
-  //   for(int it=0; it<thetabins; it++) 
-  //     /* Loop over the angles of the interpolation points,     
-  //       to compute the statistical error bar on the average estimate V2{infty}, 
-  //       with the help of Eqs.(89) of Ref.[A]. */
-  //   {    
-  //     // float arg=((float) it)*TMath::Pi()/(thetabins-1.);
-  //     double arg = theta[it];
-  //     temp+=exp(sqr(rootJ0/chi2)*cos(arg)/2.)*
-  //       BesselJ0(2.*rootJ0*sin(arg/2.))+
-  //       exp(-sqr(rootJ0/chi2)*cos(arg)/2.)*
-  //       BesselJ0(2.*rootJ0*cos(arg/2.));
-  //   }
-  //   float neve = prRefMult->GetBinEntries(ic+1);
-  //   float err2mean = v2int[ic]*sqrt(temp/2./neve/thetabins)/rootJ0/J1rootJ0;
-  //   v2e[ic] = err2mean;
-  //   // cout << err2mean << ", ";
-  // } // end of V2RP calculation
-  
-  // cout << " };" << endl;
-  // // cout << "const double chisq[" << ncent << "] = {";
-  // // for (int ic = 0; ic < ncent-1; ic++)
-  // // {
-  // //   cout << dChi2[ic] <<", ";
-  // // }
-  // // cout << dChi2[ncent-1] << "};" << endl;
-  // cout << "My flow" << endl;
-  // for (int ic=0; ic<ncent; ic++)
-  // {
-  //   cout << v2int[ic] << ", " << hv2MC->GetBinContent(ic+1) << endl;
-  // }
-  // TH1F *hLYZ = new TH1F("hLYZ","",ncent,&bin_cent[0]);
-  // for (int ic=0; ic<ncent; ic++)
-  // {
-  //   hLYZ->SetBinContent(ic+1,v2int[ic]);
-  //   hLYZ->SetBinError(ic+1,v2e[ic]);
-  // }
+    //============================================================================================================
+    cout << "const double r02[ncent][thetabins] = {";
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      float refmult = prRefMult->GetBinContent(ic+1);
+      int thetacount = 0;
+      cout <<"{";
+      for (int it = 0; it < thetabins; it++)
+      {
+        TH1F *hGtheta = FillHistGtheta(prReGthetaSum[ic][it], prImGthetaSum[ic][it]);
+        float r0theta = GetR0(hGtheta);
+        cout << r0theta << ", ";
+        if (r0theta!=0) 
+        {
+          v2int[ic] += rootJ0 / r0theta;
+          dVtheta[ic][it] = rootJ0 / r0theta;
+          thetacount++;
+        }
+      }
+      cout << "}," << endl;
+      if (thetacount!=0) v2int[ic] /= (float)thetacount*refmult;
+      else {v2int[ic]=0.;}
+      
+      // cout << v2int[ic] << " ";
+      float modQ2sqmean = prQ2ModSq->GetBinContent(ic+1);
+      float Q2xmean = prQ2x->GetBinContent(ic+1);
+      float Q2ymean = prQ2y->GetBinContent(ic+1);
+      float chi2 = v2int[ic]*refmult/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2));
+      dChi2[ic] = chi2;
 
-  // cout << "double v2LYZ[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << v2int[ic] << ", ";
-  // }
-  // cout << v2int[ncent-1] << "};" << endl;
-  // cout << "double v2eLYZ[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << v2e[ic] << ", ";
-  // }
-  // cout << v2e[ncent-1] << "};" << endl;
-  // // Differential v2 LYZ
-  // TComplex cNumeratorPOI;
-  // double re, im, reRatio;
-  // double v2diff[ncent][npt]={0.};
-  // double v2diffe[ncent][npt]={0.};
-  // for (int ic = 0; ic < ncent; ic++)
-  // {
-  //   /* Computation of statistical error bars on the average estimates */
-  //   double temp = 0.;
-  //   double arg[thetabins];
-  //   for(int k1=0; k1<thetabins; k1++)
-  //   {
-  //     // float arg=((float) it)*TMath::Pi()/(thetabins-1.);
-  //     arg[k1] = theta[k1];
+      float temp=0.;
+      for(int it=0; it<thetabins; it++) 
+      {    
 
-  //     /* Loop over the theta angles, to compute the statistical error */
-  //     temp += (exp(sqr(rootJ0/dChi2[ic])*cos(arg[k1])/2.)*
-  //     BesselJ0(2.*rootJ0*sin(arg[k1]/2.)) -
-  //     exp(-sqr(rootJ0/dChi2[ic])*cos(arg[k1])/2.)*
-  //     BesselJ0(2.*rootJ0*cos(arg[k1]/2.)))*cos(arg[k1]);
-  //   }
-  //   for (int thetabin = 0; thetabin < thetabins; thetabin++)
-  //   {
-  //     re = prReDenom[thetabin]->GetBinContent(ic+1);
-  //     im = prImDenom[thetabin]->GetBinContent(ic+1);
-  //     cDenominator = TComplex(re, im);
-  //     if (cDenominator.Rho()==0) {
-	//       cerr<<"WARNING: modulus of cDenominator is zero"<<endl;
-	//     }
-  //     for (int ipt = 0; ipt < npt; ipt++)
-  //     {
-  //       re = prReNumer[thetabin][ic]->GetBinContent(ipt+1);
-  //       im = prImNumer[thetabin][ic]->GetBinContent(ipt+1);
-  //       cNumeratorPOI = TComplex(re, im);
-  //       if (cDenominator.Rho()!=0) {
-  //         reRatio = (cNumeratorPOI/cDenominator).Re();
-  //         double dVetaPOI = reRatio * dVtheta[ic][thetabin];
-  //         // cout << "reRatio * dVtheta[ic][thetabin] = " << reRatio <<" * "<< dVtheta[ic][thetabin] << endl;
-  //         v2diff[ic][ipt] += dVetaPOI;
-  //       }
+        double arg = theta[it];
+        temp+=exp(sqr(rootJ0/chi2)*cos(arg)/2.)*
+          BesselJ0(2.*rootJ0*sin(arg/2.))+
+          exp(-sqr(rootJ0/chi2)*cos(arg)/2.)*
+          BesselJ0(2.*rootJ0*cos(arg/2.));
+      }
+      float neve = prRefMult->GetBinEntries(ic+1);
+      float err2mean = v2int[ic]*sqrt(temp/2./neve/thetabins)/rootJ0/J1rootJ0;
+      v2e[ic] = err2mean;
+    } // end of V2RP calculation
+    
+    cout << " };" << endl;
+    //============================================================================================================
+    if (bUseProduct){
+    cout << "const double r02Pro[ncent][thetabins] = {";
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      float refmult = prRefMult->GetBinContent(ic+1);
+      int thetacount = 0;
+      cout <<"{";
+      for (int it = 0; it < thetabins; it++)
+      {
+        TH1F *hGtheta = FillHistGtheta(prReGthetaProduct[ic][it], prImGthetaProduct[ic][it]);
+        float r0theta = GetR0(hGtheta);
+        cout << r0theta << ", ";
+        if (r0theta!=0) 
+        {
+          v2int[ic] += rootJ0 / r0theta;
+          dVtheta[ic][it] = rootJ0 / r0theta;
+          thetacount++;
+        }
+      }
+      cout << "}," << endl;
+    } // end of V2RP calculation
+    cout << " };" << endl;      
+    }
+    //============================================================================================================
+    cout << "const double chisq[" << ncent << "] = {";
+    for (int ic = 0; ic < ncent-1; ic++)
+    {
+      cout << dChi2[ic] <<", ";
+    }
+    cout << dChi2[ncent-1] << "};" << endl;
 
-  //     }
-  //   }
-  //   double neve = prReDenom[0]->GetBinEntries(ic+1);
-  //   for (int ipt = 0; ipt < npt; ipt++)
-  //   {    
-  //     v2diff[ic][ipt] /= thetabins;
-  //     double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
-  //     v2diffe[ic][ipt] = sqrt(temp/rpmult/neve/thetabins)/2./J1rootJ0;
-  //     if (ic == 2) cout << v2diffe[ic][ipt] << ", ";
-  //   }
+    cout << "My flow" << endl;
+    cout << "double v2MC[9] = {";
+    for (int ic = 0 ; ic < ncent-1; ic++)
+    {
+      cout << hv2MC->GetBinContent(ic+1) << ", ";
+    }
+    cout << hv2MC->GetBinContent(ncent) << "};" << endl;
 
-  // }
+    cout << "double v2LYZ[9] = {";
+    for (int ic = 0 ; ic < ncent-1; ic++)
+    {
+      cout << v2int[ic] << ", ";
+    }
+    cout << v2int[ncent-1] << "};" << endl;
+    cout << "double v2eLYZ[9] = {";
+    for (int ic = 0 ; ic < ncent-1; ic++)
+    {
+      cout << v2e[ic] << ", ";
+    }
+    cout << v2e[ncent-1] << "};" << endl;
 
-
-  // //================= Drawing =========================
-  // TCanvas c;
-
-  // hLYZ->SetMarkerStyle(23);
-  // hLYZ->SetMarkerColor(kBlue+2);
-  // hLYZ->SetLineColor(kBlue+2);
-
-  // hv2EP->SetMarkerStyle(20);
-  // hv2EP->SetMarkerColor(kRed+2);
-  // hv2EP->SetLineColor(kRed+2);
-
-  // hv2MC->SetMarkerStyle(25);
-  // hv2MC->SetMarkerColor(kBlack);
-  // hv2MC->SetLineColor(kBlack);
-  // hv2MC->SetTitle(";centrality, %;v_{2}");
-  // hv2MC->GetYaxis()->SetRangeUser(0,0.1);
-  // hv2MC->GetXaxis()->SetLimits(0,60);
-  // hv2MC->Draw();
-  // hv2EP->Draw("same");
-  // hLYZ->Draw("same");
-  // TLegend *leg = new TLegend(0.7,0.15,0.85,0.35);
-  // leg->SetBorderSize(0);
-  // leg->AddEntry(hv2MC,"MC","p");
-  // leg->AddEntry(hv2EP,"EP","p");
-  // leg->AddEntry(hLYZ,"LYZ","p");
-  // leg->Draw();
-  // gStyle->SetPadTickX(1);
-  // gStyle->SetPadTickY(1);
-  // gStyle->SetOptStat(0);
-  // c.SaveAs("Flow.pdf");
-  // //================= Drawing =========================
-  // TCanvas c2;
-  // // TPaveLabel* title = new TPaveLabel(0.1,0.95,0.9,0.98,"Toy Model");
-  // // title->SetBorderSize(0);
-  // // title->SetFillColor(0);
-  // // title->SetTextFont(textFont);
-  // // title->SetTextSize(2.);
-  // // title->Draw();
-  // // int centrality = 4; // 10-20%
-  // // c2.SetLeftMargin(0.17);
-  // TString legHeader[] = {"0-5%","5-10%","10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%"};
-  // c2.Divide(3,2,0,0);
-  // for (int centrality = 1; centrality < 7; centrality++){
-  // c2.cd(centrality);
-  // TH1F *hLYZDiff = new TH1F("hLYZDiff","",npt,&bin_pT[0]);
-  // for (int ipt=0; ipt<npt; ipt++)
-  // {
-  //   hLYZDiff->SetBinContent(ipt+1,v2diff[centrality][ipt]);
-  //   hLYZDiff->SetBinError(ipt+1,v2diffe[centrality][ipt]);
-  // }
-  // hLYZDiff->SetMarkerStyle(23);
-  // hLYZDiff->SetMarkerColor(kBlue+2);
-  // hLYZDiff->SetLineColor(kBlue+2);
-
-  // hv2EPpt[centrality]->SetMarkerStyle(20);
-  // hv2EPpt[centrality]->SetMarkerColor(kRed+2);
-  // hv2EPpt[centrality]->SetLineColor(kRed+2);
-
-  // hv2MCpt[centrality]->SetMarkerStyle(25);
-  // hv2MCpt[centrality]->SetMarkerColor(kBlack);
-  // hv2MCpt[centrality]->SetLineColor(kBlack);
-  // hv2MCpt[centrality]->SetTitle(";p_{T}, GeV/c;v_{2}");
-  // hv2MCpt[centrality]->GetYaxis()->SetRangeUser(0,0.26);
-  // hv2MCpt[centrality]->GetXaxis()->SetLimits(-0.05,3.55);
-  // hv2MCpt[centrality]->Draw();
-  // hv2EPpt[centrality]->Draw("same");
-  // hLYZDiff->Draw("P same");
-  // TLegend *leg2 = new TLegend(0.15,0.6,0.5,0.85);
-  // leg2->SetBorderSize(0);
-  // leg2->SetHeader(legHeader[centrality].Data());
-  // leg2->AddEntry(hv2MCpt[centrality],"MC","p");
-  // leg2->AddEntry(hv2EPpt[centrality],"EP","p");
-  // leg2->AddEntry(hLYZDiff,"LYZ","p");
-  // // leg2->AddEntry(hLYZ,"LYZ","p");
-  // leg2->Draw();
-  // // c2.SaveAs(Form("DifFlow_%i.png",centrality));
-  // }
-  // c2.SaveAs(Form("DifFlow.pdf"));
-  // //================= Drawing =========================
+  }
 
   d_outfile->cd();
   if (bFirstRun)
@@ -859,6 +792,15 @@ const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.7
       {
         prReNumer[j][i]->Write();
         prImNumer[j][i]->Write();
+      }
+      if (bUseProduct){
+        prReDenomPro[j]->Write();
+        prImDenomPro[j]->Write();
+        for (int i = 0; i < ncent; i++)
+        {
+          prReNumerPro[j][i]->Write();
+          prImNumerPro[j][i]->Write();
+        }
       }
     }
     for (int ic = 0; ic < ncent; ic++)

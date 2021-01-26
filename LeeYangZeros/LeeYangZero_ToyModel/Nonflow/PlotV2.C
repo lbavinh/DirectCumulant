@@ -1,3 +1,4 @@
+#include "Func_StatErrCalc.C"
 #define sqr(x) ((x)*(x))
 void GetRes(TProfile *const &pr)
 {
@@ -86,8 +87,9 @@ double BesselJ0(double x)
   return temp;
 }
 
-void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileName_sencondRun = "LYZ_M_3000_run2.root")
+void PlotV2(TString inputFileName = "LYZ_nonflow_M_1000_run1.root", TString inputFileName_sencondRun = "LYZ_nonflow_M_1000_run2.root")
 {
+  TString titleGraph = "Toy Model, 2M events, Nonflow, <M>=1000";
   TFile *fi = new TFile(inputFileName.Data(), "read");
 
   const int ncent = 9; // 0-80%
@@ -330,29 +332,262 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
       v2diffeEP[ic][ipt] = hv2EPpt[ic]->GetBinError(ipt+1);
     }
   }
-  double dRatio[ncent][npt][2] = {0.}, dRatioErr[ncent][npt][2] = {0.};
+
+
+  // QC
+
+  // Input hist
+  // TProfile for reference flow
+  TProfile *hv22[ncent];        // profile <<2>> from 2nd Q-Cumulants
+  TProfile *hv24[ncent];        // profile <<4>> from 4th Q-Cumulants
+  TProfile *hv22pt[ncent][npt];    // profile <<2'>> from 2nd Q-Cumulants
+  TProfile *hv24pt[ncent][npt];    // profile <<4'>> from 4th Q-Cumulants
+  TProfile *hcov24[ncent];       // <2>*<4>
+  TProfile *hcov22prime[ncent][npt]; // <2>*<2'>
+  TProfile *hcov24prime[ncent][npt]; // <2>*<4'>
+  TProfile *hcov42prime[ncent][npt]; // <2>*<4'>
+  TProfile *hcov44prime[ncent][npt]; // <4>*<4'>
+  TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
+  char hname[400];
+  double stats[6]; // stats of TProfile
+  // Get TProfile histograms from ROOTFile
+  for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
+    sprintf(hname,"hv22_%i",icent);
+    hv22[icent] = (TProfile*)fi2->Get(hname);
+    sprintf(hname,"hv24_%i",icent);
+    hv24[icent] = (TProfile*)fi2->Get(hname);
+    sprintf(hname,"hcov24_%i",icent);
+    hcov24[icent] = (TProfile*)fi2->Get(hname);
+
+    for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
+        sprintf(hname,"hv22pt_%i_%i",icent,ipt);
+        hv22pt[icent][ipt]=(TProfile*)fi2->Get(hname);
+        sprintf(hname,"hv24pt_%i_%i",icent,ipt);
+        hv24pt[icent][ipt]=(TProfile*)fi2->Get(hname);
+        sprintf(hname,"hcov22prime_%i_%i",icent,ipt);
+        hcov22prime[icent][ipt]=(TProfile*)fi2->Get(hname);
+        sprintf(hname,"hcov24prime_%i_%i",icent,ipt);
+        hcov24prime[icent][ipt]=(TProfile*)fi2->Get(hname);
+        sprintf(hname,"hcov42prime_%i_%i",icent,ipt);
+        hcov42prime[icent][ipt]=(TProfile*)fi2->Get(hname);
+        sprintf(hname,"hcov44prime_%i_%i",icent,ipt);
+        hcov44prime[icent][ipt]=(TProfile*)fi2->Get(hname);
+        sprintf(hname,"hcov2prime4prime_%i_%i",icent,ipt);
+        hcov2prime4prime[icent][ipt]=(TProfile*)fi2->Get(hname);
+    } // end of loop over pt bin
+  } // end of loop over centrality classes
+
+  //==========================================================================================================================
+  // Filling pT bin
+  double pt[ncent][npt];
+  double ept[ncent][npt]={{0}}; // error bin pT = 0.0
+  for (int icent=0; icent<ncent; icent++){
+    for (int ipt=0; ipt<npt; ipt++){
+      pt[icent][ipt] = ( bin_pT[ipt] + bin_pT[ipt+1] ) / 2.;
+    }
+  }
+  //==========================================================================================================================
+
+  double v2cent[2][ncent], v2centE[2][ncent];
+  double v2pt[2][ncent][npt], v2ptE[2][ncent][npt];
+
+  // ofstream ofile2("v2int.txt");
+
+  for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
+    // Reference flow calculation
+
+
+    double v22int;  // Integrated elliptic flow obtained with direct cumulants of 2nd order, v_{2}{2,QC}
+    double v22intE; // Standard error of integrated v_{2}{2,QC}
+    double cor2;    // The average all-event 2-particle correlation of RFP, <<2>>
+    double cor2E;   // stat. err. of 2-particle correlations, s(<<2>>)
+
+    double v24int;  // Integrated elliptic flow obtained with direct cumulants of 4th order, v_{2}{4,QC}
+    double v24intE; // Standard error of integrated v_{2}{4,QC}
+    double cor4;    // The average all-event 4-particle correlation of RFP, <<4>>
+    double cor4E;   // error of <<4>>
+
+    double sumw2cor2;    // sumw2 of <2>
+    double sumwcor2;     // sumw of <2>
+    double sumw2cor4;    // sumw2 of <4>
+    double sumwcor4;     // sumw of <4>
+
+    double sumwcor24;    // sum(w<2>,w<4>)
+    double cov24;        // Cov(<2>,<4>)
+
+
+    // v2{2,QC}
+    // estimate of the 2-particle reference flow (C.22)
+    cor2 = hv22[icent] -> GetBinContent(1);  // <<2>>
+    v22int = Vn2(cor2);
+    // statistical error of the 2-particle reference flow estimate (C.26)
+    cor2E = sx(hv22[icent]);
+    hv22[icent] -> GetStats(stats);
+    sumwcor2 = stats[0];
+    sumw2cor2 = stats[1];
+    v22intE = Evn2(cor2,cor2E,sumwcor2,sumw2cor2);
+    //=============================================
+    // v2{4,QC}
+    // estimate of the 4-particle reference flow (C.27)
+    cor4 = hv24[icent]->GetBinContent(1);  // <<4>>
+    v24int = Vn4(cor2,cor4);
+    // statistical error of the 4-particle reference flow estimate (C.28)
+    cor4E = sx(hv24[icent]);
+    hv24[icent] -> GetStats(stats);
+    sumwcor4 = stats[0];
+    sumw2cor4 = stats[1];
+    // calculate covariance of <2> and <4>
+    cov24 = Cov(hcov24[icent],hv22[icent],hv24[icent]);
+    sumwcor24 = Sumwxwy(hcov24[icent]);
+    v24intE = Evn4(cor2,cor2E,sumwcor2,sumw2cor2,
+                  cor4,cor4E,sumwcor4,sumw2cor4,
+                  cov24,sumwcor24);
+
+    // ofile2 << icent*10<<"-"<< (icent+1)*10<<" "<< v22intE << " " << v24intE << endl;
+
+    v2cent[0][icent] = v22int;
+    v2cent[1][icent] = v24int;
+
+    v2centE[0][icent] = v22intE;
+    v2centE[1][icent] = v24intE;
+
+    //==========================================================================================================================
+
+    // Differential flow calculation
+
+
+    double v2MCpt[npt]; // v2 in given pT bin
+    double ev2MCpt[npt]; // standard error of v2 in given pT bin
+  
+    double cor2Red[npt];         // Differential 2nd order cumulant d_{2}{2} = <<2'>>
+    double cor2RedE[npt];        // Error of <<2'>>
+    double v22dif[npt];      // Differential elliptic flow v'_{2}{2} extracted from 2nd order cumulants
+                            // v'_{2}{2} = d_{2}{2} / sqrt( c_{2}{2} )
+    double v22difE[npt];     // Error of v'_{2}{2}
+    
+    double cor4Red[npt];    // Reduced average all-event 4-particle correlation <<4'>>
+    double cor4RedE[npt];   // Error of <<4'>>
+    double v24dif[npt];      // Differential elliptic flow v'_{2}{4} extracted from 4th order cumulants
+                            // v'_{2}{4} = -d_{2}{4} / pow( -c_{2}{4} , 3/4 )
+    double v24difE[npt];     // Error of v'_{2}{4}
+
+    double sumwcor22prime[npt];        // sum(w(<2>)*w(<2'>))
+    double cov22prime[npt];            // Cov(<2>,<2'>)
+    double sumwcor24prime[npt];        // sum(w(<2>)*w(<4'>))
+    double cov24prime[npt];            // Cov(<2>,<4'>)
+    double sumwcor42prime[npt];        // sum(w(<4>)*w(<2'>))
+    double cov42prime[npt];            // Cov(<4>,<2'>)
+    double sumwcor44prime[npt];        // sum(w(<4>)*w(<4'>))
+    double cov44prime[npt];            // Cov(<4>,<4'>)
+    double sumwcor2prime4prime[npt];   // sum(w(<2'>)*w(<4'>))
+    double cov2prime4prime[npt];       // Cov(<2'>,<4'>)
+
+    double sumw2cor2red[npt]; // sumw2 of <2'>
+    double sumwcor2red[npt];  // sumw of <2'>    
+    double sumw2cor4red[npt]; // sumw2 of <4'>
+    double sumwcor4red[npt];  // sumw of <4'>
+
+    for(int ipt=0; ipt<npt; ipt++){ // loop for all pT bin
+      
+      // 2-particle correlations
+      // estimate of the 2-particle differential flow (C.41)
+      cor2Red[ipt] = hv22pt[icent][ipt]->GetBinContent(1);
+      v22dif[ipt] = Vn2Dif(cor2Red[ipt],cor2);
+      v2pt[0][icent][ipt] = v22dif[ipt];
+      // statistical error of the 2-particle differential flow estimate (C.42)
+      cor2RedE[ipt] = sx(hv22pt[icent][ipt]);
+      hv22pt[icent][ipt] -> GetStats(stats);
+      sumwcor2red[ipt] = stats[0];
+      sumw2cor2red[ipt] = stats[1];
+
+      // calculate covariance of <2> and <2'>
+      cov22prime[ipt] = Cov(hcov22prime[icent][ipt],hv22[icent],hv22pt[icent][ipt]);
+      sumwcor22prime[ipt] = Sumwxwy(hcov22prime[icent][ipt]);
+      v22difE[ipt] = Evn2dif(cor2, cor2E, sumwcor2, sumw2cor2,
+                             cor2Red[ipt], cor2RedE[ipt], sumwcor2red[ipt],sumw2cor2red[ipt],
+                             cov22prime[ipt], sumwcor22prime[ipt]);
+      v2ptE[0][icent][ipt] = v22difE[ipt];
+      // 4-particle correlations
+      // estimate of the 4-particle differential flow (C.45)
+      cor4Red[ipt] = hv24pt[icent][ipt]->GetBinContent(1);
+      v24dif[ipt] = Vn4Dif(cor2Red[ipt], cor2, cor4Red[ipt], cor4);
+      v2pt[1][icent][ipt] = v24dif[ipt];
+      // statistical error of the 4-particle differential flow estimate (C.46)
+      cor4RedE[ipt] = sx(hv24pt[icent][ipt]);
+      hv24pt[icent][ipt] -> GetStats(stats);
+      sumwcor4red[ipt] = stats[0];
+      sumw2cor4red[ipt] = stats[1];
+
+      // calculate covariance of <2> and <4'>
+      cov24prime[ipt] = Cov(hcov24prime[icent][ipt],hv22[icent],hv24pt[icent][ipt]);
+      sumwcor24prime[ipt] = Sumwxwy(hcov24prime[icent][ipt]);
+
+      // calculate covariance of <4> and <2'>
+      cov42prime[ipt] = Cov(hcov42prime[icent][ipt],hv24[icent],hv22pt[icent][ipt]);
+      sumwcor42prime[ipt] = Sumwxwy(hcov42prime[icent][ipt]);
+
+      // calculate covariance of <4> and <4'>
+      cov44prime[ipt] = Cov(hcov44prime[icent][ipt],hv24[icent],hv24pt[icent][ipt]);
+      sumwcor44prime[ipt] = Sumwxwy(hcov44prime[icent][ipt]);
+
+      // calculate covariance of <2'> and <4'>
+      cov2prime4prime[ipt] = Cov(hcov2prime4prime[icent][ipt],hv22pt[icent][ipt],hv24pt[icent][ipt]);
+      sumwcor2prime4prime[ipt] = Sumwxwy(hcov2prime4prime[icent][ipt]);
+      v24difE[ipt] = Evn4dif(cor2, cor2E, sumwcor2, sumw2cor2,
+                          cor2Red[ipt], cor2RedE[ipt], sumwcor2red[ipt], sumw2cor2red[ipt],
+                          cor4, cor4E, sumwcor4, sumw2cor4,
+                          cor4Red[ipt], cor4RedE[ipt], sumwcor4red[ipt], sumw2cor4red[ipt],
+                          cov24, sumwcor24, cov22prime[ipt], sumwcor22prime[ipt],
+                          cov2prime4prime[ipt], sumwcor2prime4prime[ipt], cov44prime[ipt], sumwcor44prime[ipt],
+                          cov24prime[ipt], sumwcor24prime[ipt], cov42prime[ipt], sumwcor42prime[ipt]);
+      v2ptE[1][icent][ipt] = v24difE[ipt];
+    } // end of loop for all pT bin
+  } // end of loop over centrality classes
+
+  TH1F *hV22 = new TH1F("hV22","",ncent,&bin_cent[0]);
+  for (int ic=0; ic<ncent; ic++)
+  {
+    hV22->SetBinContent(ic+1,v2cent[0][ic]);
+    hV22->SetBinError(ic+1,v2centE[0][ic]);
+  }
+
+  TH1F *hV24 = new TH1F("hV24","",ncent,&bin_cent[0]);
+  for (int ic=0; ic<ncent; ic++)
+  {
+    hV24->SetBinContent(ic+1,v2cent[1][ic]);
+    hV24->SetBinError(ic+1,v2centE[1][ic]);
+  }
+
+
+  double dRatio[ncent][npt][3] = {0.}, dRatioErr[ncent][npt][3] = {0.};
   for (int ic = 0; ic < ncent; ic++)
   {
     for (int ipt = 0; ipt < npt; ipt++)
     {
       // for (int i = 0; i < 3; i++)
       // {
-        dRatio[ic][ipt][0] = v2diffEP[ic][ipt] / v2diffMC[ic][ipt];
-        dRatio[ic][ipt][1] = v2diff[ic][ipt] / v2diffMC[ic][ipt];
-        dRatioErr[ic][ipt][0] = dRatio[ic][ipt][0] * sqrt(pow(v2diffeEP[ic][ipt] / v2diffEP[ic][ipt], 2) + pow(v2diffeMC[ic][ipt] / v2diffMC[ic][ipt], 2));
-        dRatioErr[ic][ipt][1] = dRatio[ic][ipt][1] * sqrt(pow(v2diffe[ic][ipt] / v2diff[ic][ipt], 2) + pow(v2diffeMC[ic][ipt] / v2diffMC[ic][ipt], 2));      
+        dRatio[ic][ipt][0] = v2diff[ic][ipt] / v2diffEP[ic][ipt];
+        dRatio[ic][ipt][1] = v2pt[0][ic][ipt] / v2diffEP[ic][ipt];
+        dRatio[ic][ipt][2] = v2pt[1][ic][ipt] / v2diffEP[ic][ipt];
+
+        dRatioErr[ic][ipt][0] = dRatio[ic][ipt][0] * sqrt(pow(v2diffeEP[ic][ipt] / v2diffEP[ic][ipt], 2) + pow(v2diffe[ic][ipt] / v2diff[ic][ipt], 2));
+        dRatioErr[ic][ipt][1] = dRatio[ic][ipt][1] * sqrt(pow(v2diffeEP[ic][ipt] / v2diffEP[ic][ipt], 2) + pow(v2ptE[0][ic][ipt] / v2pt[0][ic][ipt], 2));      
+        dRatioErr[ic][ipt][2] = dRatio[ic][ipt][2] * sqrt(pow(v2diffeEP[ic][ipt] / v2diffEP[ic][ipt], 2) + pow(v2ptE[1][ic][ipt] / v2pt[1][ic][ipt], 2));
       // }
     }
   }
 
   //================= Drawing =========================
   TCanvas c;
-  // TPaveLabel* title1 = new TPaveLabel(0.1,0.95,0.9,0.98,"Toy Model, 1M events, <M>=1000");
-  // title1->SetBorderSize(0);
-  // title1->SetFillColor(0);
-  // // title1->SetTextFont(textFont);
-  // // title1->SetTextSize(2.);
-  // title1->Draw();
+
+  hV22->SetMarkerStyle(26);
+  hV22->SetMarkerColor(kBlack);
+  hV22->SetLineColor(kBlack);
+
+  hV24->SetMarkerStyle(27);
+  hV24->SetMarkerColor(kGreen+3);
+  hV24->SetLineColor(kGreen+3);
+
   hLYZ->SetMarkerStyle(23);
   hLYZ->SetMarkerColor(kBlue+2);
   hLYZ->SetLineColor(kBlue+2);
@@ -364,17 +599,21 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
   hv2MC->SetMarkerStyle(25);
   hv2MC->SetMarkerColor(kBlack);
   hv2MC->SetLineColor(kBlack);
-  hv2MC->SetTitle("Toy Model, 1M events, <M>=3000;centrality, %;v_{2}");
+  hv2MC->SetTitle(Form("%s;centrality, %%;v_{2}",titleGraph.Data()));
   hv2MC->GetYaxis()->SetRangeUser(0,0.1);
   hv2MC->GetXaxis()->SetLimits(0,60);
   hv2MC->Draw();
   hv2EP->Draw("same");
   hLYZ->Draw("same");
+  hV22->Draw("same");
+  hV24->Draw("same");
   TLegend *leg = new TLegend(0.55,0.15,0.8,0.35);
   leg->SetBorderSize(0);
   leg->AddEntry(hv2MC,"MC","p");
   leg->AddEntry(hv2EP,"EP","p");
   leg->AddEntry(hLYZ,"LYZ","p");
+  leg->AddEntry(hV22,"2,QC","p");
+  leg->AddEntry(hV24,"4,QC","p");
   leg->Draw();
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
@@ -382,7 +621,7 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
   c.SaveAs("Flow.pdf");
   //================= Drawing =========================
   TCanvas c2;
-  TPaveLabel* title = new TPaveLabel(0.1,0.96,0.9,0.99,"Toy Model, 1M events, <M>=3000");
+  TPaveLabel* title = new TPaveLabel(0.1,0.96,0.9,0.99,titleGraph.Data());
   title->SetBorderSize(0);
   title->SetFillColor(0);
   // title->SetTextFont(textFont);
@@ -394,20 +633,45 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
   c2.Divide(3,2,0,0);
   for (int centrality = 1; centrality < 7; centrality++){
   c2.cd(centrality);
-  TH1F *hLYZDiff = new TH1F("hLYZDiff","",npt,&bin_pT[0]);
+  TH1F *hLYZDiff = new TH1F(Form("hLYZDiff_%i",centrality),"",npt,&bin_pT[0]);
   for (int ipt=0; ipt<npt; ipt++)
   {
     hLYZDiff->SetBinContent(ipt+1,v2diff[centrality][ipt]);
     hLYZDiff->SetBinError(ipt+1,v2diffe[centrality][ipt]);
   }
+  TH1F *hV22Diff = new TH1F(Form("hV22Diff_%i",centrality),"",npt,&bin_pT[0]);
+  for (int ipt = 0; ipt < npt; ipt++)
+  {
+    hV22Diff->SetBinContent(ipt+1,v2pt[0][centrality][ipt]);
+    hV22Diff->SetBinError(ipt+1,v2ptE[0][centrality][ipt]);    
+  }
+  TH1F *hV24Diff = new TH1F(Form("hV24Diff_%i",centrality),"",npt,&bin_pT[0]);
+  for (int ipt = 0; ipt < npt; ipt++)
+  {
+    hV24Diff->SetBinContent(ipt+1,v2pt[1][centrality][ipt]);
+    hV24Diff->SetBinError(ipt+1,v2ptE[1][centrality][ipt]);    
+  }
+
+  hV22Diff->SetMarkerStyle(26);
+  hV22Diff->SetMarkerColor(kBlack);
+  hV22Diff->SetLineColor(kBlack);
+  hV22Diff->GetXaxis()->SetLimits(-0.1,3.6);
+
+  hV24Diff->SetMarkerStyle(27);
+  hV24Diff->SetMarkerColor(kGreen+3);
+  hV24Diff->SetLineColor(kGreen+3);
+  hV24Diff->GetXaxis()->SetLimits(-0.1,3.6);
+
   hLYZDiff->SetMarkerStyle(23);
   hLYZDiff->SetMarkerColor(kBlue+2);
   hLYZDiff->SetLineColor(kBlue+2);
   hLYZDiff->GetXaxis()->SetLimits(-0.1,3.6);
+
   hv2EPpt[centrality]->SetMarkerStyle(20);
   hv2EPpt[centrality]->SetMarkerColor(kRed+2);
   hv2EPpt[centrality]->SetLineColor(kRed+2);
   hv2EPpt[centrality]->GetXaxis()->SetLimits(-0.1,3.6);
+
   hv2MCpt[centrality]->SetMarkerStyle(25);
   hv2MCpt[centrality]->SetMarkerColor(kBlack);
   hv2MCpt[centrality]->SetLineColor(kBlack);
@@ -417,12 +681,16 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
   hv2MCpt[centrality]->Draw();
   hv2EPpt[centrality]->Draw("same");
   hLYZDiff->Draw("P same");
+  hV22Diff->Draw("P same");
+  hV24Diff->Draw("P same");
   TLegend *leg2 = new TLegend(0.15,0.7,0.4,0.9);
   leg2->SetBorderSize(0);
   leg2->SetHeader(legHeader[centrality].Data());
   leg2->AddEntry(hv2MCpt[centrality],"MC","p");
   leg2->AddEntry(hv2EPpt[centrality],"EP","p");
   leg2->AddEntry(hLYZDiff,"LYZ","p");
+  leg2->AddEntry(hV22Diff,"2,QC","p");
+  leg2->AddEntry(hV24Diff,"4,QC","p");
   // leg2->AddEntry(hLYZ,"LYZ","p");
   leg2->Draw();
   // c2.SaveAs(Form("DifFlow_%i.png",centrality));
@@ -430,20 +698,44 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
   c2.SaveAs(Form("DifFlow.pdf"));
   //================= Drawing =========================
   TCanvas c3("c3","",1400,700);
-  TPaveLabel* title3 = new TPaveLabel(0.1,0.96,0.9,0.99,"Toy Model, 1M events, <M>=3000");
+  TPaveLabel* title3 = new TPaveLabel(0.1,0.96,0.9,0.99,titleGraph.Data());
   title3->SetBorderSize(0);
   title3->SetFillColor(0);
+  c3.SetLeftMargin(0.15);
   // title3->SetTextFont(textFont);
   // title3->SetTextSize(2.);
   title3->Draw();
   // TCanvas c3;
-  c3.Divide(6,2,0,0);
+  c3.Divide(5,2,0,0);
   // gROOT->SetStyle("Pub");
-  c3.SetLeftMargin(0.15);
+  
   // gStyle->SetTextSize(2.5);
-  for (int centrality = 1; centrality < 7; centrality++){
+  for (int centrality = 1; centrality < 6; centrality++){
   c3.cd(centrality);
-  TH1F *hLYZDiff = new TH1F("hLYZDiff","",npt,&bin_pT[0]);
+  TH1F *hV22Diff = new TH1F(Form("hV22Diff_%i",centrality),"",npt,&bin_pT[0]);
+  for (int ipt = 0; ipt < npt; ipt++)
+  {
+    hV22Diff->SetBinContent(ipt+1,v2pt[0][centrality][ipt]);
+    hV22Diff->SetBinError(ipt+1,v2ptE[0][centrality][ipt]);    
+  }
+  TH1F *hV24Diff = new TH1F(Form("hV24Diff_%i",centrality),"",npt,&bin_pT[0]);
+  for (int ipt = 0; ipt < npt; ipt++)
+  {
+    hV24Diff->SetBinContent(ipt+1,v2pt[1][centrality][ipt]);
+    hV24Diff->SetBinError(ipt+1,v2ptE[1][centrality][ipt]);    
+  }
+
+  hV22Diff->SetMarkerStyle(26);
+  hV22Diff->SetMarkerColor(kBlack);
+  hV22Diff->SetLineColor(kBlack);
+  hV22Diff->GetXaxis()->SetLimits(-0.1,3.6);
+
+  hV24Diff->SetMarkerStyle(27);
+  hV24Diff->SetMarkerColor(kGreen+3);
+  hV24Diff->SetLineColor(kGreen+3);
+  hV24Diff->GetXaxis()->SetLimits(-0.1,3.6);
+
+  TH1F *hLYZDiff = new TH1F(Form("hLYZDiff_%i",centrality+100),"",npt,&bin_pT[0]);
   for (int ipt=0; ipt<npt; ipt++)
   {
     hLYZDiff->SetBinContent(ipt+1,v2diff[centrality][ipt]);
@@ -458,50 +750,62 @@ void PlotV2(TString inputFileName = "LYZ_M_3000_run1.root", TString inputFileNam
   hv2EPpt[centrality]->SetMarkerColor(kRed+2);
   hv2EPpt[centrality]->SetLineColor(kRed+2);
   hv2EPpt[centrality]->GetXaxis()->SetLimits(-0.1,3.6);
-  hv2MCpt[centrality]->SetMarkerStyle(25);
-  hv2MCpt[centrality]->SetMarkerColor(kBlack);
-  hv2MCpt[centrality]->SetLineColor(kBlack);
-  hv2MCpt[centrality]->SetTitle(";p_{T}, GeV/c;v_{2}");
-  hv2MCpt[centrality]->GetYaxis()->SetRangeUser(-0.01,0.26);
-  hv2MCpt[centrality]->GetXaxis()->SetLimits(-0.1,3.6);
-  hv2MCpt[centrality]->Draw();
-  hv2EPpt[centrality]->Draw("same");
+
+  hv2EPpt[centrality]->SetTitle(";p_{T}, GeV/c;v_{2}");
+  hv2EPpt[centrality]->GetYaxis()->SetRangeUser(-0.01,0.26);
+  hv2EPpt[centrality]->Draw();
   hLYZDiff->Draw("P same");
-  TLegend *leg2 = new TLegend(0.15,0.7,0.4,0.9);
+  hV22Diff->Draw("P same");
+  hV24Diff->Draw("P same");
+
+  TLegend *leg2 = new TLegend(0.25,0.6,0.45,0.9);
   leg2->SetBorderSize(0);
   leg2->SetHeader(legHeader[centrality].Data());
-  leg2->AddEntry(hv2MCpt[centrality],"MC","p");
+  // leg2->AddEntry(hv2MCpt[centrality],"MC","p");
   leg2->AddEntry(hv2EPpt[centrality],"EP","p");
   leg2->AddEntry(hLYZDiff,"LYZ","p");
-  // leg2->AddEntry(hLYZ,"LYZ","p");
+  leg2->AddEntry(hV22Diff,"2,QC","p");
+  leg2->AddEntry(hV24Diff,"4,QC","p");
   leg2->Draw();
   }
-  for (int centrality = 1; centrality < 7; centrality++){
-    c3.cd(centrality+6);
+  for (int centrality = 1; centrality < 6; centrality++){
+    c3.cd(centrality+5);
 
-    TH1F *hLYZDiffRatio = new TH1F("hLYZDiffRatio","",npt,&bin_pT[0]);
+    TH1F *hLYZDiffRatio = new TH1F(Form("hLYZDiffRatio_%i",centrality),"",npt,&bin_pT[0]);
     for (int ipt=0; ipt<npt; ipt++)
     {
-      hLYZDiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][1]);
-      hLYZDiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][1]);
+      hLYZDiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][0]);
+      hLYZDiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][0]);
     }
     hLYZDiffRatio->SetMarkerStyle(23);
     hLYZDiffRatio->SetMarkerColor(kBlue+2);
     hLYZDiffRatio->SetLineColor(kBlue+2);
-    hLYZDiffRatio->SetTitle(";p_{T}, GeV/c;Ratio to MC");
+    hLYZDiffRatio->SetTitle(";p_{T}, GeV/c;Ratio to EP");
     // hLYZDiffRatio->GetXaxis()->SetLabelSize(0.5);
     hLYZDiffRatio->GetYaxis()->SetRangeUser(0.89,1.11);
-    TH1F *hEPDiffRatio = new TH1F("hEPDiffRatio","",npt,&bin_pT[0]);
+    TH1F *hV22DiffRatio = new TH1F(Form("hV22DiffRatio_%i",centrality),"",npt,&bin_pT[0]);
     for (int ipt=0; ipt<npt; ipt++)
     {
-      hEPDiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][0]);
-      hEPDiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][0]);
+      hV22DiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][1]);
+      hV22DiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][1]);
     }
-    hEPDiffRatio->SetMarkerStyle(20);
-    hEPDiffRatio->SetMarkerColor(kRed+2);
-    hEPDiffRatio->SetLineColor(kRed+2);
+    hV22DiffRatio->SetMarkerStyle(26);
+    hV22DiffRatio->SetMarkerColor(kBlack);
+    hV22DiffRatio->SetLineColor(kBlack);
+
+    TH1F *hV24DiffRatio = new TH1F(Form("hV24DiffRatio_%i",centrality),"",npt,&bin_pT[0]);
+    for (int ipt=0; ipt<npt; ipt++)
+    {
+      hV24DiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][2]);
+      hV24DiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][2]);
+    }
+    hV24DiffRatio->SetMarkerStyle(27);
+    hV24DiffRatio->SetMarkerColor(kGreen+3);
+    hV24DiffRatio->SetLineColor(kGreen+3);
+
     hLYZDiffRatio->Draw();
-    hEPDiffRatio->Draw("same");
+    hV22DiffRatio->Draw("same");
+    hV24DiffRatio->Draw("same");
     TLine lineOne;
     lineOne.SetLineStyle(2);
     lineOne.DrawLine(0.2,1.,3.5,1.);

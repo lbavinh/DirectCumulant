@@ -91,7 +91,7 @@ void GetR0(TString inputFileName = "FirstRun_vHLLE.root")
   TFile *fi = new TFile(inputFileName.Data(),"read");
   const int ncent = 9;
   const int thetabins = 10;
-  bool bUseProduct = 0;
+  bool bUseProduct = 1;
   const double rootJ0 = 2.4048256;
   TProfile *HRes = (TProfile*) fi->Get("HRes");
   TProfile *prReGthetaSum[ncent][thetabins];

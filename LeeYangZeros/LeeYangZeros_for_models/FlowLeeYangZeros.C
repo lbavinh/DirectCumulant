@@ -198,8 +198,9 @@ void CGtheta::CalDenominatorPOI(int icent)
   {
     for (int it = 0; it < thetabins; it++)
     {
-      prReDenomPro[it]->Fill(icent, (fGenfunPror0[it] * fdGr0[it]).Re());
-      prImDenomPro[it]->Fill(icent, (fGenfunPror0[it] * fdGr0[it]).Im());
+      TComplex cDenominator = (fGenfunPror0[it] * fdGr0[it]);
+      prReDenomPro[it]->Fill(icent, cDenominator.Re());
+      prImDenomPro[it]->Fill(icent, cDenominator.Im());
     }
   }  
 }
@@ -526,7 +527,7 @@ void CGtheta::CalGFProduct(double phi, int icent)
       double dCosTerm = TMath::Cos(2. * (phi - fTheta[it]));
       fGenfunPror0[it] *= TComplex(1.0, fR02Pro[icent][it] * dCosTerm);
       TComplex cCosTermComplex(1., fR02Pro[icent][it] * dCosTerm);
-      fdGr0[it] += (dCosTerm/cCosTermComplex); 
+      fdGr0[it] += (dCosTerm/cCosTermComplex);
     }    
   }
 }
@@ -542,20 +543,30 @@ void CGtheta::CalGFSum()
   }
 }
 
-void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inputFileHistFromFirstRun, Bool_t bFirstRun = 1)
+void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inputFileHistFromFirstRun = "", Bool_t bFirstRun = 1)
 {
   TStopwatch timer;
   timer.Start();
 
   // Configure input information
   TChain *chain = new TChain("mctree");
-  chain->Add(inputFileName.Data());
-  // std::ifstream file(inputFileName.Data());
-  // std::string line;
-  // while (std::getline(file, line))
-  // {
-  //   chain->Add(line.c_str());
-  // }
+  if (inputFileName.Contains(".root"))
+  {
+    chain->Add(inputFileName.Data());
+  }
+  // if str contains filelist
+  if (!inputFileName.Contains(".root"))
+  {
+    std::ifstream file(inputFileName.Data());
+    std::string line;
+    while (std::getline(file, line))
+    {
+      chain->Add(line.c_str());
+    }
+  }
+
+  
+
 
   Float_t bimp;
   Float_t phi2;
@@ -643,7 +654,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
   } // end of loop over centrality classes
 
   CGtheta *Gtheta = new CGtheta(bFirstRun, true);
-  Gtheta->SetDebugFlag(true);
+  Gtheta->SetDebugFlag(false);
   if (!bFirstRun) Gtheta->ProcessRootFileWithHistFromFirstRun(inputFileHistFromFirstRun);
   
   CQVector *Q2 = new CQVector();
@@ -651,10 +662,10 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
   int n_entries = chain->GetEntries();
   for (int iEv = 0; iEv < n_entries; iEv++)
   {
-    if (iEv % 100 == 0)
+    if (iEv % 1000 == 0)
       std::cout << "Event [" << iEv << "/" << n_entries << "]" << std::endl;
-    if (iEv == 10000)
-      break;
+    // if (iEv == 10000)
+    //   break;
     chain->GetEntry(iEv);
     hEvt->Fill(0);
 
@@ -725,7 +736,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
         sumQxy[fEta][1] += pt * TMath::Sin(2.0 * phi);
         multQv[fEta]++;
       } // end of eta selection
-      if (bFirstRun && Gtheta->GetUseProduct())
+      if (Gtheta->GetUseProduct())
       {
         Gtheta->CalGFProduct(phi, icent);
       }
@@ -827,11 +838,18 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
     hEta->Write();
     hv2MC->Write();
     HRes->Write();
-    
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      hv2MCpt[ic]->Write();
+    }
   }
   else
   {
     hv2EP->Write();
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      hv2EPpt[ic]->Write();
+    }
   }
 
   fo->Close();
@@ -893,5 +911,7 @@ int GetCentBin(float cent)
   return -1;
 }
 
-// root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/39GeVxpt500new/hybrid39GeV500Evrun022.root","testrun2.root","HistFromFirstRun.root",0)'
+// root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/39GeVxpt500new/hybrid39GeV500Evrun022.root","testrun2.root","./OUT/HistFromFirstRun.root",0)'
+// root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/Urqmd11.5/runlist_00","test.root")'
+
 // prReGthetaSum_mult0_theta0->Draw()

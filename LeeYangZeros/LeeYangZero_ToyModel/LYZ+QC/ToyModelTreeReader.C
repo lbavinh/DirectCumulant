@@ -214,7 +214,7 @@ Double_t CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
    return coor24/wred4;
 }
 
-void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputFileName = "test.root", Bool_t bFirstRun = 1)
+void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputFileName = "test.root", TString inputFileHist="", Bool_t bFirstRun = 1)
 {
   
   const int ncent = 9; // 0-80%
@@ -234,8 +234,12 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   const int rbins = 2500;
   const double rMax = 0.5;
   const double rMin = 0.005;
-  const double rMaxSum = 250;
-  const double rMinSum = 0;
+
+  const double rMaxSum = rMax;
+  const double rMinSum = rMin;
+
+  // const double rMaxSum = 250;
+  // const double rMinSum = 0;
   const int thetabins = 5;
   const double rootJ0 = 2.4048256;
   const double J1rootJ0 = 0.519147;
@@ -260,7 +264,7 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
 
   // from 1-st run
 
-const double res2[9] = {0.584718, 0.724644, 0.81762, 0.858491, 0.85583, 0.82071, 0.748597, 0.63331, 0.488836};
+// const double res2[9] = {0.584718, 0.724644, 0.81762, 0.858491, 0.85583, 0.82071, 0.748597, 0.63331, 0.488836};
 // const double r02[ncent][thetabins] = {{0.0395063, 0.0398562, 0.0399983, 0.0399956, 0.0397162 },
 // {0.0317756, 0.0317372, 0.0316871, 0.0317655, 0.0318764 },
 // {0.0290447, 0.0289142, 0.0289302, 0.0289397, 0.0290322 },
@@ -273,27 +277,28 @@ const double res2[9] = {0.584718, 0.724644, 0.81762, 0.858491, 0.85583, 0.82071,
 //  };
 // const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.07872, 0.654145, 0.33026};
 
-const double r02[ncent][thetabins] = {{155.722, 157.143, 157.945, 157.756, 156.773 },
-{102.677, 102.609, 102.479, 102.714, 103.054 },
-{70.9911, 70.651, 70.7183, 70.748, 70.9474 },
-{51.4769, 51.4586, 51.5087, 51.5327, 51.5382 },
-{42.356, 42.2836, 42.2978, 42.3127, 42.3665 },
-{37.4947, 37.4645, 37.4393, 37.4674, 37.4931 },
-{34.7908, 34.7983, 34.8452, 34.8488, 34.7904 },
-{33.9464, 33.8188, 33.7661, 33.724, 33.7591 },
-{33.4536, 33.8116, 34.1762, 33.6193, 33.3224 },
- };
+// const double r02[ncent][thetabins] = {{155.722, 157.143, 157.945, 157.756, 156.773 },
+// {102.677, 102.609, 102.479, 102.714, 103.054 },
+// {70.9911, 70.651, 70.7183, 70.748, 70.9474 },
+// {51.4769, 51.4586, 51.5087, 51.5327, 51.5382 },
+// {42.356, 42.2836, 42.2978, 42.3127, 42.3665 },
+// {37.4947, 37.4645, 37.4393, 37.4674, 37.4931 },
+// {34.7908, 34.7983, 34.8452, 34.8488, 34.7904 },
+// {33.9464, 33.8188, 33.7661, 33.724, 33.7591 },
+// {33.4536, 33.8116, 34.1762, 33.6193, 33.3224 },
+//  };
 
-const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.0400938, 0.0398228 },
-{0.0317164, 0.0316762, 0.0316221, 0.0316982, 0.0318117 },
-{0.028981, 0.0288555, 0.0288653, 0.0288714, 0.0289637 },
-{0.0308428, 0.0308339, 0.0308573, 0.0308734, 0.0308762 },
-{0.0377878, 0.0377225, 0.0377136, 0.0377306, 0.0377742 },
-{0.0520696, 0.0520408, 0.0519703, 0.0520912, 0.0520978 },
-{0.0807638, 0.0807058, 0.0808258, 0.080827, 0.080787 },
-{0.144313, 0.143242, 0.143493, 0.142505, 0.141877 },
-{0.272917, 0.274304, 0.282908, 0.269197, 0.264743 },
- };
+
+// const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.0400938, 0.0398228 },
+// {0.0317164, 0.0316762, 0.0316221, 0.0316982, 0.0318117 },
+// {0.028981, 0.0288555, 0.0288653, 0.0288714, 0.0289637 },
+// {0.0308428, 0.0308339, 0.0308573, 0.0308734, 0.0308762 },
+// {0.0377878, 0.0377225, 0.0377136, 0.0377306, 0.0377742 },
+// {0.0520696, 0.0520408, 0.0519703, 0.0520912, 0.0520978 },
+// {0.0807638, 0.0807058, 0.0808258, 0.080827, 0.080787 },
+// {0.144313, 0.143242, 0.143493, 0.142505, 0.141877 },
+// {0.272917, 0.274304, 0.282908, 0.269197, 0.264743 },
+//  };
 
 
   TFile *d_outfile = new TFile(outputFileName.Data(), "recreate");
@@ -310,7 +315,15 @@ const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.040
   TProfile *hv2MC = new TProfile("hv2MC", "MC flow", ncent, &bin_cent[0]);
   TProfile *hv2EP = new TProfile("hv2EP", "Ref. v_{2}{EP}", ncent, &bin_cent[0]);
   TProfile *HRes = new TProfile("HRes", "EP resolution", ncent, &bin_cent[0]);
-
+  double res2[9];
+  if (!bFirstRun){
+    if (!inputFileHist) cerr << "inputFileHist=NULL!!" << endl;
+    TFile *fiHist = new TFile(inputFileHist.Data(),"read");
+    HRes =  (TProfile*) fiHist->Get("HRes");
+    for (int ic = 0; ic < ncent; ic++){
+      res2[ic] = TMath::Sqrt(HRes->GetBinContent(ic+1));
+    }
+  }
   TProfile *hv2MCpt[ncent];
   TProfile *hv2EPpt[ncent];
 
@@ -323,12 +336,64 @@ const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.040
   TProfile *prReGthetaSum[ncent][thetabins];
   TProfile *prImGthetaSum[ncent][thetabins];
   TH1F *hGthetaSum[ncent][thetabins];
+  double r02[ncent][thetabins] = {{0.}};
+  if (!bFirstRun){
+    if (!inputFileHist) cerr << "inputFileHist=NULL!!" << endl;
+    TFile *fiHist = new TFile(inputFileHist.Data(),"read");
+    for (int i = 0; i < ncent; ++i)
+    {
+      for (int j = 0; j < thetabins; ++j)
+      {
+        prReGthetaSum[i][j] = (TProfile*) fiHist->Get(Form("prReGthetaSum_mult%d_theta%d", i, j));
+        prImGthetaSum[i][j] = (TProfile*) fiHist->Get(Form("prImGthetaSum_mult%d_theta%d", i, j));
+      }
+    }
+
+    
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      cout <<"{";
+      for (int it = 0; it < thetabins; it++)
+      {
+        TH1F *hGtheta = FillHistGtheta(prReGthetaSum[ic][it], prImGthetaSum[ic][it]);
+        double r0theta = GetR0(hGtheta);
+        r02[ic][it] = r0theta;
+        cout << r0theta << ", ";
+      }
+      cout << "}," << endl;
+    }
+  }
 
   TProfile *prReGthetaProduct[ncent][thetabins];
   TProfile *prImGthetaProduct[ncent][thetabins];
   TH1F *hGthetaProduct[ncent][thetabins];
+  double r02Pro[ncent][thetabins];
+  if (!bFirstRun && bUseProduct){
+    if (!inputFileHist) cerr << "inputFileHist=NULL!!" << endl;
+    TFile *fiHist = new TFile(inputFileHist.Data(),"read");
+    for (int i = 0; i < ncent; ++i)
+    {
+      for (int j = 0; j < thetabins; ++j)
+      {
+        prReGthetaProduct[i][j] = (TProfile*) fiHist->Get(Form("prReGthetaProduct_mult%d_theta%d", i, j));
+        prImGthetaProduct[i][j] = (TProfile*) fiHist->Get(Form("prImGthetaProduct_mult%d_theta%d", i, j));
+      }
+    }
 
-
+    cout << "r02Pro" << endl;
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      cout <<"{";
+      for (int it = 0; it < thetabins; it++)
+      {
+        TH1F *hGtheta = FillHistGtheta(prReGthetaProduct[ic][it], prImGthetaProduct[ic][it]);
+        double r0theta = GetR0(hGtheta);
+        r02Pro[ic][it] = r0theta;
+        cout << r0theta << ", ";
+      }
+      cout << "}," << endl;
+    }
+  }
   TProfile *prRefMult = new TProfile("prRefMult","",ncent, &bin_cent[0]);
   TProfile *prQ2x = new TProfile("prQ2x","",ncent, &bin_cent[0]);
   TProfile *prQ2y = new TProfile("prQ2y","",ncent, &bin_cent[0]);
@@ -486,7 +551,7 @@ const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.040
   cout << "Calculating flow..." << endl;
   for (Long64_t jentry = 0; jentry < nentries; jentry++)
   {
-    if (jentry % 1000 == 0)
+    if (jentry % 10000 == 0)
       cout << "[" << jentry << "/" << nentries << "]" << endl;
     // if (jentry == 100000) break;  
     fChain->GetEntry(jentry);
@@ -685,11 +750,12 @@ const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.040
         {prMultPOI[icent]->Fill(ipt+0.5,multPOI[ipt]);}
       }
 
-      double Q2xMean = Q2x / mult;
-      double Q2yMean = Q2y / mult;
+      // double Q2xMean = Q2x / mult;
+      // double Q2yMean = Q2y / mult;
       for (int thetabin = 0; thetabin < thetabins; ++thetabin)
       {
-        Qtheta[thetabin] = Q2xMean * TMath::Cos(2.0 * theta[thetabin]) + Q2yMean * TMath::Sin(2.0 * theta[thetabin]);
+        // Qtheta[thetabin] = Q2xMean * TMath::Cos(2.0 * theta[thetabin]) + Q2yMean * TMath::Sin(2.0 * theta[thetabin]);
+        Qtheta[thetabin] = Q2x * TMath::Cos(2.0 * theta[thetabin]) + Q2y * TMath::Sin(2.0 * theta[thetabin]);
       }
 
       if (bFirstRun)
@@ -704,12 +770,16 @@ const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.040
           {
             cExpo = TComplex(0., rSum[rbin] * Qtheta[thetabin]);
             genfunS[rbin][thetabin] = TComplex::Exp(cExpo); // generating function from Q-vectors
-            prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re());
-            prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im());
+            // prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re());
+            // prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im());
+            prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re(), mult);
+            prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im(), mult);
             if (bUseProduct)
             {
-              prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re());
-              prImGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Im());
+              // prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re());
+              // prImGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Im());
+              prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re(), mult);
+              prImGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Im(), mult);              
             }
           }
         }
@@ -864,7 +934,7 @@ const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.040
   //     // if (ic == 2) cout << rootJ0 / r0theta / refmult<< ", ";
   //   }
   //   cout << "}," << endl;
-  //   if (thetacount!=0) v2int[ic] /= (float)thetacount; // refmult
+  //   if (thetacount!=0) v2int[ic] /= (float)thetacount*refmult; // refmult
   //   else {v2int[ic]=0.;}
     
   //   // cout << v2int[ic] << " ";

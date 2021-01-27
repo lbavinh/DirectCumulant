@@ -234,8 +234,8 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   const int rbins = 2500;
   const double rMax = 0.5;
   const double rMin = 0.005;
-  const double rMaxSum = 0.5;
-  const double rMinSum = 0.005;
+  const double rMaxSum = 250;
+  const double rMinSum = 0;
   const int thetabins = 5;
   const double rootJ0 = 2.4048256;
   const double J1rootJ0 = 0.519147;
@@ -261,17 +261,28 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   // from 1-st run
 
 const double res2[9] = {0.584718, 0.724644, 0.81762, 0.858491, 0.85583, 0.82071, 0.748597, 0.63331, 0.488836};
-const double r02[ncent][thetabins] = {{0.0395063, 0.0398562, 0.0399983, 0.0399956, 0.0397162 },
-{0.0317756, 0.0317372, 0.0316871, 0.0317655, 0.0318764 },
-{0.0290447, 0.0289142, 0.0289302, 0.0289397, 0.0290322 },
-{0.0309952, 0.0309848, 0.031009, 0.0310251, 0.0310295 },
-{0.0381208, 0.0380498, 0.03805, 0.0380708, 0.0381157 },
-{0.0530593, 0.0530336, 0.0529607, 0.0530779, 0.0530818 },
-{0.0848463, 0.0847794, 0.0849068, 0.0849609, 0.0849139 },
-{0.174272, 0.173572, 0.17187, 0.17073, 0.171588 },
-{0, 0, 0, 0, 0 },
+// const double r02[ncent][thetabins] = {{0.0395063, 0.0398562, 0.0399983, 0.0399956, 0.0397162 },
+// {0.0317756, 0.0317372, 0.0316871, 0.0317655, 0.0318764 },
+// {0.0290447, 0.0289142, 0.0289302, 0.0289397, 0.0290322 },
+// {0.0309952, 0.0309848, 0.031009, 0.0310251, 0.0310295 },
+// {0.0381208, 0.0380498, 0.03805, 0.0380708, 0.0381157 },
+// {0.0530593, 0.0530336, 0.0529607, 0.0530779, 0.0530818 },
+// {0.0848463, 0.0847794, 0.0849068, 0.0849609, 0.0849139 },
+// {0.174272, 0.173572, 0.17187, 0.17073, 0.171588 },
+// {0, 0, 0, 0, 0 },
+//  };
+// const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.07872, 0.654145, 0.33026};
+
+const double r02[ncent][thetabins] = {{155.722, 157.143, 157.945, 157.756, 156.773 },
+{102.677, 102.609, 102.479, 102.714, 103.054 },
+{70.9911, 70.651, 70.7183, 70.748, 70.9474 },
+{51.4769, 51.4586, 51.5087, 51.5327, 51.5382 },
+{42.356, 42.2836, 42.2978, 42.3127, 42.3665 },
+{37.4947, 37.4645, 37.4393, 37.4674, 37.4931 },
+{34.7908, 34.7983, 34.8452, 34.8488, 34.7904 },
+{33.9464, 33.8188, 33.7661, 33.724, 33.7591 },
+{33.4536, 33.8116, 34.1762, 33.6193, 33.3224 },
  };
-const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.07872, 0.654145, 0.33026};
 
 const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.0400938, 0.0398228 },
 {0.0317164, 0.0316762, 0.0316221, 0.0316982, 0.0318117 },
@@ -674,11 +685,11 @@ const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.040
         {prMultPOI[icent]->Fill(ipt+0.5,multPOI[ipt]);}
       }
 
-      // Q2x /= (double) mult;
-      // Q2y /= (double) mult;
+      double Q2xMean = Q2x / mult;
+      double Q2yMean = Q2y / mult;
       for (int thetabin = 0; thetabin < thetabins; ++thetabin)
       {
-        Qtheta[thetabin] = Q2x * TMath::Cos(2.0 * theta[thetabin]) + Q2y * TMath::Sin(2.0 * theta[thetabin]);
+        Qtheta[thetabin] = Q2xMean * TMath::Cos(2.0 * theta[thetabin]) + Q2yMean * TMath::Sin(2.0 * theta[thetabin]);
       }
 
       if (bFirstRun)
@@ -821,7 +832,7 @@ const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.040
   // cout << hv2MC->GetBinError(ncent) << "};" << endl;
 
   // //============================================================================================================
-  // cout << file << " file processed" << endl;
+  // cout << inputFileName.Data() << " file processed" << endl;
   // cout << "Resolution:" << endl;
   // GetRes(HRes);
   // GetMultMean(prRefMult);
@@ -853,7 +864,7 @@ const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.040
   //     // if (ic == 2) cout << rootJ0 / r0theta / refmult<< ", ";
   //   }
   //   cout << "}," << endl;
-  //   if (thetacount!=0) v2int[ic] /= (float)thetacount*refmult;
+  //   if (thetacount!=0) v2int[ic] /= (float)thetacount; // refmult
   //   else {v2int[ic]=0.;}
     
   //   // cout << v2int[ic] << " ";
@@ -893,11 +904,26 @@ const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.040
 
 
 
-  // cout << "My flow" << endl;
-  // for (int ic=0; ic<ncent; ic++)
-  // {
-  //   cout << v2int[ic] << ", " << hv2MC->GetBinContent(ic+1) << endl;
-  // }
+  //   cout << "My flow" << endl;
+  //   cout << "double v2MC[9] = {";
+  //   for (int ic = 0 ; ic < ncent-1; ic++)
+  //   {
+  //     cout << hv2MC->GetBinContent(ic+1) << ", ";
+  //   }
+  //   cout << hv2MC->GetBinContent(ncent) << "};" << endl;
+
+  //   cout << "double v2LYZ[9] = {";
+  //   for (int ic = 0 ; ic < ncent-1; ic++)
+  //   {
+  //     cout << v2int[ic] << ", ";
+  //   }
+  //   cout << v2int[ncent-1] << "};" << endl;
+  //   cout << "double v2eLYZ[9] = {";
+  //   for (int ic = 0 ; ic < ncent-1; ic++)
+  //   {
+  //     cout << v2e[ic] << ", ";
+  //   }
+  //   cout << v2e[ncent-1] << "};" << endl;
 
 
   // TH1F *hLYZ = new TH1F("hLYZ","",ncent,&bin_cent[0]);

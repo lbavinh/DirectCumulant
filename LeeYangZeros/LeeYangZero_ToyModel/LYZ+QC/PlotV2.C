@@ -87,10 +87,10 @@ double BesselJ0(double x)
   return temp;
 }
 
-void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "SecondRun.root")
+void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "SecondRun_fixedGFSum.root")
 {
   bool bUseProduct = 1;
-  bool bDebug = 0;
+  bool bDebug = 1;
   TString label = "Toy Model, 5M events, <M>=1000";
   TFile *fi1 = new TFile(inputFileName1.Data(),"read");
 
@@ -118,12 +118,15 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   TProfile *prQ2x = (TProfile*) fi1->Get("prQ2x");
   TProfile *prQ2y = (TProfile*) fi1->Get("prQ2y");
   TProfile *prQ2ModSq = (TProfile*) fi1->Get("prQ2ModSq");
+  TFile *fi_fixedGFS = new TFile("FirstRun_fixedGFSum.root","read");
   for (int i = 0; i < ncent; ++i)
   {
     for (int j = 0; j < thetabins; ++j)
     {
-      prReGthetaSum[i][j] = (TProfile*) fi1->Get(Form("prReGthetaSum_mult%d_theta%d", i, j));
-      prImGthetaSum[i][j] = (TProfile*) fi1->Get(Form("prImGthetaSum_mult%d_theta%d", i, j));
+      // prReGthetaSum[i][j] = (TProfile*) fi1->Get(Form("prReGthetaSum_mult%d_theta%d", i, j));
+      // prImGthetaSum[i][j] = (TProfile*) fi1->Get(Form("prImGthetaSum_mult%d_theta%d", i, j));
+      prReGthetaSum[i][j] = (TProfile*) fi_fixedGFS->Get(Form("prReGthetaSum_mult%d_theta%d", i, j));
+      prImGthetaSum[i][j] = (TProfile*) fi_fixedGFS->Get(Form("prImGthetaSum_mult%d_theta%d", i, j));
       if (bUseProduct)
       {
         prReGthetaProduct[i][j] = (TProfile*) fi1->Get(Form("prReGthetaProduct_mult%d_theta%d", i, j));
@@ -211,7 +214,7 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
         thetacount++;
       }
     }
-    if (thetacount!=0) v2int /= (float)thetacount*refmult;
+    if (thetacount!=0) v2int /= (float)thetacount; // refmult
     else {v2int = 0.;}
     
     float modQ2sqmean = prQ2ModSq->GetBinContent(ic+1);
@@ -431,7 +434,7 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
           denominator += rpmult;
         }
         if (denominator != 0) integratedFlow /= denominator;
-        cout <<"cent: "<< ic << " " <<dVtheta[ic][thetabin]/refmult << "\t" << integratedFlow << endl;
+        cout <<"cent: "<< ic << " " <<dVtheta[ic][thetabin] << "\t" << integratedFlow << endl;//refmult
       }
     }
     cout << "// ====== Product ====== //" << endl;
@@ -712,10 +715,34 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
     }
   }
 
+  double ratioIntFlow[ncent][5] = {0.}, ratioIntFlowe[ncent][5] = {0.};
+  for (int ic = 0; ic < ncent; ic++)
+  {
+    double v2EP = hv2EP->GetBinContent(ic+1);
+    double v2MC = hv2MC->GetBinContent(ic+1);
+    double v2EPe = hv2EP->GetBinError(ic+1);
+    double v2MCe = hv2MC->GetBinError(ic+1);
+
+    ratioIntFlow[ic][0] = v2EP/v2MC; 
+    ratioIntFlow[ic][1] = v2LYZInt[ic]/v2MC; 
+    ratioIntFlow[ic][2] = v2LYZIntPro[ic]/v2MC; 
+    ratioIntFlow[ic][3] = v2cent[0][ic]/v2MC; // v22
+    ratioIntFlow[ic][4] = v2cent[1][ic]/v2MC; // v24
+
+    ratioIntFlowe[ic][0] = ratioIntFlow[ic][0] * sqrt(pow( v2EPe/ v2EP, 2) + pow(v2MCe / v2MC, 2));
+    ratioIntFlowe[ic][1] = ratioIntFlow[ic][1] * sqrt(pow( v2eLYZInt[ic]/ v2LYZInt[ic], 2) + pow(v2MCe / v2MC, 2));
+    ratioIntFlowe[ic][2] = ratioIntFlow[ic][2] * sqrt(pow( v2eLYZIntPro[ic]/ v2LYZIntPro[ic], 2) + pow(v2MCe / v2MC, 2));
+    ratioIntFlowe[ic][3] = ratioIntFlow[ic][3] * sqrt(pow( v2centE[0][ic]/ v2cent[0][ic], 2) + pow(v2MCe / v2MC, 2));
+    ratioIntFlowe[ic][4] = ratioIntFlow[ic][4] * sqrt(pow( v2centE[1][ic]/ v2cent[1][ic], 2) + pow(v2MCe / v2MC, 2));
+    
+  }
   //================= Drawing =========================
   gStyle->SetErrorX(0);
   TCanvas c;
-
+  
+  c.Divide(2,1);
+  // c.SetLeftMargin(0.2);
+  c.cd(1);
   hV22->SetMarkerStyle(28);
   hV22->SetMarkerColor(kBlack);
   hV22->SetLineColor(kBlack);
@@ -777,6 +804,40 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
   gStyle->SetOptStat(0);
+  c.cd(2);
+  TH1F *hRatioInt[5];
+  for (int i=0; i<5; i++)
+  {
+    hRatioInt[i] = new TH1F(Form("hRatioInt_%i",i),"",ncent,&bin_cent[0]);
+    for (int ic=0; ic<ncent; ic++)
+    {
+      hRatioInt[i]->SetBinContent(ic+1,ratioIntFlow[ic][i]);
+      hRatioInt[i]->SetBinError(ic+1,ratioIntFlowe[ic][i]);
+    }
+  }
+  hRatioInt[0]->SetMarkerStyle(20);
+  hRatioInt[0]->SetMarkerColor(kRed+2);
+  hRatioInt[0]->SetLineColor(kRed+2);
+  hRatioInt[2]->SetMarkerStyle(26);
+  hRatioInt[2]->SetMarkerColor(kGreen+2);
+  hRatioInt[2]->SetLineColor(kGreen+2);
+  hRatioInt[1]->SetMarkerStyle(23);
+  hRatioInt[1]->SetMarkerColor(kBlue+2);
+  hRatioInt[1]->SetLineColor(kBlue+2);
+  hRatioInt[3]->SetMarkerStyle(28);
+  hRatioInt[3]->SetMarkerColor(kBlack);
+  hRatioInt[3]->SetLineColor(kBlack);
+  hRatioInt[4]->SetMarkerStyle(27);
+  hRatioInt[4]->SetMarkerColor(kGray+2);
+  hRatioInt[4]->SetLineColor(kGray+2);
+  hRatioInt[0]->GetYaxis()->SetRangeUser(0.89,1.11);
+  hRatioInt[0]->SetTitle(";centrality, %;Ratio to MC");
+  hRatioInt[0]->Draw();
+  for (int i=1; i<5; i++) hRatioInt[i]->Draw("same");
+  TLine lineOne1;
+  lineOne1.SetLineStyle(2);
+  lineOne1.DrawLine(0,1.,80,1.);
+  
   c.SaveAs("Flow.pdf");
   //================= Drawing =========================
   TCanvas c2;

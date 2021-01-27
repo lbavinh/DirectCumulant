@@ -91,7 +91,7 @@ void GetR0(TString inputFileName = "LYZ_nonflow_M_1000_run1.root")
   TFile *fi = new TFile(inputFileName.Data(),"read");
   const int ncent = 9;
   const int thetabins = 5;
-  bool bUseProduct = 1;
+  bool bUseProduct = 0;
   const double rootJ0 = 2.4048256;
   TProfile *HRes = (TProfile*) fi->Get("HRes");
   TProfile *prReGthetaSum[ncent][thetabins];

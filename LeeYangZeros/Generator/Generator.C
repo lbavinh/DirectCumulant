@@ -206,7 +206,7 @@ void V2gen(int nevent,double Mmean) {
   double eta; // pseudorapidity
   bool bFlow;
 
-  float nonflow = 1.; /* Simulating nonflow correlations: 
+  float nonflow = 0.; /* Simulating nonflow correlations: 
 		     0: no nonflow correlations; 
 		     1: "pair wise" emission (2 particles with same azimuth);
          2: "quadruplet" emission (4 particles with same azimuth).*/
@@ -222,7 +222,7 @@ void V2gen(int nevent,double Mmean) {
   /* Monte-Carlo simulation */
   for(int ne=0; ne<nevent; ne++) { /* Loop over events */
 
-    if(ne%50000==0) cout << ne << endl;
+    if(ne%1000==0) cout << "[" << ne << "/" << nevent << "]" << endl;
 
     b = hBimp -> GetRandom();
     double Npart = GetProjectedRandom(b, hBimpvsNpart);
@@ -348,9 +348,9 @@ void Ana_end() {
 
   d_outfile->Close();
 }
-void Generator(TString outFile){
+void Generator(TString outFile ="ToyModel_M_1000.root", int nevt = 10000, double multmean = 1000.){
   Ana_init(outFile.Data());
-  V2gen(1000000,1000.); // (events to generate,MultMean)
+  V2gen(nevt,multmean); // (events to generate,MultMean)
   Ana_end();
 }
 

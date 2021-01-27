@@ -90,8 +90,8 @@ void GetFlow(TString inputFileName1 = "HistFromFirstRun.root", TString inputFile
 {
   bool bUseProduct = 1;
   bool bDebug = 0;
-
-  TFile *fi = new TFile(inputFileName1.Data(),"read");
+  TString label = "UrQMD, Au+Au #sqrt{s_{NN}}=11.5 GeV, h^{#pm}, |#eta|<1.5";
+  TFile *fi1 = new TFile(inputFileName1.Data(),"read");
   
   const int ncent = 9;
   const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
@@ -106,30 +106,27 @@ void GetFlow(TString inputFileName1 = "HistFromFirstRun.root", TString inputFile
   const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
   const double rootJ0 = 2.4048256;
 
-
-
-
-  TProfile *HRes = (TProfile*) fi->Get("HRes");
-  TProfile *hv2MC = (TProfile*) fi->Get("hv2MC");
+  TProfile *HRes = (TProfile*) fi1->Get("HRes");
+  TProfile *hv2MC = (TProfile*) fi1->Get("hv2MC");
   
   TProfile *prReGthetaSum[ncent][thetabins];
   TProfile *prImGthetaSum[ncent][thetabins];
   TProfile *prReGthetaProduct[ncent][thetabins];
   TProfile *prImGthetaProduct[ncent][thetabins];
-  TProfile *prRefMult = (TProfile*) fi->Get("prRefMult");
-  TProfile *prQ2x = (TProfile*) fi->Get("prQ2x");
-  TProfile *prQ2y = (TProfile*) fi->Get("prQ2y");
-  TProfile *prQ2ModSq = (TProfile*) fi->Get("prQ2ModSq");
+  TProfile *prRefMult = (TProfile*) fi1->Get("prRefMult");
+  TProfile *prQ2x = (TProfile*) fi1->Get("prQ2x");
+  TProfile *prQ2y = (TProfile*) fi1->Get("prQ2y");
+  TProfile *prQ2ModSq = (TProfile*) fi1->Get("prQ2ModSq");
   for (int i = 0; i < ncent; ++i)
   {
     for (int j = 0; j < thetabins; ++j)
     {
-      prReGthetaSum[i][j] = (TProfile*) fi->Get(Form("prReGthetaSum_mult%d_theta%d", i, j));
-      prImGthetaSum[i][j] = (TProfile*) fi->Get(Form("prImGthetaSum_mult%d_theta%d", i, j));
+      prReGthetaSum[i][j] = (TProfile*) fi1->Get(Form("prReGthetaSum_mult%d_theta%d", i, j));
+      prImGthetaSum[i][j] = (TProfile*) fi1->Get(Form("prImGthetaSum_mult%d_theta%d", i, j));
       if (bUseProduct)
       {
-        prReGthetaProduct[i][j] = (TProfile*) fi->Get(Form("prReGthetaProduct_mult%d_theta%d", i, j));
-        prImGthetaProduct[i][j] = (TProfile*) fi->Get(Form("prImGthetaProduct_mult%d_theta%d", i, j));
+        prReGthetaProduct[i][j] = (TProfile*) fi1->Get(Form("prReGthetaProduct_mult%d_theta%d", i, j));
+        prImGthetaProduct[i][j] = (TProfile*) fi1->Get(Form("prImGthetaProduct_mult%d_theta%d", i, j));
       }    
     }
   }
@@ -168,7 +165,6 @@ void GetFlow(TString inputFileName1 = "HistFromFirstRun.root", TString inputFile
         prImNumerPro[i][j] = (TProfile*) fi2->Get(Form("prImNumerPro_theta%i_cent%i", i, j));
       }    
     }   
-
   }
   TProfile *prMultPOI[ncent];
   for (int ic = 0; ic < ncent; ic++)
@@ -181,7 +177,7 @@ void GetFlow(TString inputFileName1 = "HistFromFirstRun.root", TString inputFile
   for (int icent = 0; icent < ncent; icent++)
   { // loop over centrality classes
     hv2EPpt[icent] = (TProfile*) fi2->Get(Form("hv2EPpt_%i", icent));
-    hv2MCpt[icent] = (TProfile*) fi->Get(Form("hv2MCpt_%i", icent));
+    hv2MCpt[icent] = (TProfile*) fi1->Get(Form("hv2MCpt_%i", icent));
   } // end of loop over centrality classes
 
   if (bDebug){
@@ -416,6 +412,47 @@ void GetFlow(TString inputFileName1 = "HistFromFirstRun.root", TString inputFile
   }} // end of Diff LYZ Product
 
 
+  if (bDebug)
+  {
+    cout << "// ====== Sum ====== //" << endl;
+    // Cross check integrated flow - correct!
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      float refmult = prRefMult->GetBinContent(ic+1);
+      for (int thetabin = 0; thetabin < thetabins; thetabin++)
+      {
+        double integratedFlow = 0;
+        double denominator = 0;
+        for (int ipt = 0; ipt < npt; ipt++)
+        {
+          double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
+          integratedFlow += v2diff_check[ic][ipt][thetabin] * rpmult;
+          denominator += rpmult;
+        }
+        if (denominator != 0) integratedFlow /= denominator;
+        cout <<"cent: "<< ic << " " <<dVtheta[ic][thetabin]/refmult << "\t" << integratedFlow << endl;
+      }
+    }
+    cout << "// ====== Product ====== //" << endl;
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      float refmult = prRefMult->GetBinContent(ic+1);
+      for (int thetabin = 0; thetabin < thetabins; thetabin++)
+      {
+        double integratedFlow = 0;
+        double denominator = 0;
+        for (int ipt = 0; ipt < npt; ipt++)
+        {
+          double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
+          integratedFlow += v2diff_checkPro[ic][ipt][thetabin] * rpmult;
+          denominator += rpmult;
+        }
+        if (denominator != 0) integratedFlow /= denominator;
+        cout <<"cent: "<< ic << " " <<dVthetaPro[ic][thetabin]/refmult << "\t" << integratedFlow << endl;
+      }
+    }
+
+  }
 
   double v2diffMC[ncent][npt] = {0.}, v2diffeMC[ncent][npt] = {0.}, v2diffEP[ncent][npt] = {0.}, v2diffeEP[ncent][npt] = {0.};
   for (int ic = 0; ic < ncent; ic++)
@@ -482,7 +519,7 @@ void GetFlow(TString inputFileName1 = "HistFromFirstRun.root", TString inputFile
   hv2MC->SetMarkerStyle(25);
   hv2MC->SetMarkerColor(kBlack);
   hv2MC->SetLineColor(kBlack);
-  hv2MC->SetTitle("UrQMD, Au+Au #sqrt{s_{NN}}=7.7 GeV, h^{#pm}, |#eta|<1.5, 0.2<p_{T}<3.0 GeV/c;centrality, %;v_{2}");
+  hv2MC->SetTitle(Form("%s, 0.2<p_{T}<3.0 GeV/c;centrality, %%;v_{2}",label.Data()));
   hv2MC->GetYaxis()->SetRangeUser(0,0.1);
   hv2MC->GetXaxis()->SetLimits(0,60);
   hv2MC->Draw();
@@ -502,7 +539,7 @@ void GetFlow(TString inputFileName1 = "HistFromFirstRun.root", TString inputFile
   c.SaveAs("Flow.pdf");
   //================= Drawing =========================
   TCanvas c2;
-  TPaveLabel* title = new TPaveLabel(0.1,0.96,0.9,0.99,"UrQMD, Au+Au #sqrt{s_{NN}}=7.7 GeV, h^{#pm}, |#eta|<1.5");
+  TPaveLabel* title = new TPaveLabel(0.1,0.96,0.9,0.99,label.Data());
   title->SetBorderSize(0);
   title->SetFillColor(0);
   // title->SetTextFont(textFont);
@@ -568,17 +605,15 @@ void GetFlow(TString inputFileName1 = "HistFromFirstRun.root", TString inputFile
   c2.SaveAs(Form("DifFlow.pdf"));
   //================= Drawing =========================
   TCanvas c3("c3","",1400,700);
-  TPaveLabel* title3 = new TPaveLabel(0.1,0.96,0.9,0.99,"UrQMD, Au+Au #sqrt{s_{NN}}=7.7 GeV, h^{#pm}, |#eta|<1.5");
+  TPaveLabel* title3 = new TPaveLabel(0.1,0.96,0.9,0.99,label.Data());
   title3->SetBorderSize(0);
   title3->SetFillColor(0);
+  c3.SetLeftMargin(0.15);
   // title3->SetTextFont(textFont);
   // title3->SetTextSize(2.);
   title3->Draw();
-  // TCanvas c3;
   c3.Divide(6,2,0,0);
   // gROOT->SetStyle("Pub");
-  c3.SetLeftMargin(0.15);
-  // gStyle->SetTextSize(2.5);
   for (int centrality = 1; centrality < 7; centrality++){
   c3.cd(centrality);
   TH1F *hLYZDiff = new TH1F(Form("hLYZDiff_%i",centrality+6),"",npt,&bin_pT[0]);
@@ -646,47 +681,7 @@ void GetFlow(TString inputFileName1 = "HistFromFirstRun.root", TString inputFile
   }
   c3.SaveAs("RatioDiffFlow.pdf");
 
-  if (bDebug)
-  {
-    cout << "// ====== Sum ====== //" << endl;
-    // Cross check integrated flow - correct!
-    for (int ic = 0; ic < ncent; ic++)
-    {
-      float refmult = prRefMult->GetBinContent(ic+1);
-      for (int thetabin = 0; thetabin < thetabins; thetabin++)
-      {
-        double integratedFlow = 0;
-        double denominator = 0;
-        for (int ipt = 0; ipt < npt; ipt++)
-        {
-          double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
-          integratedFlow += v2diff_check[ic][ipt][thetabin] * rpmult;
-          denominator += rpmult;
-        }
-        if (denominator != 0) integratedFlow /= denominator;
-        cout <<"cent: "<< ic << " " <<dVtheta[ic][thetabin]/refmult << "\t" << integratedFlow << endl;
-      }
-    }
-    cout << "// ====== Product ====== //" << endl;
-    for (int ic = 0; ic < ncent; ic++)
-    {
-      float refmult = prRefMult->GetBinContent(ic+1);
-      for (int thetabin = 0; thetabin < thetabins; thetabin++)
-      {
-        double integratedFlow = 0;
-        double denominator = 0;
-        for (int ipt = 0; ipt < npt; ipt++)
-        {
-          double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
-          integratedFlow += v2diff_checkPro[ic][ipt][thetabin] * rpmult;
-          denominator += rpmult;
-        }
-        if (denominator != 0) integratedFlow /= denominator;
-        cout <<"cent: "<< ic << " " <<dVthetaPro[ic][thetabin]/refmult << "\t" << integratedFlow << endl;
-      }
-    }
 
-  }
 
 
 }

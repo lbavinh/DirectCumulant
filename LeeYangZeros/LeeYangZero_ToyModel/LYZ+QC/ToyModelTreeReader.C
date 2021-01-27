@@ -6,7 +6,7 @@
 #include "TH1.h"
 #include <TLegend.h>
 #include <iostream>
-
+#include <fstream>
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
@@ -73,21 +73,21 @@ int GetCentBin(double cent)
 void GetRes(TProfile *const &pr)
 {
   cout << "const double res2[" << pr->GetNbinsX() <<"] = {";
-  for (int i=0; i<pr->GetNbinsX(); i++)
+  for (int i=0; i<pr->GetNbinsX()-1; i++)
   {
     cout << TMath::Sqrt(pr->GetBinContent(i+1)) <<", ";
   }
-  cout <<"};" << endl;
+  cout << TMath::Sqrt(pr->GetBinContent(pr->GetNbinsX())) <<"};" << endl;
 }
 
 void GetMultMean(TProfile *const &pr)
 {
   cout << "const double dMultMean[" << pr->GetNbinsX() <<"] = {";
-  for (int i=0; i<pr->GetNbinsX(); i++)
+  for (int i=0; i<pr->GetNbinsX()-1; i++)
   {
     cout << (pr->GetBinContent(i+1)) <<", ";
   }
-  cout <<"};" << endl;
+  cout <<(pr->GetBinContent(pr->GetNbinsX()))<<"};" << endl;
 }
 
 double GetR0(TH1F *const &hist)
@@ -214,7 +214,7 @@ Double_t CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
    return coor24/wred4;
 }
 
-void ToyModelTreeReader(TString file = "ToyModel_NonFlow_M_1000_2.root", TString outFile = "LYZ_nonflow_M_1000_run2.root", Bool_t bFirstRun = 0)
+void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputFileName = "test.root", Bool_t bFirstRun = 1)
 {
   
   const int ncent = 9; // 0-80%
@@ -230,7 +230,7 @@ void ToyModelTreeReader(TString file = "ToyModel_NonFlow_M_1000_2.root", TString
   const int max_nh = 20000;
 
   // LYZ
-  bool bUseProduct = 0;
+  bool bUseProduct = 1;
   const int rbins = 2500;
   const double rMax = 0.5;
   const double rMin = 0.005;
@@ -248,6 +248,8 @@ void ToyModelTreeReader(TString file = "ToyModel_NonFlow_M_1000_2.root", TString
   double Qtheta[thetabins];
   TComplex genfunS[rbins][thetabins]; // sum
   TComplex genfunP[rbins][thetabins]; // product
+  TComplex genfunPr0[thetabins]; // product
+  TComplex cdGr0[thetabins];
   TComplex cExpo;
   double Q2x, Q2y;
   int mult;
@@ -257,63 +259,33 @@ void ToyModelTreeReader(TString file = "ToyModel_NonFlow_M_1000_2.root", TString
   TComplex cExponent[thetabins];
 
   // from 1-st run
-  // <M>=500
-  // const double res2[9] = {0.435238, 0.566921, 0.670914, 0.723047, 0.720871, 0.672682, 0.592576, 0.480701, 0.360702};
-  // const double r02[ncent][thetabins] = {{0.0772551, 0.0804191, 0.0746419, 0.0861654, 0.0841463 },
-  // {0.0634925, 0.0635418, 0.0652905, 0.0645596, 0.0625709 },
-  // {0.0582525, 0.0585504, 0.0577815, 0.05755, 0.0579139 },
-  // {0.0621704, 0.0624448, 0.0618503, 0.0620689, 0.0623864 },
-  // {0.0770555, 0.0771739, 0.0765892, 0.0763371, 0.0770344 },
-  // {0.108106, 0.106704, 0.107299, 0.107969, 0.108354 },
-  // {0.177307, 0.176812, 0.176146, 0.178965, 0.185639 },
-  // {0.437955, 0.377719, 0.374978, 0.424522, 0.445229 },
-  // {0, 0, 0, 0, 0 },
-  // };
-  // const double chisq[9] = {0.671751, 0.927704, 1.16937, 1.29891, 1.24777, 1.07118, 0.786754, 0.438892, 0};
 
-  // <M>=1000
-  // const double res2[9] = {0.578437, 0.718362, 0.811036, 0.851391, 0.84943, 0.814827, 0.739581, 0.625978, 0.484355};
-  // const double r02[ncent][thetabins] = {{0.0395415, 0.039422, 0.0395461, 0.039205, 0.0397545 },
-  // {0.0316243, 0.0316585, 0.0314996, 0.0315935, 0.0315527 },
-  // {0.0289243, 0.0289726, 0.0290406, 0.029086, 0.0290144 },
-  // {0.0309938, 0.0311135, 0.031145, 0.0309388, 0.0309227 },
-  // {0.0382666, 0.0381948, 0.0380794, 0.0380945, 0.0381503 },
-  // {0.0532608, 0.0530296, 0.0528141, 0.0529654, 0.0531268 },
-  // {0.0844554, 0.084631, 0.0843408, 0.0851151, 0.0845861 },
-  // {0.167994, 0.170527, 0.172763, 0.173792, 0.169574 },
-  // {0, 0.464946, 0, 0, 0.420858 },
-  // };
-  // const double chisq[9] = {0.974493, 1.33634, 1.6448, 1.80669, 1.7188, 1.47705, 1.12974, 0.698748, 0.381532};
-  // <M>=3000
-// const double res2[9] = {0.80617, 0.904051, 0.944131, 0.957846, 0.957002, 0.944363, 0.913649, 0.842632, 0.709414};
-// const double r02[ncent][thetabins] = {{0.0131911, 0.0132969, 0.0132844, 0.0132302, 0.0131955 },
-// {0.0105154, 0.01058, 0.0106124, 0.0105857, 0.0104958 },
-// {0.00964134, 0.00964005, 0.00964694, 0.00964094, 0.00964315 },
-// {0.0103116, 0.0102837, 0.010273, 0.0102814, 0.0103083 },
-// {0.0126536, 0.0125789, 0.0125801, 0.0126597, 0.0127023 },
-// {0.0174372, 0.0174505, 0.0174524, 0.0175054, 0.0174511 },
-// {0.027267, 0.0271488, 0.0272176, 0.0273134, 0.0273194 },
-// {0.049998, 0.0496425, 0.0496019, 0.0501025, 0.0502267 },
-// {0.129129, 0.127812, 0.198605, 0.133782, 0.137957 },
-//  };
-// const double chisq[9] = {1.62443, 2.2646, 2.80012, 2.9943, 2.74902, 2.27399, 1.73514, 1.19749, 0.532146};
-
-  // Nonflow
-const double res2[9] = {0.563622, 0.705563, 0.801922, 0.84529, 0.841224, 0.804821, 0.730609, 0.612326, 0.472941};
-const double r02[ncent][thetabins] = {{0.0395492, 0.0390756, 0.039307, 0.039441, 0.0400632 },
-{0.0316274, 0.031506, 0.0313594, 0.0313725, 0.0314564 },
-{0.0287028, 0.028683, 0.0287081, 0.0287474, 0.0287379 },
-{0.0307233, 0.0307071, 0.0306717, 0.0306802, 0.0307083 },
-{0.0377524, 0.0377611, 0.0377664, 0.0377669, 0.0378292 },
-{0.0524531, 0.0527332, 0.0529141, 0.0528786, 0.0526607 },
-{0.0847556, 0.0841334, 0.0835251, 0.0844073, 0.084786 },
-{0.171219, 0.177396, 0.171281, 0.177057, 0.171719 },
-{0, 0, 0.484089, 0, 0 },
+const double res2[9] = {0.584718, 0.724644, 0.81762, 0.858491, 0.85583, 0.82071, 0.748597, 0.63331, 0.488836};
+const double r02[ncent][thetabins] = {{0.0395063, 0.0398562, 0.0399983, 0.0399956, 0.0397162 },
+{0.0317756, 0.0317372, 0.0316871, 0.0317655, 0.0318764 },
+{0.0290447, 0.0289142, 0.0289302, 0.0289397, 0.0290322 },
+{0.0309952, 0.0309848, 0.031009, 0.0310251, 0.0310295 },
+{0.0381208, 0.0380498, 0.03805, 0.0380708, 0.0381157 },
+{0.0530593, 0.0530336, 0.0529607, 0.0530779, 0.0530818 },
+{0.0848463, 0.0847794, 0.0849068, 0.0849609, 0.0849139 },
+{0.174272, 0.173572, 0.17187, 0.17073, 0.171588 },
+{0, 0, 0, 0, 0 },
  };
 const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.07872, 0.654145, 0.33026};
 
+const double r02Pro[ncent][thetabins] = {{0.0395839, 0.0399656, 0.0400806, 0.0400938, 0.0398228 },
+{0.0317164, 0.0316762, 0.0316221, 0.0316982, 0.0318117 },
+{0.028981, 0.0288555, 0.0288653, 0.0288714, 0.0289637 },
+{0.0308428, 0.0308339, 0.0308573, 0.0308734, 0.0308762 },
+{0.0377878, 0.0377225, 0.0377136, 0.0377306, 0.0377742 },
+{0.0520696, 0.0520408, 0.0519703, 0.0520912, 0.0520978 },
+{0.0807638, 0.0807058, 0.0808258, 0.080827, 0.080787 },
+{0.144313, 0.143242, 0.143493, 0.142505, 0.141877 },
+{0.272917, 0.274304, 0.282908, 0.269197, 0.264743 },
+ };
 
-  TFile *d_outfile = new TFile(outFile.Data(), "recreate");
+
+  TFile *d_outfile = new TFile(outputFileName.Data(), "recreate");
 
   TH1I *hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
   TH2F *hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", max_nh, 0, max_nh, 200, 0., 20.);
@@ -356,6 +328,12 @@ const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.
   TProfile *prImDenom[thetabins];
   TProfile *prReNumer[thetabins][ncent];
   TProfile *prImNumer[thetabins][ncent];
+
+  TProfile *prReDenomPro[thetabins];
+  TProfile *prImDenomPro[thetabins];
+  TProfile *prReNumerPro[thetabins][ncent];
+  TProfile *prImNumerPro[thetabins][ncent];
+
   TProfile *prMultPOI[ncent];
   if (bFirstRun){
   for (int i = 0; i < ncent; ++i)
@@ -385,6 +363,17 @@ const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.
       prReNumer[i][j] = new TProfile(Form("prReNumer_theta%i_cent%i", i, j),"", npt, &bin_pT[0]);
       prImNumer[i][j] = new TProfile(Form("prImNumer_theta%i_cent%i", i, j),"", npt, &bin_pT[0]);
     }
+    if (bUseProduct){
+    prReDenomPro[i] = new TProfile(Form("prReDenomPro_theta%i",i),"", ncent, &bin_cent[0]);
+    prImDenomPro[i] = new TProfile(Form("prImDenomPro_theta%i",i),"", ncent, &bin_cent[0]);
+
+    for (int j = 0; j < ncent; j++)
+    {
+      prReNumerPro[i][j] = new TProfile(Form("prReNumerPro_theta%i_cent%i", i, j),"", npt, &bin_pT[0]);
+      prImNumerPro[i][j] = new TProfile(Form("prImNumerPro_theta%i_cent%i", i, j),"", npt, &bin_pT[0]);
+    }
+    }
+
   }
 
   for (int ic = 0; ic < ncent; ic++)
@@ -457,9 +446,17 @@ const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.
   TBranch *b_pt;    //!
 
   TChain *fChain = new TChain("tree");
-  // fChain->Add(file.Data());
-  fChain->Add("ToyModel_NonFlow_M_1000_2.root");
-  fChain->Add("ToyModel_NonFlow_M_1000.root");
+  if (inputFileName.Contains(".root"))
+  {fChain->Add(inputFileName.Data());}
+  else
+  {
+    std::ifstream file(inputFileName.Data());
+    std::string line;
+    while (std::getline(file, line))
+    {
+      fChain->Add(line.c_str());
+    }
+  }
   
   if (!fChain)
     return;
@@ -478,8 +475,8 @@ const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.
   cout << "Calculating flow..." << endl;
   for (Long64_t jentry = 0; jentry < nentries; jentry++)
   {
-    if (jentry % 10000 == 0)
-      cout << jentry << endl;
+    if (jentry % 1000 == 0)
+      cout << "[" << jentry << "/" << nentries << "]" << endl;
     // if (jentry == 100000) break;  
     fChain->GetEntry(jentry);
 
@@ -500,6 +497,8 @@ const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.
       Qtheta[i] = 0.;
       cExponent[i] = TComplex(0.0,0.0);
     }
+    Q2x = 0.;
+    Q2y = 0.;
     if (bFirstRun)
     {
       for (int i = 0; i < rbins; ++i)
@@ -511,9 +510,14 @@ const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.
         }
       }
     }
-    Q2x = 0.;
-    Q2y = 0.;
-    if (!bFirstRun) for (int ipt = 0; ipt < npt; ipt++) multPOI[ipt] = 0.;
+    else{
+      
+      for (int it = 0; it < thetabins; it++){
+        genfunPr0[it] = TComplex::One();
+        cdGr0[it] = TComplex(0.0,0.0);
+      }
+      for (int ipt = 0; ipt < npt; ipt++) multPOI[ipt] = 0.;
+    } 
 
     // Q-vector of RFP
     Double_t Qx2 = 0., Qy2 = 0., Qx4 = 0., Qy4 = 0.;
@@ -600,17 +604,27 @@ const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.
         sumQxy[fEta][1] += pT * TMath::Sin(2.0 * phi);
         multQv[fEta]++;
       } // end of eta selection
-      if (bFirstRun){
-      if (bUseProduct)
-      {
-        for (int rbin = 0; rbin < rbins; ++rbin)
-        {
+      if (bUseProduct){
+        
+        if (bFirstRun){
           for (int thetabin = 0; thetabin < thetabins; ++thetabin)
           {
-            genfunP[rbin][thetabin] *= TComplex(1.0, r[rbin] * TMath::Cos(2. * (phi - theta[thetabin])));
+            double dCosTerm = TMath::Cos(2. * (phi - theta[thetabin]));
+            for (int rbin = 0; rbin < rbins; ++rbin)
+            {
+              genfunP[rbin][thetabin] *= TComplex(1.0, r[rbin] * dCosTerm);
+            }
           }
         }
-      }
+        else{
+          for (int thetabin = 0; thetabin < thetabins; ++thetabin)
+          {
+            double dCosTerm = TMath::Cos(2. * (phi - theta[thetabin]));
+            genfunPr0[thetabin] *= TComplex(1.0, r02Pro[icent][thetabin] * dCosTerm);
+            TComplex cCosTermComplex(1., r02Pro[icent][thetabin] * dCosTerm);
+            cdGr0[thetabin] += (dCosTerm/cCosTermComplex); 
+          }
+        }
       }
       mult++;
     } // end of track loop
@@ -701,6 +715,14 @@ const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.
           prReDenom[thetabin]->Fill(dCent, cDenominator.Re());
           prImDenom[thetabin]->Fill(dCent, cDenominator.Im());
         }
+        if (bUseProduct)
+        {
+          for (int thetabin = 0; thetabin < thetabins; thetabin++)
+          {
+            prReDenomPro[thetabin]->Fill(dCent, (genfunPr0[thetabin] * cdGr0[thetabin]).Re());
+            prImDenomPro[thetabin]->Fill(dCent, (genfunPr0[thetabin] * cdGr0[thetabin]).Im());
+          }
+        }
       }
     } // end of if (mult!=0)
 
@@ -755,9 +777,16 @@ const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.
     
       for (int thetabin = 0; thetabin < thetabins; ++thetabin)
       {
-        TComplex cNumeratorPOI = TMath::Cos(2.0 * (phi - theta[thetabin]))*(TComplex::Exp(cExponent[thetabin]));    
+        double dCosTerm = TMath::Cos(2.0 * (phi - theta[thetabin]));
+        TComplex cNumeratorPOI = dCosTerm*(TComplex::Exp(cExponent[thetabin]));    
         prReNumer[thetabin][icent]->Fill(pT, cNumeratorPOI.Re());
         prImNumer[thetabin][icent]->Fill(pT, cNumeratorPOI.Im());
+        if (bUseProduct){
+          TComplex cCosTermComplex(1., r02Pro[icent][thetabin] * dCosTerm);
+          TComplex cNumeratorPOIPro = genfunPr0[thetabin] * dCosTerm / cCosTermComplex;   
+          prReNumerPro[thetabin][icent]->Fill(pT, cNumeratorPOIPro.Re());
+          prImNumerPro[thetabin][icent]->Fill(pT, cNumeratorPOIPro.Im());          
+        }
       }
     } // end of the track loop
     }
@@ -1081,6 +1110,15 @@ const double chisq[9] = {0.911555, 1.25572, 1.58118, 1.7373, 1.66083, 1.4094, 1.
       {
         prReNumer[j][i]->Write();
         prImNumer[j][i]->Write();
+      }
+      if (bUseProduct){
+        prReDenomPro[j]->Write();
+        prImDenomPro[j]->Write();
+        for (int i = 0; i < ncent; i++)
+        {
+          prReNumerPro[j][i]->Write();
+          prImNumerPro[j][i]->Write();
+        }
       }
     }
     for (int ic = 0; ic < ncent; ic++)

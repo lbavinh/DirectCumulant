@@ -1,3 +1,6 @@
+#include <iostream>
+#include <fstream>
+
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
@@ -5,14 +8,15 @@
 #include "TMath.h"
 #include "TH1.h"
 #include <TLegend.h>
-#include <iostream>
-#include <fstream>
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
 #include <TComplex.h>
 #include <TString.h>
-
+#include <TStopwatch.h>
+#include <TDatabasePDG.h>
+#include <TVector3.h>
+#define MAX_TRACKS 10000
 using std::cout;
 using std::endl;
 using std::cerr;
@@ -214,20 +218,18 @@ Double_t CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
    return coor24/wred4;
 }
 
-void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputFileName = "test.root", TString inputFileHist="", Bool_t bFirstRun = 1)
+void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inputFileHist="", Bool_t bFirstRun = 1)
 {
   
   const int ncent = 9; // 0-80%
   const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
-  const int npt = 12; // 0.2 - 3.5 GeV/c
-  const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
-  const double maxpt = 3.5; // max pt
+  const int npt = 14; // 0.5 - 3.6 GeV/c - number of pt bins
+  const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
+  const double maxpt = 3.0;  // max pt
   const double minpt = 0.2; // min pt
-  const double eta_cut = 2.0;
-  const double eta_gap = 0;
-
+  const float eta_cut = 1.5;
+  const float eta_gap = 0.05;
   const int neta = 2; // [eta-,eta+]
-  const int max_nh = 20000;
 
   // LYZ
   bool bUseProduct = 1;
@@ -240,7 +242,7 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
 
   // const double rMaxSum = 250;
   // const double rMinSum = 0;
-  const int thetabins = 5;
+  const int thetabins = 10;
   const double rootJ0 = 2.4048256;
   const double J1rootJ0 = 0.519147;
   double theta[thetabins];
@@ -262,10 +264,10 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   TComplex cDenominator;
   TComplex cExponent[thetabins];
 
-  TFile *d_outfile = new TFile(outputFileName.Data(), "recreate");
-
-  TH1I *hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", max_nh, 0, max_nh);
-  TH2F *hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", max_nh, 0, max_nh, 200, 0., 20.);
+  TFile *fo = new TFile(outputFileName.Data(), "recreate");
+  TH1I *hEvt = new TH1I("hEvt", "Event number", 1, 0, 1);
+  TH1I *hMult = new TH1I("hMult", "Multiplicity distr;M;dN/dM", MAX_TRACKS, 0, MAX_TRACKS);
+  TH2F *hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", MAX_TRACKS, 0, MAX_TRACKS, 200, 0., 20.);
   TH1F *hBimp = new TH1F("hBimp", "Impact parameter;b (fm);dN/db", 200, 0., 20.);
   TH1F *hPt = new TH1F("hPt", "Pt-distr;p_{T} (GeV/c); dN/dP_{T}", 500, 0., 6.);
   TH1F *hRP = new TH1F("hRP", "Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}", 300, 0., 7.);
@@ -281,9 +283,12 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
     if (!inputFileHist) cerr << "inputFileHist=NULL!!" << endl;
     TFile *fiHist = new TFile(inputFileHist.Data(),"read");
     HRes =  (TProfile*) fiHist->Get("HRes");
+    cout << "Resolution=";
     for (int ic = 0; ic < ncent; ic++){
       res2[ic] = TMath::Sqrt(HRes->GetBinContent(ic+1));
+      cout << res2[ic] << ", ";
     }
+    cout << endl;
   }
   TProfile *hv2MCpt[ncent];
   TProfile *hv2EPpt[ncent];
@@ -445,6 +450,7 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   TProfile *hcov42prime[ncent][npt];      // <2>*<4'>
   TProfile *hcov44prime[ncent][npt];      // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
+  if (!bFirstRun){
   for (int icent = 0; icent < ncent; icent++)
   { // loop over centrality classes
     hv22[icent] = new TProfile(Form("hv22_%i", icent), "", 1, 0., 1.);
@@ -461,71 +467,92 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
       hcov2prime4prime[icent][kpt] = new TProfile(Form("hcov2prime4prime_%i_%i", icent, kpt), "", 1, 0., 1.);
     } // end of loop over pt bin
   } // end of loop over centrality classes
+  }
 
   // cout << "Histograms have been initialized" << endl;
 
-  // Declaration of leaf types
-  Int_t nh;
-  Float_t b;
-  Float_t rp;
-  Float_t phi0[max_nh]; //[nh]
-  Bool_t bFlow[max_nh]; //[nh]
-  Float_t eta[max_nh];  //[nh]
-  Float_t pt[max_nh];   //[nh]
-
-  // List of branches
-  TBranch *b_nh;    //!
-  TBranch *b_b;     //!
-  TBranch *b_rp;    //!
-  TBranch *b_phi0;  //!
-  TBranch *b_bFlow; //!
-  TBranch *b_eta;   //!
-  TBranch *b_pt;    //!
-
-  TChain *fChain = new TChain("tree");
+  // Configure input information
+  TChain *chain = new TChain("mctree");
   if (inputFileName.Contains(".root"))
-  {fChain->Add(inputFileName.Data());}
-  else
+  {
+    chain->Add(inputFileName.Data());
+  }
+  // if str contains filelist
+  if (!inputFileName.Contains(".root"))
   {
     std::ifstream file(inputFileName.Data());
     std::string line;
     while (std::getline(file, line))
     {
-      fChain->Add(line.c_str());
+      chain->Add(line.c_str());
     }
   }
-  
-  if (!fChain)
-    return;
-  fChain->SetBranchAddress("nh", &nh, &b_nh);
-  fChain->SetBranchAddress("b", &b, &b_b);
-  fChain->SetBranchAddress("rp", &rp, &b_rp);
-  fChain->SetBranchAddress("phi0", phi0, &b_phi0);
-  fChain->SetBranchAddress("bFlow", bFlow, &b_bFlow);
-  fChain->SetBranchAddress("eta", eta, &b_eta);
-  fChain->SetBranchAddress("pt", pt, &b_pt);
 
-  if (fChain == 0)
+  Float_t bimp;
+  Float_t phi2;
+  Float_t phi3;
+  Float_t ecc2;
+  Float_t ecc3;
+  Int_t npart;
+  Int_t nh;
+  Float_t momx[MAX_TRACKS];   //[nh]
+  Float_t momy[MAX_TRACKS];   //[nh]
+  Float_t momz[MAX_TRACKS];   //[nh]
+  Float_t ene[MAX_TRACKS];    //[nh]
+  Int_t hid[MAX_TRACKS];      //[nh]
+  Int_t pdg[MAX_TRACKS];      //[nh]
+  Short_t charge[MAX_TRACKS]; //[nh]
+
+  // List of branches
+  TBranch *b_bimp;   //!
+  TBranch *b_phi2;   //!
+  TBranch *b_phi3;   //!
+  TBranch *b_ecc2;   //!
+  TBranch *b_ecc3;   //!
+  TBranch *b_npart;  //!
+  TBranch *b_nh;     //!
+  TBranch *b_momx;   //!
+  TBranch *b_momy;   //!
+  TBranch *b_momz;   //!
+  TBranch *b_ene;    //!
+  TBranch *b_hid;    //!
+  TBranch *b_pdg;    //!
+  TBranch *b_charge; //!
+
+  chain->SetBranchAddress("bimp", &bimp, &b_bimp);
+  chain->SetBranchAddress("phi2", &phi2, &b_phi2);
+  chain->SetBranchAddress("phi3", &phi3, &b_phi3);
+  chain->SetBranchAddress("ecc2", &ecc2, &b_ecc2);
+  chain->SetBranchAddress("ecc3", &ecc3, &b_ecc3);
+  chain->SetBranchAddress("npart", &npart, &b_npart);
+  chain->SetBranchAddress("nh", &nh, &b_nh);
+  chain->SetBranchAddress("momx", momx, &b_momx);
+  chain->SetBranchAddress("momy", momy, &b_momy);
+  chain->SetBranchAddress("momz", momz, &b_momz);
+  chain->SetBranchAddress("ene", ene, &b_ene);
+  chain->SetBranchAddress("hid", hid, &b_hid);
+  chain->SetBranchAddress("pdg", pdg, &b_pdg);
+  chain->SetBranchAddress("charge", charge, &b_charge);
+
+  if (chain == 0)
     return;
 
-  Long64_t nentries = fChain->GetEntries();
-  cout << "Calculating flow..." << endl;
+  Long64_t nentries = chain->GetEntries();
+  cout << "OK, Master! Let's do some physics!..." << endl;
   for (Long64_t jentry = 0; jentry < nentries; jentry++)
   {
     if (jentry % 10000 == 0)
       cout << "[" << jentry << "/" << nentries << "]" << endl;
-    // if (jentry == 100000) break;  
-    fChain->GetEntry(jentry);
-
-    double dCent = CentB(b);
+    chain->GetEntry(jentry);
+    hEvt->Fill(0);
+    double dCent = CentB(bimp);
     if (dCent < 0)
       continue;
     int icent = GetCentBin(dCent);
     mult = 0;
     hMult->Fill(nh);
-    hRP->Fill(rp);
-    hBimp->Fill(b);
-    hBimpvsMult->Fill(nh, b);
+    hBimp->Fill(bimp);
+    hBimpvsMult->Fill(nh, bimp);
     double sumQxy[neta][2] = {{0}}; // [eta-,eta+][x,y]
     double multQv[neta] = {0};      // [eta+,eta-]
 
@@ -578,30 +605,36 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
     // Average single-event 2- and 4- particle correlations : <2> & <4>
     Double_t cor22 = 0., cor24 = 0.;
 
-    for (int i = 0; i < nh; i++)
+    for (int iTrk = 0; iTrk < nh; iTrk++)
     { // track loop
-      double pT = pt[i];
-      if (pT < minpt || pT > maxpt || eta[i] > eta_cut)
+      TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
+      float pt = vect.Pt();
+      float eta = vect.Eta();
+      float phi = vect.Phi();
+      if (pt < minpt || pt > maxpt || fabs(eta) > eta_cut)
+        continue; // track selection
+      // if (fabs(eta)<eta_gap) continue;
+      auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+      if (!particle)
         continue;
-      hPt->Fill(pT);
-      double phi = phi0[i];
-      if (phi < 0)
-        phi += 2. * TMath::Pi();
-      hPhi->Fill(phi-rp);
-      hPhil->Fill(phi);
-      hEta->Fill(eta[i]);
+      float charge = 1. / 3. * particle->Charge();
+      if (charge == 0)
+        continue;
+      hPt->Fill(pt);
+      hEta->Fill(eta);
+      hPhi->Fill(phi);
 
       Q2x += TMath::Cos(2.0 * phi);
       Q2y += TMath::Sin(2.0 * phi);
         Int_t ipt = -1;
-        for (int j = 0; j < npt; j++) if (pT >= bin_pT[j] && pT < bin_pT[j + 1]) ipt = j;
+        for (int j = 0; j < npt; j++) if (pt >= bin_pT[j] && pt < bin_pT[j + 1]) ipt = j;
       if (!bFirstRun)
       {
 
         multPOI[ipt]++;
       }
-      Double_t v2 = TMath::Cos(2 * (phi - rp));
-
+      Double_t v2 = TMath::Cos(2 * phi);
+      if (!bFirstRun){
       Double_t cos4phi = TMath::Cos(4.*phi);
       Double_t sin4phi = TMath::Sin(4.*phi);
       Double_t cos2phi = TMath::Cos(2.*phi);
@@ -622,23 +655,22 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
       qx4[ipt] += cos4phi;
       qy4[ipt] += sin4phi;
       mq[ipt]++;
-      
-      if (bFlow[i])
-      {
-        hv2MC->Fill(dCent, v2);        // calculate reference v2 from MC toy
-        hv2MCpt[icent]->Fill(pT, v2); // Calculate differential v2 from MC toy
       }
+
+      hv2MC->Fill(dCent, v2);        // calculate reference v2 from MC toy
+      hv2MCpt[icent]->Fill(pt, v2); // Calculate differential v2 from MC toy
+
       // Sub eta event method
       int fEta = -1;
-      if (eta[i] < -eta_gap && eta[i] > -eta_cut)
+      if (eta < -eta_gap && eta > -eta_cut)
         fEta = 0;
-      if (eta[i] > eta_gap && eta[i] < eta_cut)
+      if (eta > eta_gap && eta < eta_cut)
         fEta = 1;
 
       if (fEta > -1)
       {
-        sumQxy[fEta][0] += pT * TMath::Cos(2.0 * phi);
-        sumQxy[fEta][1] += pT * TMath::Sin(2.0 * phi);
+        sumQxy[fEta][0] += pt * TMath::Cos(2.0 * phi);
+        sumQxy[fEta][1] += pt * TMath::Sin(2.0 * phi);
         multQv[fEta]++;
       } // end of eta selection
       if (bUseProduct){
@@ -666,7 +698,7 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
       mult++;
     } // end of track loop
 
-    if (M >= 4.){
+    if (M >= 4. && !bFirstRun){
       Q2 = TComplex(Qx2, Qy2);
       w2 = M * (M - 1.);                 // w(<2>)
       cor22 = CalCor22(Q2, M, w2);       // <2>
@@ -791,28 +823,37 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
     // angles of two subset groups of tracks, called sub-events \eta- and \eta+
 
     if (!bFirstRun){
-    for (int itrk = 0; itrk < nh; itrk++)
+    for (int iTrk = 0; iTrk < nh; iTrk++)
     { //track loop
-      double pT = pt[itrk];
-      if (pT < minpt || pT > maxpt || eta[itrk] > eta_cut)
+
+      TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
+      float pt = vect.Pt();
+      float eta = vect.Eta();
+      float phi = vect.Phi();
+      if (pt < minpt || pt > maxpt || fabs(eta) > eta_cut)
+        continue; // track selection
+      // if (fabs(eta)<eta_gap) continue;
+      auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+      if (!particle)
         continue;
-      double phi = phi0[itrk];
+      float charge = 1. / 3. * particle->Charge();
+      if (charge == 0)
+        continue;
   
       if (fEP[0] != -9999. && fEP[1] != -9999.)
       {
         float v2 = -999.0;
-        if (eta[itrk] > 0)
+        if (eta > eta_gap)
         { // eta+
           v2 = TMath::Cos(2.0 * (phi - fEP[0])) / res2[icent];
         }
-        if (eta[itrk] < 0)
+        if (eta < -eta_gap)
         { // eta-
           v2 = TMath::Cos(2.0 * (phi - fEP[1])) / res2[icent];
         }
-        // if(fabs(eta[itrk])<1.0){ // eliminate spectators
         if (v2 != -999.0)
         {
-          hv2EPpt[icent]->Fill(pT, v2);
+          hv2EPpt[icent]->Fill(pt, v2);
           hv2EP->Fill(dCent, v2);
         }
       }
@@ -821,46 +862,19 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
       {
         double dCosTerm = TMath::Cos(2.0 * (phi - theta[thetabin]));
         TComplex cNumeratorPOI = dCosTerm*(TComplex::Exp(cExponent[thetabin]));    
-        prReNumer[thetabin][icent]->Fill(pT, cNumeratorPOI.Re());
-        prImNumer[thetabin][icent]->Fill(pT, cNumeratorPOI.Im());
+        prReNumer[thetabin][icent]->Fill(pt, cNumeratorPOI.Re());
+        prImNumer[thetabin][icent]->Fill(pt, cNumeratorPOI.Im());
         if (bUseProduct){
           TComplex cCosTermComplex(1., r02Pro[icent][thetabin] * dCosTerm);
           TComplex cNumeratorPOIPro = genfunPr0[thetabin] * dCosTerm / cCosTermComplex;   
-          prReNumerPro[thetabin][icent]->Fill(pT, cNumeratorPOIPro.Re());
-          prImNumerPro[thetabin][icent]->Fill(pT, cNumeratorPOIPro.Im());          
+          prReNumerPro[thetabin][icent]->Fill(pt, cNumeratorPOIPro.Re());
+          prImNumerPro[thetabin][icent]->Fill(pt, cNumeratorPOIPro.Im());          
         }
       }
     } // end of the track loop
     }
   }   // end of event loop
 
-  // cout << "double v2EP[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << hv2EP->GetBinContent(ic+1) << ", ";
-  // }
-  // cout << hv2EP->GetBinContent(ncent) << "};" << endl;
-
-  // cout << "double v2eEP[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << hv2EP->GetBinError(ic+1) << ", ";
-  // }
-  // cout << hv2EP->GetBinError(ncent) << "};" << endl;
-
-  // cout << "double v2MC[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << hv2MC->GetBinContent(ic+1) << ", ";
-  // }
-  // cout << hv2MC->GetBinContent(ncent) << "};" << endl;
-
-  // cout << "double v2eMC[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << hv2MC->GetBinError(ic+1) << ", ";
-  // }
-  // cout << hv2MC->GetBinError(ncent) << "};" << endl;
 
   // //============================================================================================================
   // cout << inputFileName.Data() << " file processed" << endl;
@@ -936,12 +950,19 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
 
 
   //   cout << "My flow" << endl;
-  //   cout << "double v2MC[9] = {";
-  //   for (int ic = 0 ; ic < ncent-1; ic++)
-  //   {
-  //     cout << hv2MC->GetBinContent(ic+1) << ", ";
-  //   }
-  //   cout << hv2MC->GetBinContent(ncent) << "};" << endl;
+    // cout << "double v2MC[9] = {";
+    // for (int ic = 0 ; ic < ncent-1; ic++)
+    // {
+    //   cout << hv2MC->GetBinContent(ic+1) << ", ";
+    // }
+    // cout << hv2MC->GetBinContent(ncent) << "};" << endl;
+
+    // cout << "double v2EP[9] = {";
+    // for (int ic = 0 ; ic < ncent-1; ic++)
+    // {
+    //   cout << hv2EP->GetBinContent(ic+1) << ", ";
+    // }
+    // cout << hv2EP->GetBinContent(ncent) << "};" << endl;
 
   //   cout << "double v2LYZ[9] = {";
   //   for (int ic = 0 ; ic < ncent-1; ic++)
@@ -956,181 +977,12 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   //   }
   //   cout << v2e[ncent-1] << "};" << endl;
 
+ 
 
-  // TH1F *hLYZ = new TH1F("hLYZ","",ncent,&bin_cent[0]);
-  // for (int ic=0; ic<ncent; ic++)
-  // {
-  //   hLYZ->SetBinContent(ic+1,v2int[ic]);
-  //   hLYZ->SetBinError(ic+1,v2e[ic]);
-  // }
-
-  // cout << "double v2LYZ[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << v2int[ic] << ", ";
-  // }
-  // cout << v2int[ncent-1] << "};" << endl;
-  // cout << "double v2eLYZ[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << v2e[ic] << ", ";
-  // }
-  // cout << v2e[ncent-1] << "};" << endl;
-  // // Differential v2 LYZ
-  // TComplex cNumeratorPOI;
-  // double re, im, reRatio;
-  // double v2diff[ncent][npt]={0.};
-  // double v2diffe[ncent][npt]={0.};
-  // for (int ic = 0; ic < ncent; ic++)
-  // {
-  //   /* Computation of statistical error bars on the average estimates */
-  //   double temp = 0.;
-  //   double arg[thetabins];
-  //   for(int k1=0; k1<thetabins; k1++)
-  //   {
-  //     // float arg=((float) it)*TMath::Pi()/(thetabins-1.);
-  //     arg[k1] = theta[k1];
-
-  //     /* Loop over the theta angles, to compute the statistical error */
-  //     temp += (exp(sqr(rootJ0/dChi2[ic])*cos(arg[k1])/2.)*
-  //     BesselJ0(2.*rootJ0*sin(arg[k1]/2.)) -
-  //     exp(-sqr(rootJ0/dChi2[ic])*cos(arg[k1])/2.)*
-  //     BesselJ0(2.*rootJ0*cos(arg[k1]/2.)))*cos(arg[k1]);
-  //   }
-  //   for (int thetabin = 0; thetabin < thetabins; thetabin++)
-  //   {
-  //     re = prReDenom[thetabin]->GetBinContent(ic+1);
-  //     im = prImDenom[thetabin]->GetBinContent(ic+1);
-  //     cDenominator = TComplex(re, im);
-  //     if (cDenominator.Rho()==0) {
-	//       cerr<<"WARNING: modulus of cDenominator is zero"<<endl;
-	//     }
-  //     for (int ipt = 0; ipt < npt; ipt++)
-  //     {
-  //       re = prReNumer[thetabin][ic]->GetBinContent(ipt+1);
-  //       im = prImNumer[thetabin][ic]->GetBinContent(ipt+1);
-  //       cNumeratorPOI = TComplex(re, im);
-  //       if (cDenominator.Rho()!=0) {
-  //         reRatio = (cNumeratorPOI/cDenominator).Re();
-  //         double dVetaPOI = reRatio * dVtheta[ic][thetabin];
-  //         // cout << "reRatio * dVtheta[ic][thetabin] = " << reRatio <<" * "<< dVtheta[ic][thetabin] << endl;
-  //         v2diff[ic][ipt] += dVetaPOI;
-  //       }
-
-  //     }
-  //   }
-  //   double neve = prReDenom[0]->GetBinEntries(ic+1);
-  //   for (int ipt = 0; ipt < npt; ipt++)
-  //   {    
-  //     v2diff[ic][ipt] /= thetabins;
-  //     double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
-  //     v2diffe[ic][ipt] = sqrt(temp/rpmult/neve/thetabins)/2./J1rootJ0;
-  //     if (ic == 2) cout << v2diffe[ic][ipt] << ", ";
-  //   }
-
-  // }
-
-
-  // //================= Drawing =========================
-  // TCanvas c;
-
-  // hLYZ->SetMarkerStyle(23);
-  // hLYZ->SetMarkerColor(kBlue+2);
-  // hLYZ->SetLineColor(kBlue+2);
-
-  // hv2EP->SetMarkerStyle(20);
-  // hv2EP->SetMarkerColor(kRed+2);
-  // hv2EP->SetLineColor(kRed+2);
-
-  // hv2MC->SetMarkerStyle(25);
-  // hv2MC->SetMarkerColor(kBlack);
-  // hv2MC->SetLineColor(kBlack);
-  // hv2MC->SetTitle(";centrality, %;v_{2}");
-  // hv2MC->GetYaxis()->SetRangeUser(0,0.1);
-  // hv2MC->GetXaxis()->SetLimits(0,60);
-  // hv2MC->Draw();
-  // hv2EP->Draw("same");
-  // hLYZ->Draw("same");
-  // TLegend *leg = new TLegend(0.7,0.15,0.85,0.35);
-  // leg->SetBorderSize(0);
-  // leg->AddEntry(hv2MC,"MC","p");
-  // leg->AddEntry(hv2EP,"EP","p");
-  // leg->AddEntry(hLYZ,"LYZ","p");
-  // leg->Draw();
-  // gStyle->SetPadTickX(1);
-  // gStyle->SetPadTickY(1);
-  // gStyle->SetOptStat(0);
-  // c.SaveAs("Flow.pdf");
-  // //================= Drawing =========================
-  // TCanvas c2;
-  // // TPaveLabel* title = new TPaveLabel(0.1,0.95,0.9,0.98,"Toy Model");
-  // // title->SetBorderSize(0);
-  // // title->SetFillColor(0);
-  // // title->SetTextFont(textFont);
-  // // title->SetTextSize(2.);
-  // // title->Draw();
-  // // int centrality = 4; // 10-20%
-  // // c2.SetLeftMargin(0.17);
-  // TString legHeader[] = {"0-5%","5-10%","10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%"};
-  // c2.Divide(3,2,0,0);
-  // for (int centrality = 1; centrality < 7; centrality++){
-  // c2.cd(centrality);
-  // TH1F *hLYZDiff = new TH1F("hLYZDiff","",npt,&bin_pT[0]);
-  // for (int ipt=0; ipt<npt; ipt++)
-  // {
-  //   hLYZDiff->SetBinContent(ipt+1,v2diff[centrality][ipt]);
-  //   hLYZDiff->SetBinError(ipt+1,v2diffe[centrality][ipt]);
-  // }
-  // hLYZDiff->SetMarkerStyle(23);
-  // hLYZDiff->SetMarkerColor(kBlue+2);
-  // hLYZDiff->SetLineColor(kBlue+2);
-
-  // hv2EPpt[centrality]->SetMarkerStyle(20);
-  // hv2EPpt[centrality]->SetMarkerColor(kRed+2);
-  // hv2EPpt[centrality]->SetLineColor(kRed+2);
-
-  // hv2MCpt[centrality]->SetMarkerStyle(25);
-  // hv2MCpt[centrality]->SetMarkerColor(kBlack);
-  // hv2MCpt[centrality]->SetLineColor(kBlack);
-  // hv2MCpt[centrality]->SetTitle(";p_{T}, GeV/c;v_{2}");
-  // hv2MCpt[centrality]->GetYaxis()->SetRangeUser(0,0.26);
-  // hv2MCpt[centrality]->GetXaxis()->SetLimits(-0.05,3.55);
-  // hv2MCpt[centrality]->Draw();
-  // hv2EPpt[centrality]->Draw("same");
-  // hLYZDiff->Draw("P same");
-  // TLegend *leg2 = new TLegend(0.15,0.6,0.5,0.85);
-  // leg2->SetBorderSize(0);
-  // leg2->SetHeader(legHeader[centrality].Data());
-  // leg2->AddEntry(hv2MCpt[centrality],"MC","p");
-  // leg2->AddEntry(hv2EPpt[centrality],"EP","p");
-  // leg2->AddEntry(hLYZDiff,"LYZ","p");
-  // // leg2->AddEntry(hLYZ,"LYZ","p");
-  // leg2->Draw();
-  // // c2.SaveAs(Form("DifFlow_%i.png",centrality));
-  // }
-  // c2.SaveAs(Form("DifFlow.pdf"));
-  // //================= Drawing =========================
-
-  d_outfile->cd();
-  for (int icent = 0; icent < ncent; icent++)
-  { // loop over centrality classes
-    hv22[icent]->Write();
-    hv24[icent]->Write();
-    hcov24[icent] ->Write();
-    for (int kpt = 0; kpt < npt; kpt++)
-    { // loop over pt bin
-      hv22pt[icent][kpt] ->Write();
-      hv24pt[icent][kpt] ->Write();
-      hcov22prime[icent][kpt]->Write();
-      hcov24prime[icent][kpt]->Write();
-      hcov42prime[icent][kpt]->Write();
-      hcov44prime[icent][kpt]->Write();
-      hcov2prime4prime[icent][kpt]->Write();
-    } // end of loop over pt bin
-  } // end of loop over centrality classes
-
+  fo->cd();
   if (bFirstRun)
   {
+    hEvt->Write();
     hMult->Write();
     hBimp->Write();
     hPt->Write();
@@ -1158,6 +1010,7 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   }
   else
   {
+    hEvt->Write();
     hv2EP->Write();
     for (int j = 0; j < thetabins; ++j)
     {
@@ -1184,8 +1037,39 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
       hv2EPpt[ic]->Write();
       hv2MCpt[ic]->Write();
     }
+
+    for (int icent = 0; icent < ncent; icent++)
+    { // loop over centrality classes
+      hv22[icent]->Write();
+      hv24[icent]->Write();
+      hcov24[icent] ->Write();
+      for (int kpt = 0; kpt < npt; kpt++)
+      { // loop over pt bin
+        hv22pt[icent][kpt] ->Write();
+        hv24pt[icent][kpt] ->Write();
+        hcov22prime[icent][kpt]->Write();
+        hcov24prime[icent][kpt]->Write();
+        hcov42prime[icent][kpt]->Write();
+        hcov44prime[icent][kpt]->Write();
+        hcov2prime4prime[icent][kpt]->Write();
+      } // end of loop over pt bin
+    } // end of loop over centrality classes
+
   }
-  d_outfile->Close();
+  fo->Close();
   cout << "Histfile has been written" << endl;
 }
+
+// root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/39GeVxpt500new/hybrid39GeV500Evrun022.root","testrun2.root","./OUT/HistFromFirstRun.root",0)'
+// root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/Urqmd11.5/runlist_00","test.root")'
+// root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/Urqmd11.5/runlist_00","test.root","OUT/FirstRun.root",0)'
+
+// prReGthetaSum_mult0_theta0->Draw()
+
+// root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/AMPT/split/AMPT15_7.7/runlist_AMPT15_7.7_9383.list","test.root")'
+// root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/AMPT/split/AMPT15_7.7/runlist_AMPT15_7.7_9383.list","test.root","OUT/FirstRun.root",0)'
+
+
+// root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/115xpt500new/hybrid11.5GeVxpt500evP3run007.root","test.root")'
+// root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/115xpt500new/hybrid11.5GeVxpt500evP3run007.root","test.root","OUT/FirstRun.root",0)'
 

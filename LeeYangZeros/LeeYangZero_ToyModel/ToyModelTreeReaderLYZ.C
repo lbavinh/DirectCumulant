@@ -616,7 +616,7 @@ void ToyModelTreeReaderLYZ(TString file = "ToyModel_M_1000.root", TString outFil
           v2 = TMath::Cos(2.0 * (phi - fEP[1])) / res2[icent];
         }
         // if(fabs(eta[itrk])<1.0){ // eliminate spectators
-        if (v2 != 999.0)
+        if (v2 != -999.0)
         {
           hv2EPpt[icent]->Fill(pT, v2);
           hv2EP->Fill(dCent, v2);

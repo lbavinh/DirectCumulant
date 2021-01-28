@@ -1,4 +1,0 @@
-#!/bin/bash
-rm -f /weekly/$USER/lbavinh/ToyModel/OUT/log/*
-rm -f /weekly/$USER/lbavinh/ToyModel/OUT/*
-rm -rf /weekly/$USER/lbavinh/ToyModel/TMP/*

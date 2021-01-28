@@ -472,7 +472,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
   // cout << "Histograms have been initialized" << endl;
 
   // Configure input information
-  TChain *chain = new TChain("mctree");
+  TChain *chain = new TChain("particles"); // mctree
   if (inputFileName.Contains(".root"))
   {
     chain->Add(inputFileName.Data());
@@ -488,51 +488,100 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
     }
   }
 
-  Float_t bimp;
-  Float_t phi2;
-  Float_t phi3;
-  Float_t ecc2;
-  Float_t ecc3;
-  Int_t npart;
-  Int_t nh;
-  Float_t momx[MAX_TRACKS];   //[nh]
-  Float_t momy[MAX_TRACKS];   //[nh]
-  Float_t momz[MAX_TRACKS];   //[nh]
-  Float_t ene[MAX_TRACKS];    //[nh]
-  Int_t hid[MAX_TRACKS];      //[nh]
-  Int_t pdg[MAX_TRACKS];      //[nh]
-  Short_t charge[MAX_TRACKS]; //[nh]
+  // Float_t bimp;
+  // Float_t phi2;
+  // Float_t phi3;
+  // Float_t ecc2;
+  // Float_t ecc3;
+  // Int_t npart;
+  // Int_t nh;
+  // Float_t momx[MAX_TRACKS];   //[nh]
+  // Float_t momy[MAX_TRACKS];   //[nh]
+  // Float_t momz[MAX_TRACKS];   //[nh]
+  // Float_t ene[MAX_TRACKS];    //[nh]
+  // Int_t hid[MAX_TRACKS];      //[nh]
+  // Int_t pdg[MAX_TRACKS];      //[nh]
+  // Short_t charge[MAX_TRACKS]; //[nh]
+
+  // // List of branches
+  // TBranch *b_bimp;   //!
+  // TBranch *b_phi2;   //!
+  // TBranch *b_phi3;   //!
+  // TBranch *b_ecc2;   //!
+  // TBranch *b_ecc3;   //!
+  // TBranch *b_npart;  //!
+  // TBranch *b_nh;     //!
+  // TBranch *b_momx;   //!
+  // TBranch *b_momy;   //!
+  // TBranch *b_momz;   //!
+  // TBranch *b_ene;    //!
+  // TBranch *b_hid;    //!
+  // TBranch *b_pdg;    //!
+  // TBranch *b_charge; //!
+
+  // chain->SetBranchAddress("bimp", &bimp, &b_bimp);
+  // chain->SetBranchAddress("phi2", &phi2, &b_phi2);
+  // chain->SetBranchAddress("phi3", &phi3, &b_phi3);
+  // chain->SetBranchAddress("ecc2", &ecc2, &b_ecc2);
+  // chain->SetBranchAddress("ecc3", &ecc3, &b_ecc3);
+  // chain->SetBranchAddress("npart", &npart, &b_npart);
+  // chain->SetBranchAddress("nh", &nh, &b_nh);
+  // chain->SetBranchAddress("momx", momx, &b_momx);
+  // chain->SetBranchAddress("momy", momy, &b_momy);
+  // chain->SetBranchAddress("momz", momz, &b_momz);
+  // chain->SetBranchAddress("ene", ene, &b_ene);
+  // chain->SetBranchAddress("hid", hid, &b_hid);
+  // chain->SetBranchAddress("pdg", pdg, &b_pdg);
+  // chain->SetBranchAddress("charge", charge, &b_charge);
+
+  Int_t           nh;
+  Double_t        bimp;
+  Bool_t          empty_event;
+  Int_t           ev;
+  Int_t           tcounter;
+  Int_t           pdg[MAX_TRACKS];   //[npart]
+  Int_t           charge[MAX_TRACKS];   //[npart]
+  Double_t        p0[MAX_TRACKS];   //[npart]
+  Double_t        momx[MAX_TRACKS];   //[npart]
+  Double_t        momy[MAX_TRACKS];   //[npart]
+  Double_t        momz[MAX_TRACKS];   //[npart]
+  Double_t        t[MAX_TRACKS];   //[npart]
+  Double_t        x[MAX_TRACKS];   //[npart]
+  Double_t        y[MAX_TRACKS];   //[npart]
+  Double_t        z[MAX_TRACKS];   //[npart]
 
   // List of branches
-  TBranch *b_bimp;   //!
-  TBranch *b_phi2;   //!
-  TBranch *b_phi3;   //!
-  TBranch *b_ecc2;   //!
-  TBranch *b_ecc3;   //!
-  TBranch *b_npart;  //!
-  TBranch *b_nh;     //!
-  TBranch *b_momx;   //!
-  TBranch *b_momy;   //!
-  TBranch *b_momz;   //!
-  TBranch *b_ene;    //!
-  TBranch *b_hid;    //!
-  TBranch *b_pdg;    //!
-  TBranch *b_charge; //!
+  TBranch        *b_npart;   //!
+  TBranch        *b_impact_b;   //!
+  TBranch        *b_empty_event;   //!
+  TBranch        *b_ev;   //!
+  TBranch        *b_tcounter;   //!
+  TBranch        *b_pdgcode;   //!
+  TBranch        *b_charge;   //!
+  TBranch        *b_p0;   //!
+  TBranch        *b_px;   //!
+  TBranch        *b_py;   //!
+  TBranch        *b_pz;   //!
+  TBranch        *b_t;   //!
+  TBranch        *b_x;   //!
+  TBranch        *b_y;   //!
+  TBranch        *b_z;   //!
 
-  chain->SetBranchAddress("bimp", &bimp, &b_bimp);
-  chain->SetBranchAddress("phi2", &phi2, &b_phi2);
-  chain->SetBranchAddress("phi3", &phi3, &b_phi3);
-  chain->SetBranchAddress("ecc2", &ecc2, &b_ecc2);
-  chain->SetBranchAddress("ecc3", &ecc3, &b_ecc3);
-  chain->SetBranchAddress("npart", &npart, &b_npart);
-  chain->SetBranchAddress("nh", &nh, &b_nh);
-  chain->SetBranchAddress("momx", momx, &b_momx);
-  chain->SetBranchAddress("momy", momy, &b_momy);
-  chain->SetBranchAddress("momz", momz, &b_momz);
-  chain->SetBranchAddress("ene", ene, &b_ene);
-  chain->SetBranchAddress("hid", hid, &b_hid);
-  chain->SetBranchAddress("pdg", pdg, &b_pdg);
+  chain->SetBranchAddress("npart", &nh, &b_npart);
+  chain->SetBranchAddress("impact_b", &bimp, &b_impact_b);
+  chain->SetBranchAddress("empty_event", &empty_event, &b_empty_event);
+  chain->SetBranchAddress("ev", &ev, &b_ev);
+  chain->SetBranchAddress("tcounter", &tcounter, &b_tcounter);
+  chain->SetBranchAddress("pdgcode", pdg, &b_pdgcode);
   chain->SetBranchAddress("charge", charge, &b_charge);
+  chain->SetBranchAddress("p0", p0, &b_p0);
+  chain->SetBranchAddress("px", momx, &b_px);
+  chain->SetBranchAddress("py", momy, &b_py);
+  chain->SetBranchAddress("pz", momz, &b_pz);
+  chain->SetBranchAddress("t", t, &b_t);
+  chain->SetBranchAddress("x", x, &b_x);
+  chain->SetBranchAddress("y", y, &b_y);
+  chain->SetBranchAddress("z", z, &b_z);
 
   if (chain == 0)
     return;

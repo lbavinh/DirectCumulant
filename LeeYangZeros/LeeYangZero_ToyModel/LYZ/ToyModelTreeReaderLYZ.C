@@ -29,14 +29,14 @@ using std::endl;
 // const int npid = 8;  // h+, pions+, kaons+, protons+, h-, pions-, kaons-, protons-
 const int ncent = 9; // 0-80%
 const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
-const int npt = 14; // 0.5 - 3.6 GeV/c - number of pT bins
-const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
-const double maxpt = 3.0;  // max pt
-const double minpt = 0.2; // min pt
+  const int npt = 12; // 0.2 - 3.5 GeV/c
+  const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
+  const double maxpt = 3.5; // max pt
+  const double minpt = 0.2; // min pt
 const double maxptRF = 3.;
 const double minptRF = 0.2;
-const float eta_cut = 1.5;
-const float eta_gap = 0.05;
+const float eta_cut = 2.0;
+const float eta_gap = 0;
 const int neta = 2; // [eta-,eta+]
 
 // LYZ
@@ -213,8 +213,8 @@ CGtheta::CGtheta(bool bFirstRun, bool bUseProduct) : fFirstRun(bFirstRun), fUseP
   }
   if (fFirstRun)
   {
-    fHistGthetaSum = new TH1F(Form("hGthetaSum_mult%d_theta%d"), "", rbins, rMinSum, rMaxSum);
-    if (fUseProduct) fHistGthetaProduct = new TH1F(Form("hGthetaProduct_mult%d_theta%d"), "", rbins, rMin, rMax);
+    fHistGthetaSum = new TH1F(Form("hGthetaSum"), "", rbins, rMinSum, rMaxSum);
+    if (fUseProduct) fHistGthetaProduct = new TH1F(Form("hGthetaProduct"), "", rbins, rMin, rMax);
     for (int i = 0; i < ncent; ++i)
     {
       for (int j = 0; j < thetabins; ++j)
@@ -542,19 +542,15 @@ void CGtheta::CalGFSum()
   }
 }
 
-void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inputFileHistFromFirstRun = "", Bool_t bFirstRun = 1)
+void ToyModelTreeReaderLYZ(TString inputFileName, TString outputFileName, TString inputFileHistFromFirstRun = "", Bool_t bFirstRun = 1)
 {
   TStopwatch timer;
   timer.Start();
 
-  // Configure input information
-  TChain *chain = new TChain("mctree");
+  TChain *chain = new TChain("tree");
   if (inputFileName.Contains(".root"))
-  {
-    chain->Add(inputFileName.Data());
-  }
-  // if str contains filelist
-  if (!inputFileName.Contains(".root"))
+  {chain->Add(inputFileName.Data());}
+  else
   {
     std::ifstream file(inputFileName.Data());
     std::string line;
@@ -563,55 +559,38 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
       chain->Add(line.c_str());
     }
   }
-
   
+  if (!chain)
+    return;
 
-
-  Float_t bimp;
-  Float_t phi2;
-  Float_t phi3;
-  Float_t ecc2;
-  Float_t ecc3;
-  Int_t npart;
+  // Declaration of leaf types
   Int_t nh;
-  Float_t momx[MAX_TRACKS];   //[nh]
-  Float_t momy[MAX_TRACKS];   //[nh]
-  Float_t momz[MAX_TRACKS];   //[nh]
-  Float_t ene[MAX_TRACKS];    //[nh]
-  Int_t hid[MAX_TRACKS];      //[nh]
-  Int_t pdg[MAX_TRACKS];      //[nh]
-  Short_t charge[MAX_TRACKS]; //[nh]
+  Float_t bimp;
+  Float_t rp;
+  Float_t phi0[MAX_TRACKS]; //[nh]
+  Bool_t bFlow[MAX_TRACKS]; //[nh]
+  Float_t eta0[MAX_TRACKS];  //[nh]
+  Float_t pt0[MAX_TRACKS];   //[nh]
 
   // List of branches
-  TBranch *b_bimp;   //!
-  TBranch *b_phi2;   //!
-  TBranch *b_phi3;   //!
-  TBranch *b_ecc2;   //!
-  TBranch *b_ecc3;   //!
-  TBranch *b_npart;  //!
-  TBranch *b_nh;     //!
-  TBranch *b_momx;   //!
-  TBranch *b_momy;   //!
-  TBranch *b_momz;   //!
-  TBranch *b_ene;    //!
-  TBranch *b_hid;    //!
-  TBranch *b_pdg;    //!
-  TBranch *b_charge; //!
+  TBranch *b_nh;    //!
+  TBranch *b_b;     //!
+  TBranch *b_rp;    //!
+  TBranch *b_phi0;  //!
+  TBranch *b_bFlow; //!
+  TBranch *b_eta;   //!
+  TBranch *b_pt;    //!
 
-  chain->SetBranchAddress("bimp", &bimp, &b_bimp);
-  chain->SetBranchAddress("phi2", &phi2, &b_phi2);
-  chain->SetBranchAddress("phi3", &phi3, &b_phi3);
-  chain->SetBranchAddress("ecc2", &ecc2, &b_ecc2);
-  chain->SetBranchAddress("ecc3", &ecc3, &b_ecc3);
-  chain->SetBranchAddress("npart", &npart, &b_npart);
   chain->SetBranchAddress("nh", &nh, &b_nh);
-  chain->SetBranchAddress("momx", momx, &b_momx);
-  chain->SetBranchAddress("momy", momy, &b_momy);
-  chain->SetBranchAddress("momz", momz, &b_momz);
-  chain->SetBranchAddress("ene", ene, &b_ene);
-  chain->SetBranchAddress("hid", hid, &b_hid);
-  chain->SetBranchAddress("pdg", pdg, &b_pdg);
-  chain->SetBranchAddress("charge", charge, &b_charge);
+  chain->SetBranchAddress("b", &bimp, &b_b);
+  chain->SetBranchAddress("rp", &rp, &b_rp);
+  chain->SetBranchAddress("phi0", phi0, &b_phi0);
+  chain->SetBranchAddress("bFlow", bFlow, &b_bFlow);
+  chain->SetBranchAddress("eta", eta0, &b_eta);
+  chain->SetBranchAddress("pt", pt0, &b_pt);
+
+  if (chain == 0)
+    return;
 
   const double rootJ0 = 2.4048256;
   const double J1rootJ0 = 0.519147;
@@ -684,44 +663,25 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
 
     for (int iTrk = 0; iTrk < nh; iTrk++)
     {
-    
-      TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
-      float pt = vect.Pt();
-      float eta = vect.Eta();
-      float phi = vect.Phi();
+      float pt = pt0[iTrk];
+      float eta = eta0[iTrk];
+      float phi = phi0[iTrk];
       if (pt < minpt || pt > maxpt || fabs(eta) > eta_cut)
         continue; // track selection
-      // if (fabs(eta)<eta_gap) continue;
-      auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
-      if (!particle)
-        continue;
-      float charge = 1. / 3. * particle->Charge();
-      if (charge == 0)
-        continue;
+
       hPt->Fill(pt);
       hEta->Fill(eta);
       hPhi->Fill(phi);
-      // int fId = -1;
-      // if (pdg[iTrk] == 211)
-      //   fId = 1; // pion+
-      // if (pdg[iTrk] == 321)
-      //   fId = 2; // kaon+
-      // if (pdg[iTrk] == 2212)
-      //   fId = 3; // proton
-      // if (pdg[iTrk] == -211)
-      //   fId = 5; // pion-
-      // if (pdg[iTrk] == -321)
-      //   fId = 6; // kaon-
-      // if (pdg[iTrk] == -2212)
-      //   fId = 7; // anti-proton
 
       Q2->CalQVector(phi);
       if (bFirstRun) Gtheta->CalMult();
       else Gtheta->CalMult(pt);
-      Double_t v2 = TMath::Cos(2 * phi);
-      hv2MC->Fill(dCent, v2);       // calculate reference v2 from MC toy
-      hv2MCpt[icent]->Fill(pt, v2); // Calculate differential v2 from MC toy
-
+      Double_t v2 = TMath::Cos(2 * (phi-rp));
+      if (bFlow[iTrk])
+      {
+        hv2MC->Fill(dCent, v2);       // calculate reference v2 from MC toy
+        hv2MCpt[icent]->Fill(pt, v2); // Calculate differential v2 from MC toy
+      }
       // Sub eta event method
       int fEta = -1;
       if (eta < -eta_gap && eta > -eta_cut)
@@ -786,20 +746,11 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
     {
       for (int iTrk = 0; iTrk < nh; iTrk++)
       {
-        TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
-        float pt = vect.Pt();
-        float eta = vect.Eta();
-        float phi = vect.Phi();
+        float pt = pt0[iTrk];
+        float eta = eta0[iTrk];
+        float phi = phi0[iTrk];
         if (pt < minpt || pt > maxpt || fabs(eta) > eta_cut)
           continue; // track selection
-        // if (fabs(eta)<eta_gap) continue;
-        auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
-        if (!particle)
-          continue;
-        float charge = 1. / 3. * particle->Charge();
-        if (charge == 0)
-          continue;
-
         if (fEP[0] != -9999. && fEP[1] != -9999.)
         {
           float v2 = -999.0;

@@ -996,13 +996,7 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   hLYZDiffPro->SetLineColor(kGreen+2);
   hLYZDiffPro->GetXaxis()->SetLimits(-0.1,3.6);
   }
-  // hv2EPpt[centrality]->SetMarkerStyle(20);
-  // hv2EPpt[centrality]->SetMarkerColor(kRed+2);
-  // hv2EPpt[centrality]->SetLineColor(kRed+2);
-  // hv2EPpt[centrality]->GetXaxis()->SetLimits(-0.1,3.6);
 
-  hv2EPpt[centrality]->SetTitle(";p_{T}, GeV/c;v_{2}");
-  hv2EPpt[centrality]->GetYaxis()->SetRangeUser(-0.01,0.26);
   hv2EPpt[centrality]->Draw();
   hLYZDiff->Draw("P same");
   if (bUseProduct) hLYZDiffPro->Draw("P same");
@@ -1021,7 +1015,7 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   leg2->Draw();
   }
   for (int centrality = 1; centrality < 6; centrality++){
-    c3.cd(centrality+5);
+    c3.cd(centrality+6);
 
     TH1F *hLYZDiffRatio = new TH1F(Form("hLYZDiffRatio_%i",centrality),"",npt,&bin_pT[0]);
     for (int ipt=0; ipt<npt; ipt++)

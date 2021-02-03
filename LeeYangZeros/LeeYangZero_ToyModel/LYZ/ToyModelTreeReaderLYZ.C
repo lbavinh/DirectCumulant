@@ -33,8 +33,6 @@ const int npt = 12; // 0.2 - 3.5 GeV/c
 const double pTBin[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
 const double maxpt = 3.5; // max pt
 const double minpt = 0.2; // min pt
-const double maxptRF = 3.;
-const double minptRF = 0.2;
 const float eta_cut = 2.0;
 const float eta_gap = 0;
 const int neta = 2; // [eta-,eta+]
@@ -315,8 +313,11 @@ void FlowAnalysisWithLeeYangZeros::ProcessEventAfterFirstTrackLoop(const CQVecto
       {
         for (int it = 0; it < thetabins; it++)
         {
-          fPrReGthetaSum[icent][it]->Fill(fRSum[rbin], fGenFunS[rbin][it].Re(), fMult);
-          fPrImGthetaSum[icent][it]->Fill(fRSum[rbin], fGenFunS[rbin][it].Im(), fMult);
+          // fPrReGthetaSum[icent][it]->Fill(fRSum[rbin], fGenFunS[rbin][it].Re(), fMult);
+          // fPrImGthetaSum[icent][it]->Fill(fRSum[rbin], fGenFunS[rbin][it].Im(), fMult);
+          fPrReGthetaSum[icent][it]->Fill(fRSum[rbin], fGenFunS[rbin][it].Re());
+          fPrImGthetaSum[icent][it]->Fill(fRSum[rbin], fGenFunS[rbin][it].Im());
+
         }
       }
 
@@ -331,8 +332,10 @@ void FlowAnalysisWithLeeYangZeros::ProcessEventAfterFirstTrackLoop(const CQVecto
         {
           for (int it = 0; it < thetabins; it++)
           {
-            fPrReGthetaProduct[icent][it]->Fill(fRProduct[rbin], fGenFunP[rbin][it].Re(), fMult);
-            fPrImGthetaProduct[icent][it]->Fill(fRProduct[rbin], fGenFunP[rbin][it].Im(), fMult);
+            // fPrReGthetaProduct[icent][it]->Fill(fRProduct[rbin], fGenFunP[rbin][it].Re(), fMult);
+            // fPrImGthetaProduct[icent][it]->Fill(fRProduct[rbin], fGenFunP[rbin][it].Im(), fMult);
+            fPrReGthetaProduct[icent][it]->Fill(fRProduct[rbin], fGenFunP[rbin][it].Re());
+            fPrImGthetaProduct[icent][it]->Fill(fRProduct[rbin], fGenFunP[rbin][it].Im());            
           }
         }
       }

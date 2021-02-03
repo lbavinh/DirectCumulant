@@ -90,8 +90,8 @@ double BesselJ0(double x)
 void GetFlow(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "SecondRun.root")
 {
   // bool bUseProduct = 1;
-  bool bDebug = 0;
-  TString label = "Toy Model, 5M events, <M>=1000";
+  bool bDebug = 1;
+  TString label = "Toy Model, 100k events, <M>=1000";
   TFile *fi1 = new TFile(inputFileName1.Data(),"read");
   
   // const int ncent = 9;
@@ -411,6 +411,24 @@ void GetFlow(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = 
       v2diffePro[ic][ipt] = sqrt(temp/rpmult/neve/thetabins)/2./J1rootJ0;
     }
   }} // end of Diff LYZ Product
+
+  if (bDebug){
+    for (int ic = 0; ic < ncent; ic++){
+      cout << "const double v2Diff" << ic << "[" << npt << "] = {";
+      for (int ipt = 0; ipt < npt-1; ipt++)
+      {
+        cout << v2diffPro[ic][ipt] <<", ";
+      }
+      cout << v2diffPro[ic][npt-1] << "};" << endl;
+      cout << "const double v2eDiff" << ic << "[" << npt << "] = {";
+      for (int ipt = 0; ipt < npt-1; ipt++)
+      {
+        cout << v2diffePro[ic][ipt] <<", ";
+      }
+      cout << v2diffePro[ic][npt-1] << "};" << endl;
+
+    }
+  }
 
 
   if (bDebug)

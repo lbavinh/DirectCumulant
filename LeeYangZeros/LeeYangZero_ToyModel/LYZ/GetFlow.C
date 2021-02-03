@@ -238,6 +238,23 @@ void GetFlow(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = 
 
   } // end of V2RP calculation
   
+  if (bDebug){
+    
+      cout << "const double v2[9] = {";
+      for (int ic = 0; ic < ncent-1; ic++){
+        cout << v2LYZInt[ic] <<", ";
+      }
+      cout << v2LYZInt[ncent-1] << "};" << endl;
+      cout << "const double v2e[9] = {";
+      for (int ic = 0; ic < ncent-1; ic++)
+      {
+        cout << v2eLYZInt[ic] <<", ";
+      }
+      cout << v2eLYZInt[ncent-1] << "};" << endl;
+
+    
+  }
+
 
   // Product
   if (bUseProduct) {

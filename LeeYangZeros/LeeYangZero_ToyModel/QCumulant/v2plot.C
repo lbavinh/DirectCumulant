@@ -283,7 +283,34 @@ void v2plot(TString inputFileName = "QCumulant.root"){
     grRefFlCent[i]->SetMarkerSize(1.3);
     grRefFlCent[i]->SetDrawOption("P");
   }
-  
+
+  cout << "v22[9]={";
+  for (int ic = 0 ; ic < ncent-1; ic++)
+  {
+    cout << v2cent[1][ic] <<", ";
+  }
+  cout << v2cent[1][ncent-1] <<"};" << endl;
+
+  cout << "v22e[9]={";
+  for (int ic = 0 ; ic < ncent-1; ic++)
+  {
+    cout << v2centE[1][ic] <<", ";
+  }
+  cout << v2centE[1][ncent-1] <<"};" << endl;
+
+  cout << "v24[9]={";
+  for (int ic = 0 ; ic < ncent-1; ic++)
+  {
+    cout << v2cent[2][ic] <<", ";
+  }
+  cout << v2cent[2][ncent-1] <<"};" << endl;
+
+  cout << "v24e[9]={";
+  for (int ic = 0 ; ic < ncent-1; ic++)
+  {
+    cout << v2centE[2][ic] <<", ";
+  }
+  cout << v2centE[2][ncent-1] <<"};" << endl;
 
   // Debug
   // pT-integrated flow

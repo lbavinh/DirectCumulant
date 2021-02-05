@@ -102,6 +102,7 @@ void GetR0(TString inputFileName = "test.root")
   TProfile *prQ2x = (TProfile*) fi->Get("prQ2x");
   TProfile *prQ2y = (TProfile*) fi->Get("prQ2y");
   TProfile *prQ2ModSq = (TProfile*) fi->Get("prQ2ModSq");
+  TProfile *hv2MC = (TProfile *)fi->Get("hv2MC");
   for (int i = 0; i < ncent; ++i)
   {
     for (int j = 0; j < thetabins; ++j)
@@ -172,10 +173,25 @@ void GetR0(TString inputFileName = "test.root")
   cout << dChi2[ncent-1] << "};" << endl;
   if (bDebug)
   {
-    // // ======= DEBUG ======== //
-    // hGthetaSum[1][1]->Draw();
-    // cout << GetR0(hGthetaSum[1][1]) << endl;
-    // gPad->SetLogy();
+    cout << "double v2MC[9] = {";
+    for (int ic = 0 ; ic < ncent-1; ic++)
+    {
+      cout << hv2MC->GetBinContent(ic+1) << ", ";
+    }
+    cout << hv2MC->GetBinContent(ncent) << "};" << endl;
+
+    cout << "double v2LYZ[9] = {";
+    for (int ic = 0 ; ic < ncent-1; ic++)
+    {
+      cout << v2int[ic] << ", ";
+    }
+    cout << v2int[ncent-1] << "};" << endl;
+    cout << "double v2eLYZ[9] = {";
+    for (int ic = 0 ; ic < ncent-1; ic++)
+    {
+      cout << v2e[ic] << ", ";
+    }
+    cout << v2e[ncent-1] << "};" << endl;
   }
 
 }

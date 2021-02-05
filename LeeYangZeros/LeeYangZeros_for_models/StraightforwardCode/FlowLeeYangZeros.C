@@ -1,3 +1,5 @@
+#ifndef FLOW_LYZ_CXX
+#define FLOW_LYZ_CXX
 #include <iostream>
 #include <fstream>
 
@@ -218,33 +220,36 @@ Double_t CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
    return coor24/wred4;
 }
 
+bool bTemporaryFlagForLYZEP = 0;
+const int ncent = 9; // 0-80%
+const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
+const int npt = 14; // 0.5 - 3.6 GeV/c - number of pt bins
+const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
+const double maxpt = 3.0;  // max pt
+const double minpt = 0.2; // min pt
+const float eta_cut = 1.5;
+const float eta_gap = 0.05;
+const int neta = 2; // [eta-,eta+]
+
+// LYZ
+bool bUseProduct = 1;
+const int rbins = 1000;
+const double rMax = 0.5;
+const double rMin = 0.005;
+
+const double rMaxSum = rMax;
+const double rMinSum = rMin;
+
+// const double rMaxSum = 250;
+// const double rMinSum = 0;
+const int thetabins = 5;
+const double rootJ0 = 2.4048256;
+const double J1rootJ0 = 0.519147;
+
 void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inputFileHist="", Bool_t bFirstRun = 1)
 {
   
-  const int ncent = 9; // 0-80%
-  const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
-  const int npt = 14; // 0.5 - 3.6 GeV/c - number of pt bins
-  const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
-  const double maxpt = 3.0;  // max pt
-  const double minpt = 0.2; // min pt
-  const float eta_cut = 1.5;
-  const float eta_gap = 0.05;
-  const int neta = 2; // [eta-,eta+]
 
-  // LYZ
-  bool bUseProduct = 1;
-  const int rbins = 2500;
-  const double rMax = 0.5;
-  const double rMin = 0.005;
-
-  const double rMaxSum = rMax;
-  const double rMinSum = rMin;
-
-  // const double rMaxSum = 250;
-  // const double rMinSum = 0;
-  const int thetabins = 10;
-  const double rootJ0 = 2.4048256;
-  const double J1rootJ0 = 0.519147;
   double theta[thetabins];
   double multPOI[npt];
   for (int thetabin = 0; thetabin < thetabins; ++thetabin)
@@ -261,7 +266,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
   int mult;
   
   // Differential LYZ
-  TComplex cDenominator;
+  TComplex cDenominator, cTemporary, cRatio, cDtheta;
   TComplex cExponent[thetabins];
 
   TFile *fo = new TFile(outputFileName.Data(), "recreate");
@@ -433,6 +438,35 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
     else{rSum[rbin] = (double) hGthetaSum[0][0]->GetBinCenter(rbin+1);}
   }}
 
+  // Lee Yang Zero RP
+  TFile *fiLYZEP;
+  TProfile *prReDtheta[thetabins];
+  TProfile *prImDtheta[thetabins];
+  if (!bFirstRun){
+    if (!bTemporaryFlagForLYZEP){
+      for (int i = 0; i < thetabins; i++)
+      {
+        prReDtheta[i] = new TProfile(Form("prReDtheta_theta%i",i),"", ncent, &bin_cent[0]);
+        prImDtheta[i] = new TProfile(Form("prImDtheta_theta%i",i),"", ncent, &bin_cent[0]);
+      }
+    }
+    else
+    {
+      fiLYZEP = new TFile("/weekly/lbavinh/lbavinh/LYZ/OUT/SecondRun.root","read");
+      // fiLYZEP = new TFile("test.root","read");
+      for (int i = 0; i < thetabins; i++)
+      {
+        prReDtheta[i] = (TProfile*)fiLYZEP->Get(Form("prReDtheta_theta%i",i));
+        prImDtheta[i] = (TProfile*)fiLYZEP->Get(Form("prImDtheta_theta%i",i));
+      }
+    }
+  }
+  TProfile *hv2LYZEP = new TProfile("hv2LYZEP", "Ref. v_{2}{LYZ, EP}", ncent, &bin_cent[0]);
+  TProfile *hv2LYZEPpt[ncent];
+  for (int icent = 0; icent < ncent; icent++)
+  { // loop over centrality classes
+    hv2LYZEPpt[icent] = new TProfile(Form("hv2LYZEPpt_%i", icent), "", npt, &bin_pT[0]);
+  } // end of loop over centrality classes
   // QC
 
   // TProfile for reference flow (RF)
@@ -472,7 +506,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
   // cout << "Histograms have been initialized" << endl;
 
   // Configure input information
-  TChain *chain = new TChain("particles"); // mctree
+  TChain *chain = new TChain("mctree"); //  particles
   if (inputFileName.Contains(".root"))
   {
     chain->Add(inputFileName.Data());
@@ -488,100 +522,100 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
     }
   }
 
-  // Float_t bimp;
-  // Float_t phi2;
-  // Float_t phi3;
-  // Float_t ecc2;
-  // Float_t ecc3;
-  // Int_t npart;
-  // Int_t nh;
-  // Float_t momx[MAX_TRACKS];   //[nh]
-  // Float_t momy[MAX_TRACKS];   //[nh]
-  // Float_t momz[MAX_TRACKS];   //[nh]
-  // Float_t ene[MAX_TRACKS];    //[nh]
-  // Int_t hid[MAX_TRACKS];      //[nh]
-  // Int_t pdg[MAX_TRACKS];      //[nh]
-  // Short_t charge[MAX_TRACKS]; //[nh]
-
-  // // List of branches
-  // TBranch *b_bimp;   //!
-  // TBranch *b_phi2;   //!
-  // TBranch *b_phi3;   //!
-  // TBranch *b_ecc2;   //!
-  // TBranch *b_ecc3;   //!
-  // TBranch *b_npart;  //!
-  // TBranch *b_nh;     //!
-  // TBranch *b_momx;   //!
-  // TBranch *b_momy;   //!
-  // TBranch *b_momz;   //!
-  // TBranch *b_ene;    //!
-  // TBranch *b_hid;    //!
-  // TBranch *b_pdg;    //!
-  // TBranch *b_charge; //!
-
-  // chain->SetBranchAddress("bimp", &bimp, &b_bimp);
-  // chain->SetBranchAddress("phi2", &phi2, &b_phi2);
-  // chain->SetBranchAddress("phi3", &phi3, &b_phi3);
-  // chain->SetBranchAddress("ecc2", &ecc2, &b_ecc2);
-  // chain->SetBranchAddress("ecc3", &ecc3, &b_ecc3);
-  // chain->SetBranchAddress("npart", &npart, &b_npart);
-  // chain->SetBranchAddress("nh", &nh, &b_nh);
-  // chain->SetBranchAddress("momx", momx, &b_momx);
-  // chain->SetBranchAddress("momy", momy, &b_momy);
-  // chain->SetBranchAddress("momz", momz, &b_momz);
-  // chain->SetBranchAddress("ene", ene, &b_ene);
-  // chain->SetBranchAddress("hid", hid, &b_hid);
-  // chain->SetBranchAddress("pdg", pdg, &b_pdg);
-  // chain->SetBranchAddress("charge", charge, &b_charge);
-
-  Int_t           nh;
-  Double_t        bimp;
-  Bool_t          empty_event;
-  Int_t           ev;
-  Int_t           tcounter;
-  Int_t           pdg[MAX_TRACKS];   //[npart]
-  Int_t           charge[MAX_TRACKS];   //[npart]
-  Double_t        p0[MAX_TRACKS];   //[npart]
-  Double_t        momx[MAX_TRACKS];   //[npart]
-  Double_t        momy[MAX_TRACKS];   //[npart]
-  Double_t        momz[MAX_TRACKS];   //[npart]
-  Double_t        t[MAX_TRACKS];   //[npart]
-  Double_t        x[MAX_TRACKS];   //[npart]
-  Double_t        y[MAX_TRACKS];   //[npart]
-  Double_t        z[MAX_TRACKS];   //[npart]
+  Float_t bimp;
+  Float_t phi2;
+  Float_t phi3;
+  Float_t ecc2;
+  Float_t ecc3;
+  Int_t npart;
+  Int_t nh;
+  Float_t momx[MAX_TRACKS];   //[nh]
+  Float_t momy[MAX_TRACKS];   //[nh]
+  Float_t momz[MAX_TRACKS];   //[nh]
+  Float_t ene[MAX_TRACKS];    //[nh]
+  Int_t hid[MAX_TRACKS];      //[nh]
+  Int_t pdg[MAX_TRACKS];      //[nh]
+  Short_t charge[MAX_TRACKS]; //[nh]
 
   // List of branches
-  TBranch        *b_npart;   //!
-  TBranch        *b_impact_b;   //!
-  TBranch        *b_empty_event;   //!
-  TBranch        *b_ev;   //!
-  TBranch        *b_tcounter;   //!
-  TBranch        *b_pdgcode;   //!
-  TBranch        *b_charge;   //!
-  TBranch        *b_p0;   //!
-  TBranch        *b_px;   //!
-  TBranch        *b_py;   //!
-  TBranch        *b_pz;   //!
-  TBranch        *b_t;   //!
-  TBranch        *b_x;   //!
-  TBranch        *b_y;   //!
-  TBranch        *b_z;   //!
+  TBranch *b_bimp;   //!
+  TBranch *b_phi2;   //!
+  TBranch *b_phi3;   //!
+  TBranch *b_ecc2;   //!
+  TBranch *b_ecc3;   //!
+  TBranch *b_npart;  //!
+  TBranch *b_nh;     //!
+  TBranch *b_momx;   //!
+  TBranch *b_momy;   //!
+  TBranch *b_momz;   //!
+  TBranch *b_ene;    //!
+  TBranch *b_hid;    //!
+  TBranch *b_pdg;    //!
+  TBranch *b_charge; //!
 
-  chain->SetBranchAddress("npart", &nh, &b_npart);
-  chain->SetBranchAddress("impact_b", &bimp, &b_impact_b);
-  chain->SetBranchAddress("empty_event", &empty_event, &b_empty_event);
-  chain->SetBranchAddress("ev", &ev, &b_ev);
-  chain->SetBranchAddress("tcounter", &tcounter, &b_tcounter);
-  chain->SetBranchAddress("pdgcode", pdg, &b_pdgcode);
+  chain->SetBranchAddress("bimp", &bimp, &b_bimp);
+  chain->SetBranchAddress("phi2", &phi2, &b_phi2);
+  chain->SetBranchAddress("phi3", &phi3, &b_phi3);
+  chain->SetBranchAddress("ecc2", &ecc2, &b_ecc2);
+  chain->SetBranchAddress("ecc3", &ecc3, &b_ecc3);
+  chain->SetBranchAddress("npart", &npart, &b_npart);
+  chain->SetBranchAddress("nh", &nh, &b_nh);
+  chain->SetBranchAddress("momx", momx, &b_momx);
+  chain->SetBranchAddress("momy", momy, &b_momy);
+  chain->SetBranchAddress("momz", momz, &b_momz);
+  chain->SetBranchAddress("ene", ene, &b_ene);
+  chain->SetBranchAddress("hid", hid, &b_hid);
+  chain->SetBranchAddress("pdg", pdg, &b_pdg);
   chain->SetBranchAddress("charge", charge, &b_charge);
-  chain->SetBranchAddress("p0", p0, &b_p0);
-  chain->SetBranchAddress("px", momx, &b_px);
-  chain->SetBranchAddress("py", momy, &b_py);
-  chain->SetBranchAddress("pz", momz, &b_pz);
-  chain->SetBranchAddress("t", t, &b_t);
-  chain->SetBranchAddress("x", x, &b_x);
-  chain->SetBranchAddress("y", y, &b_y);
-  chain->SetBranchAddress("z", z, &b_z);
+
+  // Int_t           nh;
+  // Double_t        bimp;
+  // Bool_t          empty_event;
+  // Int_t           ev;
+  // Int_t           tcounter;
+  // Int_t           pdg[MAX_TRACKS];   //[npart]
+  // Int_t           charge[MAX_TRACKS];   //[npart]
+  // Double_t        p0[MAX_TRACKS];   //[npart]
+  // Double_t        momx[MAX_TRACKS];   //[npart]
+  // Double_t        momy[MAX_TRACKS];   //[npart]
+  // Double_t        momz[MAX_TRACKS];   //[npart]
+  // Double_t        t[MAX_TRACKS];   //[npart]
+  // Double_t        x[MAX_TRACKS];   //[npart]
+  // Double_t        y[MAX_TRACKS];   //[npart]
+  // Double_t        z[MAX_TRACKS];   //[npart]
+
+  // // List of branches
+  // TBranch        *b_npart;   //!
+  // TBranch        *b_impact_b;   //!
+  // TBranch        *b_empty_event;   //!
+  // TBranch        *b_ev;   //!
+  // TBranch        *b_tcounter;   //!
+  // TBranch        *b_pdgcode;   //!
+  // TBranch        *b_charge;   //!
+  // TBranch        *b_p0;   //!
+  // TBranch        *b_px;   //!
+  // TBranch        *b_py;   //!
+  // TBranch        *b_pz;   //!
+  // TBranch        *b_t;   //!
+  // TBranch        *b_x;   //!
+  // TBranch        *b_y;   //!
+  // TBranch        *b_z;   //!
+
+  // chain->SetBranchAddress("npart", &nh, &b_npart);
+  // chain->SetBranchAddress("impact_b", &bimp, &b_impact_b);
+  // chain->SetBranchAddress("empty_event", &empty_event, &b_empty_event);
+  // chain->SetBranchAddress("ev", &ev, &b_ev);
+  // chain->SetBranchAddress("tcounter", &tcounter, &b_tcounter);
+  // chain->SetBranchAddress("pdgcode", pdg, &b_pdgcode);
+  // chain->SetBranchAddress("charge", charge, &b_charge);
+  // chain->SetBranchAddress("p0", p0, &b_p0);
+  // chain->SetBranchAddress("px", momx, &b_px);
+  // chain->SetBranchAddress("py", momy, &b_py);
+  // chain->SetBranchAddress("pz", momz, &b_pz);
+  // chain->SetBranchAddress("t", t, &b_t);
+  // chain->SetBranchAddress("x", x, &b_x);
+  // chain->SetBranchAddress("y", y, &b_y);
+  // chain->SetBranchAddress("z", z, &b_z);
 
   if (chain == 0)
     return;
@@ -653,6 +687,8 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
     Double_t wred2[npt] = {0.}, wred4[npt] = {0.};
     // Average single-event 2- and 4- particle correlations : <2> & <4>
     Double_t cor22 = 0., cor24 = 0.;
+
+    double dWR = 0., dPsiR = 0.;
 
     for (int iTrk = 0; iTrk < nh; iTrk++)
     { // track loop
@@ -812,16 +848,16 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
           {
             cExpo = TComplex(0., rSum[rbin] * Qtheta[thetabin]);
             genfunS[rbin][thetabin] = TComplex::Exp(cExpo); // generating function from Q-vectors
-            // prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re());
-            // prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im());
-            prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re(), mult);
-            prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im(), mult);
+            prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re());
+            prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im());
+            // prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re(), mult);
+            // prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im(), mult);
             if (bUseProduct)
             {
-              // prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re());
-              // prImGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Im());
-              prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re(), mult);
-              prImGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Im(), mult);              
+              prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re());
+              prImGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Im());
+              // prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re(), mult);
+              // prImGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Im(), mult);              
             }
           }
         }
@@ -830,6 +866,8 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
       }
       else
       {
+
+        double dWRcos2Psi = 0., dWRsin2Psi = 0.;
         // Differential LYZ
         for (int thetabin = 0; thetabin < thetabins; thetabin++)
         {
@@ -837,6 +875,27 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
           cDenominator = Qtheta[thetabin]*(TComplex::Exp(cExponent[thetabin])); // BP eq 12
           prReDenom[thetabin]->Fill(dCent, cDenominator.Re());
           prImDenom[thetabin]->Fill(dCent, cDenominator.Im());
+                    if (!bTemporaryFlagForLYZEP){
+          cTemporary = r02[icent][thetabin]*Qtheta[thetabin]*(TComplex::Exp(cExponent[thetabin]));
+          prReDtheta[thetabin]->Fill(dCent, cTemporary.Re());
+          prImDtheta[thetabin]->Fill(dCent, cTemporary.Im());
+          }
+          else{
+            cDtheta = TComplex(prReDtheta[thetabin]->GetBinContent(icent+1)/rootJ0, prImDtheta[thetabin]->GetBinContent(icent+1)/rootJ0);
+            if (cDtheta.Rho()!=0){ cRatio = TComplex::Exp(cExponent[thetabin]) / cDtheta;}
+            else{cRatio(0.,0.);}
+            dWRcos2Psi += cRatio.Re()*TMath::Cos(2.*theta[thetabin]);
+            dWRsin2Psi += cRatio.Re()*TMath::Sin(2.*theta[thetabin]);  
+          }
+        }
+        if (bTemporaryFlagForLYZEP){
+        dWRcos2Psi /= thetabins;
+        dWRsin2Psi /= thetabins;
+        dWR = TMath::Sqrt(dWRcos2Psi*dWRcos2Psi + dWRsin2Psi*dWRsin2Psi);
+        
+        // calculate dPsiR
+        dPsiR = 0.5*TMath::ATan2(dWRsin2Psi,dWRcos2Psi);   // takes care of the signs correctly!
+        if (dPsiR < 0.) { dPsiR += TMath::Pi(); }          // to shift distribution from (-pi/2 to pi/2) to (0 to pi)
         }
         if (bUseProduct)
         {
@@ -918,6 +977,11 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
           TComplex cNumeratorPOIPro = genfunPr0[thetabin] * dCosTerm / cCosTermComplex;   
           prReNumerPro[thetabin][icent]->Fill(pt, cNumeratorPOIPro.Re());
           prImNumerPro[thetabin][icent]->Fill(pt, cNumeratorPOIPro.Im());          
+        }
+        if (bTemporaryFlagForLYZEP){
+        double v2LYZEP = dWR * TMath::Cos(2*(phi-dPsiR));
+          hv2LYZEPpt[icent]->Fill(pt, v2LYZEP);
+          hv2LYZEP->Fill(dCent, v2LYZEP);
         }
       }
     } // end of the track loop
@@ -1103,12 +1167,23 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
         hcov2prime4prime[icent][kpt]->Write();
       } // end of loop over pt bin
     } // end of loop over centrality classes
-
+    for (int it = 0; it < thetabins; it++)
+    {
+      prReDtheta[it]->Write();
+      prImDtheta[it]->Write();
+    }
+    if (bTemporaryFlagForLYZEP){
+    hv2LYZEP->Write();
+    for (int ic = 0; ic < ncent; ic++)
+    {
+      hv2LYZEPpt[ic]->Write();
+    }
+    }
   }
   fo->Close();
   cout << "Histfile has been written" << endl;
 }
-
+#endif
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/39GeVxpt500new/hybrid39GeV500Evrun022.root","testrun2.root","./OUT/HistFromFirstRun.root",0)'
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/Urqmd11.5/runlist_00","test.root")'
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/Urqmd11.5/runlist_00","test.root","OUT/FirstRun.root",0)'

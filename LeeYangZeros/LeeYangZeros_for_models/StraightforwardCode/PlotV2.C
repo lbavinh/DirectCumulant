@@ -1,95 +1,11 @@
 #include "Func_StatErrCalc.C"
+#include "FlowLeeYangZeros.C"
 #define sqr(x) ((x)*(x))
-void GetRes(TProfile *const &pr)
-{
-  cout << "const double res2[" << pr->GetNbinsX() <<"] = {";
-  for (int i=0; i<pr->GetNbinsX(); i++)
-  {
-    cout << TMath::Sqrt(pr->GetBinContent(i+1)) <<", ";
-  }
-  cout <<"};" << endl;
-}
 
-void GetMultMean(TProfile *const &pr)
-{
-  cout << "const double dMultMean[" << pr->GetNbinsX() <<"] = {";
-  for (int i=0; i<pr->GetNbinsX(); i++)
-  {
-    cout << (pr->GetBinContent(i+1)) <<", ";
-  }
-  cout <<"};" << endl;
-}
-
-double GetR0(TH1F *const &hist)
-{
-  //find the first minimum of the square of the modulus of Gtheta 
-
-  int iNbins = hist->GetNbinsX();
-  double dR0 = 0.; 
-
-  for (int b=2;b<iNbins;b++)
-  {
-    double dG0 = hist->GetBinContent(b);
-    double dGnext = hist->GetBinContent(b+1);
-    double dGnextnext = hist->GetBinContent(b+2);
-    // cout << hist->GetBinCenter(b);
-    if (dGnext > dG0 && dGnextnext > dG0 && dG0<1.)
-    {
-      double dGlast = hist->GetBinContent(b-1);
-      double dXlast = hist->GetBinCenter(b-1);
-      double dX0 = hist->GetBinCenter(b);
-      double dXnext = hist->GetBinCenter(b+1);
-
-      dR0 = dX0 - ((dX0-dXlast)*(dX0-dXlast)*(dG0-dGnext) - (dX0-dXnext)*(dX0-dXnext)*(dG0-dGlast))/
-        (2.*((dX0-dXlast)*(dG0-dGnext) - (dX0-dXnext)*(dG0-dGlast))); //parabolic interpolated minimum
-      break; //stop loop if minimum is found
-    } //if
-
-  }//b
-
-      
-  return dR0;
-}
-
-TH1F* FillHistGtheta(TProfile *const &prReGtheta, TProfile *const &prImGtheta)
-{
-  Int_t iNbins = prReGtheta->GetNbinsX();
-  Double_t xMin = prReGtheta->GetXaxis()->GetBinLowEdge(1);
-  Double_t xMax = prReGtheta->GetXaxis()->GetBinLowEdge(iNbins) + prReGtheta->GetXaxis()->GetBinWidth(iNbins);
-  TH1F* hGtheta = new TH1F(Form("hist_%s",prReGtheta->GetName()),"",iNbins,xMin,xMax);
-  for (int rbin = 0; rbin < iNbins; rbin++)
-  {
-    // get bincentre of bins in histogram
-    Double_t dRe = prReGtheta->GetBinContent(rbin+1);
-    Double_t dIm = prImGtheta->GetBinContent(rbin+1);
-    TComplex cGtheta(dRe,dIm);
-    //fill fHistGtheta with the modulus squared of cGtheta
-    //to avoid errors when using a merged outputfile use SetBinContent() and not Fill()
-    if (cGtheta.Rho2()>3.) hGtheta->SetBinContent(rbin+1,0);
-    else hGtheta->SetBinContent(rbin+1,cGtheta.Rho2());
-    // hGtheta->SetBinContent(rbin+1,cGtheta.Rho2());
-    hGtheta->SetBinError(rbin+1,0.0);
-  }
-  return hGtheta;
-}
-
-double BesselJ0(double x)
-{
-  double temp=1., xn=1.;
-  long n, Nmax;
-
-  Nmax=int(floor(2.*x)+4);
-  for (n=1;n<Nmax;n++)
-  {
-    xn*=(-sqr(x/2./((float) n)));
-    temp+=xn;
-  }
-  return temp;
-}
 
 void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "SecondRun.root")
 {
-  bool bUseProduct = 1;
+  // bool bUseProduct = 1;
   bool bDebug = 1;
   const int markerStyle[]={25,20,28,27,23,26};
   const TString methodName[]={"MC","EP","2,QC","4,QC","LYZ (Sum)", "LYZ (Prod.)"};
@@ -97,18 +13,18 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   TString label = "AMPT, #sigma_{p}=1.5 mb, Au+Au, #sqrt{s_{NN}}=11.5 GeV";
   TFile *fi1 = new TFile(inputFileName1.Data(),"read");
 
-  const int ncent = 9;
-  const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
-  const int thetabins = 10;
+  // const int ncent = 9;
+  // const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
+  // const int thetabins = 5;
   double theta[thetabins];
   for (int thetabin = 0; thetabin < thetabins; ++thetabin)
   {
     theta[thetabin] = thetabin * TMath::Pi() / (2.0 * thetabins);
   }
-  const double J1rootJ0 = 0.519147;
-  const int npt = 14; // 0.5 - 3.6 GeV/c - number of pt bins
-  const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
-  const double rootJ0 = 2.4048256;
+  // const double J1rootJ0 = 0.519147;
+  // const int npt = 14; // 0.5 - 3.6 GeV/c - number of pt bins
+  // const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
+  // const double rootJ0 = 2.4048256;
 
   TProfile *HRes = (TProfile*) fi1->Get("HRes");
   TProfile *hv2MC = (TProfile*) fi1->Get("hv2MC");

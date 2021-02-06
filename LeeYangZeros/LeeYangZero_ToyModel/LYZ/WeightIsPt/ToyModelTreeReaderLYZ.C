@@ -48,7 +48,7 @@ const double rMinSum = rMin;
 // const double rMaxSum = 300;
 // const double rMinSum = 0;
 const int thetabins = 5;
-bool bUseProduct = 0;
+bool bUseProduct = 1;
 
 class QVector
 {
@@ -312,6 +312,7 @@ void FlowAnalysisWithLeeYangZeros::ProcessFirstTrackLoop(const double &phi, cons
         {
           // fGenFunP[rbin][it] *= TComplex(1.0, fRProduct[rbin] * dCosTerm);
           fGenFunP[rbin][it] *= TComplex(1.0, pt * fRProduct[rbin] * dCosTerm);
+          if (fGenFunP[rbin][it].Rho2() > 100.) break;
         }
       }
     }

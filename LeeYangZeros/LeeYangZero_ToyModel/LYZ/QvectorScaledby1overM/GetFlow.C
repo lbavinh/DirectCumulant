@@ -211,13 +211,13 @@ void GetFlow(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = 
         thetacount++;
       }
     }
-    if (thetacount!=0) v2int /= (float)thetacount; // *refmult
+    if (thetacount!=0) v2int /= (float)thetacount*refmult; // 
     else {v2int = 0.;}
     
     float modQ2sqmean = prQ2ModSq->GetBinContent(ic+1);
     float Q2xmean = prQ2x->GetBinContent(ic+1);
     float Q2ymean = prQ2y->GetBinContent(ic+1);
-    float chi2 = v2int/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int,2));//refmult
+    float chi2 = v2int*refmult/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int*refmult,2));//refmult
     
     float temp=0.;
     for(int it=0; it<thetabins; it++)
@@ -466,7 +466,7 @@ void GetFlow(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = 
           denominator += rpmult;
         }
         if (denominator != 0) integratedFlow /= denominator;
-        cout <<"cent: "<< ic << " " <<dVtheta[ic][thetabin]/1. << "\t" << integratedFlow << endl; // refmult
+        cout <<"cent: "<< ic << " " <<dVtheta[ic][thetabin]/refmult << "\t" << integratedFlow << endl; // 
       }
     }
     cout << "// ====== Product ====== //" << endl;

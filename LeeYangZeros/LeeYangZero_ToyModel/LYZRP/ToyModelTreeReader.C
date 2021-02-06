@@ -24,22 +24,38 @@ double CentB(double bimp)
   double fcent;
   if (bimp < 2.91)
     fcent = 2.5; // 0-5%
-  else if (bimp < 4.18)
+  
+  else if (bimp < 4.17)
     fcent = 7.5; // 5-10%
-  else if (bimp < 6.01)
-    fcent = 15.; // 10-20%
-  else if (bimp < 7.37)
-    fcent = 25.; // 20-30%
-  else if (bimp < 8.52)
-    fcent = 35.; // 30-40%
-  else if (bimp < 9.57)
-    fcent = 45.; // 40-50%
-  else if (bimp < 10.55)
-    fcent = 55.; // 50-60%
-  else if (bimp < 11.46)
-    fcent = 65.; // 60-70%
-  else if (bimp < 12.31)
-    fcent = 75.; // 70-80%
+    
+  else if (bimp < 5.18)
+    fcent = 12.5; // 10-15%
+  else if (bimp < 6.02)
+    fcent = 17.5; // 15-20%
+  else if (bimp < 6.74)
+    fcent = 22.5; // 20-25%
+  else if (bimp < 7.38)
+    fcent = 27.5; // 25-30%
+  else if (bimp < 7.97)
+    fcent = 32.5; // 30-35%
+  else if (bimp < 8.53)
+    fcent = 37.5; // 35-40%
+  else if (bimp < 9.06)
+    fcent = 42.5; // 40-45%
+  else if (bimp < 9.56)
+    fcent = 47.5; // 45-50%
+  else if (bimp < 10.05)
+    fcent = 52.5; // 50-55%
+  else if (bimp < 10.50)
+    fcent = 57.5; // 55-60%
+  else if (bimp < 10.94)
+    fcent = 62.5; // 60-65%
+  else if (bimp < 11.35)
+    fcent = 67.5; // 65-70%
+  else if (bimp < 11.76)
+    fcent = 72.5; // 70-75%
+  else if (bimp < 12.19)
+    fcent = 77.5; // 75-80%
   else
     fcent = -1;
   return fcent;
@@ -53,20 +69,34 @@ int GetCentBin(double cent)
     return 0;
   if (cent == 7.5)
     return 1;
-  if (cent == 15.)
+  if (cent == 12.5)
     return 2;
-  if (cent == 25.)
+  if (cent == 17.5)
     return 3;
-  if (cent == 35.)
+  if (cent == 22.5)
     return 4;
-  if (cent == 45.)
+  if (cent == 27.5)
     return 5;
-  if (cent == 55.)
+  if (cent == 32.5)
     return 6;
-  if (cent == 65.)
+  if (cent == 37.5)
     return 7;
-  if (cent == 75.)
+  if (cent == 42.5)
     return 8;
+  if (cent == 47.5)
+    return 9;
+  if (cent == 52.5)
+    return 10;
+  if (cent == 57.5)
+    return 11;
+  if (cent == 62.5)
+    return 12;
+  if (cent == 67.5)
+    return 13;
+  if (cent == 72.5)
+    return 14;
+  if (cent == 77.5)
+    return 15;            
   return -1;
 }
 
@@ -126,7 +156,7 @@ TH1F* FillHistGtheta(TProfile *const &prReGtheta, TProfile *const &prImGtheta)
   Int_t iNbins = prReGtheta->GetNbinsX();
   Double_t xMin = prReGtheta->GetXaxis()->GetBinLowEdge(1);
   Double_t xMax = prReGtheta->GetXaxis()->GetBinLowEdge(iNbins) + prReGtheta->GetXaxis()->GetBinWidth(iNbins);
-  TH1F* hGtheta = new TH1F(Form("hist_%s",prReGtheta->GetName()),"",iNbins,xMin,xMax);
+  TH1F* hGtheta = new TH1F("","",iNbins,xMin,xMax);
   for (int rbin = 0; rbin < iNbins; rbin++)
   {
     // get bincentre of bins in histogram
@@ -214,11 +244,11 @@ Double_t CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
    return coor24/wred4;
 }
 
-void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputFileName = "test.root", TString inputFileHist="", Bool_t bFirstRun = 1)
+void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputFileName = "test.root", TString inputFileHist="", Bool_t bFirstRun = 1, TString inputFileHist2="" , bool bTemporaryFlagForLYZEP = 0)
 {
-  bool bTemporaryFlagForLYZEP = 1;
-  const int ncent = 9; // 0-80%
-  const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
+  // bool bTemporaryFlagForLYZEP = 0;
+  const int ncent = 16; // 0-80%
+  const double bin_cent[ncent + 1] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80};
   const int npt = 12; // 0.2 - 3.5 GeV/c
   const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
   const double maxpt = 3.5; // max pt
@@ -227,11 +257,11 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   const double eta_gap = 0;
 
   const int neta = 2; // [eta-,eta+]
-  const int max_nh = 20000;
+  const int max_nh = 6000;
 
   // LYZ
   bool bUseProduct = 1;
-  const int rbins = 2500;
+  const int rbins = 1000;
   const double rMax = 0.5;
   const double rMin = 0.005;
 
@@ -242,7 +272,7 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   // const double rMinSum = 0;
   const int thetabins = 5;
   const double rootJ0 = 2.4048256;
-  const double J1rootJ0 = 0.519147;
+  // const double J1rootJ0 = 0.519147;
   double theta[thetabins];
   double multPOI[npt];
   for (int thetabin = 0; thetabin < thetabins; ++thetabin)
@@ -276,15 +306,18 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   TProfile *hv2MC = new TProfile("hv2MC", "MC flow", ncent, &bin_cent[0]);
   TProfile *hv2EP = new TProfile("hv2EP", "Ref. v_{2}{EP}", ncent, &bin_cent[0]);
   TProfile *HRes = new TProfile("HRes", "EP resolution", ncent, &bin_cent[0]);
-  double res2[9];
+
+  double res2[ncent];
+  TFile *fiHist = NULL;
   if (!bFirstRun){
     if (!inputFileHist) cerr << "inputFileHist=NULL!!" << endl;
-    TFile *fiHist = new TFile(inputFileHist.Data(),"read");
+    fiHist = new TFile(inputFileHist.Data(),"read");
     HRes =  (TProfile*) fiHist->Get("HRes");
     for (int ic = 0; ic < ncent; ic++){
       res2[ic] = TMath::Sqrt(HRes->GetBinContent(ic+1));
     }
   }
+  
   TProfile *hv2MCpt[ncent];
   TProfile *hv2EPpt[ncent];
 
@@ -300,7 +333,7 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   double r02[ncent][thetabins] = {{0.}};
   if (!bFirstRun){
     if (!inputFileHist) cerr << "inputFileHist=NULL!!" << endl;
-    TFile *fiHist = new TFile(inputFileHist.Data(),"read");
+    fiHist = new TFile(inputFileHist.Data(),"read");
     for (int i = 0; i < ncent; ++i)
     {
       for (int j = 0; j < thetabins; ++j)
@@ -331,7 +364,7 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   double r02Pro[ncent][thetabins];
   if (!bFirstRun && bUseProduct){
     if (!inputFileHist) cerr << "inputFileHist=NULL!!" << endl;
-    TFile *fiHist = new TFile(inputFileHist.Data(),"read");
+    fiHist = new TFile(inputFileHist.Data(),"read");
     for (int i = 0; i < ncent; ++i)
     {
       for (int j = 0; j < thetabins; ++j)
@@ -442,7 +475,8 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
     }
     else
     {
-      fiLYZEP = new TFile("/weekly/lbavinh/lbavinh/ToyModel/OUT/SecondRun.root","read");
+      if (inputFileHist2 == "") { cout << "inputFileHist2==NULL" << endl; return; }
+      fiLYZEP = new TFile(inputFileHist2.Data(),"read");
       // fiLYZEP = new TFile("test.root","read");
       for (int i = 0; i < thetabins; i++)
       {
@@ -590,7 +624,7 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
     TComplex Q2 = 0., Q4 = 0.;
     // p-vector of POI
     Double_t px2[npt] = {0.}, py2[npt] = {0.};
-    TComplex p2[npt] = {0.}, p4[npt] = {0.}, q2[npt] = {0.}, q4[npt] = {0.};
+    TComplex p2[npt] = {0.}, q2[npt] = {0.}, q4[npt] = {0.};
     // q-vector of particles marked as POI and RFP, which is used for
     // autocorrelation substraction
     Double_t qx2[npt] = {0.}, qy2[npt] = {0.}, qx4[npt] = {0.}, qy4[npt] = {0.};
@@ -681,6 +715,7 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
             for (int rbin = 0; rbin < rbins; ++rbin)
             {
               genfunP[rbin][thetabin] *= TComplex(1.0, r[rbin] * dCosTerm);
+              if (genfunP[rbin][thetabin].Rho2() > 100.) break;
             }
           }
         }
@@ -768,10 +803,10 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
             prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im(), mult);
             if (bUseProduct)
             {
-              // prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re());
-              // prImGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Im());
-              prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re(), mult);
-              prImGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Im(), mult);              
+              prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re());
+              prImGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Im());
+              // prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re(), mult);
+              // prImGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Im(), mult);              
             }
           }
         }
@@ -894,20 +929,6 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
     }
   }   // end of event loop
 
-  // cout << "double v2EP[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << hv2EP->GetBinContent(ic+1) << ", ";
-  // }
-  // cout << hv2EP->GetBinContent(ncent) << "};" << endl;
-
-  // cout << "double v2eEP[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << hv2EP->GetBinError(ic+1) << ", ";
-  // }
-  // cout << hv2EP->GetBinError(ncent) << "};" << endl;
-
   // cout << "double v2MC[9] = {";
   // for (int ic = 0 ; ic < ncent-1; ic++)
   // {
@@ -958,218 +979,7 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   //   if (thetacount!=0) v2int[ic] /= (float)thetacount*refmult; // refmult
   //   else {v2int[ic]=0.;}
     
-  //   // cout << v2int[ic] << " ";
-  //   float modQ2sqmean = prQ2ModSq->GetBinContent(ic+1);
-  //   float Q2xmean = prQ2x->GetBinContent(ic+1);
-  //   float Q2ymean = prQ2y->GetBinContent(ic+1);
-  //   float chi2 = v2int[ic]*refmult/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2));
-  //   dChi2[ic] = chi2;
-  //   // cout << chi2 << " ";
-  //   // if (ic==8) cout << modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2) << endl;
-  //   float temp=0.;
-  //   for(int it=0; it<thetabins; it++) 
-  //     /* Loop over the angles of the interpolation points,     
-  //       to compute the statistical error bar on the average estimate V2{infty}, 
-  //       with the help of Eqs.(89) of Ref.[A]. */
-  //   {    
-  //     // float arg=((float) it)*TMath::Pi()/(thetabins-1.);
-  //     double arg = theta[it];
-  //     temp+=exp(sqr(rootJ0/chi2)*cos(arg)/2.)*
-  //       BesselJ0(2.*rootJ0*sin(arg/2.))+
-  //       exp(-sqr(rootJ0/chi2)*cos(arg)/2.)*
-  //       BesselJ0(2.*rootJ0*cos(arg/2.));
-  //   }
-  //   float neve = prRefMult->GetBinEntries(ic+1);
-  //   float err2mean = v2int[ic]*sqrt(temp/2./neve/thetabins)/rootJ0/J1rootJ0;
-  //   v2e[ic] = err2mean;
-  //   // cout << err2mean << ", ";
-  // } // end of V2RP calculation
-  
-  // cout << " };" << endl;
-  // cout << "const double chisq[" << ncent << "] = {";
-  // for (int ic = 0; ic < ncent-1; ic++)
-  // {
-  //   cout << dChi2[ic] <<", ";
-  // }
-  // cout << dChi2[ncent-1] << "};" << endl;
 
-
-
-  //   cout << "My flow" << endl;
-  //   cout << "double v2MC[9] = {";
-  //   for (int ic = 0 ; ic < ncent-1; ic++)
-  //   {
-  //     cout << hv2MC->GetBinContent(ic+1) << ", ";
-  //   }
-  //   cout << hv2MC->GetBinContent(ncent) << "};" << endl;
-
-  //   cout << "double v2LYZ[9] = {";
-  //   for (int ic = 0 ; ic < ncent-1; ic++)
-  //   {
-  //     cout << v2int[ic] << ", ";
-  //   }
-  //   cout << v2int[ncent-1] << "};" << endl;
-  //   cout << "double v2eLYZ[9] = {";
-  //   for (int ic = 0 ; ic < ncent-1; ic++)
-  //   {
-  //     cout << v2e[ic] << ", ";
-  //   }
-  //   cout << v2e[ncent-1] << "};" << endl;
-
-
-  // TH1F *hLYZ = new TH1F("hLYZ","",ncent,&bin_cent[0]);
-  // for (int ic=0; ic<ncent; ic++)
-  // {
-  //   hLYZ->SetBinContent(ic+1,v2int[ic]);
-  //   hLYZ->SetBinError(ic+1,v2e[ic]);
-  // }
-
-  // cout << "double v2LYZ[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << v2int[ic] << ", ";
-  // }
-  // cout << v2int[ncent-1] << "};" << endl;
-  // cout << "double v2eLYZ[9] = {";
-  // for (int ic = 0 ; ic < ncent-1; ic++)
-  // {
-  //   cout << v2e[ic] << ", ";
-  // }
-  // cout << v2e[ncent-1] << "};" << endl;
-  // // Differential v2 LYZ
-  // TComplex cNumeratorPOI;
-  // double re, im, reRatio;
-  // double v2diff[ncent][npt]={0.};
-  // double v2diffe[ncent][npt]={0.};
-  // for (int ic = 0; ic < ncent; ic++)
-  // {
-  //   /* Computation of statistical error bars on the average estimates */
-  //   double temp = 0.;
-  //   double arg[thetabins];
-  //   for(int k1=0; k1<thetabins; k1++)
-  //   {
-  //     // float arg=((float) it)*TMath::Pi()/(thetabins-1.);
-  //     arg[k1] = theta[k1];
-
-  //     /* Loop over the theta angles, to compute the statistical error */
-  //     temp += (exp(sqr(rootJ0/dChi2[ic])*cos(arg[k1])/2.)*
-  //     BesselJ0(2.*rootJ0*sin(arg[k1]/2.)) -
-  //     exp(-sqr(rootJ0/dChi2[ic])*cos(arg[k1])/2.)*
-  //     BesselJ0(2.*rootJ0*cos(arg[k1]/2.)))*cos(arg[k1]);
-  //   }
-  //   for (int thetabin = 0; thetabin < thetabins; thetabin++)
-  //   {
-  //     re = prReDenom[thetabin]->GetBinContent(ic+1);
-  //     im = prImDenom[thetabin]->GetBinContent(ic+1);
-  //     cDenominator = TComplex(re, im);
-  //     if (cDenominator.Rho()==0) {
-	//       cerr<<"WARNING: modulus of cDenominator is zero"<<endl;
-	//     }
-  //     for (int ipt = 0; ipt < npt; ipt++)
-  //     {
-  //       re = prReNumer[thetabin][ic]->GetBinContent(ipt+1);
-  //       im = prImNumer[thetabin][ic]->GetBinContent(ipt+1);
-  //       cNumeratorPOI = TComplex(re, im);
-  //       if (cDenominator.Rho()!=0) {
-  //         reRatio = (cNumeratorPOI/cDenominator).Re();
-  //         double dVetaPOI = reRatio * dVtheta[ic][thetabin];
-  //         // cout << "reRatio * dVtheta[ic][thetabin] = " << reRatio <<" * "<< dVtheta[ic][thetabin] << endl;
-  //         v2diff[ic][ipt] += dVetaPOI;
-  //       }
-
-  //     }
-  //   }
-  //   double neve = prReDenom[0]->GetBinEntries(ic+1);
-  //   for (int ipt = 0; ipt < npt; ipt++)
-  //   {    
-  //     v2diff[ic][ipt] /= thetabins;
-  //     double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
-  //     v2diffe[ic][ipt] = sqrt(temp/rpmult/neve/thetabins)/2./J1rootJ0;
-  //     if (ic == 2) cout << v2diffe[ic][ipt] << ", ";
-  //   }
-
-  // }
-
-
-  // //================= Drawing =========================
-  // TCanvas c;
-
-  // hLYZ->SetMarkerStyle(23);
-  // hLYZ->SetMarkerColor(kBlue+2);
-  // hLYZ->SetLineColor(kBlue+2);
-
-  // hv2EP->SetMarkerStyle(20);
-  // hv2EP->SetMarkerColor(kRed+2);
-  // hv2EP->SetLineColor(kRed+2);
-
-  // hv2MC->SetMarkerStyle(25);
-  // hv2MC->SetMarkerColor(kBlack);
-  // hv2MC->SetLineColor(kBlack);
-  // hv2MC->SetTitle(";centrality, %;v_{2}");
-  // hv2MC->GetYaxis()->SetRangeUser(0,0.1);
-  // hv2MC->GetXaxis()->SetLimits(0,60);
-  // hv2MC->Draw();
-  // hv2EP->Draw("same");
-  // hLYZ->Draw("same");
-  // TLegend *leg = new TLegend(0.7,0.15,0.85,0.35);
-  // leg->SetBorderSize(0);
-  // leg->AddEntry(hv2MC,"MC","p");
-  // leg->AddEntry(hv2EP,"EP","p");
-  // leg->AddEntry(hLYZ,"LYZ","p");
-  // leg->Draw();
-  // gStyle->SetPadTickX(1);
-  // gStyle->SetPadTickY(1);
-  // gStyle->SetOptStat(0);
-  // c.SaveAs("Flow.pdf");
-  // //================= Drawing =========================
-  // TCanvas c2;
-  // // TPaveLabel* title = new TPaveLabel(0.1,0.95,0.9,0.98,"Toy Model");
-  // // title->SetBorderSize(0);
-  // // title->SetFillColor(0);
-  // // title->SetTextFont(textFont);
-  // // title->SetTextSize(2.);
-  // // title->Draw();
-  // // int centrality = 4; // 10-20%
-  // // c2.SetLeftMargin(0.17);
-  // TString legHeader[] = {"0-5%","5-10%","10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%"};
-  // c2.Divide(3,2,0,0);
-  // for (int centrality = 1; centrality < 7; centrality++){
-  // c2.cd(centrality);
-  // TH1F *hLYZDiff = new TH1F("hLYZDiff","",npt,&bin_pT[0]);
-  // for (int ipt=0; ipt<npt; ipt++)
-  // {
-  //   hLYZDiff->SetBinContent(ipt+1,v2diff[centrality][ipt]);
-  //   hLYZDiff->SetBinError(ipt+1,v2diffe[centrality][ipt]);
-  // }
-  // hLYZDiff->SetMarkerStyle(23);
-  // hLYZDiff->SetMarkerColor(kBlue+2);
-  // hLYZDiff->SetLineColor(kBlue+2);
-
-  // hv2EPpt[centrality]->SetMarkerStyle(20);
-  // hv2EPpt[centrality]->SetMarkerColor(kRed+2);
-  // hv2EPpt[centrality]->SetLineColor(kRed+2);
-
-  // hv2MCpt[centrality]->SetMarkerStyle(25);
-  // hv2MCpt[centrality]->SetMarkerColor(kBlack);
-  // hv2MCpt[centrality]->SetLineColor(kBlack);
-  // hv2MCpt[centrality]->SetTitle(";p_{T}, GeV/c;v_{2}");
-  // hv2MCpt[centrality]->GetYaxis()->SetRangeUser(0,0.26);
-  // hv2MCpt[centrality]->GetXaxis()->SetLimits(-0.05,3.55);
-  // hv2MCpt[centrality]->Draw();
-  // hv2EPpt[centrality]->Draw("same");
-  // hLYZDiff->Draw("P same");
-  // TLegend *leg2 = new TLegend(0.15,0.6,0.5,0.85);
-  // leg2->SetBorderSize(0);
-  // leg2->SetHeader(legHeader[centrality].Data());
-  // leg2->AddEntry(hv2MCpt[centrality],"MC","p");
-  // leg2->AddEntry(hv2EPpt[centrality],"EP","p");
-  // leg2->AddEntry(hLYZDiff,"LYZ","p");
-  // // leg2->AddEntry(hLYZ,"LYZ","p");
-  // leg2->Draw();
-  // // c2.SaveAs(Form("DifFlow_%i.png",centrality));
-  // }
-  // c2.SaveAs(Form("DifFlow.pdf"));
-  // //================= Drawing =========================
 
   d_outfile->cd();
   for (int icent = 0; icent < ncent; icent++)
@@ -1261,3 +1071,73 @@ void ToyModelTreeReader(TString inputFileName = "ToyModel.root", TString outputF
   cout << "Histfile has been written" << endl;
 }
 
+int main(int argc, char **argv)
+{
+  TString iFileName, oFileName, inputFileNameFromFirstRun = "", inputFileNameFromSecondRun = "";
+
+  if (argc < 5)
+  {
+    std::cerr << "./FlowQCumulant -i INPUT -o OUTPUT [Second Run: -inHist FirstRun.root] [Third Run: -inHist2 SecondRun.root]" << std::endl;
+    return 1;
+  }
+  for (Int_t i = 1; i < argc; i++)
+  {
+    if (std::string(argv[i]) != "-i" &&
+        std::string(argv[i]) != "-o" &&
+        std::string(argv[i]) != "-inHist" &&
+        std::string(argv[i]) != "-inHist2")
+    {
+      std::cerr << "\n[ERROR]: Unknown parameter " << i << ": " << argv[i] << std::endl;
+      return 2;
+    }
+    else
+    {
+      if (std::string(argv[i]) == "-i" && i != argc - 1)
+      {
+        iFileName = argv[++i];
+        continue;
+      }
+      if (std::string(argv[i]) == "-i" && i == argc - 1)
+      {
+        std::cerr << "\n[ERROR]: Input file name was not specified " << std::endl;
+        return 3;
+      }
+      if (std::string(argv[i]) == "-o" && i != argc - 1)
+      {
+        oFileName = argv[++i];
+        continue;
+      }
+      if (std::string(argv[i]) == "-o" && i == argc - 1)
+      {
+        std::cerr << "\n[ERROR]: Output file name was not specified " << std::endl;
+        return 4;
+      }
+      if (std::string(argv[i]) == "-inHist" && i != argc - 1)
+      {
+        inputFileNameFromFirstRun = argv[++i];
+        continue;
+      }
+      if (std::string(argv[i]) == "-inHist" && i == argc - 1)
+      {
+        std::cerr << "\n[ERROR]: Input file name with histograms from 1-st run was not specified " << std::endl;
+        return 5;
+      }
+      if (std::string(argv[i]) == "-inHist2" && i != argc - 1)
+      {
+        inputFileNameFromSecondRun = argv[++i];
+        continue;
+      }
+      if (std::string(argv[i]) == "-inHist2" && i == argc - 1)
+      {
+        std::cerr << "\n[ERROR]: Input file name with histograms from 2-st run was not specified " << std::endl;
+        return 1;
+      }
+
+    }
+  }
+  if (argc == 5) ToyModelTreeReader(iFileName, oFileName);
+  else if (argc == 7) ToyModelTreeReader(iFileName, oFileName, inputFileNameFromFirstRun, 0);
+  else if (argc == 9) ToyModelTreeReader(iFileName, oFileName, inputFileNameFromFirstRun, 0, inputFileNameFromSecondRun, 1);
+
+  return 0;
+}

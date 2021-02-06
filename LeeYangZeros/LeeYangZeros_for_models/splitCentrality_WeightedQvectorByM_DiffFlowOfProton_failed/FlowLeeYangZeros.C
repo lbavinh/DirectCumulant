@@ -4,16 +4,20 @@
 #include <fstream>
 
 #include <TH2.h>
+#include <TStyle.h>
+#include <TCanvas.h>
 #include "TProfile.h"
 #include "TMath.h"
 #include "TH1.h"
-// #include <TROOT.h>
+#include <TLegend.h>
+#include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
 #include <TComplex.h>
 #include <TString.h>
 #include <TStopwatch.h>
 #include <TDatabasePDG.h>
+#include <TParticlePDG.h>
 #include <TVector3.h>
 #define MAX_TRACKS 10000
 using std::cout;
@@ -27,22 +31,38 @@ double CentB(double bimp)
   double fcent;
   if (bimp < 2.91)
     fcent = 2.5; // 0-5%
-  else if (bimp < 4.18)
+  
+  else if (bimp < 4.17)
     fcent = 7.5; // 5-10%
-  else if (bimp < 6.01)
-    fcent = 15.; // 10-20%
-  else if (bimp < 7.37)
-    fcent = 25.; // 20-30%
-  else if (bimp < 8.52)
-    fcent = 35.; // 30-40%
-  else if (bimp < 9.57)
-    fcent = 45.; // 40-50%
-  else if (bimp < 10.55)
-    fcent = 55.; // 50-60%
-  else if (bimp < 11.46)
-    fcent = 65.; // 60-70%
-  else if (bimp < 12.31)
-    fcent = 75.; // 70-80%
+    
+  else if (bimp < 5.18)
+    fcent = 12.5; // 10-15%
+  else if (bimp < 6.02)
+    fcent = 17.5; // 15-20%
+  else if (bimp < 6.74)
+    fcent = 22.5; // 20-25%
+  else if (bimp < 7.38)
+    fcent = 27.5; // 25-30%
+  else if (bimp < 7.97)
+    fcent = 32.5; // 30-35%
+  else if (bimp < 8.53)
+    fcent = 37.5; // 35-40%
+  else if (bimp < 9.06)
+    fcent = 42.5; // 40-45%
+  else if (bimp < 9.56)
+    fcent = 47.5; // 45-50%
+  else if (bimp < 10.05)
+    fcent = 52.5; // 50-55%
+  else if (bimp < 10.50)
+    fcent = 57.5; // 55-60%
+  else if (bimp < 10.94)
+    fcent = 62.5; // 60-65%
+  else if (bimp < 11.35)
+    fcent = 67.5; // 65-70%
+  else if (bimp < 11.76)
+    fcent = 72.5; // 70-75%
+  else if (bimp < 12.19)
+    fcent = 77.5; // 75-80%
   else
     fcent = -1;
   return fcent;
@@ -56,20 +76,34 @@ int GetCentBin(double cent)
     return 0;
   if (cent == 7.5)
     return 1;
-  if (cent == 15.)
+  if (cent == 12.5)
     return 2;
-  if (cent == 25.)
+  if (cent == 17.5)
     return 3;
-  if (cent == 35.)
+  if (cent == 22.5)
     return 4;
-  if (cent == 45.)
+  if (cent == 27.5)
     return 5;
-  if (cent == 55.)
+  if (cent == 32.5)
     return 6;
-  if (cent == 65.)
+  if (cent == 37.5)
     return 7;
-  if (cent == 75.)
+  if (cent == 42.5)
     return 8;
+  if (cent == 47.5)
+    return 9;
+  if (cent == 52.5)
+    return 10;
+  if (cent == 57.5)
+    return 11;
+  if (cent == 62.5)
+    return 12;
+  if (cent == 67.5)
+    return 13;
+  if (cent == 72.5)
+    return 14;
+  if (cent == 77.5)
+    return 15;            
   return -1;
 }
 
@@ -218,8 +252,8 @@ Double_t CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
 }
 
 
-const int ncent = 9; // 0-80%
-const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
+const int ncent = 16; // 0-80%
+const double bin_cent[ncent + 1] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80};
 const int npt = 14; // 0.5 - 3.6 GeV/c - number of pt bins
 const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
 const double maxpt = 3.0;  // max pt
@@ -229,8 +263,8 @@ const float eta_gap = 0.05;
 const int neta = 2; // [eta-,eta+]
 
 // LYZ
-bool bUseProduct = 0;
-const int rbins = 2500;
+bool bUseProduct = 1;
+const int rbins = 1000;
 const double rMax = 0.5;
 const double rMin = 0.005;
 
@@ -241,7 +275,7 @@ const double rMaxSum = 250;
 const double rMinSum = 0;
 const int thetabins = 5;
 const double rootJ0 = 2.4048256;
-const double J1rootJ0 = 0.519147;
+// const double J1rootJ0 = 0.519147;
 
 void FlowLeeYangZeros(TString inputFileName,
  TString outputFileName,
@@ -285,18 +319,22 @@ void FlowLeeYangZeros(TString inputFileName,
   TProfile *hv2MC = new TProfile("hv2MC", "MC flow", ncent, &bin_cent[0]);
   TProfile *hv2EP = new TProfile("hv2EP", "Ref. v_{2}{EP}", ncent, &bin_cent[0]);
   TProfile *HRes = new TProfile("HRes", "EP resolution", ncent, &bin_cent[0]);
-  double res2[9];
+
+  double res2[ncent];
+
   if (!bFirstRun){
     if (!inputFileHist) cerr << "inputFileHist=NULL!!" << endl;
     TFile *fiHist = new TFile(inputFileHist.Data(),"read");
-    HRes =  (TProfile*) fiHist->Get("HRes");
+    HRes =  dynamic_cast<TProfile*> (fiHist->Get("HRes"));
     cout << "Resolution=";
     for (int ic = 0; ic < ncent; ic++){
       res2[ic] = TMath::Sqrt(HRes->GetBinContent(ic+1));
       cout << res2[ic] << ", ";
     }
     cout << endl;
+    delete fiHist;
   }
+
   TProfile *hv2MCpt[ncent];
   TProfile *hv2EPpt[ncent];
 
@@ -335,6 +373,7 @@ void FlowLeeYangZeros(TString inputFileName,
       }
       cout << "}," << endl;
     }
+    delete fiHist;
   }
 
   TProfile *prReGthetaProduct[ncent][thetabins];
@@ -366,6 +405,7 @@ void FlowLeeYangZeros(TString inputFileName,
       }
       cout << "}," << endl;
     }
+    delete fiHist;
   }
   TProfile *prRefMult = new TProfile("prRefMult","",ncent, &bin_cent[0]);
   TProfile *prQ2x = new TProfile("prQ2x","",ncent, &bin_cent[0]);
@@ -441,7 +481,7 @@ void FlowLeeYangZeros(TString inputFileName,
   }}
 
   // Lee Yang Zero RP
-  TFile *fiLYZEP;
+  TFile *fiLYZEP = NULL;
   TProfile *prReDtheta[thetabins];
   TProfile *prImDtheta[thetabins];
   if (!bFirstRun){
@@ -487,7 +527,7 @@ void FlowLeeYangZeros(TString inputFileName,
   TProfile *hcov42prime[ncent][npt];      // <2>*<4'>
   TProfile *hcov44prime[ncent][npt];      // <4>*<4'>
   TProfile *hcov2prime4prime[ncent][npt]; // <2'>*<4'>
-  if (!bFirstRun){
+  if (bFirstRun){
   for (int icent = 0; icent < ncent; icent++)
   { // loop over centrality classes
     hv22[icent] = new TProfile(Form("hv22_%i", icent), "", 1, 0., 1.);
@@ -695,6 +735,7 @@ void FlowLeeYangZeros(TString inputFileName,
 
     for (int iTrk = 0; iTrk < nh; iTrk++)
     { // track loop
+      
       TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
       float pt = vect.Pt();
       float eta = vect.Eta();
@@ -708,43 +749,49 @@ void FlowLeeYangZeros(TString inputFileName,
       float charge = 1. / 3. * particle->Charge();
       if (charge == 0)
         continue;
+      // int fId=-1;
       hPt->Fill(pt);
       hEta->Fill(eta);
       hPhi->Fill(phi);
 
-      Q2x += TMath::Cos(2.0 * phi);
-      Q2y += TMath::Sin(2.0 * phi);
-        Int_t ipt = -1;
-        for (int j = 0; j < npt; j++) if (pt >= bin_pT[j] && pt < bin_pT[j + 1]) ipt = j;
-      if (!bFirstRun)
+      if(pdg[iTrk] != 2212)
       {
-
-        multPOI[ipt]++;
+        Q2x += TMath::Cos(2.0 * phi);
+        Q2y += TMath::Sin(2.0 * phi);
       }
+      // if (!bFirstRun)
+      // {
+      //   multPOI[ipt]++;
+      // }
       Double_t v2 = TMath::Cos(2 * phi);
-      if (!bFirstRun){
-      Double_t cos4phi = TMath::Cos(4.*phi);
-      Double_t sin4phi = TMath::Sin(4.*phi);
-      Double_t cos2phi = TMath::Cos(2.*phi);
-      Double_t sin2phi = TMath::Sin(2.*phi);
+      if (bFirstRun){
+        Double_t cos4phi = TMath::Cos(4.*phi);
+        Double_t sin4phi = TMath::Sin(4.*phi);
+        Double_t cos2phi = TMath::Cos(2.*phi);
+        Double_t sin2phi = TMath::Sin(2.*phi);
+        
 
-      Qx2 += cos2phi;
-      Qy2 += sin2phi;
-      Qx4 += cos4phi;
-      Qy4 += sin4phi; 
-      M++;
+        Qx2 += cos2phi;
+        Qy2 += sin2phi;
+        Qx4 += cos4phi;
+        Qy4 += sin4phi; 
+        M++;
+        
+        if(pdg[iTrk] == 2212)
+        { // proton
+          Int_t ipt = -1;
+          for (int j = 0; j < npt; j++) if (pt >= bin_pT[j] && pt < bin_pT[j + 1]) ipt = j;
+          px2[ipt] += cos2phi;
+          py2[ipt] += sin2phi;
+          mp[ipt]++;
 
-      px2[ipt] += cos2phi;
-      py2[ipt] += sin2phi;
-      mp[ipt]++;
-
-      qx2[ipt] += cos2phi;
-      qy2[ipt] += sin2phi;
-      qx4[ipt] += cos4phi;
-      qy4[ipt] += sin4phi;
-      mq[ipt]++;
+          qx2[ipt] += cos2phi;
+          qy2[ipt] += sin2phi;
+          qx4[ipt] += cos4phi;
+          qy4[ipt] += sin4phi;
+          mq[ipt]++;
+        }
       }
-
       hv2MC->Fill(dCent, v2);        // calculate reference v2 from MC toy
       hv2MCpt[icent]->Fill(pt, v2); // Calculate differential v2 from MC toy
 
@@ -761,8 +808,8 @@ void FlowLeeYangZeros(TString inputFileName,
         sumQxy[fEta][1] += pt * TMath::Sin(2.0 * phi);
         multQv[fEta]++;
       } // end of eta selection
-      if (bUseProduct){
-        
+      if (bUseProduct && pdg[iTrk] != 2212)
+      {
         if (bFirstRun){
           for (int thetabin = 0; thetabin < thetabins; ++thetabin)
           {
@@ -786,8 +833,8 @@ void FlowLeeYangZeros(TString inputFileName,
       }
       mult++;
     } // end of track loop
-
-    if (M >= 4. && !bFirstRun){
+    
+    if (M >= 4. && bFirstRun){
       Q2 = TComplex(Qx2, Qy2);
       w2 = M * (M - 1.);                 // w(<2>)
       cor22 = CalCor22(Q2, M, w2);       // <2>
@@ -822,22 +869,20 @@ void FlowLeeYangZeros(TString inputFileName,
         hcov2prime4prime[icent][ipt]->Fill(0.5, redCor22[ipt] * redCor24[ipt], wred2[ipt] * wred4[ipt]);
       }
     }
-
+    
     if (mult != 0) 
     {
       hMult->Fill(mult);
       if (bFirstRun) {prRefMult->Fill(dCent, mult);}
-      else{
-        for (int ipt = 0; ipt < npt; ipt++) 
-        {prMultPOI[icent]->Fill(ipt+0.5,multPOI[ipt]);}
-      }
 
-      double Q2xMean = Q2x / mult;
-      double Q2yMean = Q2y / mult;
+      Q2x = Q2x / mult;
+      Q2y = Q2y / mult;
+      // double Q2xMean = Q2x / mult;
+      // double Q2yMean = Q2y / mult;
       for (int thetabin = 0; thetabin < thetabins; ++thetabin)
       {
-        Qtheta[thetabin] = Q2xMean * TMath::Cos(2.0 * theta[thetabin]) + Q2yMean * TMath::Sin(2.0 * theta[thetabin]);
-        // Qtheta[thetabin] = Q2x * TMath::Cos(2.0 * theta[thetabin]) + Q2y * TMath::Sin(2.0 * theta[thetabin]);
+        // Qtheta[thetabin] = Q2xMean * TMath::Cos(2.0 * theta[thetabin]) + Q2yMean * TMath::Sin(2.0 * theta[thetabin]);
+        Qtheta[thetabin] = Q2x * TMath::Cos(2.0 * theta[thetabin]) + Q2y * TMath::Sin(2.0 * theta[thetabin]);
       }
 
       if (bFirstRun)
@@ -870,7 +915,6 @@ void FlowLeeYangZeros(TString inputFileName,
       }
       else
       {
-
         double dWRcos2Psi = 0., dWRsin2Psi = 0.;
         // Differential LYZ
         for (int thetabin = 0; thetabin < thetabins; thetabin++)
@@ -879,10 +923,10 @@ void FlowLeeYangZeros(TString inputFileName,
           cDenominator = Qtheta[thetabin]*(TComplex::Exp(cExponent[thetabin])); // BP eq 12
           prReDenom[thetabin]->Fill(dCent, cDenominator.Re());
           prImDenom[thetabin]->Fill(dCent, cDenominator.Im());
-                    if (!bTemporaryFlagForLYZEP){
-          cTemporary = r02[icent][thetabin]*Qtheta[thetabin]*(TComplex::Exp(cExponent[thetabin]));
-          prReDtheta[thetabin]->Fill(dCent, cTemporary.Re());
-          prImDtheta[thetabin]->Fill(dCent, cTemporary.Im());
+          if (!bTemporaryFlagForLYZEP){
+            cTemporary = r02[icent][thetabin]*Qtheta[thetabin]*(TComplex::Exp(cExponent[thetabin]));
+            prReDtheta[thetabin]->Fill(dCent, cTemporary.Re());
+            prImDtheta[thetabin]->Fill(dCent, cTemporary.Im());
           }
           else{
             cDtheta = TComplex(prReDtheta[thetabin]->GetBinContent(icent+1)/rootJ0, prImDtheta[thetabin]->GetBinContent(icent+1)/rootJ0);
@@ -911,7 +955,7 @@ void FlowLeeYangZeros(TString inputFileName,
         }
       }
     } // end of if (mult!=0)
-
+    
     // Eta sub-event method
     double fEP[2] = {0.}; // [eta-,eta+]
     for (int ieta = 0; ieta < neta; ieta++)
@@ -927,17 +971,17 @@ void FlowLeeYangZeros(TString inputFileName,
         fEP[ieta] = -9999.;
       }
     }
-    if (fEP[0] != -9999. && fEP[1] != -9999.)
+    if (fEP[0] != -9999. && fEP[1] != -9999. && bFirstRun)
     {
       HRes->Fill(dCent, TMath::Cos(2.0 * (fEP[0] - fEP[1])));
     }
     // Estimate the event plane resolution of 2nd harmonic by the correlation between the azimuthal
     // angles of two subset groups of tracks, called sub-events \eta- and \eta+
-
+    
     if (!bFirstRun){
     for (int iTrk = 0; iTrk < nh; iTrk++)
     { //track loop
-
+      
       TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
       float pt = vect.Pt();
       float eta = vect.Eta();
@@ -945,13 +989,15 @@ void FlowLeeYangZeros(TString inputFileName,
       if (pt < minpt || pt > maxpt || fabs(eta) > eta_cut)
         continue; // track selection
       // if (fabs(eta)<eta_gap) continue;
-      auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+      auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]); 
       if (!particle)
         continue;
       float charge = 1. / 3. * particle->Charge();
       if (charge == 0)
         continue;
   
+
+
       if (fEP[0] != -9999. && fEP[1] != -9999.)
       {
         float v2 = -999.0;
@@ -965,134 +1011,41 @@ void FlowLeeYangZeros(TString inputFileName,
         }
         if (v2 != -999.0)
         {
-          hv2EPpt[icent]->Fill(pt, v2);
+          if (pdg[iTrk] == 2212) hv2EPpt[icent]->Fill(pt, v2);
           hv2EP->Fill(dCent, v2);
         }
       }
-    
-      for (int thetabin = 0; thetabin < thetabins; ++thetabin)
-      {
-        double dCosTerm = TMath::Cos(2.0 * (phi - theta[thetabin]));
-        TComplex cNumeratorPOI = dCosTerm*(TComplex::Exp(cExponent[thetabin]));    
-        prReNumer[thetabin][icent]->Fill(pt, cNumeratorPOI.Re());
-        prImNumer[thetabin][icent]->Fill(pt, cNumeratorPOI.Im());
-        if (bUseProduct){
-          TComplex cCosTermComplex(1., r02Pro[icent][thetabin] * dCosTerm);
-          TComplex cNumeratorPOIPro = genfunPr0[thetabin] * dCosTerm / cCosTermComplex;   
-          prReNumerPro[thetabin][icent]->Fill(pt, cNumeratorPOIPro.Re());
-          prImNumerPro[thetabin][icent]->Fill(pt, cNumeratorPOIPro.Im());          
-        }
-        if (bTemporaryFlagForLYZEP){
-        double v2LYZEP = dWR * TMath::Cos(2*(phi-dPsiR));
-          hv2LYZEPpt[icent]->Fill(pt, v2LYZEP);
-          hv2LYZEP->Fill(dCent, v2LYZEP);
+      if (pdg[iTrk] == 2212)
+      { // proton selection
+
+        Int_t ipt = -1;
+        for (int j = 0; j < npt; j++) if (pt >= bin_pT[j] && pt < bin_pT[j + 1]) ipt = j;
+        multPOI[ipt]++;
+
+        for (int thetabin = 0; thetabin < thetabins; ++thetabin)
+        {
+          double dCosTerm = TMath::Cos(2.0 * (phi - theta[thetabin]));
+          TComplex cNumeratorPOI = dCosTerm*(TComplex::Exp(cExponent[thetabin]));    
+          prReNumer[thetabin][icent]->Fill(pt, cNumeratorPOI.Re());
+          prImNumer[thetabin][icent]->Fill(pt, cNumeratorPOI.Im());
+          if (bUseProduct){
+            TComplex cCosTermComplex(1., r02Pro[icent][thetabin] * dCosTerm);
+            TComplex cNumeratorPOIPro = genfunPr0[thetabin] * dCosTerm / cCosTermComplex;   
+            prReNumerPro[thetabin][icent]->Fill(pt, cNumeratorPOIPro.Re());
+            prImNumerPro[thetabin][icent]->Fill(pt, cNumeratorPOIPro.Im());          
+          }
+          if (bTemporaryFlagForLYZEP){
+          double v2LYZEP = dWR * TMath::Cos(2*(phi-dPsiR));
+            hv2LYZEPpt[icent]->Fill(pt, v2LYZEP);
+            hv2LYZEP->Fill(dCent, v2LYZEP);
+          }
         }
       }
     } // end of the track loop
-    }
+    if (mult!=0) for (int ipt = 0; ipt < npt; ipt++) 
+    {prMultPOI[icent]->Fill(ipt+0.5,multPOI[ipt]);}
+    } // end of if (!bFirstRun)
   }   // end of event loop
-
-
-  // //============================================================================================================
-  // cout << inputFileName.Data() << " file processed" << endl;
-  // cout << "Resolution:" << endl;
-  // GetRes(HRes);
-  // GetMultMean(prRefMult);
-  // double dChi2[ncent];
-  // float v2int[ncent]={0.}, v2e[ncent]={0.};
-  // double dVtheta[ncent][thetabins] = {0.};
-  // cout << "const double r02[ncent][thetabins] = {";
-  // for (int ic = 0; ic < ncent; ic++)
-  // {
-  //   float refmult = prRefMult->GetBinContent(ic+1);
-  //   int thetacount = 0;
-  //   cout <<"{";
-  //   for (int it = 0; it < thetabins; it++)
-  //   {
-  //     TH1F *hGtheta = NULL;
-  //     if (bUseProduct) {hGtheta = FillHistGtheta(prReGthetaProduct[ic][it], prImGthetaProduct[ic][it]);}
-  //     else {hGtheta = FillHistGtheta(prReGthetaSum[ic][it], prImGthetaSum[ic][it]);}
-  //     float r0theta = GetR0(hGtheta);
-  //     // if (ic == 3 && it == 0) cout << "r0theta = " << r0theta << endl;
-  //     // cout << "cent:" << ic <<", theta =" << it << ", r0theta = " << r0theta << endl;
-  //     // if (it == 0) cout << rootJ0 <<"/"<< r0theta <<"/"<< refmult << " ";
-  //     cout << r0theta << ", ";
-  //     if (r0theta!=0) 
-  //     {
-  //       v2int[ic] += rootJ0 / r0theta;
-  //       dVtheta[ic][it] = rootJ0 / r0theta;
-  //       thetacount++;
-  //     }
-  //     // if (ic == 2) cout << rootJ0 / r0theta / refmult<< ", ";
-  //   }
-  //   cout << "}," << endl;
-  //   if (thetacount!=0) v2int[ic] /= (float)thetacount*refmult; // refmult
-  //   else {v2int[ic]=0.;}
-    
-  //   // cout << v2int[ic] << " ";
-  //   float modQ2sqmean = prQ2ModSq->GetBinContent(ic+1);
-  //   float Q2xmean = prQ2x->GetBinContent(ic+1);
-  //   float Q2ymean = prQ2y->GetBinContent(ic+1);
-  //   float chi2 = v2int[ic]*refmult/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2));
-  //   dChi2[ic] = chi2;
-  //   // cout << chi2 << " ";
-  //   // if (ic==8) cout << modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int[ic]*refmult,2) << endl;
-  //   float temp=0.;
-  //   for(int it=0; it<thetabins; it++) 
-  //     /* Loop over the angles of the interpolation points,     
-  //       to compute the statistical error bar on the average estimate V2{infty}, 
-  //       with the help of Eqs.(89) of Ref.[A]. */
-  //   {    
-  //     // float arg=((float) it)*TMath::Pi()/(thetabins-1.);
-  //     double arg = theta[it];
-  //     temp+=exp(sqr(rootJ0/chi2)*cos(arg)/2.)*
-  //       BesselJ0(2.*rootJ0*sin(arg/2.))+
-  //       exp(-sqr(rootJ0/chi2)*cos(arg)/2.)*
-  //       BesselJ0(2.*rootJ0*cos(arg/2.));
-  //   }
-  //   float neve = prRefMult->GetBinEntries(ic+1);
-  //   float err2mean = v2int[ic]*sqrt(temp/2./neve/thetabins)/rootJ0/J1rootJ0;
-  //   v2e[ic] = err2mean;
-  //   // cout << err2mean << ", ";
-  // } // end of V2RP calculation
-  
-  // cout << " };" << endl;
-  // cout << "const double chisq[" << ncent << "] = {";
-  // for (int ic = 0; ic < ncent-1; ic++)
-  // {
-  //   cout << dChi2[ic] <<", ";
-  // }
-  // cout << dChi2[ncent-1] << "};" << endl;
-
-
-
-  //   cout << "My flow" << endl;
-    // cout << "double v2MC[9] = {";
-    // for (int ic = 0 ; ic < ncent-1; ic++)
-    // {
-    //   cout << hv2MC->GetBinContent(ic+1) << ", ";
-    // }
-    // cout << hv2MC->GetBinContent(ncent) << "};" << endl;
-
-    // cout << "double v2EP[9] = {";
-    // for (int ic = 0 ; ic < ncent-1; ic++)
-    // {
-    //   cout << hv2EP->GetBinContent(ic+1) << ", ";
-    // }
-    // cout << hv2EP->GetBinContent(ncent) << "};" << endl;
-
-  //   cout << "double v2LYZ[9] = {";
-  //   for (int ic = 0 ; ic < ncent-1; ic++)
-  //   {
-  //     cout << v2int[ic] << ", ";
-  //   }
-  //   cout << v2int[ncent-1] << "};" << endl;
-  //   cout << "double v2eLYZ[9] = {";
-  //   for (int ic = 0 ; ic < ncent-1; ic++)
-  //   {
-  //     cout << v2e[ic] << ", ";
-  //   }
-  //   cout << v2e[ncent-1] << "};" << endl;
 
  
 
@@ -1124,6 +1077,24 @@ void FlowLeeYangZeros(TString inputFileName,
         }
       }
     }
+
+    for (int icent = 0; icent < ncent; icent++)
+    { // loop over centrality classes
+      hv22[icent]->Write();
+      hv24[icent]->Write();
+      hcov24[icent] ->Write();
+      for (int kpt = 0; kpt < npt; kpt++)
+      { // loop over pt bin
+        hv22pt[icent][kpt] ->Write();
+        hv24pt[icent][kpt] ->Write();
+        hcov22prime[icent][kpt]->Write();
+        hcov24prime[icent][kpt]->Write();
+        hcov42prime[icent][kpt]->Write();
+        hcov44prime[icent][kpt]->Write();
+        hcov2prime4prime[icent][kpt]->Write();
+      } // end of loop over pt bin
+    } // end of loop over centrality classes
+
   }
   else
   {
@@ -1154,23 +1125,6 @@ void FlowLeeYangZeros(TString inputFileName,
       hv2EPpt[ic]->Write();
       hv2MCpt[ic]->Write();
     }
-
-    for (int icent = 0; icent < ncent; icent++)
-    { // loop over centrality classes
-      hv22[icent]->Write();
-      hv24[icent]->Write();
-      hcov24[icent] ->Write();
-      for (int kpt = 0; kpt < npt; kpt++)
-      { // loop over pt bin
-        hv22pt[icent][kpt] ->Write();
-        hv24pt[icent][kpt] ->Write();
-        hcov22prime[icent][kpt]->Write();
-        hcov24prime[icent][kpt]->Write();
-        hcov42prime[icent][kpt]->Write();
-        hcov44prime[icent][kpt]->Write();
-        hcov2prime4prime[icent][kpt]->Write();
-      } // end of loop over pt bin
-    } // end of loop over centrality classes
     for (int it = 0; it < thetabins; it++)
     {
       prReDtheta[it]->Write();

@@ -17,6 +17,7 @@
 #include <TString.h>
 #include <TStopwatch.h>
 #include <TDatabasePDG.h>
+#include <TParticlePDG.h>
 #include <TVector3.h>
 #define MAX_TRACKS 10000
 using std::cout;
@@ -220,7 +221,7 @@ Double_t CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
    return coor24/wred4;
 }
 
-bool bTemporaryFlagForLYZEP = 0;
+
 const int ncent = 9; // 0-80%
 const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
 const int npt = 14; // 0.5 - 3.6 GeV/c - number of pt bins
@@ -246,7 +247,12 @@ const int thetabins = 5;
 const double rootJ0 = 2.4048256;
 const double J1rootJ0 = 0.519147;
 
-void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inputFileHist="", Bool_t bFirstRun = 1)
+void FlowLeeYangZeros(TString inputFileName,
+ TString outputFileName,
+  TString inputFileHist="",
+   Bool_t bFirstRun = 1,
+    TString inputFileNameFromSecondRun = "",
+     Bool_t bTemporaryFlagForLYZEP = 0)
 {
   
 
@@ -275,9 +281,9 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
   TH2F *hBimpvsMult = new TH2F("hBimpvsMult", "Impact parameter vs multiplicity;N_{ch};b (fm)", MAX_TRACKS, 0, MAX_TRACKS, 200, 0., 20.);
   TH1F *hBimp = new TH1F("hBimp", "Impact parameter;b (fm);dN/db", 200, 0., 20.);
   TH1F *hPt = new TH1F("hPt", "Pt-distr;p_{T} (GeV/c); dN/dP_{T}", 500, 0., 6.);
-  TH1F *hRP = new TH1F("hRP", "Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}", 300, 0., 7.);
+  // TH1F *hRP = new TH1F("hRP", "Event Plane; #phi-#Psi_{RP}; dN/d#Psi_{RP}", 300, 0., 7.);
   TH1F *hPhi = new TH1F("hPhi", "Particle azimuthal angle distr with respect to RP; #phi-#Psi_{RP}; dN/d(#phi-#Psi_{RP})", 300, 0., 7.);
-  TH1F *hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
+  // TH1F *hPhil = new TH1F("hPhil", "Azimuthal angle distr in laboratory coordinate system; #phi; dN/d#phi", 300, 0., 7.);
   TH1F *hEta = new TH1F("hEta", "Pseudorapidity distr; #eta; dN/d#eta", 300, -2.2, 2.2);
 
   TProfile *hv2MC = new TProfile("hv2MC", "MC flow", ncent, &bin_cent[0]);
@@ -452,7 +458,8 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
     }
     else
     {
-      fiLYZEP = new TFile("/weekly/lbavinh/lbavinh/LYZ/OUT/SecondRun.root","read");
+      if (inputFileNameFromSecondRun=="") { cout << "inputFileNameFromSecondRun==""" << endl; return;}
+      fiLYZEP = new TFile(inputFileNameFromSecondRun.Data(),"read");
       // fiLYZEP = new TFile("test.root","read");
       for (int i = 0; i < thetabins; i++)
       {
@@ -671,7 +678,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
     TComplex Q2 = 0., Q4 = 0.;
     // p-vector of POI
     Double_t px2[npt] = {0.}, py2[npt] = {0.};
-    TComplex p2[npt] = {0.}, p4[npt] = {0.}, q2[npt] = {0.}, q4[npt] = {0.};
+    TComplex p2[npt] = {0.}, q2[npt] = {0.}, q4[npt] = {0.};
     // q-vector of particles marked as POI and RFP, which is used for
     // autocorrelation substraction
     Double_t qx2[npt] = {0.}, qy2[npt] = {0.}, qx4[npt] = {0.}, qy4[npt] = {0.};
@@ -767,6 +774,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
             for (int rbin = 0; rbin < rbins; ++rbin)
             {
               genfunP[rbin][thetabin] *= TComplex(1.0, r[rbin] * dCosTerm);
+              if (genfunP[rbin][thetabin].Rho2() > 100.) break;
             }
           }
         }
@@ -848,10 +856,10 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
           {
             cExpo = TComplex(0., rSum[rbin] * Qtheta[thetabin]);
             genfunS[rbin][thetabin] = TComplex::Exp(cExpo); // generating function from Q-vectors
-            prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re());
-            prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im());
-            // prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re(), mult);
-            // prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im(), mult);
+            // prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re());
+            // prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im());
+            prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re(), mult);
+            prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im(), mult);
             if (bUseProduct)
             {
               prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re());
@@ -941,7 +949,7 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
       if (pt < minpt || pt > maxpt || fabs(eta) > eta_cut)
         continue; // track selection
       // if (fabs(eta)<eta_gap) continue;
-      auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+      auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]); 
       if (!particle)
         continue;
       float charge = 1. / 3. * particle->Charge();
@@ -1184,6 +1192,77 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
   cout << "Histfile has been written" << endl;
 }
 #endif
+
+int main(int argc, char **argv)
+{
+  TString iFileName, oFileName, inputFileNameFromFirstRun = "", inputFileNameFromSecondRun = "";
+
+  if (argc < 5)
+  {
+    std::cerr << "./FlowQCumulant -i INPUT -o OUTPUT [Second Run: -inHist FirstRun.root] [Third Run: -inHist2 SecondRun.root]" << std::endl;
+    return 1;
+  }
+  for (Int_t i = 1; i < argc; i++)
+  {
+    if (std::string(argv[i]) != "-i" &&
+        std::string(argv[i]) != "-o" &&
+        std::string(argv[i]) != "-inHist" &&
+        std::string(argv[i]) != "-inHist2")
+    {
+      std::cerr << "\n[ERROR]: Unknown parameter " << i << ": " << argv[i] << std::endl;
+      return 2;
+    }
+    else
+    {
+      if (std::string(argv[i]) == "-i" && i != argc - 1)
+      {
+        iFileName = argv[++i];
+        continue;
+      }
+      if (std::string(argv[i]) == "-i" && i == argc - 1)
+      {
+        std::cerr << "\n[ERROR]: Input file name was not specified " << std::endl;
+        return 3;
+      }
+      if (std::string(argv[i]) == "-o" && i != argc - 1)
+      {
+        oFileName = argv[++i];
+        continue;
+      }
+      if (std::string(argv[i]) == "-o" && i == argc - 1)
+      {
+        std::cerr << "\n[ERROR]: Output file name was not specified " << std::endl;
+        return 4;
+      }
+      if (std::string(argv[i]) == "-inHist" && i != argc - 1)
+      {
+        inputFileNameFromFirstRun = argv[++i];
+        continue;
+      }
+      if (std::string(argv[i]) == "-inHist" && i == argc - 1)
+      {
+        std::cerr << "\n[ERROR]: Input file name with histograms from 1-st run was not specified " << std::endl;
+        return 5;
+      }
+      if (std::string(argv[i]) == "-inHist2" && i != argc - 1)
+      {
+        inputFileNameFromSecondRun = argv[++i];
+        continue;
+      }
+      if (std::string(argv[i]) == "-inHist2" && i == argc - 1)
+      {
+        std::cerr << "\n[ERROR]: Input file name with histograms from 2-st run was not specified " << std::endl;
+        return 1;
+      }
+
+    }
+  }
+  if (argc == 5) FlowLeeYangZeros(iFileName, oFileName);
+  else if (argc == 7) FlowLeeYangZeros(iFileName, oFileName, inputFileNameFromFirstRun, 0);
+  else if (argc == 9) FlowLeeYangZeros(iFileName, oFileName, inputFileNameFromFirstRun, 0, inputFileNameFromSecondRun, 1);
+
+  return 0;
+}
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/39GeVxpt500new/hybrid39GeV500Evrun022.root","testrun2.root","./OUT/HistFromFirstRun.root",0)'
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/Urqmd11.5/runlist_00","test.root")'
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/Urqmd11.5/runlist_00","test.root","OUT/FirstRun.root",0)'
@@ -1197,3 +1276,4 @@ void FlowLeeYangZeros(TString inputFileName, TString outputFileName, TString inp
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/115xpt500new/hybrid11.5GeVxpt500evP3run007.root","test.root")'
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/115xpt500new/hybrid11.5GeVxpt500evP3run007.root","test.root","OUT/FirstRun.root",0)'
 
+// ./FlowLeeYangZeros -i /weekly/lbavinh/lbavinh/AMPT/split/AMPT15_7.7/runlist_AMPT15_7.7_9383.list -o test.root

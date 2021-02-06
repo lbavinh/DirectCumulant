@@ -99,7 +99,7 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
 
   const int ncent = 9;
   const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
-  const int thetabins = 10;
+  const int thetabins = 5;
   double theta[thetabins];
   for (int thetabin = 0; thetabin < thetabins; ++thetabin)
   {
@@ -729,6 +729,31 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
     cout << "v24:" << endl;
     for (int ic = 0; ic < ncent; ic++) cout << v2cent[1][ic] <<", ";
     cout << endl;
+    cout << "v22:" << endl;
+    for (int ic = 0; ic < ncent; ic++) cout << v2cent[0][ic] <<", ";
+    cout << endl;
+    cout << "v2EP:" << endl;
+    for (int ic = 0; ic < ncent; ic++) cout << hv2EP->GetBinContent(ic+1) <<", ";
+    cout << endl;
+    cout << "v2LYZSUM:" << endl;
+    for (int ic = 0; ic < ncent; ic++) cout << v2LYZInt[ic] <<", ";
+    cout << endl;
+
+    cout << "v24e:" << endl;
+    for (int ic = 0; ic < ncent; ic++) cout << v2centE[1][ic] <<", ";
+    cout << endl;
+    cout << "v22e:" << endl;
+    for (int ic = 0; ic < ncent; ic++) cout << v2centE[0][ic] <<", ";
+    cout << endl;
+    cout << "v2eEP:" << endl;
+    for (int ic = 0; ic < ncent; ic++) cout << hv2EP->GetBinError(ic+1) <<", ";
+    cout << endl;
+    cout << "v2eLYZSUM:" << endl;
+    for (int ic = 0; ic < ncent; ic++) cout << v2eLYZInt[ic] <<", ";
+    cout << endl;
+
+// v2LYZInt
+// v2eLYZInt
   }
   const int ratioToMethod = 3;
   double dRatio[ncent][npt][6] = {0.}, dRatioErr[ncent][npt][6] = {0.};

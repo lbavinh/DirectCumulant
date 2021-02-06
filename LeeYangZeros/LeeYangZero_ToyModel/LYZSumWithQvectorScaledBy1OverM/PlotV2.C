@@ -87,16 +87,18 @@ double BesselJ0(double x)
   return temp;
 }
 
-void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "ThirdRun.root")
+void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "SecondRun.root")
 {
-  bool bUseProduct = 1;
+  bool bUseProduct = 0;
   bool bDebug = 1;
-  TString label = "Toy Model, 10M events, <M>=1000";
+  const int markerStyle[]={25,20,28,27,23,26};
+  const TString methodName[]={"MC","EP","2,QC","4,QC","LYZ (Sum)", "LYZ (Prod.)"};
+  std::pair<double,double> ratioRange = {0.67,1.23};
+  TString label = "Toy Model, 5M events, <M>=1000";
   TFile *fi1 = new TFile(inputFileName1.Data(),"read");
 
-  const int ncent = 16;
-  const double bin_cent[ncent + 1] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80};
-  TString legHeader[] = {"0-5%","5-10%","10-15%","15-20%","20-25%","25-30%","30-35%","35-40%","40-45%","45-50%","50-55%","55-60%","60-65%","65-70%","70-75%","75-80%"};
+  const int ncent = 9;
+  const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
   const int thetabins = 5;
   double theta[thetabins];
   for (int thetabin = 0; thetabin < thetabins; ++thetabin)
@@ -185,15 +187,6 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
     hv2MCpt[icent] = (TProfile*) fi2->Get(Form("hv2MCpt_%i", icent));
   } // end of loop over centrality classes
 
-  // Test LYZ, RP
-  TProfile *hv2LYZEP = (TProfile*) fi2->Get("hv2LYZEP");
-  TProfile *hv2LYZEPpt[ncent];
-  for (int icent = 0; icent < ncent; icent++)
-  { // loop over centrality classes
-    hv2LYZEPpt[icent] = (TProfile*) fi2->Get(Form("hv2LYZEPpt_%i", icent));
-  } // end of loop over centrality classes
-
-
   if (bDebug){
     cout << "Resolution:" << endl;
     GetRes(HRes);
@@ -224,7 +217,7 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
         thetacount++;
       }
     }
-    if (thetacount!=0) v2int /= (float)thetacount*refmult; // refmult
+    if (thetacount!=0) v2int /= (float)thetacount; // refmult
     else {v2int = 0.;}
     
     float modQ2sqmean = prQ2ModSq->GetBinContent(ic+1);
@@ -433,6 +426,7 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
     for (int ic = 0; ic < ncent; ic++)
     {
       float refmult = prRefMult->GetBinContent(ic+1);
+      float intFlowMean = 0;
       for (int thetabin = 0; thetabin < thetabins; thetabin++)
       {
         double integratedFlow = 0;
@@ -443,10 +437,16 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
           integratedFlow += v2diff_check[ic][ipt][thetabin] * rpmult;
           denominator += rpmult;
         }
-        if (denominator != 0) integratedFlow /= denominator;
-        cout <<"cent: "<< ic << " " <<dVtheta[ic][thetabin]/refmult << "\t" << integratedFlow << endl;//refmult
+        if (denominator != 0) {
+          integratedFlow /= denominator;
+          intFlowMean += integratedFlow;
+        }
+        // cout <<"cent: "<< ic << " " <<dVtheta[ic][thetabin] << "\t" << integratedFlow << endl;//refmult
       }
+      intFlowMean /= thetabins;
+      cout <<"cent: "<< ic << " " <<v2LYZInt[ic] << "\t" << intFlowMean << endl; // YES!! There is a huge bug here, intFlowMean > v2LYZInt[ic]
     }
+    if (bUseProduct){
     cout << "// ====== Product ====== //" << endl;
     for (int ic = 0; ic < ncent; ic++)
     {
@@ -465,10 +465,10 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
         cout <<"cent: "<< ic << " " <<dVthetaPro[ic][thetabin]/refmult << "\t" << integratedFlow << endl;
       }
     }
-
+    }
   }
 
-  double v2diffMC[ncent][npt] = {0.}, v2diffeMC[ncent][npt] = {0.}, v2diffEP[ncent][npt] = {0.}, v2diffeEP[ncent][npt] = {0.}, v2diffLYZEP[ncent][npt] = {0.}, v2ediffLYZEP[ncent][npt] = {0.};
+  double v2diffMC[ncent][npt] = {0.}, v2diffeMC[ncent][npt] = {0.}, v2diffEP[ncent][npt] = {0.}, v2diffeEP[ncent][npt] = {0.};
   for (int ic = 0; ic < ncent; ic++)
   {
     for (int ipt = 0; ipt < npt; ipt++)
@@ -477,9 +477,6 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
       v2diffeMC[ic][ipt] = hv2MCpt[ic]->GetBinError(ipt+1);
       v2diffEP[ic][ipt] = hv2EPpt[ic]->GetBinContent(ipt+1);
       v2diffeEP[ic][ipt] = hv2EPpt[ic]->GetBinError(ipt+1);
-      v2diffLYZEP[ic][ipt] = hv2LYZEPpt[ic]->GetBinContent(ipt+1);
-      v2ediffLYZEP[ic][ipt] = hv2LYZEPpt[ic]->GetBinError(ipt+1);
-
     }
   }
 
@@ -502,27 +499,27 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   // Get TProfile histograms from ROOTFile
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     sprintf(hname,"hv22_%i",icent);
-    hv22[icent] = (TProfile*)fi2->Get(hname);
+    hv22[icent] = (TProfile*)fi1->Get(hname);
     sprintf(hname,"hv24_%i",icent);
-    hv24[icent] = (TProfile*)fi2->Get(hname);
+    hv24[icent] = (TProfile*)fi1->Get(hname);
     sprintf(hname,"hcov24_%i",icent);
-    hcov24[icent] = (TProfile*)fi2->Get(hname);
+    hcov24[icent] = (TProfile*)fi1->Get(hname);
 
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
         sprintf(hname,"hv22pt_%i_%i",icent,ipt);
-        hv22pt[icent][ipt]=(TProfile*)fi2->Get(hname);
+        hv22pt[icent][ipt]=(TProfile*)fi1->Get(hname);
         sprintf(hname,"hv24pt_%i_%i",icent,ipt);
-        hv24pt[icent][ipt]=(TProfile*)fi2->Get(hname);
+        hv24pt[icent][ipt]=(TProfile*)fi1->Get(hname);
         sprintf(hname,"hcov22prime_%i_%i",icent,ipt);
-        hcov22prime[icent][ipt]=(TProfile*)fi2->Get(hname);
+        hcov22prime[icent][ipt]=(TProfile*)fi1->Get(hname);
         sprintf(hname,"hcov24prime_%i_%i",icent,ipt);
-        hcov24prime[icent][ipt]=(TProfile*)fi2->Get(hname);
+        hcov24prime[icent][ipt]=(TProfile*)fi1->Get(hname);
         sprintf(hname,"hcov42prime_%i_%i",icent,ipt);
-        hcov42prime[icent][ipt]=(TProfile*)fi2->Get(hname);
+        hcov42prime[icent][ipt]=(TProfile*)fi1->Get(hname);
         sprintf(hname,"hcov44prime_%i_%i",icent,ipt);
-        hcov44prime[icent][ipt]=(TProfile*)fi2->Get(hname);
+        hcov44prime[icent][ipt]=(TProfile*)fi1->Get(hname);
         sprintf(hname,"hcov2prime4prime_%i_%i",icent,ipt);
-        hcov2prime4prime[icent][ipt]=(TProfile*)fi2->Get(hname);
+        hcov2prime4prime[icent][ipt]=(TProfile*)fi1->Get(hname);
     } // end of loop over pt bin
   } // end of loop over centrality classes
 
@@ -706,67 +703,91 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
     hV24->SetBinContent(ic+1,v2cent[1][ic]);
     hV24->SetBinError(ic+1,v2centE[1][ic]);
   }
+  // Calculate ratio
+  double v2Diff[6][ncent][npt], v2eDiff[6][ncent][npt];
+  for (int ic = 0; ic < ncent; ic++)
+  {
+    for (int ipt = 0; ipt < npt; ipt++)
+    {
+      v2Diff[0][ic][ipt] = v2diffMC[ic][ipt]; // MC
+      v2Diff[1][ic][ipt] = v2diffEP[ic][ipt]; // EP
+      v2Diff[2][ic][ipt] = v2pt[0][ic][ipt];  // 2QC
+      v2Diff[3][ic][ipt] = v2pt[1][ic][ipt];  // 4QC
+      v2Diff[4][ic][ipt] = v2diff[ic][ipt]; // LYZ, Sum
+      v2Diff[5][ic][ipt] = v2diffPro[ic][ipt]; // LYZ, Pro
 
+      v2eDiff[0][ic][ipt] = v2diffeMC[ic][ipt]; // MC
+      v2eDiff[1][ic][ipt] = v2diffeEP[ic][ipt]; // EP
+      v2eDiff[2][ic][ipt] = v2ptE[0][ic][ipt];  // 2QC
+      v2eDiff[3][ic][ipt] = v2ptE[1][ic][ipt];  // 4QC
+      v2eDiff[4][ic][ipt] = v2diffe[ic][ipt]; // LYZ, Sum
+      v2eDiff[5][ic][ipt] = v2diffePro[ic][ipt]; // LYZ, Pro
 
+    }
+  }
+  if (bDebug){
+    cout << "v24:" << endl;
+    for (int ic = 0; ic < ncent; ic++) cout << v2cent[1][ic] <<", ";
+    cout << endl;
+  }
+  const int ratioToMethod = 3;
   double dRatio[ncent][npt][6] = {0.}, dRatioErr[ncent][npt][6] = {0.};
   for (int ic = 0; ic < ncent; ic++)
   {
     for (int ipt = 0; ipt < npt; ipt++)
     {
-      // for (int i = 0; i < 3; i++)
-      // {
-        dRatio[ic][ipt][0] = v2diffEP[ic][ipt] / v2diffMC[ic][ipt];
-        dRatio[ic][ipt][1] = v2diff[ic][ipt] / v2diffMC[ic][ipt];
-        dRatio[ic][ipt][2] = v2pt[0][ic][ipt] / v2diffMC[ic][ipt];
-        dRatio[ic][ipt][3] = v2pt[1][ic][ipt] / v2diffMC[ic][ipt];
-        dRatio[ic][ipt][4] = v2diffPro[ic][ipt] / v2diffMC[ic][ipt];
-        dRatio[ic][ipt][5] = v2diffLYZEP[ic][ipt] / v2diffMC[ic][ipt];
+      for (int i = 0; i < 6; i++)
+      {
+        dRatio[ic][ipt][i] = v2Diff[i][ic][ipt] / v2Diff[ratioToMethod][ic][ipt];
+        dRatioErr[ic][ipt][i] = dRatio[ic][ipt][i] * sqrt(pow(v2eDiff[ratioToMethod][ic][ipt] / v2Diff[ratioToMethod][ic][ipt], 2) + pow(v2eDiff[i][ic][ipt] / v2Diff[i][ic][ipt], 2)); 
 
-        dRatioErr[ic][ipt][0] = dRatio[ic][ipt][0] * sqrt(pow(v2diffeMC[ic][ipt] / v2diffMC[ic][ipt], 2) + pow(v2diffeEP[ic][ipt] / v2diffEP[ic][ipt], 2)); 
-        dRatioErr[ic][ipt][1] = dRatio[ic][ipt][1] * sqrt(pow(v2diffeMC[ic][ipt] / v2diffMC[ic][ipt], 2) + pow(v2diffe[ic][ipt] / v2diff[ic][ipt], 2));
-        dRatioErr[ic][ipt][2] = dRatio[ic][ipt][2] * sqrt(pow(v2diffeMC[ic][ipt] / v2diffMC[ic][ipt], 2) + pow(v2ptE[0][ic][ipt] / v2pt[0][ic][ipt], 2));      
-        dRatioErr[ic][ipt][3] = dRatio[ic][ipt][3] * sqrt(pow(v2diffeMC[ic][ipt] / v2diffMC[ic][ipt], 2) + pow(v2ptE[1][ic][ipt] / v2pt[1][ic][ipt], 2));
-        dRatioErr[ic][ipt][4] = dRatio[ic][ipt][4] * sqrt(pow(v2diffeMC[ic][ipt] / v2diffMC[ic][ipt], 2) + pow(v2diffePro[ic][ipt] / v2diffPro[ic][ipt], 2));
-        dRatioErr[ic][ipt][5] = dRatio[ic][ipt][5] * sqrt(pow(v2diffeMC[ic][ipt] / v2diffMC[ic][ipt], 2) + pow(v2ediffLYZEP[ic][ipt] / v2diffLYZEP[ic][ipt], 2)); 
-      // }
+      }
     }
+  }
+
+  double v2Int[6][ncent], v2eInt[6][ncent];
+  for (int ic = 0; ic < ncent; ic++)
+  {
+    
+      v2Int[0][ic] = hv2MC->GetBinContent(ic+1); // MC
+      v2Int[1][ic] = hv2EP->GetBinContent(ic+1); // EP
+      v2Int[2][ic] = v2cent[0][ic];  // 2QC
+      v2Int[3][ic] = v2cent[1][ic];  // 4QC
+      v2Int[4][ic] = v2LYZInt[ic]; // LYZ, Sum
+      v2Int[5][ic] = v2LYZIntPro[ic]; // LYZ, Pro
+
+      v2eInt[0][ic] = hv2MC->GetBinError(ic+1); // MC
+      v2eInt[1][ic] = hv2EP->GetBinError(ic+1); // EP
+      v2eInt[2][ic] = v2centE[0][ic];  // 2QC
+      v2eInt[3][ic] = v2centE[1][ic];  // 4QC
+      v2eInt[4][ic] = v2eLYZInt[ic]; // LYZ, Sum
+      v2eInt[5][ic] = v2eLYZIntPro[ic]; // LYZ, Pro
+
+    
   }
 
   double ratioIntFlow[ncent][6] = {0.}, ratioIntFlowe[ncent][6] = {0.};
   for (int ic = 0; ic < ncent; ic++)
   {
-    double v2EP = hv2EP->GetBinContent(ic+1);
-    double v2MC = hv2MC->GetBinContent(ic+1);
-    double v2EPe = hv2EP->GetBinError(ic+1);
-    double v2MCe = hv2MC->GetBinError(ic+1);
-    double v2LYZEP = hv2LYZEP->GetBinContent(ic+1);
-    double v2eLYZEP = hv2LYZEP->GetBinError(ic+1);
-    ratioIntFlow[ic][0] = v2EP/v2MC; 
-    ratioIntFlow[ic][1] = v2LYZInt[ic]/v2MC; 
-    ratioIntFlow[ic][2] = v2LYZIntPro[ic]/v2MC; 
-    ratioIntFlow[ic][3] = v2cent[0][ic]/v2MC; // v22
-    ratioIntFlow[ic][4] = v2cent[1][ic]/v2MC; // v24
-    ratioIntFlow[ic][5] = v2LYZEP/v2MC;
-
-    ratioIntFlowe[ic][0] = ratioIntFlow[ic][0] * sqrt(pow( v2EPe/ v2EP, 2) + pow(v2MCe / v2MC, 2));
-    ratioIntFlowe[ic][1] = ratioIntFlow[ic][1] * sqrt(pow( v2eLYZInt[ic]/ v2LYZInt[ic], 2) + pow(v2MCe / v2MC, 2));
-    ratioIntFlowe[ic][2] = ratioIntFlow[ic][2] * sqrt(pow( v2eLYZIntPro[ic]/ v2LYZIntPro[ic], 2) + pow(v2MCe / v2MC, 2));
-    ratioIntFlowe[ic][3] = ratioIntFlow[ic][3] * sqrt(pow( v2centE[0][ic]/ v2cent[0][ic], 2) + pow(v2MCe / v2MC, 2));
-    ratioIntFlowe[ic][4] = ratioIntFlow[ic][4] * sqrt(pow( v2centE[1][ic]/ v2cent[1][ic], 2) + pow(v2MCe / v2MC, 2));
-    ratioIntFlowe[ic][5] = ratioIntFlow[ic][5] * sqrt(pow( v2eLYZEP/v2LYZEP, 2) + pow(v2MCe / v2MC, 2));
+    for (int i=0; i<6; i++){
+    ratioIntFlow[ic][i] = v2Int[i][ic]/v2Int[ratioToMethod][ic]; // v24
+    ratioIntFlowe[ic][i] = ratioIntFlow[ic][i] * sqrt(pow( v2eInt[i][ic]/ v2Int[i][ic], 2) + pow(v2eInt[ratioToMethod][ic] / v2Int[ratioToMethod][ic], 2));
+    }
   }
   //================= Drawing =========================
   gStyle->SetErrorX(0);
   TCanvas c;
-  
-  c.Divide(2,1);
+  TPaveLabel* title2 = new TPaveLabel(0.1,0.96,0.9,0.99,label.Data());
+  title2->SetBorderSize(0);
+  title2->SetFillColor(0);
+  // title->SetTextFont(textFont);
+  // title->SetTextSize(2.);
+  // title2->Draw();
   // c.SetLeftMargin(0.2);
+  // c.SetTopMargin(0.2);
+  c.Divide(2,1);
+  
   c.cd(1);
-
-  hv2LYZEP->SetMarkerStyle(29);
-  hv2LYZEP->SetMarkerColor(kYellow+2);
-  hv2LYZEP->SetLineColor(kYellow+2);
-
   hV22->SetMarkerStyle(28);
   hV22->SetMarkerColor(kBlack);
   hV22->SetLineColor(kBlack);
@@ -809,17 +830,20 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   hv2MC->SetLineColor(kBlack);
   hv2MC->SetTitle(Form("%s;centrality, %%;v_{2}",label.Data()));
   hv2MC->GetYaxis()->SetRangeUser(0,0.1);
-  hv2MC->GetXaxis()->SetLimits(0,60);
-
-
-  hv2MC->Draw();
-  hv2EP->Draw("same");
-  hLYZ->Draw("same");
-  if (bUseProduct) hLYZPro->Draw("same");
-  hV22->Draw("same");
-  hV24->Draw("same");
-  hv2LYZEP->Draw("same");
-  TLegend *leg = new TLegend(0.55,0.15,0.8,0.55);
+  hv2MC->GetXaxis()->SetLimits(0,80.);
+  hv2EP->GetXaxis()->SetLimits(0,80.);
+  hLYZ->GetXaxis()->SetLimits(0,80.);
+  hV22->GetXaxis()->SetLimits(0,80.);
+  hV24->GetXaxis()->SetLimits(0,80.);
+  TH2F *hist = new TH2F("hist",Form("%s;centrality, %%;v_{2}",label.Data()),6,0,80,1,0,0.1);
+  hist->Draw("");
+  hv2MC->Draw("P same");
+  hv2EP->Draw("P same");
+  hLYZ->Draw("P same");
+  if (bUseProduct) { hLYZPro->GetXaxis()->SetLimits(0,80); hLYZPro->Draw("P same");}
+  hV22->Draw("P same");
+  hV24->Draw("P same");
+  TLegend *leg = new TLegend(0.25,0.65,0.5,0.87);
   leg->SetBorderSize(0);
   leg->AddEntry(hv2MC,"MC","p");
   leg->AddEntry(hv2EP,"EP","p");
@@ -827,14 +851,13 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   if (bUseProduct) leg->AddEntry(hLYZPro,"LYZ (Prod.)","p");
   leg->AddEntry(hV22,"2,QC","p");
   leg->AddEntry(hV24,"4,QC","p");
-  leg->AddEntry(hv2LYZEP,"LYZ,EP","p");
   leg->Draw();
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
   gStyle->SetOptStat(0);
   c.cd(2);
   TH1F *hRatioInt[6];
-  for (int i=0; i<6; i++)
+  for (int i=0; i<5; i++)
   {
     hRatioInt[i] = new TH1F(Form("hRatioInt_%i",i),"",ncent,&bin_cent[0]);
     for (int ic=0; ic<ncent; ic++)
@@ -842,34 +865,50 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
       hRatioInt[i]->SetBinContent(ic+1,ratioIntFlow[ic][i]);
       hRatioInt[i]->SetBinError(ic+1,ratioIntFlowe[ic][i]);
     }
+    hRatioInt[i]->SetMarkerStyle(markerStyle[i]);
+    hRatioInt[i]->GetYaxis()->SetRangeUser(ratioRange.first,ratioRange.second);
+    hRatioInt[i]->SetTitle(";centrality, %;Ratio to v_{2}{4}");
   }
-  hRatioInt[0]->SetMarkerStyle(20);
-  hRatioInt[0]->SetMarkerColor(kRed+2);
-  hRatioInt[0]->SetLineColor(kRed+2);
-  hRatioInt[2]->SetMarkerStyle(26);
-  hRatioInt[2]->SetMarkerColor(kGreen+2);
-  hRatioInt[2]->SetLineColor(kGreen+2);
-  hRatioInt[1]->SetMarkerStyle(23);
-  hRatioInt[1]->SetMarkerColor(kBlue+2);
-  hRatioInt[1]->SetLineColor(kBlue+2);
-  hRatioInt[3]->SetMarkerStyle(28);
-  hRatioInt[3]->SetMarkerColor(kBlack);
-  hRatioInt[3]->SetLineColor(kBlack);
-  hRatioInt[4]->SetMarkerStyle(27);
-  hRatioInt[4]->SetMarkerColor(kGray+2);
-  hRatioInt[4]->SetLineColor(kGray+2);
+  if (bUseProduct){
+    hRatioInt[5] = new TH1F(Form("hRatioInt_5"),"",ncent,&bin_cent[0]);
+    for (int ic=0; ic<ncent; ic++)
+    {
+      hRatioInt[5]->SetBinContent(ic+1,ratioIntFlow[ic][5]);
+      hRatioInt[5]->SetBinError(ic+1,ratioIntFlowe[ic][5]);
+    }
+    hRatioInt[5]->SetMarkerStyle(markerStyle[5]);    
+  }
 
-  hRatioInt[5]->SetMarkerStyle(29);
-  hRatioInt[5]->SetMarkerColor(kYellow+2);
-  hRatioInt[5]->SetLineColor(kYellow+2);
+  hRatioInt[4]->SetMarkerColor(kBlue+2);
+  hRatioInt[4]->SetLineColor(kBlue+2);
+  if (bUseProduct){
+  hRatioInt[5]->SetMarkerColor(kGreen+2);
+  hRatioInt[5]->SetLineColor(kGreen+2);
+  }
+  hRatioInt[2]->SetMarkerColor(kBlack);
+  hRatioInt[2]->SetLineColor(kBlack);
 
-  hRatioInt[0]->GetYaxis()->SetRangeUser(0.89,1.11);
-  hRatioInt[0]->SetTitle(";centrality, %;Ratio to MC");
-  hRatioInt[0]->Draw();
-  for (int i=1; i<6; i++) hRatioInt[i]->Draw("same");
+  hRatioInt[3]->SetMarkerColor(kGray+2);
+  hRatioInt[3]->SetLineColor(kGray+2);
+
+  hRatioInt[1]->SetMarkerColor(kRed+2);
+  hRatioInt[1]->SetLineColor(kRed+2);
+
+  hRatioInt[0]->SetMarkerColor(kBlack);
+  hRatioInt[0]->SetLineColor(kBlack);
+
+  TH2F *hist1 = new TH2F("hist1",Form("%s;centrality, %%;Ratio to v_{2}{4}",label.Data()),6,0,80,1,ratioRange.first,ratioRange.second);
+  hist1->Draw();
+  for (int i=1; i<5; i++) if (i!=ratioToMethod)hRatioInt[i]->Draw("P same");
+  if (bUseProduct){hRatioInt[5]->Draw("P same");}
   TLine lineOne1;
   lineOne1.SetLineStyle(2);
   lineOne1.DrawLine(0,1.,80,1.);
+  TLegend *leg3 = new TLegend(0.15,0.15,0.35,0.35);
+  leg3->SetBorderSize(0);
+  for (int i=1; i<5; i++){if (i!=ratioToMethod) leg3->AddEntry(hRatioInt[i],methodName[i].Data(),"p");}
+  if (bUseProduct) leg3->AddEntry(hRatioInt[5],"LYZ (Prod.)","p");
+  leg3->Draw();
   
   c.SaveAs("Flow.pdf");
   //================= Drawing =========================
@@ -882,7 +921,7 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   title->Draw();
   // int centrality = 4; // 10-20%
   // c2.SetLeftMargin(0.13);
-  
+  TString legHeader[] = {"0-5%","5-10%","10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%"};
   c2.Divide(3,2,0,0);
   for (int centrality = 1; centrality < 7; centrality++){
   c2.cd(centrality);
@@ -933,6 +972,8 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   hV24Diff->SetLineColor(kGray+2);
   hV24Diff->GetXaxis()->SetLimits(-0.1,3.6);
 
+
+
   hv2EPpt[centrality]->SetMarkerStyle(20);
   hv2EPpt[centrality]->SetMarkerColor(kRed+2);
   hv2EPpt[centrality]->SetLineColor(kRed+2);
@@ -972,9 +1013,9 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   // title3->SetTextFont(textFont);
   // title3->SetTextSize(2.);
   title3->Draw();
-  c3.Divide(5,2,0,0);
+  c3.Divide(8,2,0,0);
   // gROOT->SetStyle("Pub");
-  for (int centrality = 1; centrality < 6; centrality++){
+  for (int centrality = 1; centrality < 9; centrality++){
   c3.cd(centrality);
   TH1F *hV22Diff = new TH1F(Form("hV22Diff_%i",centrality+100),"",npt,&bin_pT[0]);
   for (int ipt = 0; ipt < npt; ipt++)
@@ -1025,10 +1066,10 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   hLYZDiffPro->SetLineColor(kGreen+2);
   hLYZDiffPro->GetXaxis()->SetLimits(-0.1,3.6);
   }
-  hv2LYZEPpt[centrality]->SetMarkerStyle(29);
-  hv2LYZEPpt[centrality]->SetMarkerColor(kYellow+2);
-  hv2LYZEPpt[centrality]->SetLineColor(kYellow+2);
-  hv2LYZEPpt[centrality]->GetXaxis()->SetLimits(-0.1,3.6);
+  // hv2EPpt[centrality]->SetMarkerStyle(20);
+  // hv2EPpt[centrality]->SetMarkerColor(kRed+2);
+  // hv2EPpt[centrality]->SetLineColor(kRed+2);
+  // hv2EPpt[centrality]->GetXaxis()->SetLimits(-0.1,3.6);
 
   hv2EPpt[centrality]->SetTitle(";p_{T}, GeV/c;v_{2}");
   hv2EPpt[centrality]->GetYaxis()->SetRangeUser(-0.01,0.26);
@@ -1037,277 +1078,72 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
   if (bUseProduct) hLYZDiffPro->Draw("P same");
   hV22Diff->Draw("P same");
   hV24Diff->Draw("P same");
-  hv2MCpt[centrality]->Draw("P same");
-  hv2LYZEPpt[centrality]->Draw("P same");
+  // hv2MCpt[centrality]->Draw("P same");
   TLegend *leg2 = new TLegend(0.17,0.65,0.48,0.97);
   leg2->SetBorderSize(0);
   leg2->SetHeader(legHeader[centrality].Data());
-  leg2->AddEntry(hv2MCpt[centrality],"MC","p");
+  // leg2->AddEntry(hv2MCpt[centrality],"MC","p");
   leg2->AddEntry(hv2EPpt[centrality],"EP","p");
   leg2->AddEntry(hLYZDiff,"LYZ (Sum)","p");
   if (bUseProduct) leg2->AddEntry(hLYZDiffPro,"LYZ (Prod.)","p");
   leg2->AddEntry(hV22Diff,"2,QC","p");
   leg2->AddEntry(hV24Diff,"4,QC","p");
-  leg2->AddEntry(hv2LYZEPpt[centrality],"LYZ, EP","p");
   leg2->Draw();
   }
-  for (int centrality = 1; centrality < 6; centrality++){
-    c3.cd(centrality+5);
-
-    TH1F *hLYZDiffRatio = new TH1F(Form("hLYZDiffRatio_%i",centrality),"",npt,&bin_pT[0]);
-    for (int ipt=0; ipt<npt; ipt++)
+  for (int centrality = 1; centrality < 9; centrality++){
+    c3.cd(centrality+8);
+    TH1F *hDifRatio[6];
+    for (int i = 0; i<5; i++)
     {
-      hLYZDiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][1]);
-      hLYZDiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][1]);
+      hDifRatio[i] = new TH1F(Form("hDifRatio_%i_%i",centrality,i),"",npt,&bin_pT[0]);
+      for (int ipt = 0; ipt < npt; ipt++)
+      {
+        hDifRatio[i]->SetBinContent(ipt+1,dRatio[centrality][ipt][i]);
+        hDifRatio[i]->SetBinError(ipt+1,dRatioErr[centrality][ipt][1]);
+      }
+    hDifRatio[i]->SetTitle(";p_{T}, GeV/c;Ratio to v_{2}{4}");
+    hDifRatio[i]->GetYaxis()->SetRangeUser(ratioRange.first,ratioRange.second);
+    hDifRatio[i]->SetMarkerStyle(markerStyle[i]);
     }
-    hLYZDiffRatio->SetMarkerStyle(23);
-    hLYZDiffRatio->SetMarkerColor(kBlue+2);
-    hLYZDiffRatio->SetLineColor(kBlue+2);
-    hLYZDiffRatio->SetTitle(";p_{T}, GeV/c;Ratio to MC");
-    hLYZDiffRatio->GetYaxis()->SetRangeUser(0.89,1.11);
-    
-    TH1F *hLYZDiffRatioPro;
-    hLYZDiffRatioPro = new TH1F(Form("hLYZDiffRatioPro_%i",centrality),"",npt,&bin_pT[0]);
     if (bUseProduct){
-    for (int ipt=0; ipt<npt; ipt++)
-    {
-      hLYZDiffRatioPro->SetBinContent(ipt+1,dRatio[centrality][ipt][4]);
-      hLYZDiffRatioPro->SetBinError(ipt+1,dRatioErr[centrality][ipt][4]);
+      hDifRatio[5] = new TH1F(Form("hDifRatio_%i_5",centrality),"",npt,&bin_pT[0]);
+      for (int ipt = 0; ipt < npt; ipt++)
+      {
+        hDifRatio[5]->SetBinContent(ipt+1,dRatio[centrality][ipt][5]);
+        hDifRatio[5]->SetBinError(ipt+1,dRatioErr[centrality][ipt][5]);
+      }
+      hDifRatio[5]->SetMarkerStyle(markerStyle[5]);
     }
-    hLYZDiffRatioPro->SetMarkerStyle(26);
-    hLYZDiffRatioPro->SetMarkerColor(kGreen+2);
-    hLYZDiffRatioPro->SetLineColor(kGreen+2);
-    }
-    TH1F *hV22DiffRatio = new TH1F(Form("hV22DiffRatio_%i",centrality),"",npt,&bin_pT[0]);
-    for (int ipt=0; ipt<npt; ipt++)
-    {
-      hV22DiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][2]);
-      hV22DiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][2]);
-    }
-    hV22DiffRatio->SetMarkerStyle(28);
-    hV22DiffRatio->SetMarkerColor(kBlack);
-    hV22DiffRatio->SetLineColor(kBlack);
-    hV22DiffRatio->GetYaxis()->SetRangeUser(0.89,1.11);
-    TH1F *hV24DiffRatio = new TH1F(Form("hV24DiffRatio_%i",centrality),"",npt,&bin_pT[0]);
-    for (int ipt=0; ipt<npt; ipt++)
-    {
-      hV24DiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][3]);
-      hV24DiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][3]);
-    }
-    hV24DiffRatio->SetMarkerStyle(27);
-    hV24DiffRatio->SetMarkerColor(kGray+2);
-    hV24DiffRatio->SetLineColor(kGray+2);
-
-    TH1F *hV2EPDiffRatio = new TH1F(Form("hV2EPDiffRatio_%i",centrality),"",npt,&bin_pT[0]);
-    for (int ipt=0; ipt<npt; ipt++)
-    {
-      hV2EPDiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][0]);
-      hV2EPDiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][0]);
-    }
-    hV2EPDiffRatio->SetMarkerStyle(20);
-    hV2EPDiffRatio->SetMarkerColor(kRed+2);
-    hV2EPDiffRatio->SetLineColor(kRed+2);
-
-    TH1F *hV2LYZEPDiffRatio = new TH1F(Form("hV2LYZEPDiffRatio_%i",centrality),"",npt,&bin_pT[0]);
-    for (int ipt=0; ipt<npt; ipt++)
-    {
-      hV2LYZEPDiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][5]);
-      hV2LYZEPDiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][5]);
-    }
-    hV2LYZEPDiffRatio->SetMarkerStyle(29);
-    hV2LYZEPDiffRatio->SetMarkerColor(kYellow+2);
-    hV2LYZEPDiffRatio->SetLineColor(kYellow+2);
-
-    hLYZDiffRatio->Draw();
-    hV22DiffRatio->Draw("same");
-    hV24DiffRatio->Draw("same");
-    hV2EPDiffRatio->Draw("same");
     
+    hDifRatio[4]->SetMarkerColor(kBlue+2);
+    hDifRatio[4]->SetLineColor(kBlue+2);
+    if (bUseProduct){
+    hDifRatio[5]->SetMarkerColor(kGreen+2);
+    hDifRatio[5]->SetLineColor(kGreen+2);
+    }
+    hDifRatio[2]->SetMarkerColor(kBlack);
+    hDifRatio[2]->SetLineColor(kBlack);
+
+    hDifRatio[3]->SetMarkerColor(kGray+2);
+    hDifRatio[3]->SetLineColor(kGray+2);
+
+    hDifRatio[1]->SetMarkerColor(kRed+2);
+    hDifRatio[1]->SetLineColor(kRed+2);
+
+    hDifRatio[0]->SetMarkerColor(kBlack);
+    hDifRatio[0]->SetLineColor(kBlack);
+    
+    hDifRatio[1]->Draw();
+    for (int i=2; i<5; i++)
+    {
+
+      if (i!=ratioToMethod) hDifRatio[i]->Draw("same");
+    }
+    if (bUseProduct) hDifRatio[5]->Draw("same");
    
-
-    
-    if (bUseProduct) hLYZDiffRatioPro->Draw("same");
-    // hLYZDiffRatio->Draw("same");
-    hV2LYZEPDiffRatio->Draw("same");
     TLine lineOne;
     lineOne.SetLineStyle(2);
     lineOne.DrawLine(0.2,1.,3.5,1.);
   }
   c3.SaveAs("RatioDiffFlow.pdf");
-
-  //================= Drawing =========================
-  TCanvas c4("c4","",1400,700);
-  TPaveLabel* title4 = new TPaveLabel(0.1,0.96,0.9,0.99,label.Data());
-  title4->SetBorderSize(0);
-  title4->SetFillColor(0);
-  c4.SetLeftMargin(0.15);
-  // title3->SetTextFont(textFont);
-  // title3->SetTextSize(2.);
-  title4->Draw();
-  c4.Divide(5,2,0,0);
-  // gROOT->SetStyle("Pub");
-  for (int centrality = 6; centrality < 11; centrality++){
-  c4.cd(centrality-5);
-  TH1F *hV22Diff = new TH1F(Form("hV22Diff_%i",centrality+9),"",npt,&bin_pT[0]);
-  for (int ipt = 0; ipt < npt; ipt++)
-  {
-    hV22Diff->SetBinContent(ipt+1,v2pt[0][centrality][ipt]);
-    hV22Diff->SetBinError(ipt+1,v2ptE[0][centrality][ipt]);    
-  }
-  TH1F *hV24Diff = new TH1F(Form("hV24Diff_%i",centrality+9),"",npt,&bin_pT[0]);
-  for (int ipt = 0; ipt < npt; ipt++)
-  {
-    hV24Diff->SetBinContent(ipt+1,v2pt[1][centrality][ipt]);
-    hV24Diff->SetBinError(ipt+1,v2ptE[1][centrality][ipt]);    
-  }
-
-  hV22Diff->SetMarkerStyle(28);
-  hV22Diff->SetMarkerColor(kBlack);
-  hV22Diff->SetLineColor(kBlack);
-  hV22Diff->GetXaxis()->SetLimits(-0.1,3.6);
-
-  hV24Diff->SetMarkerStyle(27);
-  hV24Diff->SetMarkerColor(kGray+2);
-  hV24Diff->SetLineColor(kGray+2);
-  hV24Diff->GetXaxis()->SetLimits(-0.1,3.6);
-
-
-
-  TH1F *hLYZDiff = new TH1F(Form("hLYZDiff_%i",centrality+9),"",npt,&bin_pT[0]);
-  for (int ipt=0; ipt<npt; ipt++)
-  {
-    hLYZDiff->SetBinContent(ipt+1,v2diff[centrality][ipt]);
-    hLYZDiff->SetBinError(ipt+1,v2diffe[centrality][ipt]);
-  }
-  hLYZDiff->SetMarkerStyle(23);
-  hLYZDiff->SetMarkerColor(kBlue+2);
-  hLYZDiff->SetLineColor(kBlue+2);
-  hLYZDiff->GetXaxis()->SetLimits(-0.1,3.6);
-
-  TH1F *hLYZDiffPro;
-  if (bUseProduct){
-  hLYZDiffPro = new TH1F(Form("hLYZDiffPro_%i",centrality+9),"",npt,&bin_pT[0]);
-  for (int ipt=0; ipt<npt; ipt++)
-  {
-    hLYZDiffPro->SetBinContent(ipt+1,v2diffPro[centrality][ipt]);
-    hLYZDiffPro->SetBinError(ipt+1,v2diffePro[centrality][ipt]);
-  }
-  hLYZDiffPro->SetMarkerStyle(26);
-  hLYZDiffPro->SetMarkerColor(kGreen+2);
-  hLYZDiffPro->SetLineColor(kGreen+2);
-  hLYZDiffPro->GetXaxis()->SetLimits(-0.1,3.6);
-  }
-  hv2LYZEPpt[centrality]->SetMarkerStyle(29);
-  hv2LYZEPpt[centrality]->SetMarkerColor(kYellow+2);
-  hv2LYZEPpt[centrality]->SetLineColor(kYellow+2);
-  hv2LYZEPpt[centrality]->GetXaxis()->SetLimits(-0.1,3.6);
-
-  hv2EPpt[centrality]->SetTitle(";p_{T}, GeV/c;v_{2}");
-  hv2EPpt[centrality]->GetYaxis()->SetRangeUser(-0.01,0.26);
-  hv2EPpt[centrality]->Draw();
-  hLYZDiff->Draw("P same");
-  if (bUseProduct) hLYZDiffPro->Draw("P same");
-  hV22Diff->Draw("P same");
-  hV24Diff->Draw("P same");
-  hv2MCpt[centrality]->Draw("P same");
-  hv2LYZEPpt[centrality]->Draw("P same");
-  TLegend *leg2 = new TLegend(0.17,0.65,0.48,0.97);
-  leg2->SetBorderSize(0);
-  leg2->SetHeader(legHeader[centrality].Data());
-  leg2->AddEntry(hv2MCpt[centrality],"MC","p");
-  leg2->AddEntry(hv2EPpt[centrality],"EP","p");
-  leg2->AddEntry(hLYZDiff,"LYZ (Sum)","p");
-  if (bUseProduct) leg2->AddEntry(hLYZDiffPro,"LYZ (Prod.)","p");
-  leg2->AddEntry(hV22Diff,"2,QC","p");
-  leg2->AddEntry(hV24Diff,"4,QC","p");
-  leg2->AddEntry(hv2LYZEPpt[centrality],"LYZ, EP","p");
-  leg2->Draw();
-  }
-  for (int centrality = 6; centrality < 11; centrality++){
-    c4.cd(centrality);
-
-    TH1F *hLYZDiffRatio = new TH1F(Form("hLYZDiffRatio_%i",centrality),"",npt,&bin_pT[0]);
-    for (int ipt=0; ipt<npt; ipt++)
-    {
-      hLYZDiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][1]);
-      hLYZDiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][1]);
-    }
-    hLYZDiffRatio->SetMarkerStyle(23);
-    hLYZDiffRatio->SetMarkerColor(kBlue+2);
-    hLYZDiffRatio->SetLineColor(kBlue+2);
-    hLYZDiffRatio->SetTitle(";p_{T}, GeV/c;Ratio to MC");
-    hLYZDiffRatio->GetYaxis()->SetRangeUser(0.89,1.11);
-    
-    TH1F *hLYZDiffRatioPro;
-    hLYZDiffRatioPro = new TH1F(Form("hLYZDiffRatioPro_%i",centrality),"",npt,&bin_pT[0]);
-    if (bUseProduct){
-    for (int ipt=0; ipt<npt; ipt++)
-    {
-      hLYZDiffRatioPro->SetBinContent(ipt+1,dRatio[centrality][ipt][4]);
-      hLYZDiffRatioPro->SetBinError(ipt+1,dRatioErr[centrality][ipt][4]);
-    }
-    hLYZDiffRatioPro->SetMarkerStyle(26);
-    hLYZDiffRatioPro->SetMarkerColor(kGreen+2);
-    hLYZDiffRatioPro->SetLineColor(kGreen+2);
-    }
-    TH1F *hV22DiffRatio = new TH1F(Form("hV22DiffRatio_%i",centrality),"",npt,&bin_pT[0]);
-    for (int ipt=0; ipt<npt; ipt++)
-    {
-      hV22DiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][2]);
-      hV22DiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][2]);
-    }
-    hV22DiffRatio->SetMarkerStyle(28);
-    hV22DiffRatio->SetMarkerColor(kBlack);
-    hV22DiffRatio->SetLineColor(kBlack);
-    hV22DiffRatio->GetYaxis()->SetRangeUser(0.89,1.11);
-    TH1F *hV24DiffRatio = new TH1F(Form("hV24DiffRatio_%i",centrality),"",npt,&bin_pT[0]);
-    for (int ipt=0; ipt<npt; ipt++)
-    {
-      hV24DiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][3]);
-      hV24DiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][3]);
-    }
-    hV24DiffRatio->SetMarkerStyle(27);
-    hV24DiffRatio->SetMarkerColor(kGray+2);
-    hV24DiffRatio->SetLineColor(kGray+2);
-
-    TH1F *hV2EPDiffRatio = new TH1F(Form("hV2EPDiffRatio_%i",centrality),"",npt,&bin_pT[0]);
-    for (int ipt=0; ipt<npt; ipt++)
-    {
-      hV2EPDiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][0]);
-      hV2EPDiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][0]);
-    }
-    hV2EPDiffRatio->SetMarkerStyle(20);
-    hV2EPDiffRatio->SetMarkerColor(kRed+2);
-    hV2EPDiffRatio->SetLineColor(kRed+2);
-
-    TH1F *hV2LYZEPDiffRatio = new TH1F(Form("hV2LYZEPDiffRatio_%i",centrality),"",npt,&bin_pT[0]);
-    for (int ipt=0; ipt<npt; ipt++)
-    {
-      hV2LYZEPDiffRatio->SetBinContent(ipt+1,dRatio[centrality][ipt][5]);
-      hV2LYZEPDiffRatio->SetBinError(ipt+1,dRatioErr[centrality][ipt][5]);
-    }
-    hV2LYZEPDiffRatio->SetMarkerStyle(29);
-    hV2LYZEPDiffRatio->SetMarkerColor(kYellow+2);
-    hV2LYZEPDiffRatio->SetLineColor(kYellow+2);
-
-    hLYZDiffRatio->Draw();
-    hV22DiffRatio->Draw("same");
-    hV24DiffRatio->Draw("same");
-    hV2EPDiffRatio->Draw("same");
-    
-   
-
-    
-    if (bUseProduct) hLYZDiffRatioPro->Draw("same");
-    
-    hV2LYZEPDiffRatio->Draw("same");
-    TLine lineOne;
-    lineOne.SetLineStyle(2);
-    lineOne.DrawLine(0.2,1.,3.5,1.);
-  }
-  c4.SaveAs("RatioDiffFlow_2.pdf");
-
-
-
-
 }

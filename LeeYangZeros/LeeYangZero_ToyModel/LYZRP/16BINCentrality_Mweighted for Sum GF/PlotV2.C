@@ -1127,7 +1127,7 @@ void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "
 
     
     if (bUseProduct) hLYZDiffRatioPro->Draw("same");
-    // hLYZDiffRatio->Draw("same");
+    
     hV2LYZEPDiffRatio->Draw("same");
     TLine lineOne;
     lineOne.SetLineStyle(2);

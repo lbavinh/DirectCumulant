@@ -4,16 +4,20 @@
 #include <fstream>
 
 #include <TH2.h>
+#include <TStyle.h>
+#include <TCanvas.h>
 #include "TProfile.h"
 #include "TMath.h"
 #include "TH1.h"
-// #include <TROOT.h>
+#include <TLegend.h>
+#include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
 #include <TComplex.h>
 #include <TString.h>
 #include <TStopwatch.h>
 #include <TDatabasePDG.h>
+#include <TParticlePDG.h>
 #include <TVector3.h>
 #define MAX_TRACKS 10000
 using std::cout;
@@ -229,16 +233,16 @@ const float eta_gap = 0.05;
 const int neta = 2; // [eta-,eta+]
 
 // LYZ
-bool bUseProduct = 0;
-const int rbins = 2500;
+bool bUseProduct = 1;
+const int rbins = 1000;
 const double rMax = 0.5;
 const double rMin = 0.005;
 
-// const double rMaxSum = rMax;
-// const double rMinSum = rMin;
+const double rMaxSum = rMax;
+const double rMinSum = rMin;
 
-const double rMaxSum = 250;
-const double rMinSum = 0;
+// const double rMaxSum = 250;
+// const double rMinSum = 0;
 const int thetabins = 5;
 const double rootJ0 = 2.4048256;
 const double J1rootJ0 = 0.519147;
@@ -702,7 +706,8 @@ void FlowLeeYangZeros(TString inputFileName,
       if (pt < minpt || pt > maxpt || fabs(eta) > eta_cut)
         continue; // track selection
       // if (fabs(eta)<eta_gap) continue;
-      auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+      // auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+      TParticlePDG * particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
       if (!particle)
         continue;
       float charge = 1. / 3. * particle->Charge();
@@ -832,12 +837,12 @@ void FlowLeeYangZeros(TString inputFileName,
         {prMultPOI[icent]->Fill(ipt+0.5,multPOI[ipt]);}
       }
 
-      double Q2xMean = Q2x / mult;
-      double Q2yMean = Q2y / mult;
+      // double Q2xMean = Q2x / mult;
+      // double Q2yMean = Q2y / mult;
       for (int thetabin = 0; thetabin < thetabins; ++thetabin)
       {
-        Qtheta[thetabin] = Q2xMean * TMath::Cos(2.0 * theta[thetabin]) + Q2yMean * TMath::Sin(2.0 * theta[thetabin]);
-        // Qtheta[thetabin] = Q2x * TMath::Cos(2.0 * theta[thetabin]) + Q2y * TMath::Sin(2.0 * theta[thetabin]);
+        // Qtheta[thetabin] = Q2xMean * TMath::Cos(2.0 * theta[thetabin]) + Q2yMean * TMath::Sin(2.0 * theta[thetabin]);
+        Qtheta[thetabin] = Q2x * TMath::Cos(2.0 * theta[thetabin]) + Q2y * TMath::Sin(2.0 * theta[thetabin]);
       }
 
       if (bFirstRun)
@@ -852,10 +857,10 @@ void FlowLeeYangZeros(TString inputFileName,
           {
             cExpo = TComplex(0., rSum[rbin] * Qtheta[thetabin]);
             genfunS[rbin][thetabin] = TComplex::Exp(cExpo); // generating function from Q-vectors
-            prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re());
-            prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im());
-            // prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re(), mult);
-            // prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im(), mult);
+            // prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re());
+            // prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im());
+            prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re(), mult);
+            prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im(), mult);
             if (bUseProduct)
             {
               prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re());
@@ -945,7 +950,8 @@ void FlowLeeYangZeros(TString inputFileName,
       if (pt < minpt || pt > maxpt || fabs(eta) > eta_cut)
         continue; // track selection
       // if (fabs(eta)<eta_gap) continue;
-      auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+      // auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]); 
+      TParticlePDG * particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
       if (!particle)
         continue;
       float charge = 1. / 3. * particle->Charge();
@@ -1189,6 +1195,7 @@ void FlowLeeYangZeros(TString inputFileName,
 }
 #endif
 
+
 int main(int argc, char **argv)
 {
   TString iFileName, oFileName, inputFileNameFromFirstRun = "", inputFileNameFromSecondRun = "";
@@ -1259,6 +1266,7 @@ int main(int argc, char **argv)
 
   return 0;
 }
+
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/39GeVxpt500new/hybrid39GeV500Evrun022.root","testrun2.root","./OUT/HistFromFirstRun.root",0)'
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/Urqmd11.5/runlist_00","test.root")'
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/lbavinh/lbavinh/UrQMD/split/Urqmd11.5/runlist_00","test.root","OUT/FirstRun.root",0)'

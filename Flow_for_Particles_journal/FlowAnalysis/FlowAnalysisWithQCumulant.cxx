@@ -308,6 +308,7 @@ void FlowAnalysisWithQCumulant::SaveHist()
         hcov2prime4prime[icent][ipt][id]->Write();
         hcov22primeGap[icent][ipt][id]->Write();
         hv22ptGap[icent][ipt][id]->Write();
+        hcounter[icent][ipt][id]->Write();
       }
     } // end of loop over pt bin
   } // end of loop over centrality classes

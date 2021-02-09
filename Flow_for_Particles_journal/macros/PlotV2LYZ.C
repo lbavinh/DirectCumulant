@@ -77,9 +77,9 @@ double BesselJ0(double x)
   return temp;
 }
 
-void PlotV2(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "SecondRun.root")
+void PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "SecondRun.root")
 {
-  // bool bUseProduct = 1;
+  bool bUseProduct = 1;
   bool bDebug = 1;
   const int markerStyle[]={25,20,28,27,23,26};
   const TString methodName[]={"LYZ (Sum)", "LYZ (Prod.)"};

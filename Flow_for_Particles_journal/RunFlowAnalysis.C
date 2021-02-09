@@ -132,7 +132,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     flowEtaSub = new FlowAnalysisWithEtaSubEventPlane();
     flowEtaSub->SetFirstRun(false);
     flowEtaSub->SetEtaGap(eta_gap);
-    flowEtaSub->SetInputFileFromFirstRun(inputHistogramFileName.Data()); // need to be improve!!!
+    flowEtaSub->SetInputFileFromFirstRun(inputHistogramFileName); // need to be improve!!!
     flowEtaSub->Init();
   }
   if (LYZ_SUM_1)
@@ -146,7 +146,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     flowLYZ = new FlowAnalysisWithLeeYangZeros();
     // flowLYZ->SetDebugFlag(true);
     flowLYZ->SetFirstRun(false);
-    flowEtaSub->SetInputFileFromFirstRun(inputHistogramFileName.Data()); // need to be improve!!!
+    flowLYZ->SetInputFileFromFirstRun(inputHistogramFileName); // need to be improve!!!
     flowLYZ->Init();
   }
 
@@ -163,7 +163,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     // flowLYZ->SetDebugFlag(true);
     flowLYZ->SetFirstRun(false);
     flowLYZ->SetUseProduct(true);
-    flowEtaSub->SetInputFileFromFirstRun(inputHistogramFileName.Data()); // need to be improve!!!
+    flowLYZ->SetInputFileFromFirstRun(inputHistogramFileName); // need to be improve!!!
     flowLYZ->Init();
   }
   QVector *Q2 = new QVector(); // for LYZ only, need to be improve to be also feasible to QC.
@@ -180,7 +180,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     flowSP = new FlowAnalysisWithScalarProduct();
     flowSP->SetFirstRun(false);
     flowSP->SetEtaGap(eta_gap);
-    flowSP->SetInputFileFromFirstRun(inputHistogramFileName.Data()); // need to be improve!!!
+    flowSP->SetInputFileFromFirstRun(inputHistogramFileName); // need to be improve!!!
     flowSP->Init();
   }
   if (QCUMULANT)

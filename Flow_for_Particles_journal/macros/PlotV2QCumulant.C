@@ -79,7 +79,8 @@ struct term{ // structure for "Mean squared error of MEAN" calculation, using un
 
 void CalStatErrCent1040(TString model, TString energy,double v2eDif1040[nmethod][npid][npt]){
 
-  TFile *inFile = new TFile(Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data()),"read");
+  // TFile *inFile = new TFile(Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data()),"read");
+  TFile *inFile = new TFile("test.root","read");
 
   TProfile *hv22[ncent];        // profile <<2>> from 2nd Q-Cumulants
   TProfile *hv24[ncent];        // profile <<4>> from 4th Q-Cumulants
@@ -243,7 +244,8 @@ void CalStatErrCent1040(TString model, TString energy,double v2eDif1040[nmethod]
 
 void PlotV2QCumulant(TString model = "UrQMD", TString energy = "7.7GeV"){
   
-  TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
+  // TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
+  TString inFileName = "test.root";
   TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");
   TString outDirName=(TString)Form("%s_%s",model.Data(),energy.Data());
   TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energy.Data());
@@ -314,7 +316,6 @@ void PlotV2QCumulant(TString model = "UrQMD", TString energy = "7.7GeV"){
         hcov22primeGap[icent][ipt][id] = (TProfile*)  hcov22primeGap[icent][ipt][id-8] -> Clone();
         hcounter[icent][ipt][id] = (TProfile*)  hcounter[icent][ipt][id-8] -> Clone();
 
-        hPT[icent][ipt][id] -> Add(hPT[icent][ipt][id-4]);
         hv22pt[icent][ipt][id] -> Add(hv22pt[icent][ipt][id-4]);
         hv24pt[icent][ipt][id] -> Add(hv24pt[icent][ipt][id-4]);
         hcov22prime[icent][ipt][id] -> Add(hcov22prime[icent][ipt][id-4]);
@@ -496,8 +497,6 @@ void PlotV2QCumulant(TString model = "UrQMD", TString energy = "7.7GeV"){
   for (int icent=0;icent<ncent;icent++){
     for (int id=0;id<npid;id++){
       for (int ipt=binMinPtRFP+1;ipt<binMaxPtRFP;ipt++){
-        hv2EP[icent][binMinPtRFP][id]           -> Add(hv2EP[icent][ipt][id]);
-        // hPT[icent][binMinPtRFP][id]             -> Add(hPT[icent][ipt][id]);
         hv22pt[icent][binMinPtRFP][id]          -> Add(hv22pt[icent][ipt][id]);
         hv24pt[icent][binMinPtRFP][id]          -> Add(hv24pt[icent][ipt][id]);
         hcov22prime[icent][binMinPtRFP][id]     -> Add(hcov22prime[icent][ipt][id]);
@@ -528,31 +527,20 @@ void PlotV2QCumulant(TString model = "UrQMD", TString energy = "7.7GeV"){
     double ev24 = sqrt( 1./pow(v24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) );
     v2_RF[1][icent] = v24;
     v2e_RF[1][icent] = ev24;
-    // EP
-    TProfile *tmp = (TProfile*) hv2EP[icent][binMinPtRFP][0] -> Clone();
-    tmp -> Add(hv2EP[icent][binMinPtRFP][4]);
-    v2_RF[2][icent] = tmp->GetBinContent(1)/sqrt(HRes[icent]->GetBinContent(1));
-    v2e_RF[2][icent] = tmp->GetBinError(1)/sqrt(HRes[icent]->GetBinContent(1));
+
     // 2QC Gapped
     term cor2Gap = term(hv22Gap[icent]);
     double v22Gap = sqrt(cor2Gap.mVal);
     double ev22Gap = sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE);
-    v2_RF[3][icent] = v22Gap;
-    v2e_RF[3][icent] = ev22Gap;
+    v2_RF[2][icent] = v22Gap;
+    v2e_RF[2][icent] = ev22Gap;
     // Differential flow calculation
     for (int id=0;id<npid;id++){   
       for(int ipt=binMinPtRFP; ipt<binMinPtRFP+1; ipt++){ // loop for all pT bin
         // vPt.push_back(hPT[icent][ipt][id] -> GetBinContent(1));
         // vPt.push_back((bin_pT[ipt]+bin_pT[ipt+1])/2.);
         // ePt.push_back(0);
-        // v2EP
-        double res2 = sqrt(HRes[icent]->GetBinContent(1));
-        double v2obs = hv2EP[icent][ipt][id]->GetBinContent(1);
-        double v2EPDif = v2obs / res2;
-        // double v2EPDif = v2obs;
-        double ev2EP = hv2EP[icent][ipt][id]->GetBinError(1) / res2;
-        v2[2][id][icent] = v2EPDif;
-        v2e[2][id][icent] = ev2EP;
+
         
         // v22
         term cor2red = term(hv22pt[icent][ipt][id]);
@@ -598,8 +586,8 @@ void PlotV2QCumulant(TString model = "UrQMD", TString energy = "7.7GeV"){
         double cov22primeGap = Covariance(hcov22primeGap[icent][ipt][id],hv22Gap[icent],hv22ptGap[icent][ipt][id]);
         double ev22DifGap = sqrt(0.25*pow(cor2Gap.mVal,-3)*(pow(cor2redGap.mVal,2)*cor2Gap.mMSE
                             + 4*pow(cor2Gap.mVal,2)*cor2redGap.mMSE - 4*cor2Gap.mVal*cor2redGap.mVal*cov22primeGap));
-      v2[3][id][icent] = v22DifGap;
-      v2e[3][id][icent] = ev22DifGap;
+      v2[2][id][icent] = v22DifGap;
+      v2e[2][id][icent] = ev22DifGap;
       } // end of loop for all pT bin
     } // end of loop over PID
   } // end of loop over centrality classes

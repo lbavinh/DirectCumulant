@@ -254,10 +254,10 @@ Double_t CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
 
 const int ncent = 16; // 0-80%
 const double bin_cent[ncent + 1] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80};
-const int npt = 14; // 0.5 - 3.6 GeV/c - number of pt bins
-const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
-const double maxpt = 3.0;  // max pt
-const double minpt = 0.2; // min pt
+const int npt = 16; // 0.5 - 3.6 GeV/c - number of pt bins
+const double bin_pT[npt + 1] = {0., 0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 4.0};
+const double maxpt = 4.0;  // max pt
+const double minpt = 0.; // min pt
 const float eta_cut = 1.5;
 const float eta_gap = 0.05;
 const int neta = 2; // [eta-,eta+]
@@ -265,14 +265,14 @@ const int neta = 2; // [eta-,eta+]
 // LYZ
 bool bUseProduct = 0;
 const int rbins = 2500;
-const double rMax = 0.5;
-const double rMin = 0.005;
+const double rMax = 1.;
+const double rMin = 0.;
 
-// const double rMaxSum = rMax;
-// const double rMinSum = rMin;
+const double rMaxSum = rMax;
+const double rMinSum = rMin;
 
-const double rMaxSum = 250;
-const double rMinSum = 0;
+// const double rMaxSum = 250;
+// const double rMinSum = 0;
 const int thetabins = 5;
 const double rootJ0 = 2.4048256;
 // const double J1rootJ0 = 0.519147;
@@ -749,47 +749,43 @@ void FlowLeeYangZeros(TString inputFileName,
       float charge = 1. / 3. * particle->Charge();
       if (charge == 0)
         continue;
-      // int fId=-1;
       hPt->Fill(pt);
       hEta->Fill(eta);
       hPhi->Fill(phi);
 
-
       Q2x += TMath::Cos(2.0 * phi);
       Q2y += TMath::Sin(2.0 * phi);
-    
-      // if (!bFirstRun)
-      // {
-      //   multPOI[ipt]++;
-      // }
-      Double_t v2 = TMath::Cos(2 * phi);
-      if (bFirstRun){
-        Double_t cos4phi = TMath::Cos(4.*phi);
-        Double_t sin4phi = TMath::Sin(4.*phi);
-        Double_t cos2phi = TMath::Cos(2.*phi);
-        Double_t sin2phi = TMath::Sin(2.*phi);
-        
-
-        Qx2 += cos2phi;
-        Qy2 += sin2phi;
-        Qx4 += cos4phi;
-        Qy4 += sin4phi; 
-        M++;
-        
-
         Int_t ipt = -1;
         for (int j = 0; j < npt; j++) if (pt >= bin_pT[j] && pt < bin_pT[j + 1]) ipt = j;
-        px2[ipt] += cos2phi;
-        py2[ipt] += sin2phi;
-        mp[ipt]++;
+      if (!bFirstRun)
+      {
 
-        qx2[ipt] += cos2phi;
-        qy2[ipt] += sin2phi;
-        qx4[ipt] += cos4phi;
-        qy4[ipt] += sin4phi;
-        mq[ipt]++;
-        
+        multPOI[ipt]++;
       }
+      Double_t v2 = TMath::Cos(2 * phi);
+      if (bFirstRun){
+      Double_t cos4phi = TMath::Cos(4.*phi);
+      Double_t sin4phi = TMath::Sin(4.*phi);
+      Double_t cos2phi = TMath::Cos(2.*phi);
+      Double_t sin2phi = TMath::Sin(2.*phi);
+
+      Qx2 += cos2phi;
+      Qy2 += sin2phi;
+      Qx4 += cos4phi;
+      Qy4 += sin4phi; 
+      M++;
+
+      px2[ipt] += cos2phi;
+      py2[ipt] += sin2phi;
+      mp[ipt]++;
+
+      qx2[ipt] += cos2phi;
+      qy2[ipt] += sin2phi;
+      qx4[ipt] += cos4phi;
+      qy4[ipt] += sin4phi;
+      mq[ipt]++;
+      }
+
       hv2MC->Fill(dCent, v2);        // calculate reference v2 from MC toy
       hv2MCpt[icent]->Fill(pt, v2); // Calculate differential v2 from MC toy
 
@@ -806,8 +802,8 @@ void FlowLeeYangZeros(TString inputFileName,
         sumQxy[fEta][1] += pt * TMath::Sin(2.0 * phi);
         multQv[fEta]++;
       } // end of eta selection
-      if (bUseProduct)
-      {
+      if (bUseProduct){
+        
         if (bFirstRun){
           for (int thetabin = 0; thetabin < thetabins; ++thetabin)
           {
@@ -872,9 +868,11 @@ void FlowLeeYangZeros(TString inputFileName,
     {
       hMult->Fill(mult);
       if (bFirstRun) {prRefMult->Fill(dCent, mult);}
+      else{
+        for (int ipt = 0; ipt < npt; ipt++) 
+        {prMultPOI[icent]->Fill(ipt+0.5,multPOI[ipt]);}
+      }
 
-      Q2x = Q2x / mult;
-      Q2y = Q2y / mult;
       // double Q2xMean = Q2x / mult;
       // double Q2yMean = Q2y / mult;
       for (int thetabin = 0; thetabin < thetabins; ++thetabin)
@@ -895,10 +893,10 @@ void FlowLeeYangZeros(TString inputFileName,
           {
             cExpo = TComplex(0., rSum[rbin] * Qtheta[thetabin]);
             genfunS[rbin][thetabin] = TComplex::Exp(cExpo); // generating function from Q-vectors
-            prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re());
-            prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im());
-            // prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re(), mult);
-            // prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im(), mult);
+            // prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re());
+            // prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im());
+            prReGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Re(), mult);
+            prImGthetaSum[icent][thetabin]->Fill(rSum[rbin], genfunS[rbin][thetabin].Im(), mult);
             if (bUseProduct)
             {
               prReGthetaProduct[icent][thetabin]->Fill(r[rbin], genfunP[rbin][thetabin].Re());
@@ -921,10 +919,10 @@ void FlowLeeYangZeros(TString inputFileName,
           cDenominator = Qtheta[thetabin]*(TComplex::Exp(cExponent[thetabin])); // BP eq 12
           prReDenom[thetabin]->Fill(dCent, cDenominator.Re());
           prImDenom[thetabin]->Fill(dCent, cDenominator.Im());
-          if (!bTemporaryFlagForLYZEP){
-            cTemporary = r02[icent][thetabin]*Qtheta[thetabin]*(TComplex::Exp(cExponent[thetabin]));
-            prReDtheta[thetabin]->Fill(dCent, cTemporary.Re());
-            prImDtheta[thetabin]->Fill(dCent, cTemporary.Im());
+                    if (!bTemporaryFlagForLYZEP){
+          cTemporary = r02[icent][thetabin]*Qtheta[thetabin]*(TComplex::Exp(cExponent[thetabin]));
+          prReDtheta[thetabin]->Fill(dCent, cTemporary.Re());
+          prImDtheta[thetabin]->Fill(dCent, cTemporary.Im());
           }
           else{
             cDtheta = TComplex(prReDtheta[thetabin]->GetBinContent(icent+1)/rootJ0, prImDtheta[thetabin]->GetBinContent(icent+1)/rootJ0);
@@ -994,8 +992,6 @@ void FlowLeeYangZeros(TString inputFileName,
       if (charge == 0)
         continue;
   
-
-
       if (fEP[0] != -9999. && fEP[1] != -9999.)
       {
         float v2 = -999.0;
@@ -1013,36 +1009,27 @@ void FlowLeeYangZeros(TString inputFileName,
           hv2EP->Fill(dCent, v2);
         }
       }
-      // if (pdg[iTrk] == 2212)
-      // { // proton selection
-
-        Int_t ipt = -1;
-        for (int j = 0; j < npt; j++) if (pt >= bin_pT[j] && pt < bin_pT[j + 1]) ipt = j;
-        multPOI[ipt]++;
-
-        for (int thetabin = 0; thetabin < thetabins; ++thetabin)
-        {
-          double dCosTerm = TMath::Cos(2.0 * (phi - theta[thetabin]));
-          TComplex cNumeratorPOI = dCosTerm*(TComplex::Exp(cExponent[thetabin]));    
-          prReNumer[thetabin][icent]->Fill(pt, cNumeratorPOI.Re());
-          prImNumer[thetabin][icent]->Fill(pt, cNumeratorPOI.Im());
-          if (bUseProduct){
-            TComplex cCosTermComplex(1., r02Pro[icent][thetabin] * dCosTerm);
-            TComplex cNumeratorPOIPro = genfunPr0[thetabin] * dCosTerm / cCosTermComplex;   
-            prReNumerPro[thetabin][icent]->Fill(pt, cNumeratorPOIPro.Re());
-            prImNumerPro[thetabin][icent]->Fill(pt, cNumeratorPOIPro.Im());          
-          }
-          if (bTemporaryFlagForLYZEP){
-          double v2LYZEP = dWR * TMath::Cos(2*(phi-dPsiR));
-            hv2LYZEPpt[icent]->Fill(pt, v2LYZEP);
-            hv2LYZEP->Fill(dCent, v2LYZEP);
-          }
+    
+      for (int thetabin = 0; thetabin < thetabins; ++thetabin)
+      {
+        double dCosTerm = TMath::Cos(2.0 * (phi - theta[thetabin]));
+        TComplex cNumeratorPOI = dCosTerm*(TComplex::Exp(cExponent[thetabin]));    
+        prReNumer[thetabin][icent]->Fill(pt, cNumeratorPOI.Re());
+        prImNumer[thetabin][icent]->Fill(pt, cNumeratorPOI.Im());
+        if (bUseProduct){
+          TComplex cCosTermComplex(1., r02Pro[icent][thetabin] * dCosTerm);
+          TComplex cNumeratorPOIPro = genfunPr0[thetabin] * dCosTerm / cCosTermComplex;   
+          prReNumerPro[thetabin][icent]->Fill(pt, cNumeratorPOIPro.Re());
+          prImNumerPro[thetabin][icent]->Fill(pt, cNumeratorPOIPro.Im());          
         }
-      // }
+        if (bTemporaryFlagForLYZEP){
+        double v2LYZEP = dWR * TMath::Cos(2*(phi-dPsiR));
+          hv2LYZEPpt[icent]->Fill(pt, v2LYZEP);
+          hv2LYZEP->Fill(dCent, v2LYZEP);
+        }
+      }
     } // end of the track loop
-    if (mult!=0) for (int ipt = 0; ipt < npt; ipt++) 
-    {prMultPOI[icent]->Fill(ipt+0.5,multPOI[ipt]);}
-    } // end of if (!bFirstRun)
+    }
   }   // end of event loop
 
  
@@ -1225,4 +1212,3 @@ int main(int argc, char **argv)
 // root -l -b -q FlowLeeYangZeros.C+'("/weekly/demanov/mchybrid/115xpt500new/hybrid11.5GeVxpt500evP3run007.root","test.root","OUT/FirstRun.root",0)'
 
 // ./FlowLeeYangZeros -i /weekly/lbavinh/lbavinh/AMPT/split/AMPT15_7.7/runlist_AMPT15_7.7_9383.list -o test.root
-// ./FlowLeeYangZeros -i /weekly/demanov/mchybrid/115xpt500new/hybrid11.5GeVxpt500evP3run007.root -o test.root

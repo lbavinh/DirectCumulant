@@ -31,38 +31,22 @@ double CentB(double bimp)
   double fcent;
   if (bimp < 2.91)
     fcent = 2.5; // 0-5%
-  
-  else if (bimp < 4.17)
+  else if (bimp < 4.18)
     fcent = 7.5; // 5-10%
-    
-  else if (bimp < 5.18)
-    fcent = 12.5; // 10-15%
-  else if (bimp < 6.02)
-    fcent = 17.5; // 15-20%
-  else if (bimp < 6.74)
-    fcent = 22.5; // 20-25%
-  else if (bimp < 7.38)
-    fcent = 27.5; // 25-30%
-  else if (bimp < 7.97)
-    fcent = 32.5; // 30-35%
-  else if (bimp < 8.53)
-    fcent = 37.5; // 35-40%
-  else if (bimp < 9.06)
-    fcent = 42.5; // 40-45%
-  else if (bimp < 9.56)
-    fcent = 47.5; // 45-50%
-  else if (bimp < 10.05)
-    fcent = 52.5; // 50-55%
-  else if (bimp < 10.50)
-    fcent = 57.5; // 55-60%
-  else if (bimp < 10.94)
-    fcent = 62.5; // 60-65%
-  else if (bimp < 11.35)
-    fcent = 67.5; // 65-70%
-  else if (bimp < 11.76)
-    fcent = 72.5; // 70-75%
-  else if (bimp < 12.19)
-    fcent = 77.5; // 75-80%
+  else if (bimp < 6.01)
+    fcent = 15.; // 10-20%
+  else if (bimp < 7.37)
+    fcent = 25.; // 20-30%
+  else if (bimp < 8.52)
+    fcent = 35.; // 30-40%
+  else if (bimp < 9.57)
+    fcent = 45.; // 40-50%
+  else if (bimp < 10.55)
+    fcent = 55.; // 50-60%
+  else if (bimp < 11.46)
+    fcent = 65.; // 60-70%
+  else if (bimp < 12.31)
+    fcent = 75.; // 70-80%
   else
     fcent = -1;
   return fcent;
@@ -76,34 +60,20 @@ int GetCentBin(double cent)
     return 0;
   if (cent == 7.5)
     return 1;
-  if (cent == 12.5)
+  if (cent == 15.)
     return 2;
-  if (cent == 17.5)
+  if (cent == 25.)
     return 3;
-  if (cent == 22.5)
+  if (cent == 35.)
     return 4;
-  if (cent == 27.5)
+  if (cent == 45.)
     return 5;
-  if (cent == 32.5)
+  if (cent == 55.)
     return 6;
-  if (cent == 37.5)
+  if (cent == 65.)
     return 7;
-  if (cent == 42.5)
+  if (cent == 75.)
     return 8;
-  if (cent == 47.5)
-    return 9;
-  if (cent == 52.5)
-    return 10;
-  if (cent == 57.5)
-    return 11;
-  if (cent == 62.5)
-    return 12;
-  if (cent == 67.5)
-    return 13;
-  if (cent == 72.5)
-    return 14;
-  if (cent == 77.5)
-    return 15;            
   return -1;
 }
 
@@ -252,8 +222,8 @@ Double_t CalRedCor24(TComplex Q2, TComplex Q4, TComplex p2, TComplex q2,
 }
 
 
-const int ncent = 16; // 0-80%
-const double bin_cent[ncent + 1] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80};
+const int ncent = 9; // 0-80%
+const double bin_cent[ncent + 1] = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80};
 const int npt = 14; // 0.5 - 3.6 GeV/c - number of pt bins
 const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
 const double maxpt = 3.0;  // max pt
@@ -265,14 +235,14 @@ const int neta = 2; // [eta-,eta+]
 // LYZ
 bool bUseProduct = 0;
 const int rbins = 2500;
-const double rMax = 0.5;
-const double rMin = 0.005;
+const double rMax = 1.;
+const double rMin = 0.;
 
-// const double rMaxSum = rMax;
-// const double rMinSum = rMin;
+const double rMaxSum = rMax;
+const double rMinSum = rMin;
 
-const double rMaxSum = 250;
-const double rMinSum = 0;
+// const double rMaxSum = 250;
+// const double rMinSum = 0;
 const int thetabins = 5;
 const double rootJ0 = 2.4048256;
 // const double J1rootJ0 = 0.519147;
@@ -873,8 +843,8 @@ void FlowLeeYangZeros(TString inputFileName,
       hMult->Fill(mult);
       if (bFirstRun) {prRefMult->Fill(dCent, mult);}
 
-      Q2x = Q2x / mult;
-      Q2y = Q2y / mult;
+      // Q2x = Q2x / mult;
+      // Q2y = Q2y / mult;
       // double Q2xMean = Q2x / mult;
       // double Q2yMean = Q2y / mult;
       for (int thetabin = 0; thetabin < thetabins; ++thetabin)

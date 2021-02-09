@@ -256,8 +256,11 @@ const int ncent = 16; // 0-80%
 const double bin_cent[ncent + 1] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80};
 const int npt = 14; // 0.5 - 3.6 GeV/c - number of pt bins
 const double bin_pT[npt + 1] = {0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
-const double maxpt = 3.0;  // max pt
-const double minpt = 0.2; // min pt
+const double maxpt = 4.0;  // max pt
+const double minpt = 0.; // min pt
+const double maxptRF = 3.0;  // max pt
+const double minptRF = 0.3; // min pt
+
 const float eta_cut = 1.5;
 const float eta_gap = 0.05;
 const int neta = 2; // [eta-,eta+]
@@ -265,8 +268,8 @@ const int neta = 2; // [eta-,eta+]
 // LYZ
 bool bUseProduct = 0;
 const int rbins = 2500;
-const double rMax = 0.5;
-const double rMin = 0.005;
+const double rMax = 1.;
+const double rMin = 0.;
 
 // const double rMaxSum = rMax;
 // const double rMinSum = rMin;
@@ -755,8 +758,7 @@ void FlowLeeYangZeros(TString inputFileName,
       hPhi->Fill(phi);
 
 
-      Q2x += TMath::Cos(2.0 * phi);
-      Q2y += TMath::Sin(2.0 * phi);
+
     
       // if (!bFirstRun)
       // {
@@ -769,12 +771,14 @@ void FlowLeeYangZeros(TString inputFileName,
         Double_t cos2phi = TMath::Cos(2.*phi);
         Double_t sin2phi = TMath::Sin(2.*phi);
         
-
+        if (pt>minptRF && pt<maxptRF)
+        {
         Qx2 += cos2phi;
         Qy2 += sin2phi;
         Qx4 += cos4phi;
         Qy4 += sin4phi; 
         M++;
+        }
         
 
         Int_t ipt = -1;
@@ -792,44 +796,48 @@ void FlowLeeYangZeros(TString inputFileName,
       }
       hv2MC->Fill(dCent, v2);        // calculate reference v2 from MC toy
       hv2MCpt[icent]->Fill(pt, v2); // Calculate differential v2 from MC toy
-
-      // Sub eta event method
-      int fEta = -1;
-      if (eta < -eta_gap && eta > -eta_cut)
-        fEta = 0;
-      if (eta > eta_gap && eta < eta_cut)
-        fEta = 1;
-
-      if (fEta > -1)
+      if (pt>minptRF && pt<maxptRF)
       {
-        sumQxy[fEta][0] += pt * TMath::Cos(2.0 * phi);
-        sumQxy[fEta][1] += pt * TMath::Sin(2.0 * phi);
-        multQv[fEta]++;
-      } // end of eta selection
-      if (bUseProduct)
-      {
-        if (bFirstRun){
-          for (int thetabin = 0; thetabin < thetabins; ++thetabin)
-          {
-            double dCosTerm = TMath::Cos(2. * (phi - theta[thetabin]));
-            for (int rbin = 0; rbin < rbins; ++rbin)
+        Q2x += TMath::Cos(2.0 * phi);
+        Q2y += TMath::Sin(2.0 * phi);
+        // Sub eta event method
+        int fEta = -1;
+        if (eta < -eta_gap && eta > -eta_cut)
+          fEta = 0;
+        if (eta > eta_gap && eta < eta_cut)
+          fEta = 1;
+
+        if (fEta > -1)
+        {
+          sumQxy[fEta][0] += pt * TMath::Cos(2.0 * phi);
+          sumQxy[fEta][1] += pt * TMath::Sin(2.0 * phi);
+          multQv[fEta]++;
+        } // end of eta selection
+        if (bUseProduct)
+        {
+          if (bFirstRun){
+            for (int thetabin = 0; thetabin < thetabins; ++thetabin)
             {
-              genfunP[rbin][thetabin] *= TComplex(1.0, r[rbin] * dCosTerm);
-              if (genfunP[rbin][thetabin].Rho2() > 100.) break;
+              double dCosTerm = TMath::Cos(2. * (phi - theta[thetabin]));
+              for (int rbin = 0; rbin < rbins; ++rbin)
+              {
+                genfunP[rbin][thetabin] *= TComplex(1.0, r[rbin] * dCosTerm);
+                if (genfunP[rbin][thetabin].Rho2() > 100.) break;
+              }
+            }
+          }
+          else{
+            for (int thetabin = 0; thetabin < thetabins; ++thetabin)
+            {
+              double dCosTerm = TMath::Cos(2. * (phi - theta[thetabin]));
+              genfunPr0[thetabin] *= TComplex(1.0, r02Pro[icent][thetabin] * dCosTerm);
+              TComplex cCosTermComplex(1., r02Pro[icent][thetabin] * dCosTerm);
+              cdGr0[thetabin] += (dCosTerm/cCosTermComplex); 
             }
           }
         }
-        else{
-          for (int thetabin = 0; thetabin < thetabins; ++thetabin)
-          {
-            double dCosTerm = TMath::Cos(2. * (phi - theta[thetabin]));
-            genfunPr0[thetabin] *= TComplex(1.0, r02Pro[icent][thetabin] * dCosTerm);
-            TComplex cCosTermComplex(1., r02Pro[icent][thetabin] * dCosTerm);
-            cdGr0[thetabin] += (dCosTerm/cCosTermComplex); 
-          }
-        }
+        mult++;
       }
-      mult++;
     } // end of track loop
     
     if (M >= 4. && bFirstRun){

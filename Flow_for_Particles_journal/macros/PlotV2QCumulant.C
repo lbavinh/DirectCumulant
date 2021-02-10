@@ -460,7 +460,7 @@ void PlotV2QCumulant(TString model = "UrQMD", TString energy = "7.7GeV"){
   for (int icent=0; icent<drawDifferentialFlowTill; icent++){
     for (int id=0;id<npid;id++){
       std::vector<TGraphErrors*> vgrv2pt;
-      vgrv2pt.push_back(grDifFl[3][icent][id]); // v2{gapped 2QC}
+      vgrv2pt.push_back(grDifFl[2][icent][id]); // v2{gapped 2QC}
       for (int i=0; i<nmethod-1; i++){
         if (i==excludeMethod) continue;
         vgrv2pt.push_back(grDifFl[i][icent][id]);
@@ -477,7 +477,7 @@ void PlotV2QCumulant(TString model = "UrQMD", TString energy = "7.7GeV"){
   TCanvas *cV2PT1040[npid];
   for (int id=0;id<npid;id++){
     std::vector<TGraphErrors*> vgrv2pt1040;
-    vgrv2pt1040.push_back(grDifFl1040[3][id]);
+    vgrv2pt1040.push_back(grDifFl1040[2][id]);
     for (int imeth=0;imeth<nmethod-1;imeth++){
       if (imeth==excludeMethod) continue;
       vgrv2pt1040.push_back(grDifFl1040[imeth][id]);

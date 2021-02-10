@@ -5,25 +5,25 @@ ClassImp(FlowAnalysisWithLeeYangZeros);
 FlowAnalysisWithLeeYangZeros::FlowAnalysisWithLeeYangZeros() :
 fDebug(0),
 fUseProduct(false),
-fFirstRun(true),
+fFirstRun(true)
 // fTheta,
 // fQtheta,
 // fPrReGthetaSum,
 // fPrImGthetaSum,
-fHistGthetaSum(NULL),
+// fHistGthetaSum(NULL),
 // fPrReGthetaProduct,
 // fPrImGthetaProduct,
-fHistGthetaProduct(NULL),
+// fHistGthetaProduct(NULL),
 // fRSum,
 // fRProduct,
-fMult(0),
+// fMult(0),
 // fGenFunS,
 // fGenFunP,
-prRefMult(NULL),
-prQ2x(NULL),
-prQ2y(NULL),
-prQ2ModSq(NULL),
-fstrInputFileFromFirstRun("")
+// prRefMult(NULL),
+// prQ2x(NULL),
+// prQ2y(NULL),
+// prQ2ModSq(NULL),
+// fstrInputFileFromFirstRun("")
 // fPrReDenom
 // fPrImDenom
 // fPrReNumer
@@ -357,6 +357,7 @@ void FlowAnalysisWithLeeYangZeros::ProcessRootFileWithHistFromFirstRun()
       cout << endl;
     }
   }
+  delete fileHist;
 }
 
 TH1F *FlowAnalysisWithLeeYangZeros::FillHistGtheta(const TProfile *const prReGtheta, const TProfile *const prImGtheta)

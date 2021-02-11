@@ -49,17 +49,18 @@ double Covariance(TProfile *const &hcovXY, TProfile *const &hX, TProfile *const 
   return mVal;
 }
 
-void PlotV2HighOrderQCumulant(){
-  TString energy="11.5GeV";
-  TFile *fi = new TFile(Form("../UrQMD_%s_GenericFramework.root",energy.Data()),"read");
-  TFile *fo = new TFile(Form("v2_UrQMD_%s_GenericFramework.root",energy.Data()),"recreate");
-  const int NcentBins     = 6;
+TGraphErrors** PlotV2HighOrderQCumulant(TString inputFileName="FirstRun.root"){
+  TString energy="7.7GeV";
+  // TFile *fi = new TFile(Form("../UrQMD_%s_GenericFramework.root",energy.Data()),"read");
+  TFile *fi = new TFile(inputFileName.Data(),"read");
+  // TFile *fo = new TFile(Form("v2_AMPT_%s_GenericFramework.root",energy.Data()),"recreate");
+  const int ncent = 9;
   const double centBinMin = 0.;
   const double centBinMax = 62.;
-  double binCent[]={5,15,25,35,45,55,65,75};
-  double eBinCent[NcentBins];
+  double binCent[]={2.5,7.5,15,25,35,45,55,65,75};
+  double eBinCent[ncent];
   const double v2Min = -0.005;
-  const double v2Max = 0.05;
+  const double v2Max = 0.1;
   const double v2RatioMin = 0.78;
   const double v2RatioMax = 1.05;
   const float pt_min_cut = 0.2;
@@ -68,22 +69,22 @@ void PlotV2HighOrderQCumulant(){
   const int nMethod = 4; // v22,v24,v26,v28
   const int ratioToType = 0;
   TString grName[]={"v_{2}{2}","v_{2}{4}","v_{2}{6}","v_{2}{8}"};
-  TProfile *recursion[maxCorrelator][NcentBins];    // Correlations calculated from Q-vector components using recursive algorithm 
+  TProfile *recursion[maxCorrelator][ncent];    // Correlations calculated from Q-vector components using recursive algorithm 
   for(int c=0;c<maxCorrelator;c++){
-    for(int icent=0;icent<NcentBins;icent++){
+    for(int icent=0;icent<ncent;icent++){
       recursion[c][icent] = (TProfile*)fi->Get(Form("recursion_%i_%i",c,icent));
     }
   }
-  TProfile *pCovariance[6][NcentBins];
+  TProfile *pCovariance[6][ncent];
   for (int i=0;i<6;i++){
-    for (int c=0;c<NcentBins;c++){
+    for (int c=0;c<ncent;c++){
       pCovariance[i][c] = (TProfile*)fi->Get(Form("pCovariance_%i_%i",i,c));
     }
   }
-  double vV22[NcentBins], vV24[NcentBins], vV26[NcentBins], vV28[NcentBins];
-  double veV22[NcentBins], veV24[NcentBins], veV26[NcentBins], veV28[NcentBins];
+  double vV22[ncent], vV24[ncent], vV26[ncent], vV28[ncent];
+  double veV22[ncent], veV24[ncent], veV26[ncent], veV28[ncent];
   std::vector<double> vecV22, vecEV22;
-  for (int icent=0;icent<NcentBins;icent++){
+  for (int icent=0;icent<ncent;icent++){
     // 2QC
     term cor2 = term(recursion[0][icent]);
     double V22  = sqrt(cor2.mVal);
@@ -128,22 +129,22 @@ void PlotV2HighOrderQCumulant(){
 
   eBinCent[icent] = 0.;
   }
-  // for (int icent=0;icent<NcentBins;icent++){
+  // for (int icent=0;icent<ncent;icent++){
   //   cout << vV22[icent] <<" "<< vV24[icent] <<" "<< vV26[icent] <<" "<< vV28[icent] << endl;
   // }
   TGraphErrors *gr[nMethod];
-  gr[0] = new TGraphErrors(NcentBins,binCent,vV22,eBinCent,veV22);
-  gr[1] = new TGraphErrors(NcentBins,binCent,vV24,eBinCent,veV24);
-  gr[2] = new TGraphErrors(NcentBins,binCent,vV26,eBinCent,veV26);
-  gr[3] = new TGraphErrors(NcentBins,binCent,vV28,eBinCent,veV28);
+  gr[0] = new TGraphErrors(ncent,binCent,vV22,eBinCent,veV22);
+  gr[1] = new TGraphErrors(ncent,binCent,vV24,eBinCent,veV24);
+  gr[2] = new TGraphErrors(ncent,binCent,vV26,eBinCent,veV26);
+  gr[3] = new TGraphErrors(ncent,binCent,vV28,eBinCent,veV28);
   for (int m=0;m<nMethod;m++){
     gr[m]->SetMarkerStyle(20+m);
     // gr[m]->SetMarkerSize(1.5);
   }
-  fo->cd();
+  // fo->cd();
   for (int m=0;m<nMethod;m++){
     gr[m]->SetTitle(grName[m].Data());
-    gr[m]->Write(Form("gr_%i",m));
+  //   gr[m]->Write(Form("gr_%i",m));
   }
 
 
@@ -183,52 +184,53 @@ void PlotV2HighOrderQCumulant(){
   
 
   
-  TCanvas *c = new TCanvas("c","",200,10,800,600);
+  // TCanvas *c = new TCanvas("c","",200,10,800,600);
 
-  gStyle->SetOptStat(0);
-  gStyle->SetPalette(kDarkRainBow);
-  gStyle->SetErrorX(0);
-  gStyle->SetPadTickX(1);
-  gStyle->SetPadTickY(1);
+  // gStyle->SetOptStat(0);
+  // gStyle->SetPalette(kDarkRainBow);
+  // gStyle->SetErrorX(0);
+  // gStyle->SetPadTickX(1);
+  // gStyle->SetPadTickY(1);
 
-  c->SetLeftMargin(0.12);
-  c->Divide(1,2,0,0);
-  c->cd(1);
-  TH2F *h = new TH2F("h",Form("Au+Au at #sqrt{s_{NN}}=%s, UrQMD, ch. hadrons, %1.1f<p_{T}<%1.1f GeV/c;centrality (%%);v_{2}", energy.Data(), pt_min_cut,pt_max_cut),NcentBins,centBinMin,centBinMax,1,v2Min,v2Max);
-  h->GetXaxis()->SetNdivisions(504);
-  h->GetYaxis()->SetNdivisions(504);
-  h->GetYaxis()->SetTitleOffset(0.8);
-  h->GetYaxis()->SetLabelSize(0.05);
-  h->GetYaxis()->SetTitleSize(0.05);
-  h->Draw();
-  for (int m=0;m<nMethod;m++){
-    gr[m]->Draw("P PLC PMC");
-  }
-  TLegend *leg = new TLegend(0.8,0.1,0.9,0.5);
-  leg->SetBorderSize(0);
-  leg->SetTextSize(0.05);
-  leg->SetTextFont(42);
-  for (int m=0;m<nMethod;m++){
-    leg->AddEntry(gr[m],gr[m]->GetTitle(),"p");
-  }
-  leg->Draw();
-  c->cd(2);
-  TH2F *hRatio = new TH2F("hRatio",Form(";centrality (%%);Ratio to v_{2}{2}"),NcentBins,centBinMin,centBinMax,1,v2RatioMin,v2RatioMax);
-  hRatio->GetXaxis()->SetNdivisions(504);
-  hRatio->GetYaxis()->SetNdivisions(504);
-  hRatio->GetYaxis()->SetTitleOffset(0.8);
-  hRatio->GetYaxis()->SetLabelSize(0.05);
-  hRatio->GetYaxis()->SetTitleSize(0.05);
-  hRatio->GetXaxis()->SetTitleSize(0.05);
-  hRatio->GetXaxis()->SetLabelSize(0.05);
-  hRatio->GetXaxis()->CenterTitle(true);
-  hRatio->GetYaxis()->CenterTitle(true);
-  hRatio->Draw();
-  TLine lineOne;
-  lineOne.SetLineStyle(2);
-  lineOne.DrawLine(centBinMin,1.,centBinMax,1.);
-  for (int m=0;m<nMethod;m++){
-    grRatio[m]->Draw("P PLC PMC");
-  }
-  c->SaveAs(Form("v2_UrQMD_%s.pdf",energy.Data()));
+  // c->SetLeftMargin(0.12);
+  // c->Divide(1,2,0,0);
+  // c->cd(1);
+  // TH2F *h = new TH2F("h",Form("Au+Au at #sqrt{s_{NN}}=%s, AMPT, #sigma_{p}=1.5mb, ch. hadrons, %1.1f<p_{T}<%1.1f GeV/c;centrality (%%);v_{2}", energy.Data(), pt_min_cut,pt_max_cut),ncent,centBinMin,centBinMax,1,v2Min,v2Max);
+  // h->GetXaxis()->SetNdivisions(504);
+  // h->GetYaxis()->SetNdivisions(504);
+  // h->GetYaxis()->SetTitleOffset(0.8);
+  // h->GetYaxis()->SetLabelSize(0.05);
+  // h->GetYaxis()->SetTitleSize(0.05);
+  // h->Draw();
+  // for (int m=0;m<nMethod;m++){
+  //   gr[m]->Draw("P PLC PMC");
+  // }
+  // TLegend *leg = new TLegend(0.8,0.1,0.9,0.5);
+  // leg->SetBorderSize(0);
+  // leg->SetTextSize(0.05);
+  // leg->SetTextFont(42);
+  // for (int m=0;m<nMethod;m++){
+  //   leg->AddEntry(gr[m],gr[m]->GetTitle(),"p");
+  // }
+  // leg->Draw();
+  // c->cd(2);
+  // TH2F *hRatio = new TH2F("hRatio",Form(";centrality (%%);Ratio to v_{2}{2}"),ncent,centBinMin,centBinMax,1,v2RatioMin,v2RatioMax);
+  // hRatio->GetXaxis()->SetNdivisions(504);
+  // hRatio->GetYaxis()->SetNdivisions(504);
+  // hRatio->GetYaxis()->SetTitleOffset(0.8);
+  // hRatio->GetYaxis()->SetLabelSize(0.05);
+  // hRatio->GetYaxis()->SetTitleSize(0.05);
+  // hRatio->GetXaxis()->SetTitleSize(0.05);
+  // hRatio->GetXaxis()->SetLabelSize(0.05);
+  // hRatio->GetXaxis()->CenterTitle(true);
+  // hRatio->GetYaxis()->CenterTitle(true);
+  // hRatio->Draw();
+  // TLine lineOne;
+  // lineOne.SetLineStyle(2);
+  // lineOne.DrawLine(centBinMin,1.,centBinMax,1.);
+  // for (int m=0;m<nMethod;m++){
+  //   grRatio[m]->Draw("P PLC PMC");
+  // }
+  // c->SaveAs(Form("v2_AMPT_%s.pdf",energy.Data()));
+  return gr;
 }

@@ -33,10 +33,10 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   canv->cd();
 
   // canv->SetRightMargin(0.09);
-  // canv->SetLeftMargin(0.20);
-  // canv->SetBottomMargin(0.15);
-  TPad *padUp = new TPad(Form("padUp"),"v2 vs pt",0.,0.33,1.,1.,0,-1,0);
-  TPad *padDown = new TPad(Form("padDown"),"Ratio v2",0.,0.,1.,0.33,0,-1,0);
+  // canv->SetLeftMargin(0.15);
+  // canv->SetBottomMargin(0.07);
+  TPad *padUp = new TPad(Form("padUp"),"v2 vs pt",0.,0.5,1.,1.,0,-1,0);
+  TPad *padDown = new TPad(Form("padDown"),"Ratio v2",0.,0.,1.,0.5,0,-1,0);
 
   double padUW;
 	double padUH;
@@ -165,25 +165,25 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
 
   for (int igr=0; igr<vgrRatio.size();igr++)
   {
-    vgrRatio.at(igr)->GetXaxis()->SetLabelSize(0.11);
-    vgrRatio.at(igr)->GetYaxis()->SetLabelSize(0.11);
-    vgrRatio.at(igr)->GetXaxis()->SetTitleSize(0.12);
-    vgrRatio.at(igr)->GetYaxis()->SetTitleSize(0.12);
+    vgrRatio.at(igr)->GetXaxis()->SetLabelSize(0.06);
+    vgrRatio.at(igr)->GetYaxis()->SetLabelSize(0.06);
+    vgrRatio.at(igr)->GetXaxis()->SetTitleSize(0.07);
+    vgrRatio.at(igr)->GetYaxis()->SetTitleSize(0.07);
 
     // vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("%s/%s",vgr.at(igr+1)->GetTitle(),vgr.at(0)->GetTitle()));
-    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("#frac{[2,3]}{[1]}"));
-    vgrRatio.at(igr)->GetYaxis()->SetTitleOffset(0.5);
+    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("Ratio to v_{2}{4}"));
+    vgrRatio.at(igr)->GetYaxis()->SetTitleOffset(1.);
     vgrRatio.at(igr)->GetXaxis()->SetTitle(Form("%s",vgr.at(0)->GetXaxis()->GetTitle()));
     vgrRatio.at(igr)->GetYaxis()->SetNdivisions(504);
-    vgrRatio.at(igr)->GetXaxis()->SetTickLength(3*12/padUH);
-    vgrRatio.at(igr)->GetYaxis()->SetTickLength(2.6*12/padUW);
+    // vgrRatio.at(igr)->GetXaxis()->SetTickLength(3*12/padUH);
+    // vgrRatio.at(igr)->GetYaxis()->SetTickLength(2.6*12/padUW);
     vgrRatio.at(igr)->GetYaxis()->SetRangeUser(yRatio_low,yRatio_high);
 
     vgrRatio.at(igr)->SetMarkerStyle(vgr.at(igr+1)->GetMarkerStyle());
-    vgrRatio.at(igr)->SetMarkerSize(1.6);
+    vgrRatio.at(igr)->SetMarkerSize(1.3);
     vgrRatio.at(igr)->SetLineColor(vgr.at(igr+1)->GetMarkerStyle());
     vgrRatio.at(igr)->SetMarkerColor(vgr.at(igr+1)->GetMarkerStyle());
-    // vgrRatio.at(igr)->SetLineWidth(1.);
+    vgrRatio.at(igr)->SetLineWidth(1.);
     // grRatio->GetXaxis()->SetLimits(0.95*vx_gr1[0],1.05*vx_gr1[n1bins-1]);
     if (igr==0)
     {
@@ -245,4 +245,20 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   }
 
   return canv;
+}
+
+TGraphErrors* Converter(const TProfile* const &pr)
+{
+  const Int_t iNbins = pr->GetNbinsX();
+  std::vector<Double_t> x, errX;
+  std::vector<Double_t> y, errY;
+  for (Int_t i = 0; i < iNbins; i++)
+  {
+    x.push_back( pr->GetBinCenter(i+1) );
+    y.push_back( pr->GetBinContent(i+1) );
+    errX.push_back(0.);
+    errY.push_back( pr->GetBinError(i+1) );
+  }
+  TGraphErrors *gr = new TGraphErrors(iNbins, &x[0], &y[0], &errX[0], &errY[0]);
+  return gr;
 }

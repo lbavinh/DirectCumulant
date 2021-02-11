@@ -21,6 +21,8 @@
 #include <FlowAnalysisWithScalarProduct.h>
 #include <FlowAnalysisWithQCumulant.h>
 #include <FlowAnalysisWithHighOrderQCumulant.h>
+#include <FlowAnalysisWithLeeYangZerosEventPlane.h>
+
 #include "utilities.C"
 
 using std::cerr;
@@ -37,6 +39,7 @@ bool SCALARPRODUCT_1 = 1;
 bool SCALARPRODUCT_2 = 0;
 bool QCUMULANT = 1;
 bool HIGHORDERQCUMULANT = 1;
+bool LYZEP = 0;
 
 Double_t maxpt = 3.6;    // max pt for differential flow
 Double_t minpt = 0.;     // min pt for differential flow
@@ -51,7 +54,7 @@ Int_t debug = 0;
 std::string format = "mctree";
 #define MAX_TRACKS 10000
 
-void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inputHistogramFileName)
+void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inputHistogramFileName, TString inputHistFromLYZSecondRun)
 {
   TStopwatch timer;
   timer.Start();
@@ -119,6 +122,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
   FlowAnalysisWithScalarProduct *flowSP = NULL;        // Scalar Product
   FlowAnalysisWithQCumulant *flowQC = NULL;            // Q-Cumulant
   FlowAnalysisWithHighOrderQCumulant *flowHighQC = NULL;
+  FlowAnalysisWithLeeYangZerosEventPlane *flowLYZEP = NULL;
 
   if (ETASUBEVENTPLANE_1)
   {
@@ -195,13 +199,24 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     flowHighQC = new FlowAnalysisWithHighOrderQCumulant();
     flowHighQC->Init();
   }
-
+  if (LYZEP)
+  {
+    if (inputHistogramFileName=="" || inputHistFromLYZSecondRun=="")
+    {
+      cerr << "Input files with needed histograms for Lee Yang Zeros Event Plane aren't set" << endl;
+      return;
+    }
+    flowLYZEP = new FlowAnalysisWithLeeYangZerosEventPlane();
+    flowLYZEP->SetInputFileFromFirstAndSecondRun(inputHistogramFileName, inputHistFromLYZSecondRun);
+    flowLYZEP->Init();
+  }
   Double_t pt, eta, phi, charge;
   Long64_t chain_size = chain->GetEntries();
   Long64_t n_entries = (Nevents < chain_size && Nevents > 0) ? Nevents : chain_size;
+  cout << "Hi Master, let's do some physics together..." << endl;
   for (Int_t iEv = 0; iEv < n_entries; iEv++)
   {
-    if (iEv % 1000 == 0)
+    if (iEv % 10000 == 0)
       std::cout << "Event [" << iEv << "/" << n_entries << "]" << std::endl;
     chain->GetEntry(iEv);
     if (!nh) continue;
@@ -269,8 +284,10 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     if (QCUMULANT)
       flowQC->ProcessEventAfterFirstTrackLoop(icent);
     if (HIGHORDERQCUMULANT)
-      flowHighQC->ProcessEventAfterFirstTrackLoop(icent);  
-    if (ETASUBEVENTPLANE_2 || LYZ_SUM_2 || LYZ_SUM_PRODUCT_2 || SCALARPRODUCT_2)
+      flowHighQC->ProcessEventAfterFirstTrackLoop(icent);
+    if (LYZEP)
+      flowLYZEP->ProcessEventAfterFirstTrackLoop(Q2, icent);
+    if (ETASUBEVENTPLANE_2 || LYZ_SUM_2 || LYZ_SUM_PRODUCT_2 || SCALARPRODUCT_2 || LYZEP)
     {
       for (Int_t iTrk = 0; iTrk < nh; iTrk++)
       { // 2nd Track loop
@@ -291,6 +308,8 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
           flowSP->ProcessSecondTrackLoop(eta, phi, pt, cent);
         if (LYZ_SUM_2 || LYZ_SUM_PRODUCT_2)
           flowLYZ->ProcessSecondTrackLoop(phi, pt, icent);
+        if (LYZEP)
+          flowLYZEP->ProcessSecondTrackLoop(eta, phi, pt, cent);
       }
     }
   } // end event loop
@@ -308,6 +327,8 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     flowQC->SaveHist();
   if (HIGHORDERQCUMULANT)
     flowHighQC->SaveHist();
+  if (LYZEP)
+    flowLYZEP->SaveHist();
   fo->Close();
 
   timer.Stop();

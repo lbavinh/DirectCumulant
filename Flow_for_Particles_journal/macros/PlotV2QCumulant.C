@@ -242,7 +242,7 @@ void CalStatErrCent1040(TString model, TString energy,double v2eDif1040[nmethod]
   delete inFile;
 }
 
-void PlotV2QCumulant(TString model = "UrQMD", TString energy = "7.7GeV"){
+void PlotV2QCumulant(TString model = "AMPT", TString energy = "7.7GeV"){
   
   // TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
   TString inFileName = "test.root";

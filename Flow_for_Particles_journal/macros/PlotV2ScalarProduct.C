@@ -1,5 +1,6 @@
+#define PLOTV2SP
 bool bDebug = false;
-TProfile *PlotV2Integrated(TProfile3D* &prV2,
+TProfile *PlotV2SPIntegrated(TProfile3D* &prV2,
                            const double pt_low = 0.2,
                            const double pt_high = 3.0,
                            const double eta_cut = 1.5)
@@ -16,7 +17,7 @@ TProfile *PlotV2Integrated(TProfile3D* &prV2,
   return prV2int;
 }
 
-TProfile *PlotV2DifferentialVersusPt(TProfile3D *const &prV2,
+TProfile *PlotV2SPDifferentialVersusPt(TProfile3D *const &prV2,
                            const double cent_low = 10,
                            const double cent_high = 40,
                            const double eta_cut = 1.5)
@@ -32,7 +33,7 @@ TProfile *PlotV2DifferentialVersusPt(TProfile3D *const &prV2,
   return prV2diffpt;
 }
 
-TProfile *PlotV2DifferentialVersusEta(TProfile3D*const &prV2,
+TProfile *PlotV2SPDifferentialVersusEta(TProfile3D*const &prV2,
                            const double pt_low = 0.2,
                            const double pt_high = 3.0,
                            const double cent_low = 10,
@@ -67,7 +68,7 @@ void PlotV2ScalarProduct(TString inputFileName = "SecondRun.root")
   
   c.cd(1);
   // v2 versus pt, 10-40%, |eta|<1.5
-  TProfile *prV2diffpt = PlotV2DifferentialVersusPt(pr,10,40,1.5);
+  TProfile *prV2diffpt = PlotV2SPDifferentialVersusPt(pr,10,40,1.5);
   prV2diffpt->SetMarkerStyle(27);
   prV2diffpt->SetMarkerColor(kBlue + 3);
   prV2diffpt->GetYaxis()->SetRangeUser(0., 0.2);
@@ -76,7 +77,7 @@ void PlotV2ScalarProduct(TString inputFileName = "SecondRun.root")
 
   c.cd(2);
   // v2 versus pt, 40-80%, |eta|<1.5
-  TProfile *prV2diffpt4080 = PlotV2DifferentialVersusPt(pr,40,80,1.5);
+  TProfile *prV2diffpt4080 = PlotV2SPDifferentialVersusPt(pr,40,80,1.5);
   prV2diffpt4080->SetMarkerStyle(27);
   prV2diffpt4080->SetMarkerColor(kBlue + 3);
   prV2diffpt4080->GetYaxis()->SetRangeUser(0., 0.2);
@@ -85,7 +86,7 @@ void PlotV2ScalarProduct(TString inputFileName = "SecondRun.root")
 
   c.cd(3);
   // v2 versus centrality, 0.2<pt<3.5 GeV/c, |eta|<1.5
-  TProfile *prV2int = PlotV2Integrated(pr,0.2,3.5,1.5);
+  TProfile *prV2int = PlotV2SPIntegrated(pr,0.2,3.5,1.5);
   prV2int->SetMarkerStyle(27);
   prV2int->SetMarkerColor(kBlue + 3);
   prV2int->GetYaxis()->SetRangeUser(0., 0.1);
@@ -93,8 +94,8 @@ void PlotV2ScalarProduct(TString inputFileName = "SecondRun.root")
   
   c.cd(4);
   // v2 versus eta, 0.2<pt<3.5 GeV/c, 10-40%
-  TProfile *prV2diffEta = PlotV2DifferentialVersusEta(prClone, 0.2, 3.5, 10, 40);
-  // TProfile *prV2diffEta = PlotV2DifferentialVersusEta(pr, 0.2, 3.5, 10, 40);
+  TProfile *prV2diffEta = PlotV2SPDifferentialVersusEta(prClone, 0.2, 3.5, 10, 40);
+  // TProfile *prV2diffEta = PlotV2SPDifferentialVersusEta(pr, 0.2, 3.5, 10, 40);
   prV2diffEta->SetMarkerStyle(27);
   prV2diffEta->SetMarkerColor(kBlue + 3);
   prV2diffEta->GetYaxis()->SetRangeUser(0., 0.1);

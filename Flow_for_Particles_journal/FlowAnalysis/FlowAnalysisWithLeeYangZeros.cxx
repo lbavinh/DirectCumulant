@@ -3,44 +3,53 @@
 ClassImp(FlowAnalysisWithLeeYangZeros);
 
 FlowAnalysisWithLeeYangZeros::FlowAnalysisWithLeeYangZeros() :
-fDebug(0),
-fUseProduct(false),
-fFirstRun(true)
-// fTheta,
-// fQtheta,
-// fPrReGthetaSum,
-// fPrImGthetaSum,
-// fHistGthetaSum(NULL),
-// fPrReGthetaProduct,
-// fPrImGthetaProduct,
-// fHistGthetaProduct(NULL),
-// fRSum,
-// fRProduct,
-// fMult(0),
-// fGenFunS,
-// fGenFunP,
-// prRefMult(NULL),
-// prQ2x(NULL),
-// prQ2y(NULL),
-// prQ2ModSq(NULL),
-// fstrInputFileFromFirstRun("")
-// fPrReDenom
-// fPrImDenom
-// fPrReNumer
-// fPrImNumer
-// fPrMultPOI
-// fPrReDenomPro
-// fPrImDenomPro
-// fPrReNumerPro
-// fPrImNumerPro
-// fMultPOI
-// fExponent
-// fdGr0
-// fGenfunPror0
-// fR02Sum
-// fR02Pro
-
+  fDebug(kFALSE),
+  fUseProduct(kFALSE),
+  fFirstRun(kTRUE),
+  fHistGthetaSum(NULL),
+  fHistGthetaProduct(NULL),
+  prRefMult(NULL),
+  prQ2x(NULL),
+  prQ2y(NULL),
+  prQ2ModSq(NULL),
+  fstrInputFileFromFirstRun("")
 {
+  for (Int_t i = 0; i < ncent; ++i)
+  {
+    for (Int_t j = 0; j < thetabins; ++j)
+    {
+      fPrReGthetaSum[i][j] = NULL;
+      fPrImGthetaSum[i][j] = NULL;
+      if (fUseProduct)
+      {
+        fPrReGthetaProduct[i][j] = NULL;
+        fPrImGthetaProduct[i][j] = NULL;
+      }
+    }
+  }
+  for (Int_t it = 0; it < thetabins; it++)
+  {
+    fPrReDtheta[it] = NULL;
+    fPrImDtheta[it] = NULL;
+    fPrReDenom[it] = NULL;
+    fPrImDenom[it] = NULL;
+    if (fUseProduct)
+    {
+      fPrReDenomPro[it] = NULL;
+      fPrImDenomPro[it] = NULL;
+    }
+    for (Int_t ic = 0; ic < ncent; ic++)
+    {
+      fPrReNumer[it][ic] = NULL;
+      fPrImNumer[it][ic] = NULL;
+      if (fUseProduct)
+      {
+        fPrReNumerPro[it][ic] = NULL;
+        fPrImNumerPro[it][ic] = NULL;
+      }
+    }
+  }
+  Zero();
 }
 
 FlowAnalysisWithLeeYangZeros::~FlowAnalysisWithLeeYangZeros()
@@ -49,7 +58,7 @@ FlowAnalysisWithLeeYangZeros::~FlowAnalysisWithLeeYangZeros()
 
 void FlowAnalysisWithLeeYangZeros::Init()
 {
-  for (int itheta = 0; itheta < thetabins; itheta++)
+  for (Int_t itheta = 0; itheta < thetabins; itheta++)
   {
     fTheta[itheta] = itheta * TMath::Pi() / (2.0 * thetabins);
   }
@@ -58,9 +67,9 @@ void FlowAnalysisWithLeeYangZeros::Init()
     fHistGthetaSum = new TH1F(Form("hGthetaSum"), "", rbins, rMinSum, rMaxSum);
     if (fUseProduct)
       fHistGthetaProduct = new TH1F(Form("hGthetaProduct"), "", rbins, rMin, rMax);
-    for (int i = 0; i < ncent; ++i)
+    for (Int_t i = 0; i < ncent; ++i)
     {
-      for (int j = 0; j < thetabins; ++j)
+      for (Int_t j = 0; j < thetabins; ++j)
       {
         fPrReGthetaSum[i][j] = new TProfile(Form("prReGthetaSum_mult%d_theta%d", i, j), "", rbins, rMinSum, rMaxSum);
         fPrImGthetaSum[i][j] = new TProfile(Form("prImGthetaSum_mult%d_theta%d", i, j), "", rbins, rMinSum, rMaxSum);
@@ -78,7 +87,7 @@ void FlowAnalysisWithLeeYangZeros::Init()
     prQ2y = new TProfile("prQ2y", "", ncent, 0, ncent);
     prQ2ModSq = new TProfile("prQ2ModSq", "", ncent, 0, ncent);
 
-    for (int rbin = 0; rbin < rbins; ++rbin)
+    for (Int_t rbin = 0; rbin < rbins; ++rbin)
     {
       if (fUseProduct)
       {
@@ -89,14 +98,14 @@ void FlowAnalysisWithLeeYangZeros::Init()
     }
   }
   else
-  {
+  { // Second Run 
     ProcessRootFileWithHistFromFirstRun();
-    for (int i = 0; i < thetabins; i++)
+    for (Int_t i = 0; i < thetabins; i++)
     {
       fPrReDenom[i] = new TProfile(Form("prReDenom_theta%i", i), "", ncent, 0, ncent);
       fPrImDenom[i] = new TProfile(Form("prImDenom_theta%i", i), "", ncent, 0, ncent);
 
-      for (int j = 0; j < ncent; j++)
+      for (Int_t j = 0; j < ncent; j++)
       {
         fPrReNumer[i][j] = new TProfile(Form("prReNumer_theta%i_cent%i", i, j), "", npt, &pTBin[0]);
         fPrImNumer[i][j] = new TProfile(Form("prImNumer_theta%i_cent%i", i, j), "", npt, &pTBin[0]);
@@ -104,21 +113,26 @@ void FlowAnalysisWithLeeYangZeros::Init()
     }
     if (fUseProduct)
     {
-      for (int i = 0; i < thetabins; i++)
+      for (Int_t i = 0; i < thetabins; i++)
       {
         fPrReDenomPro[i] = new TProfile(Form("prReDenomPro_theta%i", i), "", ncent, 0, ncent);
         fPrImDenomPro[i] = new TProfile(Form("prImDenomPro_theta%i", i), "", ncent, 0, ncent);
 
-        for (int j = 0; j < ncent; j++)
+        for (Int_t j = 0; j < ncent; j++)
         {
           fPrReNumerPro[i][j] = new TProfile(Form("prReNumerPro_theta%i_cent%i", i, j), "", npt, &pTBin[0]);
           fPrImNumerPro[i][j] = new TProfile(Form("prImNumerPro_theta%i_cent%i", i, j), "", npt, &pTBin[0]);
         }
       }
     }
-    for (int ic = 0; ic < ncent; ic++)
+    for (Int_t ic = 0; ic < ncent; ic++)
     {
       fPrMultPOI[ic] = new TProfile(Form("prMultPOI_cent%i", ic), "", npt, 0, npt);
+    }
+    for (Int_t i = 0; i < thetabins; i++)
+    { // Lee Yang Zeros Event Plane
+      fPrReDtheta[i] = new TProfile(Form("prReDtheta_theta%i",i),"", ncent, 0, ncent);
+      fPrImDtheta[i] = new TProfile(Form("prImDtheta_theta%i",i),"", ncent, 0, ncent);
     }
   }
 }
@@ -126,15 +140,15 @@ void FlowAnalysisWithLeeYangZeros::Init()
 void FlowAnalysisWithLeeYangZeros::Zero()
 {
   fMult = 0.;
-  for (int i = 0; i < thetabins; ++i)
+  for (Int_t i = 0; i < thetabins; ++i)
   {
     fQtheta[i] = 0.;
   }
   if (fFirstRun)
   {
-    for (int i = 0; i < rbins; ++i)
+    for (Int_t i = 0; i < rbins; ++i)
     {
-      for (int j = 0; j < thetabins; ++j)
+      for (Int_t j = 0; j < thetabins; ++j)
       {
         fGenFunS[i][j] = TComplex(0.0, 0.0); // initialize to 0, calculate directly
         if (fUseProduct)
@@ -146,11 +160,11 @@ void FlowAnalysisWithLeeYangZeros::Zero()
   }
   else
   {
-    for (int ipt = 0; ipt < npt; ipt++)
+    for (Int_t ipt = 0; ipt < npt; ipt++)
     {
       fMultPOI[ipt] = 0.;
     }
-    for (int it = 0; it < thetabins; it++)
+    for (Int_t it = 0; it < thetabins; it++)
     {
       fExponent[it] = TComplex(0.0, 0.0);
       fdGr0[it] = TComplex(0.0, 0.0);
@@ -159,13 +173,13 @@ void FlowAnalysisWithLeeYangZeros::Zero()
   }
 }
 
-void FlowAnalysisWithLeeYangZeros::ProcessFirstTrackLoop(const double &phi, const double &pt, const int &icent)
+void FlowAnalysisWithLeeYangZeros::ProcessFirstTrackLoop(const Double_t &phi, const Double_t &pt, const Int_t &icent)
 {
   fMult++;
   if (!fFirstRun)
   {
     Int_t ipt = -1;
-    for (int j = 0; j < npt; j++)
+    for (Int_t j = 0; j < npt; j++)
       if (pt >= pTBin[j] && pt < pTBin[j + 1])
         ipt = j;
     fMultPOI[ipt]++;
@@ -174,10 +188,10 @@ void FlowAnalysisWithLeeYangZeros::ProcessFirstTrackLoop(const double &phi, cons
   {
     if (fFirstRun)
     {
-      for (int it = 0; it < thetabins; ++it)
+      for (Int_t it = 0; it < thetabins; ++it)
       {
-        double dCosTerm = TMath::Cos(2. * (phi - fTheta[it]));
-        for (int rbin = 0; rbin < rbins; ++rbin)
+        Double_t dCosTerm = TMath::Cos(2. * (phi - fTheta[it]));
+        for (Int_t rbin = 0; rbin < rbins; ++rbin)
         {
           fGenFunP[rbin][it] *= TComplex(1.0, fRProduct[rbin] * dCosTerm);
         }
@@ -185,9 +199,9 @@ void FlowAnalysisWithLeeYangZeros::ProcessFirstTrackLoop(const double &phi, cons
     }
     else
     {
-      for (int it = 0; it < thetabins; ++it)
+      for (Int_t it = 0; it < thetabins; ++it)
       {
-        double dCosTerm = TMath::Cos(2. * (phi - fTheta[it]));
+        Double_t dCosTerm = TMath::Cos(2. * (phi - fTheta[it]));
         fGenfunPror0[it] *= TComplex(1.0, fR02Pro[icent][it] * dCosTerm);
         TComplex cCosTermComplex(1., fR02Pro[icent][it] * dCosTerm);
         fdGr0[it] += (dCosTerm / cCosTermComplex);
@@ -196,30 +210,30 @@ void FlowAnalysisWithLeeYangZeros::ProcessFirstTrackLoop(const double &phi, cons
   }
 }
 
-void FlowAnalysisWithLeeYangZeros::ProcessEventAfterFirstTrackLoop(const QVector *const Qvector, const int &icent)
+void FlowAnalysisWithLeeYangZeros::ProcessEventAfterFirstTrackLoop(const QVector *const &Qvector, const Int_t &icent)
 {
   if (fMult != 0)
   {
-    double Qx = Qvector->X();
-    double Qy = Qvector->Y();
-    for (int itheta = 0; itheta < thetabins; itheta++)
+    Double_t Qx = Qvector->X();
+    Double_t Qy = Qvector->Y();
+    for (Int_t itheta = 0; itheta < thetabins; itheta++)
     {
       fQtheta[itheta] = Qx * TMath::Cos(2.0 * fTheta[itheta]) + Qy * TMath::Sin(2.0 * fTheta[itheta]);
     }
     if (fFirstRun)
     {
-      for (int rbin = 0; rbin < rbins; rbin++)
+      for (Int_t rbin = 0; rbin < rbins; rbin++)
       {
-        for (int it = 0; it < thetabins; it++)
+        for (Int_t it = 0; it < thetabins; it++)
         {
           TComplex cExpo = TComplex(0., fRSum[rbin] * fQtheta[it]);
           fGenFunS[rbin][it] = TComplex::Exp(cExpo); // generating function from Q-vectors
         }
       }
 
-      for (int rbin = 0; rbin < rbins; rbin++)
+      for (Int_t rbin = 0; rbin < rbins; rbin++)
       {
-        for (int it = 0; it < thetabins; it++)
+        for (Int_t it = 0; it < thetabins; it++)
         {
           fPrReGthetaSum[icent][it]->Fill(fRSum[rbin], fGenFunS[rbin][it].Re());
           fPrImGthetaSum[icent][it]->Fill(fRSum[rbin], fGenFunS[rbin][it].Im());          
@@ -228,16 +242,16 @@ void FlowAnalysisWithLeeYangZeros::ProcessEventAfterFirstTrackLoop(const QVector
         }
       }
 
-      double QModSq = Qx * Qx + Qy * Qy;
+      Double_t QModSq = Qx * Qx + Qy * Qy;
       prRefMult->Fill(icent, fMult);
       prQ2x->Fill(icent, Qx);
       prQ2y->Fill(icent, Qy);
       prQ2ModSq->Fill(icent, QModSq);
       if (fUseProduct)
       {
-        for (int rbin = 0; rbin < rbins; rbin++)
+        for (Int_t rbin = 0; rbin < rbins; rbin++)
         {
-          for (int it = 0; it < thetabins; it++)
+          for (Int_t it = 0; it < thetabins; it++)
           {
             fPrReGthetaProduct[icent][it]->Fill(fRProduct[rbin], fGenFunP[rbin][it].Re());
             fPrImGthetaProduct[icent][it]->Fill(fRProduct[rbin], fGenFunP[rbin][it].Im());            
@@ -248,14 +262,14 @@ void FlowAnalysisWithLeeYangZeros::ProcessEventAfterFirstTrackLoop(const QVector
       }
     }
     else
-    {
-      for (int ipt = 0; ipt < npt; ipt++)
+    { // Second Run
+      for (Int_t ipt = 0; ipt < npt; ipt++)
       {
         fPrMultPOI[icent]->Fill(ipt + 0.5, fMultPOI[ipt]);
       }
       // Differential LYZ
 
-      for (int it = 0; it < thetabins; it++)
+      for (Int_t it = 0; it < thetabins; it++)
       {
 
         fExponent[it] = TComplex(0., fR02Sum[icent][it] * fQtheta[it]);
@@ -263,10 +277,15 @@ void FlowAnalysisWithLeeYangZeros::ProcessEventAfterFirstTrackLoop(const QVector
 
         fPrReDenom[it]->Fill(icent, cDenominator.Re());
         fPrImDenom[it]->Fill(icent, cDenominator.Im());
+
+        // LYZ-EP
+        TComplex cTemporary = fR02Sum[icent][it]*fQtheta[it]*TComplex::Exp(fExponent[it]);
+        fPrReDtheta[it]->Fill(icent, cTemporary.Re());
+        fPrImDtheta[it]->Fill(icent, cTemporary.Im());
       }
       if (fUseProduct)
       {
-        for (int it = 0; it < thetabins; it++)
+        for (Int_t it = 0; it < thetabins; it++)
         {
           TComplex cDenominator = (fGenfunPror0[it] * fdGr0[it]);
           fPrReDenomPro[it]->Fill(icent, cDenominator.Re());
@@ -277,13 +296,13 @@ void FlowAnalysisWithLeeYangZeros::ProcessEventAfterFirstTrackLoop(const QVector
   }
 }
 
-void FlowAnalysisWithLeeYangZeros::ProcessSecondTrackLoop(double phi, double pt, int icent)
+void FlowAnalysisWithLeeYangZeros::ProcessSecondTrackLoop(const Double_t &phi, const Double_t &pt, const Int_t &icent)
 {
   if (!fFirstRun)
   {
-    for (int it = 0; it < thetabins; ++it)
+    for (Int_t it = 0; it < thetabins; ++it)
     {
-      double dCosTerm = TMath::Cos(2.0 * (phi - fTheta[it]));
+      Double_t dCosTerm = TMath::Cos(2.0 * (phi - fTheta[it]));
       TComplex cNumeratorPOI = dCosTerm * (TComplex::Exp(fExponent[it]));
       fPrReNumer[it][icent]->Fill(pt, cNumeratorPOI.Re());
       fPrImNumer[it][icent]->Fill(pt, cNumeratorPOI.Im());
@@ -307,9 +326,9 @@ void FlowAnalysisWithLeeYangZeros::ProcessRootFileWithHistFromFirstRun()
   TProfile *prReGthetaProduct[ncent][thetabins];
   TProfile *prImGthetaProduct[ncent][thetabins];
 
-  for (int i = 0; i < ncent; ++i)
+  for (Int_t i = 0; i < ncent; ++i)
   {
-    for (int j = 0; j < thetabins; ++j)
+    for (Int_t j = 0; j < thetabins; ++j)
     {
       prReGthetaSum[i][j] = (TProfile *)fileHist->Get(Form("prReGthetaSum_mult%d_theta%d", i, j));
       prImGthetaSum[i][j] = (TProfile *)fileHist->Get(Form("prImGthetaSum_mult%d_theta%d", i, j));
@@ -320,9 +339,9 @@ void FlowAnalysisWithLeeYangZeros::ProcessRootFileWithHistFromFirstRun()
       }
     }
   }
-  for (int ic = 0; ic < ncent; ic++)
+  for (Int_t ic = 0; ic < ncent; ic++)
   {
-    for (int it = 0; it < thetabins; it++)
+    for (Int_t it = 0; it < thetabins; it++)
     {
       TH1F *hGthetaSum = FillHistGtheta(prReGthetaSum[ic][it], prImGthetaSum[ic][it]);
       fR02Sum[ic][it] = GetR0(hGthetaSum);
@@ -337,20 +356,20 @@ void FlowAnalysisWithLeeYangZeros::ProcessRootFileWithHistFromFirstRun()
   {
     cout << "Value of r02 from first run are:" << endl;
     cout << "fR02Sum = " << endl;
-    for (int ic = 0; ic < ncent; ic++)
+    for (Int_t ic = 0; ic < ncent; ic++)
     {
       cout << "Cent. " << bin_cent[ic] << "-" << bin_cent[ic + 1] << "%: ";
-      for (int it = 0; it < thetabins; it++)
+      for (Int_t it = 0; it < thetabins; it++)
       {
         cout << fR02Sum[ic][it] << ", ";
       }
       cout << endl;
     }
     cout << "fR02Pro = " << endl;
-    for (int ic = 0; ic < ncent; ic++)
+    for (Int_t ic = 0; ic < ncent; ic++)
     {
       cout << "Cent. " << bin_cent[ic] << "-" << bin_cent[ic + 1] << "%: ";
-      for (int it = 0; it < thetabins; it++)
+      for (Int_t it = 0; it < thetabins; it++)
       {
         cout << fR02Pro[ic][it] << ", ";
       }
@@ -360,13 +379,13 @@ void FlowAnalysisWithLeeYangZeros::ProcessRootFileWithHistFromFirstRun()
   delete fileHist;
 }
 
-TH1F *FlowAnalysisWithLeeYangZeros::FillHistGtheta(const TProfile *const prReGtheta, const TProfile *const prImGtheta)
+TH1F *FlowAnalysisWithLeeYangZeros::FillHistGtheta(const TProfile *const &prReGtheta, const TProfile *const &prImGtheta)
 {
   Int_t iNbins = prReGtheta->GetNbinsX();
   Double_t xMin = prReGtheta->GetXaxis()->GetBinLowEdge(1);
   Double_t xMax = prReGtheta->GetXaxis()->GetBinLowEdge(iNbins) + prReGtheta->GetXaxis()->GetBinWidth(iNbins);
   TH1F *hGtheta = new TH1F(Form("hist_%s", prReGtheta->GetName()), "", iNbins, xMin, xMax);
-  for (int rbin = 0; rbin < iNbins; rbin++)
+  for (Int_t rbin = 0; rbin < iNbins; rbin++)
   {
     // get bincentre of bins in histogram
     Double_t dRe = prReGtheta->GetBinContent(rbin + 1);
@@ -384,25 +403,25 @@ TH1F *FlowAnalysisWithLeeYangZeros::FillHistGtheta(const TProfile *const prReGth
   return hGtheta;
 }
 
-double FlowAnalysisWithLeeYangZeros::GetR0(const TH1F *const hist)
+Double_t FlowAnalysisWithLeeYangZeros::GetR0(const TH1F *const &hist)
 {
   //find the first minimum of the square of the modulus of flowLYZ
 
-  int iNbins = hist->GetNbinsX();
-  double dR0 = 0.;
+  Int_t iNbins = hist->GetNbinsX();
+  Double_t dR0 = 0.;
 
-  for (int b = 2; b < iNbins; b++)
+  for (Int_t b = 2; b < iNbins; b++)
   {
-    double dG0 = hist->GetBinContent(b);
-    double dGnext = hist->GetBinContent(b + 1);
-    double dGnextnext = hist->GetBinContent(b + 2);
+    Double_t dG0 = hist->GetBinContent(b);
+    Double_t dGnext = hist->GetBinContent(b + 1);
+    Double_t dGnextnext = hist->GetBinContent(b + 2);
     // cout << hist->GetBinCenter(b);
     if (dGnext > dG0 && dGnextnext > dG0 && dG0 < 1.)
     {
-      double dGlast = hist->GetBinContent(b - 1);
-      double dXlast = hist->GetBinCenter(b - 1);
-      double dX0 = hist->GetBinCenter(b);
-      double dXnext = hist->GetBinCenter(b + 1);
+      Double_t dGlast = hist->GetBinContent(b - 1);
+      Double_t dXlast = hist->GetBinCenter(b - 1);
+      Double_t dX0 = hist->GetBinCenter(b);
+      Double_t dXnext = hist->GetBinCenter(b + 1);
 
       dR0 = dX0 - ((dX0 - dXlast) * (dX0 - dXlast) * (dG0 - dGnext) - (dX0 - dXnext) * (dX0 - dXnext) * (dG0 - dGlast)) /
                       (2. * ((dX0 - dXlast) * (dG0 - dGnext) - (dX0 - dXnext) * (dG0 - dGlast))); //parabolic interpolated minimum
@@ -418,9 +437,9 @@ void FlowAnalysisWithLeeYangZeros::SaveHist()
 {
   if (fFirstRun)
   {
-    for (int i = 0; i < ncent; ++i)
+    for (Int_t i = 0; i < ncent; ++i)
     {
-      for (int j = 0; j < thetabins; ++j)
+      for (Int_t j = 0; j < thetabins; ++j)
       {
         fPrReGthetaSum[i][j]->Write();
         fPrImGthetaSum[i][j]->Write();
@@ -438,11 +457,15 @@ void FlowAnalysisWithLeeYangZeros::SaveHist()
   }
   else
   {
-    for (int j = 0; j < thetabins; ++j)
+    for (Int_t j = 0; j < thetabins; ++j)
     {
       fPrReDenom[j]->Write();
       fPrImDenom[j]->Write();
-      for (int i = 0; i < ncent; i++)
+
+      fPrReDtheta[j]->Write(); // LYZ-EP
+      fPrImDtheta[j]->Write(); // LYZ-EP
+
+      for (Int_t i = 0; i < ncent; i++)
       {
         fPrReNumer[j][i]->Write();
         fPrImNumer[j][i]->Write();
@@ -451,14 +474,14 @@ void FlowAnalysisWithLeeYangZeros::SaveHist()
       {
         fPrReDenomPro[j]->Write();
         fPrImDenomPro[j]->Write();
-        for (int i = 0; i < ncent; i++)
+        for (Int_t i = 0; i < ncent; i++)
         {
           fPrReNumerPro[j][i]->Write();
           fPrImNumerPro[j][i]->Write();
         }
       }
     }
-    for (int ic = 0; ic < ncent; ic++)
+    for (Int_t ic = 0; ic < ncent; ic++)
     {
       fPrMultPOI[ic]->Write();
     }

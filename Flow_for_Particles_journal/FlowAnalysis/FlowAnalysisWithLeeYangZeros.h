@@ -3,13 +3,11 @@
 #include <iostream>
 #include <TFile.h>
 #include <TMath.h>
-#include <TH2F.h>
 #include <TH1.h>
 #include <TProfile.h>
 #include <TString.h>
 #include <TComplex.h>
 #include "QVector.h"
-// #include "../constants.C"
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -19,28 +17,28 @@ class FlowAnalysisWithLeeYangZeros
 public:
   FlowAnalysisWithLeeYangZeros();
   virtual ~FlowAnalysisWithLeeYangZeros();
-  void SetDebugFlag(bool bDebug) { this->fDebug = bDebug; }
-  void SetUseProduct(bool kt) {this->fUseProduct = kt; }
-  bool GetUseProduct() const { return this->fUseProduct; }
-  void SetFirstRun(bool kt) { this->fFirstRun = kt; }
+  void SetDebugFlag(Bool_t bDebug) { this->fDebug = bDebug; }
+  void SetUseProduct(Bool_t kt) {this->fUseProduct = kt; }
+  Bool_t GetUseProduct() const { return this->fUseProduct; }
+  void SetFirstRun(Bool_t kt) { this->fFirstRun = kt; }
   void Init();
   void Zero(); // Reset variables for new event loop
-  void ProcessFirstTrackLoop(const double &phi, const double &pt, const int &icent);
-  void ProcessEventAfterFirstTrackLoop(const QVector *const Qvector, const int &icent);
-  void ProcessSecondTrackLoop(double phi, double pt, int icent);
+  void ProcessFirstTrackLoop(const Double_t &phi, const Double_t &pt, const Int_t &icent);
+  void ProcessEventAfterFirstTrackLoop(const QVector *const &Qvector, const Int_t &icent);
+  void ProcessSecondTrackLoop(const Double_t &phi, const Double_t &pt, const Int_t &icent);
   void SetInputFileFromFirstRun(TString str) { this->fstrInputFileFromFirstRun = str; }
   void ProcessRootFileWithHistFromFirstRun();
-  TH1F *FillHistGtheta(const TProfile *const prReGtheta, const TProfile *const prImGtheta);
-  double GetR0(const TH1F *const hist);
+  TH1F *FillHistGtheta(const TProfile *const &prReGtheta, const TProfile *const &prImGtheta);
+  Double_t GetR0(const TH1F *const &hist);
 
   void SaveHist();
 
 private:
-  bool fDebug;
-  bool fUseProduct;
-  bool fFirstRun;
-  double fTheta[thetabins];
-  double fQtheta[thetabins];
+  Bool_t fDebug;
+  Bool_t fUseProduct;
+  Bool_t fFirstRun;
+  Double_t fTheta[thetabins];
+  Double_t fQtheta[thetabins];
 
   // First run
   // Integrated flow
@@ -52,9 +50,9 @@ private:
   TProfile *fPrImGthetaProduct[ncent][thetabins];
   TH1F *fHistGthetaProduct;
 
-  double fRSum[rbins];
-  double fRProduct[rbins];
-  double fMult;
+  Double_t fRSum[rbins];
+  Double_t fRProduct[rbins];
+  Double_t fMult;
   TComplex fGenFunS[rbins][thetabins]; // sum
   TComplex fGenFunP[rbins][thetabins]; // product
 
@@ -75,12 +73,16 @@ private:
   TProfile *fPrImDenomPro[thetabins];
   TProfile *fPrReNumerPro[thetabins][ncent];
   TProfile *fPrImNumerPro[thetabins][ncent];
-  double fMultPOI[npt];
+  Double_t fMultPOI[npt];
   TComplex fExponent[thetabins];
   TComplex fdGr0[thetabins];
   TComplex fGenfunPror0[thetabins];
-  double fR02Sum[ncent][thetabins];
-  double fR02Pro[ncent][thetabins];
+  Double_t fR02Sum[ncent][thetabins];
+  Double_t fR02Pro[ncent][thetabins];
+
+  // Event plane Lee Yang Zeros
+  TProfile *fPrReDtheta[thetabins];
+  TProfile *fPrImDtheta[thetabins];
 
   ClassDef(FlowAnalysisWithLeeYangZeros,0);
 };

@@ -35,3 +35,6 @@ const Int_t sum = (h1<0?-1*h1:h1)+(h2<0?-1*h2:h2)+(h3<0?-1*h3:h3)+(h4<0?-1*h4:h4
 const Int_t maxCorrelator = 8; // We will not go beyond 8-p correlations
 const Int_t maxHarmonic = sum+1;
 const Int_t maxPower = maxCorrelator+1;
+
+// LYZ-EP
+const Double_t rootJ0 = 2.4048256;

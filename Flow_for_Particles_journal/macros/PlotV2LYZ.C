@@ -1,3 +1,4 @@
+#define PLOTV2LYZ
 #include "../constants.C"
 #define sqr(x) ((x)*(x))
 void GetMultMean(TProfile *const &pr)
@@ -404,6 +405,23 @@ void PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 
 
   if (bDebug)
   {
+    if (bUseProduct)
+    {
+      cout << "const double v2LYZPro[" << ncent << "] = {";
+      for (int ic = 0; ic < ncent-1; ic++)
+      {
+        cout << v2LYZIntPro[ic] <<", ";
+      }
+      cout << v2LYZIntPro[ncent-1] << "};" << endl;
+
+      cout << "const double v2eLYZPro[" << ncent << "] = {";
+      for (int ic = 0; ic < ncent-1; ic++)
+      {
+        cout << v2eLYZIntPro[ic] <<", ";
+      }
+      cout << v2eLYZIntPro[ncent-1] << "};" << endl;   
+
+    }
     cout << "// ====== Sum ====== //" << endl;
     // Cross check integrated flow - correct!
     for (int ic = 0; ic < ncent; ic++)
@@ -472,10 +490,10 @@ void PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 
   }
 
   hLYZ->GetXaxis()->SetLimits(0,60.);
-  TH2F *hist = new TH2F("hist",Form("%s;centrality, %%;v_{2}",label.Data()),6,0,60,1,0,0.1);
+  TH2F *hist = new TH2F("hist",Form("%s;centrality, %%;v_{2}",label.Data()),6,0,80,1,0,0.1);
   hist->Draw("");
   hLYZ->Draw("P same");
-  if (bUseProduct) { hLYZPro->GetXaxis()->SetLimits(0,60); hLYZPro->Draw("P same");}
+  if (bUseProduct) { hLYZPro->GetXaxis()->SetLimits(0,80); hLYZPro->Draw("P same");}
   TLegend *leg = new TLegend(0.25,0.65,0.5,0.87);
   leg->SetBorderSize(0);
   leg->AddEntry(hLYZ,"LYZ (Sum)","p");

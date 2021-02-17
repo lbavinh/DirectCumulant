@@ -5,7 +5,7 @@ TProfile *PlotV2SPIntegrated(TProfile3D* &prV2,
                            const double pt_high = 3.0,
                            const double eta_cut = 1.5)
 {
-  prV2->GetZaxis()->SetRange(-eta_cut, eta_cut);
+  // prV2->GetZaxis()->SetRange(-eta_cut, eta_cut);
   // prV2->GetZaxis()->SetRange(-(eta_cut-0.001), eta_cut-0.001);
   TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("yx");
   prV2_2D->SetName(Form("%s_eta_cut_%1.1f",prV2->GetName(),eta_cut));
@@ -22,7 +22,7 @@ TProfile *PlotV2SPDifferentialVersusPt(TProfile3D *const &prV2,
                            const double cent_high = 40,
                            const double eta_cut = 1.5)
 {
-  prV2->GetZaxis()->SetRange(-eta_cut, eta_cut);
+  // prV2->GetZaxis()->SetRange(-eta_cut, eta_cut);
   TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("yx");
   prV2_2D->SetName(Form("%s_eta_cut_%1.1f",prV2->GetName(),eta_cut));
   int cent_bin_low = prV2_2D->GetXaxis()->FindBin(cent_low);
@@ -39,7 +39,7 @@ TProfile *PlotV2SPDifferentialVersusEta(TProfile3D*const &prV2,
                            const double cent_low = 10,
                            const double cent_high = 40)
 {
-  prV2->GetYaxis()->SetRange(pt_low, pt_high);
+  // prV2->GetYaxis()->SetRange(pt_low, pt_high);
   TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("zx");
   prV2_2D->SetName(Form("%s_pt_%1.1f_%1.1f",prV2->GetName(),pt_low,pt_high));
   int cent_bin_low = prV2_2D->GetXaxis()->FindBin(cent_low);

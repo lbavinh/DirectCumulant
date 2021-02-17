@@ -4,7 +4,7 @@
 #include "PlotV2HighOrderQCumulant.C"
 #include "DrawTGraphImp.C"
 
-void PlotV2IntegratedChargedHadrons(TString inputFirstRunFileName = "FirstRun_4.5.root", TString inputSecondRunFileName = "SecondRun_4.5.root")
+vector<TGraphErrors*> PlotV2IntegratedChargedHadrons(TString inputFirstRunFileName = "FirstRun_11.5.root", TString inputSecondRunFileName = "SecondRun_11.5.root")
 {
 
   Double_t maxpt = 3.6;    // max pt for differential flow
@@ -18,9 +18,9 @@ void PlotV2IntegratedChargedHadrons(TString inputFirstRunFileName = "FirstRun_4.
   const double errX[ncent] = {0.};
   const double X[ncent] = {2.5, 7.5, 15, 25, 35, 45, 55, 65, 75};
   bool bUseProduct = 1;
-  Int_t nmethod = 8;
-  TString title[]={"v_{2}{#Psi_{2,TPC}}","v_{2}{SP}","v_{2}{2}","v_{2}{4}","v_{2}{6}","v_{2}{8}","v_{2}{LYZ, Sum}","v_{2}{LYZ, Prod.}"};
-  const int markerStyle[] = {24,22,27,21,20,25,28,26};
+  Int_t nmethod = 9;
+  TString title[]={"v_{2}{#Psi_{2,TPC}}","v_{2}{SP}","v_{2}{2}","v_{2}{4}","v_{2}{6}","v_{2}{8}","v_{2}{LYZ, Sum}","v_{2}{LYZ, Prod.}","v_{2}{2,#eta-gap}"};
+  const int markerStyle[] = {24,22,27,21,20,25,28,26,23};
   const float markerSize = 1.3;
   TGraphErrors *gr[nmethod];
   TFile *firun1 = new TFile(inputFirstRunFileName.Data(),"read");
@@ -32,6 +32,11 @@ void PlotV2IntegratedChargedHadrons(TString inputFirstRunFileName = "FirstRun_4.
   TProfile *prV2SPInt = PlotV2SPIntegrated(prV2SP3D,minptRF,maxptRF,eta_cut);
   gr[1] = Converter(prV2SPInt);
 
+  TGraphErrors **grHOQC = PlotV2HighOrderQCumulant(inputFirstRunFileName.Data());
+  for (int i=0; i<4; i++)
+  {
+    gr[i+2] = (TGraphErrors*) grHOQC[i];
+  }
   // LYZ
   double theta[thetabins];
   for (int thetabin = 0; thetabin < thetabins; ++thetabin)
@@ -155,32 +160,41 @@ void PlotV2IntegratedChargedHadrons(TString inputFirstRunFileName = "FirstRun_4.
 
   gr[6] = new TGraphErrors(ncent, X, v2LYZInt, errX, v2eLYZInt);
   gr[7] = new TGraphErrors(ncent, X, v2LYZIntPro, errX, v2eLYZIntPro);
-  TGraphErrors **grHOQC = PlotV2HighOrderQCumulant("FirstRun.root");
-  for (int i=0; i<4; i++)
-  {
-    gr[i+2] = (TGraphErrors*) grHOQC[i];
+
+  // v22 with eta-gap
+  Double_t v22Gap[ncent], v22eGap[ncent];
+  TProfile *hv22Gap[ncent];
+  for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
+    hv22Gap[icent] = (TProfile*)firun1->Get(Form("hv22Gap_%i",icent));
+    term cor2Gap = term(hv22Gap[icent]);
+    v22Gap[icent] = sqrt(cor2Gap.mVal);
+    v22eGap[icent] = sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE);
   }
+  gr[8] = new TGraphErrors(ncent, X, v22Gap, errX, v22eGap);
+
   for (int i=0; i<nmethod; i++)
   {
     gr[i]->RemovePoint(0);
     gr[i]->SetTitle(title[i].Data());
     gr[i]->SetMarkerStyle(markerStyle[i]);
     gr[i]->SetMarkerSize(markerSize);
+    gr[i]->GetXaxis()->SetTitle("centrality, %");
+    gr[i]->GetYaxis()->SetTitle("v_{2}");
+    gr[i]->SetDrawOption("P PLC PMC");
   }
-  gr[ratioToMethod]->GetXaxis()->SetTitle("centrality, %");
-  gr[ratioToMethod]->GetYaxis()->SetTitle("v_{2}");
+
   vector<TGraphErrors*> vGr;
-  vGr.push_back(gr[ratioToMethod]);
+  // vGr.push_back(gr[ratioToMethod]);
   for (int i=0; i<nmethod; i++)
   {
-    if (i==ratioToMethod) continue;
+    // if (i==ratioToMethod) continue;
     vGr.push_back(gr[i]);
   }
-  TCanvas *can = (TCanvas*)DrawTGraph(vGr,"",0.79, 1.21, 0, 60, -0.005, 0.1,
-                                      // 0.65, 0.05, 0.9, 0.5,
-                                      0.2, 0.45, 0.4, 0.88,
-                                      "AMPT, #sigma_{p}=1.5mb, Au+Au at #sqrt{s_{NN}}=4.5GeV", Form("Ch. hadrons, %1.1f<p_{T}<%1.1f GeV/c",minptRF,maxptRF));
-  can->SetName("IntFlow");
-  can->SaveAs("IntFlow.pdf");
-
+  // TCanvas *can = (TCanvas*)DrawTGraph(vGr,"",0.48, 1.52, 0, 60, -0.005, 0.1,
+  //                                     // 0.65, 0.05, 0.9, 0.5,
+  //                                     0.2, 0.45, 0.4, 0.88,
+  //                                     "UrQMD, Au+Au at #sqrt{s_{NN}}=7.7GeV", Form("Ch. hadrons, %1.1f<p_{T}<%1.1f GeV/c",minptRF,maxptRF));
+  // can->SetName("IntFlow");
+  // can->SaveAs("IntFlow_UrQMD_7.7.pdf");
+  return vGr;
 }

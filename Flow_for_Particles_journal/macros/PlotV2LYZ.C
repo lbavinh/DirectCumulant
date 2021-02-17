@@ -78,14 +78,14 @@ double BesselJ0(double x)
   return temp;
 }
 
-void PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "SecondRun.root")
+TGraphErrors* PlotV2LYZ(TString inputFileName1 = "FirstRun_11.5.root", TString inputFileName2 = "SecondRun_11.5.root")
 {
   bool bUseProduct = 1;
   bool bDebug = 1;
   const int markerStyle[]={25,20,28,27,23,26};
   const TString methodName[]={"LYZ (Sum)", "LYZ (Prod.)"};
   std::pair<double,double> ratioRange = {0.67,1.23};
-  TString label = "AMPT, #sigma_{p}=1.5 mb, Au+Au, #sqrt{s_{NN}}=7.7 GeV";
+  TString label = "AMPT, #sigma_{p}=1.5mb, Au+Au, #sqrt{s_{NN}}=11.5 GeV"; // AMPT, #sigma_{p}=1.5 mb
   TFile *fi1 = new TFile(inputFileName1.Data(),"read");
 
 
@@ -134,7 +134,8 @@ void PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 
   TProfile *prImDenomPro[thetabins];
   TProfile *prReNumerPro[thetabins][ncent];
   TProfile *prImNumerPro[thetabins][ncent];
-
+  TProfile *prV2Diff1040 = new TProfile("prV2Diff1040","", npt, 0, npt);
+  TProfile *prV2Diff1040Pro = new TProfile("prV2Diff1040Pro","", npt, 0, npt);
   for (int i = 0; i < thetabins; i++)
   {
     prReDenom[i] = (TProfile*) fi2->Get(Form("prReDenom_theta%i",i));
@@ -284,6 +285,13 @@ void PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 
     }
     cout << dChi2Pro[ncent-1] << "};" << endl;
 
+    cout << "const double chiPRO[" << ncent << "] = {";
+    for (int ic = 0; ic < ncent-1; ic++)
+    {
+      cout << sqrt(dChi2Pro[ic]) <<", ";
+    }
+    cout << sqrt(dChi2Pro[ncent-1]) << "};" << endl;
+
   }
 
 
@@ -342,6 +350,7 @@ void PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 
       v2diff[ic][ipt] /= thetacount;
       double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
       v2diffe[ic][ipt] = sqrt(temp/rpmult/neve/thetabins)/2./J1rootJ0;
+      if (ic>=2 && ic<=4)prV2Diff1040->Fill(ipt, v2diff[ic][ipt], rpmult);
     }
   } // end of Diff LYZ Sum
 
@@ -399,6 +408,7 @@ void PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 
       v2diffPro[ic][ipt] /= thetacount;
       double rpmult = prMultPOI[ic]->GetBinContent(ipt+1);
       v2diffePro[ic][ipt] = sqrt(temp/rpmult/neve/thetabins)/2./J1rootJ0; // 
+      if (ic>=2 && ic<=4)prV2Diff1040Pro->Fill(ipt, v2diffPro[ic][ipt], rpmult);
     }
   }} // end of Diff LYZ Product
 
@@ -461,6 +471,159 @@ void PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 
     }
   }
 
+  // Stat. error calculation for 10-40%
+  double v2ErrLYZ1040[npt], v2ErrLYZPro1040[npt];
+  bool bCent1040 = 1;
+  if (bCent1040)
+  {
+    double refmult = prRefMult->GetBinContent(2+1) * prRefMult->GetBinEntries(2+1)
+                   + prRefMult->GetBinContent(3+1) * prRefMult->GetBinEntries(3+1)
+                   + prRefMult->GetBinContent(4+1) * prRefMult->GetBinEntries(4+1);
+    refmult /= prRefMult->GetBinEntries(2+1) + prRefMult->GetBinEntries(3+1) + prRefMult->GetBinEntries(4+1);
+    cout << prRefMult->GetBinContent(2+1) <<" "<<prRefMult->GetBinContent(3+1)<<" "<<prRefMult->GetBinContent(4+1) << endl; 
+    cout << "refmult=" << refmult << endl;    
+    double v2int;
+    float thetacount = 0;
+
+    for (int it = 0; it < thetabins; it++)
+    {
+      TProfile* prRetheta = (TProfile*) prReGthetaSum[2][it]->Clone(Form("Clone_%s",prReGthetaSum[2][it]->GetName()));
+      prRetheta->Add(prReGthetaSum[3][it]);
+      prRetheta->Add(prReGthetaSum[4][it]);
+      TProfile* prImtheta = (TProfile*) prImGthetaSum[2][it]->Clone(Form("Clone_%s",prImGthetaSum[2][it]->GetName()));
+      prImtheta->Add(prImGthetaSum[3][it]);
+      prImtheta->Add(prImGthetaSum[4][it]);
+
+      TH1F *hGtheta = FillHistGtheta(prRetheta, prImtheta);
+      float r0theta = GetR0(hGtheta);
+      if (r0theta!=0) 
+      {
+        v2int += rootJ0 / r0theta;
+        thetacount++;
+      }
+    }
+    if (thetacount!=0) v2int /= thetacount; // refmult
+    else {v2int = 0.;}
+    cout << "v2int = " << v2int << endl;
+    float modQ2sqmean=0, Q2xmean=0, Q2ymean=0, mult=0;
+    for (int ic = 2; ic < 5; ic++)
+    {
+      mult += prRefMult->GetBinContent(ic+1);
+      modQ2sqmean += prQ2ModSq->GetBinContent(ic+1) * prRefMult->GetBinContent(ic+1);
+      Q2xmean += prQ2x->GetBinContent(ic+1) * prRefMult->GetBinContent(ic+1);
+      Q2ymean += prQ2y->GetBinContent(ic+1) * prRefMult->GetBinContent(ic+1);
+    }
+    modQ2sqmean /= mult;
+    Q2xmean /= mult;
+    Q2ymean /= mult;
+    float chi2 = v2int/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int,2));
+    cout << "Chi2 of 10-40%: " << chi2 << endl;
+    float temp=0.;
+    for(int it=0; it<thetabins; it++)
+    {
+      double arg = theta[it];
+      temp+=exp(sqr(rootJ0/chi2)*cos(arg)/2.)*
+        BesselJ0(2.*rootJ0*sin(arg/2.))+
+        exp(-sqr(rootJ0/chi2)*cos(arg)/2.)*
+        BesselJ0(2.*rootJ0*cos(arg/2.));
+    }
+    float neve = prRefMult->GetBinEntries(2+1) + prRefMult->GetBinEntries(3+1) + prRefMult->GetBinEntries(4+1);
+    TProfile* prMultPOI1040 = (TProfile*) prMultPOI[2]->Clone(Form("Clone_%s",prMultPOI[2]->GetName()));
+    prMultPOI1040->Add(prMultPOI[3]);
+    prMultPOI1040->Add(prMultPOI[4]);
+    for (int ipt = 0; ipt < npt; ipt++)
+    {
+      double rpmult = prMultPOI1040->GetBinContent(ipt+1);
+      v2ErrLYZ1040[ipt] = sqrt(temp/rpmult/neve/thetabins)/2./J1rootJ0;
+    }
+    cout << "const double v2ErrLYZ1040[" << npt <<"] = {";
+    for (int ipt = 0; ipt < npt-1; ipt++)
+    {
+      cout << v2ErrLYZ1040[ipt] <<", ";
+    }
+    cout << v2ErrLYZ1040[npt-1] << " };" << endl;
+
+  } // end of V2 calculation
+
+  // LYZ Product 10-40%
+  if (bCent1040)
+  {
+    double refmult = prRefMult->GetBinContent(2+1) * prRefMult->GetBinEntries(2+1)
+                   + prRefMult->GetBinContent(3+1) * prRefMult->GetBinEntries(3+1)
+                   + prRefMult->GetBinContent(4+1) * prRefMult->GetBinEntries(4+1);
+    refmult /= prRefMult->GetBinEntries(2+1) + prRefMult->GetBinEntries(3+1) + prRefMult->GetBinEntries(4+1);
+    double v2int;
+    float thetacount = 0;
+
+    for (int it = 0; it < thetabins; it++)
+    {
+      TProfile* prRetheta = (TProfile*) prReGthetaProduct[2][it]->Clone(Form("Clone_%s",prReGthetaProduct[2][it]->GetName()));
+      prRetheta->Add(prReGthetaProduct[3][it]);
+      prRetheta->Add(prReGthetaProduct[4][it]);
+      TProfile* prImtheta = (TProfile*) prImGthetaProduct[2][it]->Clone(Form("Clone_%s",prImGthetaProduct[2][it]->GetName()));
+      prImtheta->Add(prImGthetaProduct[3][it]);
+      prImtheta->Add(prImGthetaProduct[4][it]);
+
+      TH1F *hGtheta = FillHistGtheta(prRetheta, prImtheta);
+      float r0theta = GetR0(hGtheta);
+      if (r0theta!=0) 
+      {
+        v2int += rootJ0 / r0theta;
+        thetacount++;
+      }
+    }
+    if (thetacount!=0) v2int /= thetacount*refmult; // 
+    else {v2int = 0.;}
+    float modQ2sqmean=0, Q2xmean=0, Q2ymean=0, mult=0;
+    for (int ic = 2; ic < 5; ic++)
+    {
+      mult += prRefMult->GetBinContent(ic+1);
+      modQ2sqmean += prQ2ModSq->GetBinContent(ic+1) * prRefMult->GetBinContent(ic+1);
+      Q2xmean += prQ2x->GetBinContent(ic+1) * prRefMult->GetBinContent(ic+1);
+      Q2ymean += prQ2y->GetBinContent(ic+1) * prRefMult->GetBinContent(ic+1);
+    }
+    modQ2sqmean /= mult;
+    Q2xmean /= mult;
+    Q2ymean /= mult;
+    float chi2 = v2int/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int,2));
+    cout << "Chi2 of 10-40% Pro: " << chi2 << endl;
+    float temp=0.;
+    for(int it=0; it<thetabins; it++)
+    {
+      double arg = theta[it];
+      temp+=exp(sqr(rootJ0/chi2)*cos(arg)/2.)*
+        BesselJ0(2.*rootJ0*sin(arg/2.))+
+        exp(-sqr(rootJ0/chi2)*cos(arg)/2.)*
+        BesselJ0(2.*rootJ0*cos(arg/2.));
+    }
+    // float neve = prRefMult->GetBinEntries(2+1) + prRefMult->GetBinEntries(3+1) + prRefMult->GetBinEntries(4+1);
+    double neve = prReDenomPro[0]->GetBinEntries(2+1) + prReDenomPro[0]->GetBinEntries(3+1) + prReDenomPro[0]->GetBinEntries(4+1);
+    TProfile* prMultPOI1040 = (TProfile*) prMultPOI[2]->Clone(Form("Clone_%s",prMultPOI[2]->GetName()));
+    prMultPOI1040->Add(prMultPOI[3]);
+    prMultPOI1040->Add(prMultPOI[4]);
+    for (int ipt = 0; ipt < npt; ipt++)
+    {
+      double rpmult = prMultPOI1040->GetBinContent(ipt+1);
+      v2ErrLYZPro1040[ipt] = sqrt(temp/rpmult/neve/thetabins)/2./J1rootJ0;
+    }
+    cout << "const double v2ErrLYZPro1040[" << npt <<"] = {";
+    for (int ipt = 0; ipt < npt-1; ipt++)
+    {
+      cout << v2ErrLYZPro1040[ipt] <<", ";
+    }
+    cout << v2ErrLYZPro1040[npt-1] << " };" << endl;
+
+  } // end of V2 calculation
+  double X[npt], ErrX[npt], V2Diff1040Pro[npt];
+  for (int ipt=0; ipt<npt; ipt++)
+  {
+    X[ipt] = (pTBin[ipt] + pTBin[ipt+1])/2.;
+    ErrX[ipt] = 0;
+    V2Diff1040Pro[ipt] = prV2Diff1040Pro->GetBinContent(ipt+1);
+  }
+  TGraphErrors *grV2Diff1040Pro = new TGraphErrors(npt, X, V2Diff1040Pro, ErrX, v2ErrLYZPro1040);
+   
+
   //================= Drawing =========================
   gStyle->SetErrorX(0);
   TCanvas c;
@@ -502,7 +665,7 @@ void PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
   gStyle->SetOptStat(0);
-  c.SaveAs("IntFlowLYZ.pdf");
+  c.SaveAs("IntFlowLYZ_AMPT_11.5.pdf");
   //================= Drawing =========================
   TCanvas c2;
   TPaveLabel* title = new TPaveLabel(0.1,0.96,0.9,0.99,label.Data());
@@ -550,6 +713,6 @@ void PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 
   if (bUseProduct) leg2->AddEntry(hLYZDiffPro,"LYZ (Prod.)","p");
   leg2->Draw();
   }
-  c2.SaveAs(Form("DifFlowLYZ.pdf"));
-
+  c2.SaveAs(Form("DifFlowLYZ_AMPT_11.5.pdf"));
+  return grV2Diff1040Pro;
 }

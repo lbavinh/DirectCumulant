@@ -66,6 +66,13 @@ void CompareV2PT_withRatio(){
         grV2[it][id][3] -> SetLineColor(kRed+1);
       }
 
+      grV2[0][id][0] -> SetMarkerStyle(kOpenCircle);
+      grV2[1][id][0] -> SetMarkerStyle(kFullCircle);
+      for(int it=0;it<ntype;it++){
+        grV2[it][id][0] -> SetMarkerColor(kRed+1);
+        grV2[it][id][0] -> SetLineColor(kRed+1);
+      }
+
       grV2[0][id][4] -> SetMarkerStyle(kOpenTriangleUp);
       grV2[1][id][4] -> SetMarkerStyle(kFullTriangleUp);
       for(int it=0;it<ntype;it++){
@@ -129,6 +136,10 @@ void CompareV2PT_withRatio(){
       grRatioV2[1][id][1] -> SetMarkerColor(kBlue+1);
       grRatioV2[1][id][1] -> SetLineColor(kBlue+1);
 
+      grRatioV2[1][id][0] -> SetMarkerStyle(kFullCircle);
+      grRatioV2[1][id][0] -> SetMarkerColor(kRed+1);
+      grRatioV2[1][id][0] -> SetLineColor(kRed+1);
+
       grRatioV2[1][id][3] -> SetMarkerStyle(kFullCircle);
       grRatioV2[1][id][3] -> SetMarkerColor(kRed+1);
       grRatioV2[1][id][3] -> SetLineColor(kRed+1);
@@ -154,7 +165,7 @@ void CompareV2PT_withRatio(){
   title->SetTextFont(textFont);
   title->SetTextSize(1.5);
   title->Draw();
-  can->SetLeftMargin(0.17);
+  can->SetLeftMargin(0.18);
   can->SetRightMargin(0.01);
   can->SetBottomMargin(0.2);
   can->SetTopMargin(0.12);
@@ -199,6 +210,7 @@ void CompareV2PT_withRatio(){
 
     h[ipad]->GetYaxis()->SetNdivisions(504);
     h[ipad]->GetYaxis()->SetTitleOffset(titleOffset);
+    // if (ipad==0) h[ipad]->GetYaxis()->SetTitleOffset(titleOffset+0.03);
     h[ipad]->Draw();
     
     TLatex tex;
@@ -322,13 +334,13 @@ void CompareV2PT_withRatio(){
 
     for(int it=0;it<ntype;it++){
       if (ipad==0) grV2[it][0][1]->Draw("P"); // PLC PMC // PLC (Palette Line Color) and PMC (Palette Marker Color)
-      if (ipad==1) grV2[it][0][3]->Draw("P");
+      if (ipad==1) grV2[it][0][0]->Draw("P");
       if (ipad==2) grV2[it][0][4]->Draw("P");
       if (ipad==3) grV2[it][0][5]->Draw("P");
     }
     for(int it=1;it<ntype;it++){
       if (ipad==4) grRatioV2[it][0][1]->Draw("P");
-      if (ipad==5) grRatioV2[it][0][3]->Draw("P");
+      if (ipad==5) grRatioV2[it][0][0]->Draw("P");
       if (ipad==6) grRatioV2[it][0][4]->Draw("P");
       if (ipad==7) grRatioV2[it][0][5]->Draw("P");
     }

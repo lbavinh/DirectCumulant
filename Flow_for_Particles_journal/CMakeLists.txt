@@ -5,7 +5,7 @@ project(FlowAMPT)
 find_package(Git)
 
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
-find_package(ROOT REQUIRED COMPONENTS MathCore RIO Hist Tree Net EG)
+find_package(ROOT REQUIRED COMPONENTS MathCore RIO Hist Tree Net EG MathMore)
 include(${ROOT_USE_FILE})
 add_definitions(${ROOT_CXX_FLAGS})
 add_subdirectory(FlowAnalysis)

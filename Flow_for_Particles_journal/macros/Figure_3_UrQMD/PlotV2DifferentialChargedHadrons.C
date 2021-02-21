@@ -1,11 +1,12 @@
 #include "../PlotV2LYZ.C"
 #include "../PlotV2EtaSubEventPlane.C"
+#include "../PlotV2FHCalEventPlane.C"
 #include "../PlotV2ScalarProduct.C"
 #include "../PlotV2HighOrderQCumulant.C"
 #include "../DrawTGraphImp.C"
 const TString energy = "7.7";
-TString input1 = Form("../FirstRun_%s.root",energy.Data());
-TString input2  = Form("../SecondRun_%s.root",energy.Data());
+TString input1 = Form("../FirstRun_UrQMD_%s.root",energy.Data());
+TString input2  = Form("../SecondRun_UrQMD_%s.root",energy.Data());
 void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TString inputSecondRunFileName = input2)
 {
   const vector<pair<int,int>> centrality = {{0,5},{5,10},{10,20},{20,30},{30,40},{40,50},{50,60},{60,70},{70,80}};
@@ -16,15 +17,15 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
   Double_t minptRF = 0.2;  // min pt for reference flow
   Double_t eta_cut = 1.5;  // pseudorapidity acceptance window for flow measurements
   Double_t eta_gap = 0.05; // +-0.05, eta-gap between 2 eta sub-event of two-particle cumulants method with eta-gap
-  const int ratioToMethod = 2; // v22gap ,#eta-gap
+  const int ratioToMethod = 2;
   const double J1rootJ0 = 0.519147;
-  int excludeMethod1 = 3; // v22
+  int excludeMethod1 = 3;
   int excludeMethod2 = 5;
   int excludeMethod3 = 6;
   int excludeMethod4 = -1;
   int excludeMethod5 = -1;
   int excludeMethod6 = -1;  
-  const int markerStyle[] = {24,22,23,27,30,28,26};
+  const int markerStyle[] = {24,22,23,27,30,28,26,29};
   const float markerSize = 1.5;
   const float labelSize = 0.07;
   const float titleSize = 0.08;
@@ -46,20 +47,24 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
   }
   const double errX[npt] = {0.};
   bool bUseProduct = 1;
-  Int_t nmethod = 7;
-  TString title[]={"#it{v}_{2}{#Psi_{2,TPC}}","#it{v}_{2}^{SP}{Q_{2,TPC}}","#it{v}_{2}{2}","#it{v}_{2}{2}","#it{v}_{2}{4}","#it{v}_{2}{LYZ, Sum}","#it{v}_{2}{LYZ}"};
-  // 0-EP, 1-SP, 2-2eta-gap, 3-2, 4-4, 5-LYZ(Sum), 6-LYZ(Prod)
+  Int_t nmethod = 8;
+  TString title[]={"#it{v}_{2}{#Psi_{2,TPC}}","#it{v}_{2}^{SP}{Q_{2,TPC}}","#it{v}_{2}{2}","#it{v}_{2}{2}","#it{v}_{2}{4}","#it{v}_{2}{LYZ, Sum}","#it{v}_{2}{LYZ}","#it{v}_{2}{#Psi_{1,FHCal}}"}; //
+  // 0-EP, 1-SP, 2-2eta-gap, 3-2, 4-4, 5-LYZ(Sum), 6-LYZ(Prod), 7 FHCal,EP
   TGraphErrors *gr[ncent][nmethod];
   TFile *firun1 = new TFile(inputFirstRunFileName.Data(),"read");
   TFile *firun2 = new TFile(inputSecondRunFileName.Data(),"read");
   auto *prV2EP3D = (TProfile3D*) firun2->Get("prV2EtaSubEventPlane");
   auto *prV2SP3D = (TProfile3D*) firun2->Get("prV2ScalarProduct");
+  TFile *fiFHCal = new TFile(Form("../FHCal_UrQMD_%s_1.root",energy.Data()),"read");
+  auto *prV2FHCalEP3D = (TProfile3D*) fiFHCal->Get("prV2FHCalEventPlane");
   for (int i = 0; i< ncent; i++)
   {
     TProfile *prV2EPInt = PlotV2EPDifferentialVersusPt(prV2EP3D,bin_cent[i],bin_cent[i+1]-1,eta_cut+0.0001);
     TProfile *prV2SPInt = PlotV2SPDifferentialVersusPt(prV2SP3D,bin_cent[i],bin_cent[i+1]-1,eta_cut);
+    TProfile *prV2FHCalEPInt = PlotV2FHCalEPDifferentialVersusPt(prV2FHCalEP3D,bin_cent[i],bin_cent[i+1],1.5);
     gr[i][0] = Converter(prV2EPInt);
-    gr[i][1] = Converter(prV2SPInt);  
+    gr[i][1] = Converter(prV2SPInt);
+    gr[i][7] = Converter(prV2FHCalEPInt);
   }
   
   // QCumulant
@@ -521,7 +526,7 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
   }
 
   TCanvas *can = new TCanvas("can","",1000,600);
-  TPaveLabel* label = new TPaveLabel(0.1,0.95,0.9,0.99,Form("AMPT SM, #it{#sigma}_{p}=1.5 mb, Au+Au at #sqrt{s_{NN}} = %s GeV, Charged Hadrons",energy.Data()));
+  TPaveLabel* label = new TPaveLabel(0.1,0.95,0.9,0.99,Form("UrQMD, Au+Au at #sqrt{s_{NN}} = %s GeV, Charged Hadrons",energy.Data()));
   label->SetTextFont(132);
   // label->SetTextSize(labelSize);
   label->SetBorderSize(0);
@@ -569,7 +574,7 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
     tex.DrawLatex(0.55,0.22,Form("%i-%i%%",centrality.at(ic).first, centrality.at(ic).second));
     if (ic==firstCentToDraw+1)
     {
-    TLegend *leg1 = new TLegend(0.4,0.1,0.85,0.3);
+    TLegend *leg1 = new TLegend(0.1,0.6,0.5,0.85);
     leg1->SetBorderSize(0);
     leg1->SetTextSize(titleSize+0.015);
     
@@ -583,7 +588,7 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
     }
     if (ic==firstCentToDraw+2)
     {
-      TLegend *leg2 = new TLegend(0.4,0.1,0.85,0.3);
+      TLegend *leg2 = new TLegend(0.1,0.6,0.5,0.8);
       leg2->SetBorderSize(0);
       leg2->SetTextSize(titleSize+0.015);
       for (int i=2; i<vGr[ic].size(); i++)
@@ -644,7 +649,7 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
     
     tex.DrawLatex(0.2,1.08,padName[padID-1].Data());
   }
-  can->SaveAs(Form("V2pT_AMPT_at_%s.png",energy.Data()));
-  can->SaveAs(Form("V2pT_AMPT_at_%s.pdf",energy.Data()));
+  can->SaveAs(Form("V2pT_UrQMD_at_%s.png",energy.Data()));
+  can->SaveAs(Form("V2pT_UrQMD_at_%s.pdf",energy.Data()));
 
 }

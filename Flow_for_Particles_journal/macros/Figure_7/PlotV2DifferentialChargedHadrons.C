@@ -219,7 +219,7 @@ void PlotV2DifferentialChargedHadrons()
     }
     graph[1][ien][1] = new TGraphErrors(npt, X, v2Dif[0][3][0], errX, v2eDif[0][3][0]); // v2{2}
     graph[2][ien][1] = new TGraphErrors(npt, X, v2Dif[1][3][0], errX, v2eDif[1][3][0]); // v2{4}
-    // graph[1][4] = new TGraphErrors(npt, X, v2Dif[2][3][0], errX, v2eDif[2][3][0]); // v2{2,eta-gap}
+    // graph[1][ien][1] = new TGraphErrors(npt, X, v2Dif[2][3][0], errX, v2eDif[2][3][0]); // v2{2,eta-gap}
 
   } // end of loop over energy
   
@@ -346,6 +346,6 @@ void PlotV2DifferentialChargedHadrons()
     tex.SetTextSize(titleSize-0.02);
     tex.DrawLatex(1.6,0.01,"#sqrt{#it{s}_{NN}} = 11.5 GeV");
   }
-  can->SaveAs(Form("CompareMethods_Diff_v2_vs_STAR_at_20-30.png"));
-  can->SaveAs(Form("CompareMethods_Diff_v2_vs_STAR_at_20-30.pdf"));
+  can->SaveAs(Form("V2pT_AMPT_vs_STAR.png"));
+  can->SaveAs(Form("V2pT_AMPT_vs_STAR.pdf"));
 }

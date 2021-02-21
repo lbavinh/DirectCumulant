@@ -1,6 +1,6 @@
-#include "../PlotV2IntegratedChargedHadrons.C"
+#include "PlotV2IntegratedChargedHadrons.C"
 
-void PlotV2IntegratedChargedHadronsTwoEnergy()
+void PlotV2IntegratedChargedHadronsTwoEnergyWithFHCal()
 {
 
   Double_t maxptRF = 3.;   // max pt for reference flow
@@ -34,10 +34,10 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   const double errX[ncent] = {0.};
   const double X[ncent] = {2.5, 7.5, 15, 25, 35, 45, 55, 65, 75};
   bool bUseProduct = 1;
-  Int_t nmethod = 9;
-  TString title[]={"#it{v}_{2}{#Psi_{2,TPC}}","#it{v}_{2}^{SP}{Q_{2,TPC}}","#it{v}_{2}{2}","#it{v}_{2}{4}","#it{v}_{2}{6}","#it{v}_{2}{8}","#it{v}_{2}{LYZ, Sum}","#it{v}_{2}{LYZ}","#it{v}_{2}{2}"}; // ,#eta-gap
+  Int_t nmethod = 10;
+  TString title[]={"#it{v}_{2}{#Psi_{2,TPC}}","#it{v}_{2}^{SP}{Q_{2,TPC}}","#it{v}_{2}{2}","#it{v}_{2}{4}","#it{v}_{2}{6}","#it{v}_{2}{8}","#it{v}_{2}{LYZ, Sum}","#it{v}_{2}{LYZ}","#it{v}_{2}{2}","#it{v}_{2}{#Psi_{1,FHCal}}"}; // ,#eta-gap
   // "#it{v}_{2}{#Psi_{1,FHCal}}"
-  const int markerStyle[] = {24,22,27,30,20,25,28,26,23};
+  const int markerStyle[] = {24,22,27,30,20,25,28,26,23,29};
   const float markerSize = 1.5;
   const float labelSize = 0.07;
   const float titleSize = 0.08;
@@ -47,8 +47,8 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   const double minRatio = 0.79;
   const double maxX = 62.;
   const double minX = -1.;
-  vector<TGraphErrors*> vGr77 = PlotV2IntegratedChargedHadrons("../FirstRun_UrQMD_7.7.root","../SecondRun_UrQMD_7.7.root");
-  vector<TGraphErrors*> vGr115 = PlotV2IntegratedChargedHadrons("../FirstRun_UrQMD_11.5.root","../SecondRun_UrQMD_11.5.root");
+  vector<TGraphErrors*> vGr77 = PlotV2IntegratedChargedHadrons("AMPT15","7.7");
+  vector<TGraphErrors*> vGr115 = PlotV2IntegratedChargedHadrons("AMPT15","11.5");
   vector<TGraphErrors*> vGr77_ratio, vGr115_ratio;
   for (int i=0; i<vGr77.size(); i++)
   {
@@ -203,7 +203,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   }
   vGr115_ratio.at(ratioToMethod-5)->SetTitle(Form(";Centrality, %%;Ratio to %s", title[ratioToMethod].Data()));
   tex.DrawLatex(3,1.08,"(d)");
-  can->SaveAs("V2Cent_Others_UrQMD.png");
-  can->SaveAs("V2Cent_Others_UrQMD.pdf");
+  can->SaveAs("V2Cent_Others_AMPT15_withFHCal.png");
+  can->SaveAs("V2Cent_Others_AMPT15_withFHCal.pdf");
 
 }

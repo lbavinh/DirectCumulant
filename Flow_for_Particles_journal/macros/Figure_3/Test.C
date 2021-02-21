@@ -1,9 +1,10 @@
 #include "../PlotV2LYZ.C"
 #include "../PlotV2EtaSubEventPlane.C"
+#include "../PlotV2FHCalEventPlane.C"
 #include "../PlotV2ScalarProduct.C"
 #include "../PlotV2HighOrderQCumulant.C"
 #include "../DrawTGraphImp.C"
-const TString energy = "7.7";
+const TString energy = "11.5";
 TString input1 = Form("../FirstRun_%s.root",energy.Data());
 TString input2  = Form("../SecondRun_%s.root",energy.Data());
 void Test(TString inputFirstRunFileName = input1, TString inputSecondRunFileName = input2)
@@ -24,7 +25,7 @@ void Test(TString inputFirstRunFileName = input1, TString inputSecondRunFileName
   int excludeMethod4 = -1;
   int excludeMethod5 = -1;
   int excludeMethod6 = -1;  
-  const int markerStyle[] = {24,22,23,27,30,28,26};
+  const int markerStyle[] = {24,22,23,27,30,28,26,29};
   const float markerSize = 1.5;
   const float labelSize = 0.07;
   const float titleSize = 0.08;
@@ -46,20 +47,25 @@ void Test(TString inputFirstRunFileName = input1, TString inputSecondRunFileName
   }
   const double errX[npt] = {0.};
   bool bUseProduct = 1;
-  Int_t nmethod = 7;
-  TString title[]={"#it{v}_{2}{#Psi_{2,TPC}}","#it{v}_{2}^{SP}{Q_{2,TPC}}","#it{v}_{2}{2,#eta-gap}","#it{v}_{2}{2}","#it{v}_{2}{4}","#it{v}_{2}{LYZ, Sum}","#it{v}_{2}{LYZ, Prod.}"};
+  Int_t nmethod = 8;
+  TString title[]={"#it{v}_{2}{#Psi_{2,TPC}}","#it{v}_{2}^{SP}{Q_{2,TPC}}","#it{v}_{2}{2,#eta-gap}","#it{v}_{2}{2}","#it{v}_{2}{4}","#it{v}_{2}{LYZ, Sum}","#it{v}_{2}{LYZ, Prod.}","#it{v}_{2}{#Psi_{1,FHCal}}"};
   // 0-EP, 1-SP, 2-2eta-gap, 3-2, 4-4, 5-LYZ(Sum), 6-LYZ(Prod)
   TGraphErrors *gr[ncent][nmethod];
   TFile *firun1 = new TFile(inputFirstRunFileName.Data(),"read");
   TFile *firun2 = new TFile(inputSecondRunFileName.Data(),"read");
   auto *prV2EP3D = (TProfile3D*) firun2->Get("prV2EtaSubEventPlane");
   auto *prV2SP3D = (TProfile3D*) firun2->Get("prV2ScalarProduct");
+  TFile *fiFHCal = new TFile(Form("../FHCal_AMPT15_%s_1.root",energy.Data()),"read");
+  auto *prV2FHCalEP3D = (TProfile3D*) fiFHCal->Get("prV2FHCalEventPlane");
   for (int i = 0; i< ncent; i++)
   {
     TProfile *prV2EPInt = PlotV2EPDifferentialVersusPt(prV2EP3D,bin_cent[i],bin_cent[i+1]-1,eta_cut);
     TProfile *prV2SPInt = PlotV2SPDifferentialVersusPt(prV2SP3D,bin_cent[i],bin_cent[i+1]-1,eta_cut);
+    TProfile *prV2FHCalEPInt = PlotV2FHCalEPDifferentialVersusPt(prV2FHCalEP3D,bin_cent[i],bin_cent[i+1],eta_cut);
+
     gr[i][0] = Converter(prV2EPInt);
-    gr[i][1] = Converter(prV2SPInt);  
+    gr[i][1] = Converter(prV2SPInt);
+    gr[i][7] = Converter(prV2FHCalEPInt);
   }
   
   // QCumulant

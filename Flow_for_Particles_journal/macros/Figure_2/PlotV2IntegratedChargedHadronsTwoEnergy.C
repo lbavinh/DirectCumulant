@@ -6,7 +6,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   Double_t maxptRF = 3.;   // max pt for reference flow
   Double_t minptRF = 0.2;  // min pt for reference flow
 
-  int ratioToMethod = 2;
+  int ratioToMethod = 8;
   // v24 vs. v26 v28
   // int excludeMethod1 = 0;
   // int excludeMethod2 = 1;
@@ -24,7 +24,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   // int excludeMethod6 = 8; // 2,eta-gap
 
   //v24 vs. others
-  int excludeMethod1 = 8;
+  int excludeMethod1 = 2;
   int excludeMethod2 = 4;
   int excludeMethod3 = 5;
   int excludeMethod4 = 6;
@@ -35,7 +35,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   const double X[ncent] = {2.5, 7.5, 15, 25, 35, 45, 55, 65, 75};
   bool bUseProduct = 1;
   Int_t nmethod = 9;
-  TString title[]={"#it{v}_{2}{#Psi_{2,TPC}}","#it{v}_{2}^{SP}{Q_{2,TPC}}","#it{v}_{2}{2}","#it{v}_{2}{4}","#it{v}_{2}{6}","#it{v}_{2}{8}","#it{v}_{2}{LYZ, Sum}","#it{v}_{2}{LYZ}","#it{v}_{2}{2,#eta-gap}"};
+  TString title[]={"#it{v}_{2}{#Psi_{2,TPC}}","#it{v}_{2}^{SP}{Q_{2,TPC}}","#it{v}_{2}{2}","#it{v}_{2}{4}","#it{v}_{2}{6}","#it{v}_{2}{8}","#it{v}_{2}{LYZ, Sum}","#it{v}_{2}{LYZ}","#it{v}_{2}{2}"}; // ,#eta-gap
   // "#it{v}_{2}{#Psi_{1,FHCal}}"
   const int markerStyle[] = {24,22,27,30,20,25,28,26,23};
   const float markerSize = 1.5;
@@ -68,8 +68,8 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
 
     vGr77.at(i)->GetYaxis()->SetNdivisions(504);
     vGr115.at(i)->GetYaxis()->SetNdivisions(504);
-    vGr77_ratio.at(i)->GetYaxis()->SetNdivisions(504);
-    vGr115_ratio.at(i)->GetYaxis()->SetNdivisions(504);
+    vGr77_ratio.at(i)->GetYaxis()->SetNdivisions(508);
+    vGr115_ratio.at(i)->GetYaxis()->SetNdivisions(508);
 
     vGr77.at(i)->GetYaxis()->SetRangeUser(-0.005,0.075);
     vGr115.at(i)->GetYaxis()->SetRangeUser(-0.005,0.075);
@@ -165,35 +165,35 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   tex.DrawLatex(3,0.065,"(b)   #sqrt{#it{s}_{NN}} = 11.5 GeV");
   vGr115.at(ratioToMethod)->SetTitle("");
   can->cd(3);
-  vGr77_ratio.at(ratioToMethod+1)->Draw("AP PLC PMC");
-  vGr77_ratio.at(ratioToMethod+1)->GetYaxis()->SetTitleSize(titleSize);
-  vGr77_ratio.at(ratioToMethod+1)->GetYaxis()->SetLabelSize(labelSize);
-  vGr77_ratio.at(ratioToMethod+1)->GetYaxis()->SetTitleFont(textFont);
-  vGr77_ratio.at(ratioToMethod+1)->GetYaxis()->SetLabelFont(textFont);
-  vGr77_ratio.at(ratioToMethod+1)->GetXaxis()->SetTitleSize(titleSize);
-  vGr77_ratio.at(ratioToMethod+1)->GetXaxis()->SetLabelSize(labelSize);
-  vGr77_ratio.at(ratioToMethod+1)->GetXaxis()->SetTitleFont(textFont);
-  vGr77_ratio.at(ratioToMethod+1)->GetXaxis()->SetLabelFont(textFont);
-  vGr77_ratio.at(ratioToMethod+1)->GetYaxis()->SetTitleOffset(titleOffSet);
+  vGr77_ratio.at(ratioToMethod-1)->Draw("AP PLC PMC");
+  vGr77_ratio.at(ratioToMethod-1)->GetYaxis()->SetTitleSize(titleSize);
+  vGr77_ratio.at(ratioToMethod-1)->GetYaxis()->SetLabelSize(labelSize);
+  vGr77_ratio.at(ratioToMethod-1)->GetYaxis()->SetTitleFont(textFont);
+  vGr77_ratio.at(ratioToMethod-1)->GetYaxis()->SetLabelFont(textFont);
+  vGr77_ratio.at(ratioToMethod-1)->GetXaxis()->SetTitleSize(titleSize);
+  vGr77_ratio.at(ratioToMethod-1)->GetXaxis()->SetLabelSize(labelSize);
+  vGr77_ratio.at(ratioToMethod-1)->GetXaxis()->SetTitleFont(textFont);
+  vGr77_ratio.at(ratioToMethod-1)->GetXaxis()->SetLabelFont(textFont);
+  vGr77_ratio.at(ratioToMethod-1)->GetYaxis()->SetTitleOffset(titleOffSet);
   lineOne.DrawLine(minX,1.,maxX,1.);
   for (int i=0; i<vGr77_ratio.size(); i++)
   {
     if (i==excludeMethod1 || i==excludeMethod2 || i==excludeMethod3 || i==excludeMethod4 || i==excludeMethod5 || i==excludeMethod6 || i==ratioToMethod) continue;
     vGr77_ratio.at(i)->Draw("P PLC PMC");
   }
-  vGr77_ratio.at(ratioToMethod+1)->SetTitle(Form(";Centrality, %%;Ratio to %s", title[ratioToMethod].Data()));
+  vGr77_ratio.at(ratioToMethod-1)->SetTitle(Form(";Centrality, %%;Ratio to %s", title[ratioToMethod].Data()));
   tex.SetTextSize(titleSize);
   tex.DrawLatex(3,1.08,"(c)");
   can->cd(4);
-  vGr115_ratio.at(ratioToMethod+1)->Draw("AP PLC PMC");
-  vGr115_ratio.at(ratioToMethod+1)->GetYaxis()->SetTitleSize(titleSize);
-  vGr115_ratio.at(ratioToMethod+1)->GetYaxis()->SetLabelSize(labelSize);
-  vGr115_ratio.at(ratioToMethod+1)->GetYaxis()->SetTitleFont(textFont);
-  vGr115_ratio.at(ratioToMethod+1)->GetYaxis()->SetLabelFont(textFont);
-  vGr115_ratio.at(ratioToMethod+1)->GetXaxis()->SetTitleSize(titleSize);
-  vGr115_ratio.at(ratioToMethod+1)->GetXaxis()->SetLabelSize(labelSize);
-  vGr115_ratio.at(ratioToMethod+1)->GetXaxis()->SetTitleFont(textFont);
-  vGr115_ratio.at(ratioToMethod+1)->GetXaxis()->SetLabelFont(textFont);  
+  vGr115_ratio.at(ratioToMethod-1)->Draw("AP PLC PMC");
+  vGr115_ratio.at(ratioToMethod-1)->GetYaxis()->SetTitleSize(titleSize);
+  vGr115_ratio.at(ratioToMethod-1)->GetYaxis()->SetLabelSize(labelSize);
+  vGr115_ratio.at(ratioToMethod-1)->GetYaxis()->SetTitleFont(textFont);
+  vGr115_ratio.at(ratioToMethod-1)->GetYaxis()->SetLabelFont(textFont);
+  vGr115_ratio.at(ratioToMethod-1)->GetXaxis()->SetTitleSize(titleSize);
+  vGr115_ratio.at(ratioToMethod-1)->GetXaxis()->SetLabelSize(labelSize);
+  vGr115_ratio.at(ratioToMethod-1)->GetXaxis()->SetTitleFont(textFont);
+  vGr115_ratio.at(ratioToMethod-1)->GetXaxis()->SetLabelFont(textFont);  
 
   lineOne.DrawLine(-1.,1.,61.,1.);
   for (int i=0; i<vGr115_ratio.size(); i++)
@@ -201,9 +201,9 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
     if (i==excludeMethod1 || i==excludeMethod2 || i==excludeMethod3 || i==excludeMethod4 || i==excludeMethod5 || i==excludeMethod6 || i==ratioToMethod) continue;
     vGr115_ratio.at(i)->Draw("P PLC PMC");
   }
-  vGr115_ratio.at(ratioToMethod+1)->SetTitle(Form(";Centrality, %%;Ratio to %s", title[ratioToMethod].Data()));
+  vGr115_ratio.at(ratioToMethod-1)->SetTitle(Form(";Centrality, %%;Ratio to %s", title[ratioToMethod].Data()));
   tex.DrawLatex(3,1.08,"(d)");
-  can->SaveAs("CompareMethods_v2{2}_vs_others.png");
-  can->SaveAs("CompareMethods_v2{2}_vs_others.pdf");
+  can->SaveAs("V2Cent_Others_AMPT.png");
+  can->SaveAs("V2Cent_Others_AMPT.pdf");
 
 }

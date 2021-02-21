@@ -28,7 +28,7 @@ public:
   void ProcessFirstTrackLoop(const Double_t &eta, const Double_t &phi, const Double_t &pt);
   void ProcessEventAfterFirstTrackLoop(const Double_t &dCent);
   void ProcessSecondTrackLoop(const Double_t &eta, const Double_t &phi, const Double_t &pt, const Double_t &dCent);
-  // void SetEtaGap(Double_t d) { this->fEtaGap = d; }
+  void SetEtaGap(Double_t d) { this->fEtaGap = d; }
   void SetFirstRun(bool kt) { this->fFirstRun = kt; }
   void SetInputFileFromFirstRun(TString str) { this->fstrInputFileFromFirstRun = str; }
   void GetRes();
@@ -46,9 +46,10 @@ private:
   QVector *fQvector_L;
   QVector *fQvector_R;
   Double_t fRes2[ncent];
-  // Double_t fEtaGap;
+  Double_t fEtaGap;
   TString fstrInputFileFromFirstRun;
   TProfile *fPrRes;
+  TProfile *fPrV2FHCalEventPlaneIntegrated;
   TProfile3D *fPrV2FHCalEventPlane;
   ClassDef(FlowAnalysisWithFHCalEventPlane,0);
 

@@ -30,18 +30,18 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
-bool ETASUBEVENTPLANE_1 = 1;
+bool ETASUBEVENTPLANE_1 = 0;
 bool ETASUBEVENTPLANE_2 = 0;
-bool FHCALEVENTPLANE_1 = 1;
-bool FHCALEVENTPLANE_2 = 0;
+bool FHCALEVENTPLANE_1 = 0;
+bool FHCALEVENTPLANE_2 = 1;
 bool LYZ_SUM_1 = 0;
 bool LYZ_SUM_2 = 0;
-bool LYZ_SUM_PRODUCT_1 = 1;
+bool LYZ_SUM_PRODUCT_1 = 0;
 bool LYZ_SUM_PRODUCT_2 = 0;
-bool SCALARPRODUCT_1 = 1;
+bool SCALARPRODUCT_1 = 0;
 bool SCALARPRODUCT_2 = 0;
-bool QCUMULANT = 1;
-bool HIGHORDERQCUMULANT = 1;
+bool QCUMULANT = 0;
+bool HIGHORDERQCUMULANT = 0;
 bool LYZEP = 0;
 
 Double_t maxpt = 3.6;    // max pt for differential flow
@@ -148,12 +148,14 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
   {
     flowFHCalEP = new FlowAnalysisWithFHCalEventPlane();
     flowFHCalEP->SetFirstRun(true);
+    flowFHCalEP->SetEtaGap(eta_gap);
     flowFHCalEP->Init();
   }
   if (FHCALEVENTPLANE_2)
   {
     flowFHCalEP = new FlowAnalysisWithFHCalEventPlane();
     flowFHCalEP->SetFirstRun(false);
+    flowFHCalEP->SetEtaGap(eta_gap);
     flowFHCalEP->SetDebugFlag(true);
     flowFHCalEP->SetInputFileFromFirstRun(inputHistogramFileName);
     flowFHCalEP->Init();
@@ -267,10 +269,10 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
       pt  = vect.Pt();
       eta = vect.Eta();
       phi = vect.Phi();
-      if ((FHCALEVENTPLANE_1 || FHCALEVENTPLANE_2) && pt > minptRF && pt < maxptRF) 
+      if ((FHCALEVENTPLANE_1 || FHCALEVENTPLANE_2)) //  && pt > minptRF && pt < maxptRF 
       {
-        auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
-        if (!particle) continue;
+        // auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+        // if (!particle) continue;
         flowFHCalEP->ProcessFirstTrackLoop(eta, phi, pt);
       }
       if (pt < minpt || pt > maxpt || fabs(eta)>eta_cut) continue; // track selection
@@ -327,7 +329,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
         pt  = vect.Pt();
         eta = vect.Eta();
         phi = vect.Phi();
-        if (pt < minpt || pt > maxpt || fabs(eta)>eta_cut) continue; // track selection
+        if (pt < minpt || pt > maxpt || fabs(eta)>=eta_cut) continue; // track selection
         // if (abs(eta)<eta_gap) continue;
         auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
         if (!particle) continue;

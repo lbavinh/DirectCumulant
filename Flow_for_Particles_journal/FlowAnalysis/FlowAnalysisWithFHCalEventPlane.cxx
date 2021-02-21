@@ -10,9 +10,10 @@ FlowAnalysisWithFHCalEventPlane::FlowAnalysisWithFHCalEventPlane() :
   fQvector_L(NULL),
   fQvector_R(NULL),
   // fRes2(NULL),
-  // fEtaGap(0.),
+  fEtaGap(0.),
   fstrInputFileFromFirstRun(""),
   fPrRes(NULL),
+  fPrV2FHCalEventPlaneIntegrated(NULL),
   fPrV2FHCalEventPlane(NULL)
 {
 }
@@ -29,6 +30,7 @@ void FlowAnalysisWithFHCalEventPlane::Init()
   if (!fFirstRun) 
   {
     fPrV2FHCalEventPlane = new TProfile3D("prV2FHCalEventPlane", "", ncent, &bin_cent[0], npt, &pTBin[0], netaBin, &etaBin[0]);
+    if (fDebug) fPrV2FHCalEventPlaneIntegrated = new TProfile("fPrV2FHCalEventPlaneIntegrated", "", ncent, &bin_cent[0]);
     GetRes();
   }  
 }
@@ -56,7 +58,7 @@ void FlowAnalysisWithFHCalEventPlane::ProcessFirstTrackLoop(const Double_t &eta,
 
 void FlowAnalysisWithFHCalEventPlane::ProcessEventAfterFirstTrackLoop(const Double_t &dCent)
 {
-  if (fQvector_L->GetMult() > mult_EP_cut && fQvector_R->GetMult() > mult_EP_cut)
+  if (fQvector_L->GetMult() > (mult_EP_cut+1) && fQvector_R->GetMult() > (mult_EP_cut+1))
   {
     fMultCut = false;
     // fQvector_L->WeightQVector();
@@ -85,7 +87,7 @@ void FlowAnalysisWithFHCalEventPlane::GetRes()
     {
       res2 = fPrRes->GetBinContent(ic+1);
       res = (res2>0) ? TMath::Sqrt(res2) : 0.;
-      chi = GetChi(res,2.,50);
+      chi = GetChi(res,1.,50);
       chiF = TMath::Sqrt(2.)*chi;
       resF = Res(chiF,2.);
       fRes2[ic]=(res!=0) ? resF : 0.;
@@ -98,6 +100,17 @@ void FlowAnalysisWithFHCalEventPlane::GetRes()
         cout << fRes2[ic] <<", ";
       }
       cout << endl;
+      cout << "FHCal Chi:" << endl;
+      for (Int_t ic = 0; ic < ncent; ic++)
+      {
+        res2 = fPrRes->GetBinContent(ic+1);
+        res = (res2>0) ? TMath::Sqrt(res2) : 0.;
+        chi = GetChi(res,1.,50);
+        chiF = TMath::Sqrt(2.)*chi;
+        cout << chiF <<", ";
+      }
+      cout << endl;
+
     }
   }
 }
@@ -126,7 +139,7 @@ Double_t FlowAnalysisWithFHCalEventPlane::GetChi(Double_t res, Double_t harmonic
 
 void FlowAnalysisWithFHCalEventPlane::ProcessSecondTrackLoop(const Double_t &eta, const Double_t &phi, const Double_t &pt, const Double_t &dCent)
 {
-  if (!fMultCut && !fFirstRun)
+  if (!fMultCut && !fFirstRun) //  && fabs(eta)>=fEtaGap
   {
     Double_t v2FHCalEventPlane = TMath::Cos( 2.0 * (phi - fPsi) );
     Int_t icent = fPrRes->FindBin(dCent) - 1;
@@ -134,6 +147,7 @@ void FlowAnalysisWithFHCalEventPlane::ProcessSecondTrackLoop(const Double_t &eta
     { 
       v2FHCalEventPlane /= fRes2[icent];
       fPrV2FHCalEventPlane->Fill(dCent, pt, eta, v2FHCalEventPlane);
+      if (fDebug && pt < 3.0 && pt > 0.2) fPrV2FHCalEventPlaneIntegrated->Fill(dCent, v2FHCalEventPlane);
     }
   }
 }
@@ -142,4 +156,15 @@ void FlowAnalysisWithFHCalEventPlane::SaveHist()
 {
   fPrRes->Write();
   if (!fFirstRun) fPrV2FHCalEventPlane->Write();
+  if (!fFirstRun && fDebug)
+  {
+    fPrV2FHCalEventPlaneIntegrated->Write();
+    cout << "const Double_t v2FHCal[" << ncent << "] = {";
+    for (Int_t ic=0; ic<ncent-1; ic++)
+    {
+      cout << fPrV2FHCalEventPlaneIntegrated->GetBinContent(ic+1) << ", ";
+    }
+    cout << fPrV2FHCalEventPlaneIntegrated->GetBinContent(ncent-1) << "};" << endl;
+  }
+   
 }

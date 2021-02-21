@@ -42,8 +42,8 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   const float titleSize = 0.08;
   const float titleOffSet = 0.8;
   const int textFont = 132;
-  const double maxRatio = 1.11;
-  const double minRatio = 0.89;
+  const double maxRatio = 1.14;
+  const double minRatio = 0.86;
   const double maxX = 62.;
   const double minX = -1.;
   vector<TGraphErrors*> vGr77 = PlotV2IntegratedChargedHadrons("../FirstRun_7.7.root","../SecondRun_7.7.root");
@@ -67,8 +67,8 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
 
     vGr77.at(i)->GetYaxis()->SetNdivisions(504);
     vGr115.at(i)->GetYaxis()->SetNdivisions(504);
-    vGr77_ratio.at(i)->GetYaxis()->SetNdivisions(504);
-    vGr115_ratio.at(i)->GetYaxis()->SetNdivisions(504);
+    vGr77_ratio.at(i)->GetYaxis()->SetNdivisions(506);
+    vGr115_ratio.at(i)->GetYaxis()->SetNdivisions(506);
 
     vGr77.at(i)->GetYaxis()->SetRangeUser(-0.005,0.075);
     vGr115.at(i)->GetYaxis()->SetRangeUser(-0.005,0.075);
@@ -85,8 +85,8 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   Red(vGr77.at(3));
   Red(vGr115.at(3));
 
-  Green(vGr77.at(4));
-  Green(vGr115.at(4));
+  Blue(vGr77.at(4));
+  Blue(vGr115.at(4));
 
   Yellow(vGr77.at(5));
   Yellow(vGr115.at(5));
@@ -94,8 +94,8 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   Red(vGr77_ratio.at(3));
   Red(vGr115_ratio.at(3));
 
-  Green(vGr77_ratio.at(4));
-  Green(vGr115_ratio.at(4));
+  Blue(vGr77_ratio.at(4));
+  Blue(vGr115_ratio.at(4));
 
   Yellow(vGr77_ratio.at(5));
   Yellow(vGr115_ratio.at(5));
@@ -224,7 +224,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   }
   vGr77_ratio.at(ratioToMethod+1)->SetTitle(Form(";Centrality, %%;Ratio to %s", title[ratioToMethod].Data()));
   tex.SetTextSize(titleSize);
-  tex.DrawLatex(3,1.08,"(c)");
+  tex.DrawLatex(3,1.1,"(c)");
   can->cd(4);
   vGr115_ratio.at(ratioToMethod+1)->Draw("AP");
   vGr115_ratio.at(ratioToMethod+1)->GetYaxis()->SetTitleSize(titleSize);
@@ -243,8 +243,8 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
     vGr115_ratio.at(i)->Draw("P"); //  PLC PMC
   }
   vGr115_ratio.at(ratioToMethod+1)->SetTitle(Form(";Centrality, %%;Ratio to %s", title[ratioToMethod].Data()));
-  tex.DrawLatex(3,1.08,"(d)");
-  can->SaveAs("CompareMethods_v2(4,6,8).png");
-  can->SaveAs("CompareMethods_v2(4,6,8).pdf");
+  tex.DrawLatex(3,1.1,"(d)");
+  can->SaveAs("V2Cent_HighQC_AMPT.png");
+  can->SaveAs("V2Cent_HighQC_AMPT.pdf");
 
 }

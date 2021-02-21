@@ -1,10 +1,11 @@
 #include "PlotV2LYZ.C"
 #include "PlotV2EtaSubEventPlane.C"
+#include "PlotV2FHCalEventPlane.C"
 #include "PlotV2ScalarProduct.C"
 #include "PlotV2HighOrderQCumulant.C"
 #include "DrawTGraphImp.C"
 
-vector<TGraphErrors*> PlotV2DifferentialChargedHadronsFor10_40Centrality(TString inputFirstRunFileName = "FirstRun_7.7.root", TString inputSecondRunFileName = "SecondRun_7.7.root")
+vector<TGraphErrors*> PlotV2DifferentialChargedHadronsFor10_40Centrality_withFHCal_7GeV(TString inputFirstRunFileName = "FirstRun_7.7.root", TString inputSecondRunFileName = "SecondRun_7.7.root")
 {
 
   Double_t maxpt = 3.6;    // max pt for differential flow
@@ -13,7 +14,7 @@ vector<TGraphErrors*> PlotV2DifferentialChargedHadronsFor10_40Centrality(TString
   Double_t minptRF = 0.2;  // min pt for reference flow
   Double_t eta_cut = 1.5;  // pseudorapidity acceptance window for flow measurements
   Double_t eta_gap = 0.05; // +-0.05, eta-gap between 2 eta sub-event of two-particle cumulants method with eta-gap
-  const int ratioToMethod = 4;
+  const int ratioToMethod = 2;
   const double J1rootJ0 = 0.519147;
   double X[npt];
   for (int ipt=0; ipt<npt; ipt++)
@@ -22,8 +23,9 @@ vector<TGraphErrors*> PlotV2DifferentialChargedHadronsFor10_40Centrality(TString
   }
   const double errX[npt] = {0.};
   bool bUseProduct = 1;
-  Int_t nmethod = 6;
-  TString title[]={"v_{2}{#Psi_{2,TPC}}","v_{2}{SP}","v_{2}{2,#eta-gap}","v_{2}{2}","v_{2}{4}","v_{2}{LYZ, Prod.}"}; //"v_{2}{LYZ, Sum}"
+  Int_t nmethod = 7;
+  TString title[]={"v_{2}{#Psi_{2,TPC}}","v_{2}^{SP}{Q_{2,TPC}}","v_{2}{2}","v_{2}{2}","v_{2}{4}","v_{2}{LYZ, Prod.}", "v_{2}{#Psi_{1,FHCal}}"}; //"v_{2}{LYZ, Sum}"
+                                                                  //,#eta-gap  
   const int markerStyle[] = {24,22,27,21,20,25,28,26,23};
   const float markerSize = 1.3;
   TGraphErrors *gr[nmethod];
@@ -36,7 +38,12 @@ vector<TGraphErrors*> PlotV2DifferentialChargedHadronsFor10_40Centrality(TString
   TProfile *prV2SPInt = PlotV2SPDifferentialVersusPt(prV2SP3D,10,40-1,eta_cut);
   gr[0] = Converter(prV2EPInt);
   gr[1] = Converter(prV2SPInt);
-  
+
+  TFile *fiFHCal = new TFile(Form("FHCal_AMPT15_7.7_1.root"),"read");
+  auto *prV2FHCalEP3D = (TProfile3D*) fiFHCal->Get("prV2FHCalEventPlane");
+  TProfile *prV2FHCalEPInt = PlotV2FHCalEPDifferentialVersusPt(prV2FHCalEP3D,10,40,eta_cut);
+  gr[6] = Converter(prV2FHCalEPInt);
+
 const double v221040[16] = {-0.0818663, 0.0304641, 0.0494609, 0.0598629, 0.0710271, 0.0828205, 0.0935024, 0.102448, 0.109797, 0.115035, 0.117596, 0.120454, 0.118533, 0.112218, 0.0861491, 0.0392331};
 const double v241040[16] = {0.00476282, 0.0293219, 0.047868, 0.0584055, 0.0694344, 0.0799784, 0.0895586, 0.0980653, 0.103965, 0.107809, 0.109036, 0.122194, 0.123758, 0.111551, 0.112619, 0.129317};
 const double v22Gap1040[16] = {0.0070712, 0.0310401, 0.0503092, 0.0616217, 0.0726653, 0.0841001, 0.094094, 0.10214, 0.10848, 0.11267, 0.115217, 0.115418, 0.119612, 0.10233, 0.0978402, 0.106685};
@@ -70,12 +77,13 @@ const double v22Gape1040[16] = {5.86977e-05, 4.02059e-05, 6.13738e-05, 9.64514e-
   //   if (i==ratioToMethod) continue;
   //   vGr.push_back(gr[i]);
   // }
-  // vGr.push_back(gr[5]);
+  vGr.push_back(gr[4]);
 
   vGr.push_back(gr[0]);
   vGr.push_back(gr[1]);
-  vGr.push_back(gr[3]);
-  TCanvas *can = (TCanvas*)DrawTGraph(vGr,"10-40%",0.89, 1.11, minpt, 2.8, -0.005, 0.25,
+  // vGr.push_back(gr[3]);
+  vGr.push_back(gr[6]);
+  TCanvas *can = (TCanvas*)DrawTGraph(vGr,"10-40%",0.55, 1.11, minpt, 2.8, -0.005, 0.25,
                                       // 0.65, 0.05, 0.9, 0.5,
                                       0.2, 0.45, 0.4, 0.88,
                                       "AMPT, #sigma_{p}=1.5mb, Au+Au at #sqrt{s_{NN}}=7.7GeV", Form("Ch. hadrons, |#eta|<%1.1f",eta_cut));

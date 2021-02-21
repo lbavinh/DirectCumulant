@@ -11,7 +11,7 @@ const std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "pr
 const std::vector<TString> pidFancyNames = {"h^{+}", "#pi^{+}", "K^{+}", "p", "h^{-}", "#pi^{-}", "K^{-}", "#bar{p}", "h^{#pm}","#pi^{#pm}","K^{#pm}","p(#bar{p})"};
 const float eta_gap = 0.05;
 // TString inputFileName = Form("QCumulant_eta_gap_%1.1f.root",eta_gap*2);
-TString inputFileName = "FirstRun_11.5.root";
+TString inputFileName = "FirstRun_UrQMD_11.5.root";
 
 const int nmethod = 3; // 2QC, 4QC, EP, 2QC-gapped
 
@@ -245,7 +245,7 @@ void CalStatErrCent1040(TString model, TString energy,double v2eDif1040[nmethod]
   delete inFile;
 }
 
-void PlotV2QCumulant(TString model = "AMPT", TString energy = "7.7GeV"){
+void PlotV2QCumulant(TString model = "UrQMD", TString energy = "11.5GeV"){
   
   // TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
   TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");

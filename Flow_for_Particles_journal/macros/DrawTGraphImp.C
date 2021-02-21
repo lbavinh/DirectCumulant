@@ -171,7 +171,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     vgrRatio.at(igr)->GetYaxis()->SetTitleSize(0.07);
 
     // vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("%s/%s",vgr.at(igr+1)->GetTitle(),vgr.at(0)->GetTitle()));
-    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("Ratio to v_{2}{4}"));
+    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("Ratio to v_{2}{2}"));
     vgrRatio.at(igr)->GetYaxis()->SetTitleOffset(1.);
     vgrRatio.at(igr)->GetXaxis()->SetTitle(Form("%s",vgr.at(0)->GetXaxis()->GetTitle()));
     vgrRatio.at(igr)->GetYaxis()->SetNdivisions(504);
@@ -296,8 +296,8 @@ TGraphErrors* Blue(TGraphErrors *const &gr)
 
 TGraphErrors* Green(TGraphErrors *const &gr)
 {
-  gr->SetMarkerColor(kGreen+3);
-  gr->SetLineColor(kGreen+3);
+  gr->SetMarkerColor(kGreen+2);
+  gr->SetLineColor(kGreen+2);
   return gr;
 }
 

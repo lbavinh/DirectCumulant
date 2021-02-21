@@ -23,6 +23,7 @@ TProfile *PlotV2FHCalEPDifferentialVersusPt(TProfile3D *const &prV2,
                            const double eta_cut = 1.5)
 {
   // prV2->GetZaxis()->SetRange(-eta_cut, eta_cut);
+  // prV2->GetZaxis()->SetRange(-(eta_cut-0.001), eta_cut-0.001);
   TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("yx");
   prV2_2D->SetName(Form("%s_eta_cut_%1.1f",prV2->GetName(),eta_cut));
   int cent_bin_low = prV2_2D->GetXaxis()->FindBin(cent_low);

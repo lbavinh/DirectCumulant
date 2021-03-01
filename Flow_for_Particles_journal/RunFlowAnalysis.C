@@ -17,6 +17,7 @@
 
 #include <QVector.h>
 #include <FlowAnalysisWithEtaSubEventPlane.h>
+#include <FlowAnalysisWithThreeEtaSubEventPlane.h>
 #include <FlowAnalysisWithFHCalEventPlane.h>
 #include <FlowAnalysisWithLeeYangZeros.h>
 #include <FlowAnalysisWithScalarProduct.h>
@@ -32,8 +33,10 @@ using std::endl;
 
 bool ETASUBEVENTPLANE_1 = 0;
 bool ETASUBEVENTPLANE_2 = 0;
+bool THREEETASUBEVENTPLANE_1 = 0;
+bool THREEETASUBEVENTPLANE_2 = 1;
 bool FHCALEVENTPLANE_1 = 0;
-bool FHCALEVENTPLANE_2 = 1;
+bool FHCALEVENTPLANE_2 = 0;
 bool LYZ_SUM_1 = 0;
 bool LYZ_SUM_2 = 0;
 bool LYZ_SUM_PRODUCT_1 = 0;
@@ -52,7 +55,7 @@ Double_t eta_cut = 1.5;  // pseudorapidity acceptance window for flow measuremen
 Double_t eta_gap = 0.05; // +-0.05, eta-gap between 2 eta sub-event of two-particle cumulants method with eta-gap
 Long64_t Nevents = -1;
 
-Int_t debug = 0;
+Int_t debug = 1;
 
 std::string format = "mctree";
 #define MAX_TRACKS 10000
@@ -121,6 +124,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
   TFile *fo = new TFile(outputFileName.Data(), "recreate");
 
   FlowAnalysisWithEtaSubEventPlane *flowEtaSub = NULL; // Eta-sub Event Plane
+  FlowAnalysisWithThreeEtaSubEventPlane *flowThreeEtaSub = NULL; // 3-Eta-sub Event Plane
   FlowAnalysisWithFHCalEventPlane *flowFHCalEP = NULL; // FHCal Event Plane
   FlowAnalysisWithLeeYangZeros *flowLYZ = NULL;        // Lee Yang Zeros
   FlowAnalysisWithScalarProduct *flowSP = NULL;        // Scalar Product
@@ -143,7 +147,22 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     flowEtaSub->SetInputFileFromFirstRun(inputHistogramFileName);
     flowEtaSub->Init();
   }
-
+  if (THREEETASUBEVENTPLANE_1)
+  {
+    flowThreeEtaSub = new FlowAnalysisWithThreeEtaSubEventPlane();
+    flowThreeEtaSub->SetFirstRun(true);
+    flowThreeEtaSub->SetEtaGap(eta_gap);
+    flowThreeEtaSub->Init();
+  }
+  if (THREEETASUBEVENTPLANE_2)
+  {
+    flowThreeEtaSub = new FlowAnalysisWithThreeEtaSubEventPlane();
+    flowThreeEtaSub->SetFirstRun(false);
+    flowThreeEtaSub->SetEtaGap(eta_gap);
+    flowThreeEtaSub->SetDebugFlag(debug);
+    flowThreeEtaSub->SetInputFileFromFirstRun(inputHistogramFileName);
+    flowThreeEtaSub->Init();
+  }
   if (FHCALEVENTPLANE_1)
   {
     flowFHCalEP = new FlowAnalysisWithFHCalEventPlane();
@@ -156,7 +175,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     flowFHCalEP = new FlowAnalysisWithFHCalEventPlane();
     flowFHCalEP->SetFirstRun(false);
     flowFHCalEP->SetEtaGap(eta_gap);
-    flowFHCalEP->SetDebugFlag(true);
+    flowFHCalEP->SetDebugFlag(debug);
     flowFHCalEP->SetInputFileFromFirstRun(inputHistogramFileName);
     flowFHCalEP->Init();
   }
@@ -238,6 +257,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
   cout << "Hi Master, let's do some physics together..." << endl;
   for (Int_t iEv = 0; iEv < n_entries; iEv++)
   {
+    
     if (iEv % 10000 == 0)
       std::cout << "Event [" << iEv << "/" << n_entries << "]" << std::endl;
     chain->GetEntry(iEv);
@@ -250,6 +270,8 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
 
     if (ETASUBEVENTPLANE_1 || ETASUBEVENTPLANE_2)
       flowEtaSub->Zero();
+    if (THREEETASUBEVENTPLANE_1 || THREEETASUBEVENTPLANE_2)
+      flowThreeEtaSub->Zero();
     if (FHCALEVENTPLANE_1 || FHCALEVENTPLANE_2)
       flowFHCalEP->Zero();
     if (LYZ_SUM_1 || LYZ_SUM_2 || LYZ_SUM_PRODUCT_1 || LYZ_SUM_PRODUCT_2)
@@ -269,11 +291,12 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
       pt  = vect.Pt();
       eta = vect.Eta();
       phi = vect.Phi();
-      if ((FHCALEVENTPLANE_1 || FHCALEVENTPLANE_2)) //  && pt > minptRF && pt < maxptRF 
+      if (FHCALEVENTPLANE_1 || FHCALEVENTPLANE_2 || THREEETASUBEVENTPLANE_1 || THREEETASUBEVENTPLANE_2) //  && pt > minptRF && pt < maxptRF 
       {
         // auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
         // if (!particle) continue;
-        flowFHCalEP->ProcessFirstTrackLoop(eta, phi, pt);
+        if (FHCALEVENTPLANE_1 || FHCALEVENTPLANE_2) flowFHCalEP->ProcessFirstTrackLoop(eta, phi, pt);
+        if (THREEETASUBEVENTPLANE_1 || THREEETASUBEVENTPLANE_2) flowThreeEtaSub->ProcessFirstTrackLoopFHCal(eta, phi, pt);
       }
       if (pt < minpt || pt > maxpt || fabs(eta)>eta_cut) continue; // track selection
       // if (abs(eta)<eta_gap) continue;
@@ -285,14 +308,14 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
       Int_t ipt = findBin(pt);
       Int_t fId = findId(pdg[iTrk]);
 
-      // phiAngles.recalc(phi);
-
       if (pt > minptRF && pt < maxptRF)
       { // Reference Flow pt cut
         // 2,4-QC
 
         if (ETASUBEVENTPLANE_1 || ETASUBEVENTPLANE_2)
           flowEtaSub->ProcessFirstTrackLoop(eta, phi, pt);
+        if (THREEETASUBEVENTPLANE_1 || THREEETASUBEVENTPLANE_2)
+          flowThreeEtaSub->ProcessFirstTrackLoopTPC(eta, phi, pt);
         if (SCALARPRODUCT_1 || SCALARPRODUCT_2)
           flowSP->ProcessFirstTrackLoop(eta, phi);
         if (LYZ_SUM_1 || LYZ_SUM_2 || LYZ_SUM_PRODUCT_1 || LYZ_SUM_PRODUCT_2)
@@ -309,6 +332,8 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     Q2->WeightQVector();
     if (ETASUBEVENTPLANE_1 || ETASUBEVENTPLANE_2)
       flowEtaSub->ProcessEventAfterFirstTrackLoop(cent);
+    if (THREEETASUBEVENTPLANE_1 || THREEETASUBEVENTPLANE_2)
+      flowThreeEtaSub->ProcessEventAfterFirstTrackLoop(cent);
     if (FHCALEVENTPLANE_1 || FHCALEVENTPLANE_2)
       flowFHCalEP->ProcessEventAfterFirstTrackLoop(cent);
     if (SCALARPRODUCT_1 || SCALARPRODUCT_2)
@@ -321,7 +346,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
       flowHighQC->ProcessEventAfterFirstTrackLoop(icent);
     if (LYZEP)
       flowLYZEP->ProcessEventAfterFirstTrackLoop(Q2, icent);
-    if (ETASUBEVENTPLANE_2 || FHCALEVENTPLANE_2 || LYZ_SUM_2 || LYZ_SUM_PRODUCT_2 || SCALARPRODUCT_2 || LYZEP)
+    if (ETASUBEVENTPLANE_2 || FHCALEVENTPLANE_2 || THREEETASUBEVENTPLANE_2 || LYZ_SUM_2 || LYZ_SUM_PRODUCT_2 || SCALARPRODUCT_2 || LYZEP)
     {
       for (Int_t iTrk = 0; iTrk < nh; iTrk++)
       { // 2nd Track loop
@@ -329,7 +354,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
         pt  = vect.Pt();
         eta = vect.Eta();
         phi = vect.Phi();
-        if (pt < minpt || pt > maxpt || fabs(eta)>=eta_cut) continue; // track selection
+        if (pt < minpt || pt > maxpt || fabs(eta)>eta_cut) continue; // track selection
         // if (abs(eta)<eta_gap) continue;
         auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
         if (!particle) continue;
@@ -338,6 +363,8 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
 
         if (ETASUBEVENTPLANE_2)
           flowEtaSub->ProcessSecondTrackLoop(eta, phi, pt, cent);
+        if (THREEETASUBEVENTPLANE_2)
+          flowThreeEtaSub->ProcessSecondTrackLoop(eta, phi, pt, cent);
         if (FHCALEVENTPLANE_2)
           flowFHCalEP->ProcessSecondTrackLoop(eta, phi, pt, cent);
         if (SCALARPRODUCT_2)
@@ -355,6 +382,8 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
 
   if (ETASUBEVENTPLANE_1 || ETASUBEVENTPLANE_2)
     flowEtaSub->SaveHist();
+  if (THREEETASUBEVENTPLANE_1 || THREEETASUBEVENTPLANE_2)
+    flowThreeEtaSub->SaveHist();
   if (FHCALEVENTPLANE_1 || FHCALEVENTPLANE_2)
     flowFHCalEP->SaveHist();
   if (SCALARPRODUCT_1 || SCALARPRODUCT_2)

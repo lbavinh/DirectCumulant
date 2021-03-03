@@ -8,7 +8,10 @@
 #pragma link C++ class QVector+;
 #pragma link C++ class FlowAnalysisWithEtaSubEventPlane+;
 #pragma link C++ class FlowAnalysisWithThreeEtaSubEventPlane+;
+#pragma link C++ class FlowAnalysisWithThreeEtaSubFHCalEventPlane+;
+#pragma link C++ class FlowAnalysisWithThreeEtaSubFHCalEventPlaneWRTSecondHarm+;
 #pragma link C++ class FlowAnalysisWithFHCalEventPlane+;
+#pragma link C++ class FlowAnalysisWithFHCalEventPlaneWRTSecondHarm+;
 #pragma link C++ class FlowAnalysisWithLeeYangZeros+;
 #pragma link C++ class FlowAnalysisWithScalarProduct+;
 #pragma link C++ class FlowAnalysisWithQCumulant+;

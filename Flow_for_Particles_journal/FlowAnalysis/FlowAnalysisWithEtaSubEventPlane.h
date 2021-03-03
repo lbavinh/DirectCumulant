@@ -29,12 +29,14 @@ public:
   void ProcessSecondTrackLoop(const double &eta, const double &phi, const double &pt, const double &dCent);
   void SetEtaGap(double d) { this->fEtaGap = d; }
   void SetFirstRun(bool kt) { this->fFirstRun = kt; }
+  void SetDebugFlag(bool kt) { this->fDebug = kt; }
   void SetInputFileFromFirstRun(TString str) { this->fstrInputFileFromFirstRun = str; }
   void GetRes();
   void SaveHist();
 private:
   bool fFirstRun;
   bool fMultCut;
+  bool fDebug;
   double fPsi_L;
   double fPsi_R;
   QVector *fQvector_L;

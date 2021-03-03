@@ -18,7 +18,7 @@ void QVector::Zero()
 {
   fQx = 0.;
   fQy = 0.;
-  fMult = 0.;
+  fMult = 0;
   fWeight = 0.;
 }
 
@@ -32,9 +32,12 @@ void QVector::CalQVector(const Double_t &phi, const Double_t &weight)
 
 void QVector::WeightQVector()
 {
+  if (fMult == 0) { cout << "Warning! fMult==0!" << endl;}
   if (fMult != 0)
   {
+    if (fWeight<0) fWeight *= -1.;
     fQx /= fWeight;
     fQy /= fWeight;
   }
+  
 }

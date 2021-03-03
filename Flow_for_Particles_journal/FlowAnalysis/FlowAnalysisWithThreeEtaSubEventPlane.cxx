@@ -77,7 +77,7 @@ void FlowAnalysisWithThreeEtaSubEventPlane::ProcessFirstTrackLoopTPC(const Doubl
 
 void FlowAnalysisWithThreeEtaSubEventPlane::ProcessEventAfterFirstTrackLoop(const Double_t &dCent)
 {
-  if (fQvector_L->GetMult() > mult_EP_cut && fQvector_R->GetMult() > mult_EP_cut)
+  if (fQvector_L->GetMult() > mult_EP_cut && fQvector_R->GetMult() > mult_EP_cut && fQvector_FHCal->GetMult() > 0)
   {
     fMultCut = false;
     fQvector_L->WeightQVector();
@@ -116,13 +116,13 @@ void FlowAnalysisWithThreeEtaSubEventPlane::GetRes()
     }
     if (fDebug)
     {
-      cout << "Left TPC Resolution:" << endl;
+      cout << "Left TPC Resolution (3-sub event):" << endl;
       for (Int_t ic = 0; ic < ncent; ic++)
       {
         cout << fResTPCL[ic] <<", ";
       }
       cout << endl;
-      cout << "Right TPC Resolution:" << endl;
+      cout << "Right TPC Resolution (3-sub event):" << endl;
       for (Int_t ic = 0; ic < ncent; ic++)
       {
         cout << fResTPCR[ic] <<", ";

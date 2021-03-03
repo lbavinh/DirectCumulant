@@ -1,7 +1,13 @@
 #ifndef QVECTOR_H
 #define QVECTOR_H
+#include <iostream>
+
 #include "../constants.C"
 #include <TMath.h>
+
+using std::cerr;
+using std::cout;
+using std::endl;
 class QVector
 {
 public:

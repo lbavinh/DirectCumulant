@@ -4,6 +4,7 @@ ClassImp(FlowAnalysisWithEtaSubEventPlane);
 FlowAnalysisWithEtaSubEventPlane::FlowAnalysisWithEtaSubEventPlane() :
   fFirstRun(true),
   fMultCut(true),
+  fDebug(false),
   fPsi_L(0.),
   fPsi_R(0.),
   fQvector_L(NULL),
@@ -42,7 +43,7 @@ void FlowAnalysisWithEtaSubEventPlane::Zero()
 
 void FlowAnalysisWithEtaSubEventPlane::ProcessFirstTrackLoop(const double &eta, const double &phi, const double &pt)
 {
-  if (eta < - fEtaGap)
+  if (eta < -fEtaGap)
   {
     fQvector_L->CalQVector(phi, pt);
   }
@@ -80,6 +81,15 @@ void FlowAnalysisWithEtaSubEventPlane::GetRes()
     for (int ic = 0; ic < ncent; ic++)
     {
       fRes2[ic] = TMath::Sqrt(fPrRes->GetBinContent(ic+1));
+    }
+    if (fDebug)
+    {
+      cout << "TPC Resolution (2sub-event) with respect to 2-nd harm:" << endl;
+      for (Int_t ic = 0; ic < ncent; ic++)
+      {
+        cout << fRes2[ic] <<", ";
+      }
+      cout << endl;
     }
   }
 }

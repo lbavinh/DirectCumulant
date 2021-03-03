@@ -94,7 +94,7 @@ void PlotV2ThreeEtaSubEventPlane(TString inputFileName = "SecondRun.root")
   
   c.cd(4);
   // v2 versus eta, 0.2<pt<3.5 GeV/c, 10-40%
-  TProfile *prV2diffEta = PlotV2ThreeEtaSubEPDifferentialVersusEta(prClone, 0.2, 3.0, 10, 40);
+  TProfile *prV2diffEta = PlotV2ThreeEtaSubEPDifferentialVersusEta(prClone, 0, 3.6, 10, 40);
   // TProfile *prV2diffEta = PlotV2EPDifferentialVersusEta(pr, 0.2, 3.5, 10, 40);
   prV2diffEta->SetMarkerStyle(27);
   prV2diffEta->SetMarkerColor(kBlue + 3);

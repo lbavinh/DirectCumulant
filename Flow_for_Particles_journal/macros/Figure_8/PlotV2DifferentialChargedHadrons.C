@@ -22,7 +22,7 @@ void PlotV2DifferentialChargedHadrons()
   int excludeMethod4 = 3;
   int excludeMethod5 = 5;
   int excludeMethod6 = -1;  
-  const int markerStyle[] = {24,22,23,27,30,28,26};
+  const int markerStyle[] = {24,22,23,27,20,28,25};
   const float markerSize = 1.5;
   const float labelSize = 0.07;
   const float titleSize = 0.08;
@@ -648,7 +648,7 @@ void PlotV2DifferentialChargedHadrons()
     tex.DrawLatex(0.2,0.22,padName[padID-1].Data());
     if (ic==firstCentToDraw) tex.DrawLatex(0.2,0.18,"#sqrt{#it{s}_{NN}} = 11.5 GeV");
   }
-  can->SaveAs(Form("CompareMethods_Diff_v2{4}_vs_v2{LYZ,Prod}.png"));
-  can->SaveAs(Form("CompareMethods_Diff_v2{4}_vs_v2{LYZ,Prod}.pdf"));
+  can->SaveAs(Form("V2pT_LYZ_AMPT.png"));
+  can->SaveAs(Form("V2pT_LYZ_AMPT.pdf"));
 
 }

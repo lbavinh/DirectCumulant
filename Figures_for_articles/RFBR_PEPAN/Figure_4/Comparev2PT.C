@@ -126,7 +126,7 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   title->SetFillColor(0);
   title->SetTextFont(textFont);
   title->SetTextSize(2.);
-  title->Draw();
+  // title->Draw();
   can->SetTopMargin(0.14);
   can->SetLeftMargin(0.2);
   can->SetRightMargin(0.01);
@@ -171,13 +171,23 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
     h[ipad]->GetYaxis()->SetTitleOffset(0.7);
     h[ipad]->Draw();
     
-    TLatex tex;
+    TLatex tex, tex1;
     tex.SetTextFont(42);
+    tex1.SetTextFont(42);
     tex.SetTextAlign(33);
+    tex1.SetTextAlign(13);
     if (ipad<=4) tex.SetTextSize(labelSizeUpperPlot);
     else tex.SetTextSize(labelSizeLowerPlot);
+    if (ipad<=4) tex1.SetTextSize(labelSizeUpperPlot);
+    else tex1.SetTextSize(labelSizeLowerPlot);
     tex.DrawLatex(0.3,maxV2*0.95,padName[ipad].Data());
     if (ipad<5)tex.DrawLatex(maxpt*0.95,maxV2*0.95,Form("%s",graphTitle[ipad].Data())); // 0.95-0.025
+    if (ipad==6) tex.DrawLatex(maxpt*0.55,maxV2*0.95,"Au+Au"); // , , , 
+    if (ipad==7) tex.DrawLatex(maxpt*0.55,maxV2*0.95,"10-40%");
+    if (ipad==8) tex.DrawLatex(maxpt*0.55,maxV2*0.95,"UrQMD");
+    if (ipad==9) tex.DrawLatex(maxpt*0.55,maxV2*0.95,"GEANT4");
+    // if (ipad==4) tex.DrawLatex(maxpt*0.15,maxV2*0.95,"Ch. hadrons");
+
     if (ipad==0) {
       // tex.DrawLatex(maxpt*0.95,maxV2*0.95,Form("Au+Au at #sqrt{s_{NN}}=%s, 10-40%%",energy[0].Data()));
       
@@ -200,11 +210,11 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
       }
       leg_pt1->Draw();
     }else if (ipad==5) {
-      tex.DrawLatex(maxpt*0.75,maxV2*0.78,Form("#sqrt{s_{NN}}=%s",energy[1].Data()));
+      tex.DrawLatex(maxpt*0.65,maxV2*0.78,Form("#sqrt{s_{NN}}=11 GeV"));// energy[1].Data()
     }
-    if (ipad==0)tex.DrawLatex(maxpt*0.65,maxV2*0.78,Form("#sqrt{s_{NN}}=%s",energy[0].Data()));
-    if (ipad==1)tex.DrawLatex(maxpt*0.55,maxV2*0.78,"20M events");
-    if (ipad==6)tex.DrawLatex(maxpt*0.55,maxV2*0.78,"10M events");
+    if (ipad==0)tex.DrawLatex(maxpt*0.65,maxV2*0.78,Form("#sqrt{s_{NN}}=7.7 GeV"));// energy[0].Data()
+    // if (ipad==1)tex.DrawLatex(maxpt*0.55,maxV2*0.78,"20M events");
+    // if (ipad==6)tex.DrawLatex(maxpt*0.55,maxV2*0.78,"10M events");
 
 
 
@@ -228,6 +238,7 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
     // cout << "error here" << endl;
   }
   can->SaveAs(Form("Figure_4_Performance_v2pt_PID.pdf"));
+  can->SaveAs(Form("Figure_4_Performance_v2pt_PID.C"));
   gROOT->SetStyle("Pub");
   can->SaveAs(Form("Figure_4_Performance_v2pt_PID.png"));
 

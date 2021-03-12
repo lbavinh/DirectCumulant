@@ -107,14 +107,25 @@ void UrQMD_config2(TString inputFileName, TString outputFileName)
   timer.Start();
 
   // Constant declaration
+  const Int_t npt = 16; // 0-3.6 GeV/c - number of pT bins
+  // const Double_t pTBin[npt + 1] = {0., 0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.2, 3.6};
+  const Double_t pTBin[npt + 1] = {0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6};
+  // const Double_t pTBin[npt + 1] = {0., 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8};
+  const Int_t netaBin = 14;
+  const Double_t etaBin[netaBin+1] = {-1.5,-1.2,-1.,-0.8,-0.6,-0.4,-0.2,0.,0.2,0.4,0.6,0.8,1.,1.2,1.5};
   const int ncent = 9; // 0-80%
   const double bin_cent[ncent+1] = {0,5,10,20,30,40,50,60,70,80};
-  const double maxptRF = 3.;
+  const double maxptRF = 0.4;
   const double minptRF = 0.2;
   const float eta_cut =  1.5;
-  const float eta_gap = 0.05;
-  const int mult_cut = 4;
-  const double harmonic = 2.;
+  const float eta_gap = 1.0;
+  const int mult_cut = 2;
+  const double harmonic = 1.;
+  const double k = 1.;
+  bool multcut;
+  const double eta_min = 0.75;
+  const double res1[ncent] = {0.539752, 0.776864, 0.87774, 0.91216, 0.918623, 0.909002, 0.886465, 0.844807, 0.79559};
+  const double res1TPC[ncent] = {0.211062, 0.261323, 0.303503, 0.31116, 0.296341, 0.270871, 0.241148, 0.20907, 0.197559};
   // Configure input information
   TChain *chain = new TChain("mctree");
 
@@ -185,12 +196,21 @@ void UrQMD_config2(TString inputFileName, TString outputFileName)
   QVector *Q2_TPC_R = new QVector(harmonic);
   QVector *Q2_FHCal_L = new QVector(harmonic);
   QVector *Q2_FHCal_R = new QVector(harmonic);
-
+  TProfile *prV1[ncent];
+  TProfile *prV1_TPCEP[ncent];
+  TProfile *prV1eta[ncent];
+  for (int ic = 0; ic < ncent; ic++)
+  {
+    prV1[ic] = new TProfile(Form("prV1_%i",ic),"",npt,&pTBin[0]);
+    prV1_TPCEP[ic] = new TProfile(Form("prV1_TPCEP_%i",ic),"",npt,&pTBin[0]);
+    prV1eta[ic] = new TProfile(Form("prV1eta_%i",ic),"",netaBin,&etaBin[0]);
+  }
   // Start event loop
   int n_entries = chain->GetEntries();
   for (int iEv=0; iEv<n_entries; iEv++)
   {
     if (iEv%100000==0) std::cout << "Event [" << iEv << "/" << n_entries << "]" << std::endl;
+    // if (iEv==100000) break;
     chain->GetEntry(iEv);
     // Get centrality
     float cent = CentB(bimp);
@@ -201,55 +221,89 @@ void UrQMD_config2(TString inputFileName, TString outputFileName)
     Q2_TPC_R->Zero();
     Q2_FHCal_L->Zero();
     Q2_FHCal_R->Zero();
-
+    float Psi2FHCal = -999, Psi2TPCL = -999., Psi2TPCR = -999.;
     for (int iTrk=0; iTrk<nh; iTrk++)
     { // 1st track loop
       TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
       float pt  = vect.Pt();
       float eta = vect.Eta();
       float phi = vect.Phi();
-      if (eta<-2. && eta>-5.) { if (harmonic==1) Q2_FHCal_L->CalQVector(phi,-pt); else { Q2_FHCal_L->CalQVector(phi,pt);} }
-      if (eta> 2. && eta< 5.) Q2_FHCal_R->CalQVector(phi,pt);
-      if (pt < minptRF || pt > maxptRF || abs(eta)>eta_cut) continue; // track selection
+      float weight = pt;
       auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
       if (!particle) continue;
+      // if (pt < minptRF || pt > maxptRF) continue; // track selection
+      if (eta<-2. && eta>-5.) { if (harmonic==1) Q2_FHCal_L->CalQVector(phi,-weight); else { Q2_FHCal_L->CalQVector(phi,weight);} }
+      if (eta> 2. && eta< 5.) Q2_FHCal_R->CalQVector(phi,weight);
+      // if (eta<-2. && eta>-5.) { if (harmonic==1) Q2_FHCal_L->CalQVector(phi,-ene[iTrk]); else { Q2_FHCal_L->CalQVector(phi,ene[iTrk]);} }
+      // if (eta> 2. && eta< 5.) Q2_FHCal_R->CalQVector(phi,ene[iTrk]);      
+      if (pt < minptRF || pt > maxptRF || abs(eta)>eta_cut) continue; // track selection
+      // if (harmonic == 1. && pt > 0.2) continue; // pt cut for first harmonic
+      // auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+      // if (!particle) continue;
+      // if (pdg[iTrk]!=2212 && pdg[iTrk]!=-2212) continue;
       float charge = 1./3.*particle->Charge();
       if (charge == 0) continue;
 
-      if (eta<-eta_gap) { if (harmonic==1) Q2_TPC_L->CalQVector(phi,-pt); else { Q2_TPC_L->CalQVector(phi,pt);} }
-      if (eta> eta_gap) Q2_TPC_R->CalQVector(phi,pt);
+      if (eta<-eta_gap) { if (harmonic==1) Q2_TPC_L->CalQVector(phi,-weight); else { Q2_TPC_L->CalQVector(phi,weight);} }
+      if (eta> eta_gap) Q2_TPC_R->CalQVector(phi,weight);
       
     } // end of 1st track loop
     if (Q2_FHCal_L->GetMult() > mult_cut && Q2_FHCal_R->GetMult() > mult_cut && Q2_TPC_R->GetMult() > mult_cut && Q2_TPC_L->GetMult() > mult_cut)
     {
-      Q2_FHCal_L->WeightQVector();
-      Q2_FHCal_R->WeightQVector();
-      Q2_TPC_L->WeightQVector();
-      Q2_TPC_R->WeightQVector();
-      float Psi2TPCL = TMath::ATan2(Q2_TPC_L->Y(),Q2_TPC_L->X()) / harmonic;
-      float Psi2TPCR = TMath::ATan2(Q2_TPC_R->Y(),Q2_TPC_R->X()) / harmonic;
+      multcut = 0;
+      // Q2_FHCal_L->WeightQVector();
+      // Q2_FHCal_R->WeightQVector();
+      // Q2_TPC_L->WeightQVector();
+      // Q2_TPC_R->WeightQVector();
+      Psi2TPCL = TMath::ATan2(Q2_TPC_L->Y(),Q2_TPC_L->X()) / harmonic;
+      Psi2TPCR = TMath::ATan2(Q2_TPC_R->Y(),Q2_TPC_R->X()) / harmonic;
       float Psi2TPC = TMath::ATan2(Q2_TPC_L->Y()+Q2_TPC_R->Y(),Q2_TPC_R->X()+Q2_TPC_L->X()) / harmonic;
       float Psi2FHCalL = TMath::ATan2(Q2_FHCal_L->Y(),Q2_FHCal_L->X()) / harmonic;
       float Psi2FHCalR = TMath::ATan2(Q2_FHCal_R->Y(),Q2_FHCal_R->X()) / harmonic;
-      float Psi2FHCal = TMath::ATan2(Q2_FHCal_R->Y()+Q2_FHCal_L->Y(),Q2_FHCal_R->X()+Q2_FHCal_L->X()) / harmonic;
+      Psi2FHCal = TMath::ATan2(Q2_FHCal_R->Y()+Q2_FHCal_L->Y(),Q2_FHCal_R->X()+Q2_FHCal_L->X()) / harmonic;
 
-      prFHCalLTPC->Fill(cent,TMath::Cos( harmonic * (Psi2FHCalL-Psi2TPC) ));
-      prFHCalRTPC->Fill(cent,TMath::Cos( harmonic * (Psi2FHCalR-Psi2TPC) ));
+      // prFHCalLTPC->Fill(cent,TMath::Cos( harmonic * (Psi2FHCalL-Psi2TPC) ));
+      // prFHCalRTPC->Fill(cent,TMath::Cos( harmonic * (Psi2FHCalR-Psi2TPC) ));
       prFHCalLR->Fill(cent,TMath::Cos( harmonic * (Psi2FHCalL-Psi2FHCalR) ));
 
       // configuration 2
-      prFHCalTPCL->Fill(cent,TMath::Cos( harmonic * (Psi2FHCal-Psi2TPCL) ));
-      prFHCalTPCR->Fill(cent,TMath::Cos( harmonic * (Psi2FHCal-Psi2TPCR) ));
-      prTPCLR->Fill(cent,TMath::Cos( harmonic * (Psi2TPCL-Psi2TPCR) ));      
+      prFHCalTPCL->Fill(cent,TMath::Cos( harmonic * k * (Psi2FHCal-Psi2TPCL) ));
+      prFHCalTPCR->Fill(cent,TMath::Cos( harmonic * k * (Psi2FHCal-Psi2TPCR) ));
+      prTPCLR->Fill(cent,TMath::Cos( harmonic * k * (Psi2TPCL-Psi2TPCR) ));      
     }
+    else {multcut=1;}
+    // if (!multcut)
+    // {
+    //   for (int iTrk=0; iTrk<nh; iTrk++)
+    //   { // 1st track loop
+    //     TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
+    //     float pt  = vect.Pt();
+    //     float eta = vect.Eta();
+    //     float phi = vect.Phi();
+    //     if (pt < 0. || pt > 1.6 || abs(eta)>eta_cut) continue; // track selection
+    //     auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+    //     if (!particle) continue;
+    //     float charge = 1./3.*particle->Charge();
+    //     if (charge == 0) continue;
+    //     if (Psi2FHCal==-999) cout << "Error!" << endl;
+    //     // if (pdg[iTrk]!=2212 && pdg[iTrk]!=-2212) continue;
+    //     if (eta <-eta_min) prV1[fcent]->Fill(pt,(-1.0)*TMath::Cos(phi-Psi2FHCal)/res1[fcent]);
+    //     if (eta > eta_min) prV1[fcent]->Fill(pt,TMath::Cos(phi-Psi2FHCal)/res1[fcent]);
+    //     if (eta <-eta_min) prV1_TPCEP[fcent]->Fill(pt,TMath::Cos(phi-Psi2TPCR)/res1TPC[fcent]);
+    //     if (eta > eta_min) prV1_TPCEP[fcent]->Fill(pt,(-1.0)*TMath::Cos(phi-Psi2TPCL)/res1TPC[fcent]);        
+        
+    //     if (pt > 0.15 && pt < 0.5) prV1eta[fcent]->Fill(eta,TMath::Cos(phi-Psi2FHCal)/res1[fcent]);
+    //   }
+    // }
 
   } // end event loop
-  cout << "Harmonic = " << harmonic << endl;
+  cout << "Harmonic = " << harmonic <<", Eta-gap = " << eta_gap << endl;
   cout << "FHCal L/R resolution:" << endl;
   for (int ic=0; ic<ncent; ic++)
   {
     cout << TMath::Sqrt(prFHCalLR->GetBinContent(ic+1)) << ", ";
   }
+
   cout << endl;
   cout << "FHCal resolution (approx.):" << endl;
   Double_t chi, res, res2, chiF, resF; 
@@ -257,9 +311,9 @@ void UrQMD_config2(TString inputFileName, TString outputFileName)
   {
     res2 = prFHCalLR->GetBinContent(ic+1);
     res = (res2>0) ? TMath::Sqrt(res2) : 0.;
-    chi = GetChi(res,1.,50);
+    chi = GetChi(res,k,50);
     chiF = TMath::Sqrt(2.)*chi;
-    resF = Res(chiF,1.);
+    resF = Res(chiF,k);
     // fRes2[ic]=(res!=0) ? resF : 0.;
     cout << resF << ", ";
   }
@@ -271,6 +325,44 @@ void UrQMD_config2(TString inputFileName, TString outputFileName)
     cout << TMath::Sqrt(prFHCalTPCL->GetBinContent(ic+1)*prFHCalTPCR->GetBinContent(ic+1)/prTPCLR->GetBinContent(ic+1)) << ", ";
   }
   cout << endl;
+
+  cout << "TPC L/R resolution:" << endl;
+  for (int ic=0; ic<ncent; ic++)
+  {
+    cout << TMath::Sqrt(prTPCLR->GetBinContent(ic+1)) << ", ";
+  }
+  cout << endl;
+  cout << "TPC L 3-sub resolution:" << endl;
+  for (int ic=0; ic<ncent; ic++)
+  {
+    cout << TMath::Sqrt(prFHCalTPCL->GetBinContent(ic+1)*prTPCLR->GetBinContent(ic+1)/prFHCalTPCR->GetBinContent(ic+1)) << ", ";
+  }
+  cout << endl;
+
+  cout << "TPC R 3-sub resolution:" << endl;
+  for (int ic=0; ic<ncent; ic++)
+  {
+    cout << TMath::Sqrt(prFHCalTPCR->GetBinContent(ic+1)*prTPCLR->GetBinContent(ic+1)/prFHCalTPCL->GetBinContent(ic+1)) << ", ";
+  }
+  cout << endl;
+
+  // cout << "V1 versus pt:" << endl;
+  // for (int ic = 0; ic < ncent; ic++)
+  // {
+  //   cout << bin_cent[ic] << "-" << bin_cent[ic+1] << "%\t";
+  //   for (int ipt = 0; ipt < npt; ipt++)
+  //   {
+  //     cout << prV1[ic]->GetBinContent(ipt+1) << ", ";
+  //   }
+  //   cout << endl;
+  //   cout << bin_cent[ic] << "-" << bin_cent[ic+1] << "%\t";
+  //   for (int ipt = 0; ipt < npt; ipt++)
+  //   {
+  //     cout << prV1_TPCEP[ic]->GetBinContent(ipt+1) << ", ";
+  //   }
+  //   cout << endl;
+
+  // }
 
 
   // Writing output

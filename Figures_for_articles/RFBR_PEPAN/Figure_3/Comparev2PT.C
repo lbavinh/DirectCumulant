@@ -130,7 +130,7 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   title->SetFillColor(0);
   title->SetTextFont(textFont);
   title->SetTextSize(2.);
-  title->Draw();
+  // title->Draw();
   can->SetTopMargin(0.14);
   can->SetLeftMargin(0.2);
   can->SetRightMargin(0.01);
@@ -177,16 +177,21 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
     
     TLatex tex;
     tex.SetTextFont(42);
-    tex.SetTextAlign(33);
+    tex.SetTextAlign(13);
     if (ipad<=4) tex.SetTextSize(labelSizeUpperPlot);
     else tex.SetTextSize(labelSizeLowerPlot);
-    tex.DrawLatex(0.3,maxV2*0.95,padName[ipad].Data());
+    tex.DrawLatex(maxpt*0.02,maxV2*0.95,padName[ipad].Data());
     // for (int imeth=0; imeth<nmethod; imeth++){
     // tex.DrawLatex(maxpt*0.95,maxV2*0.95-0.025,Form("%s",graphTitle[imeth].Data()));
     // }
+    if (ipad==0) tex.DrawLatex(maxpt*0.15,maxV2*0.95,"Au+Au"); // , , , 
+    if (ipad==1) tex.DrawLatex(maxpt*0.15,maxV2*0.95,"10-40%");
+    if (ipad==2) tex.DrawLatex(maxpt*0.15,maxV2*0.95,"UrQMD");
+    if (ipad==3) tex.DrawLatex(maxpt*0.15,maxV2*0.95,"GEANT4");
+    if (ipad==4) tex.DrawLatex(maxpt*0.15,maxV2*0.95,"Ch. hadrons");
     if (ipad==0) {
       // tex.DrawLatex(maxpt*0.95,maxV2*0.95,Form("Au+Au at #sqrt{s_{NN}}=%s",energy[0].Data()));
-      tex.DrawLatex(maxpt*0.95,maxV2*0.95,"#sqrt{s_{NN}}=7.7 GeV");
+      tex.DrawLatex(maxpt*0.15,maxV2*0.8,"#sqrt{s_{NN}}=7.7 GeV");
       
       TLegend *leg_pt = new TLegend(leg_coordinate[0]+0.05,leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
       leg_pt->SetBorderSize(0);
@@ -210,7 +215,7 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
 
       leg_pt->Draw();
     }else if (ipad==5) {
-      tex.DrawLatex(maxpt*0.95,maxV2*0.95,Form("#sqrt{s_{NN}}=%s",energy[1].Data()));
+      tex.DrawLatex(maxpt*0.15,maxV2*0.8,Form("#sqrt{s_{NN}}=11 GeV"));//energy[1].Data()
     }else if (ipad==2) {
       // tex.DrawLatex(maxpt*0.95,maxV2*0.95,Form("10-40%%, UrQMD, Ch. hadrons"));
       TLegend *leg_pt = new TLegend(leg_coordinate[0],leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
@@ -240,8 +245,8 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
       leg_pt->AddEntry(grV2[0][0][4][0],graphTitle[4].Data(),"p");
       leg_pt->Draw();
     }
-    if (ipad==1)tex.DrawLatex(maxpt*0.7,maxV2*0.95,"20M events");
-    if (ipad==6)tex.DrawLatex(maxpt*0.7,maxV2*0.95,"10M events");    
+    // if (ipad==1)tex.DrawLatex(maxpt*0.7,maxV2*0.95,"20M events");
+    // if (ipad==6)tex.DrawLatex(maxpt*0.7,maxV2*0.95,"10M events");    
 
     for (int ilev=0;ilev<nlevel;ilev++){
 
@@ -263,6 +268,7 @@ void Comparev2PT(){ // 0: v22; 1:v24; 2: v2EP, 3: gapped v22
   }   
 
   can->SaveAs(Form("Figure_3_Performance_v2pt.pdf"));
+  can->SaveAs(Form("Figure_3_Performance_v2pt.C"));
   gROOT->SetStyle("Pub");
   can->SaveAs(Form("Figure_3_Performance_v2pt.png"));
 

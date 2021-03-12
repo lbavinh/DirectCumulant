@@ -4,7 +4,7 @@
 #include "../PlotV2ScalarProduct.C"
 #include "../PlotV2HighOrderQCumulant.C"
 #include "../DrawTGraphImp.C"
-const TString energy = "7.7";
+const TString energy = "11.5";
 TString input1 = Form("../FirstRun_UrQMD_%s.root",energy.Data());
 TString input2  = Form("../SecondRun_UrQMD_%s.root",energy.Data());
 void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TString inputSecondRunFileName = input2)
@@ -22,10 +22,10 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
   int excludeMethod1 = 3;
   int excludeMethod2 = 5;
   int excludeMethod3 = 6;
-  int excludeMethod4 = -1;
+  int excludeMethod4 = 7; // FHCal
   int excludeMethod5 = -1;
   int excludeMethod6 = -1;  
-  const int markerStyle[] = {24,22,23,27,30,28,26,29};
+  const int markerStyle[] = {24,22,25,27,20,28,26,29};
   const float markerSize = 1.5;
   const float labelSize = 0.07;
   const float titleSize = 0.08;

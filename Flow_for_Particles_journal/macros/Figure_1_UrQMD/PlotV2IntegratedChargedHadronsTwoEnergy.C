@@ -36,7 +36,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   Int_t nmethod = 9;
   TString title[]={"#it{v}_{2}{#Psi_{2,TPC}}","#it{v}_{2}^{SP}{Q_{2,TPC}}","#it{v}_{2}{2}","#it{v}_{2}{4}","#it{v}_{2}{6}","#it{v}_{2}{8}","#it{v}_{2}{LYZ, Sum}","#it{v}_{2}{LYZ, Prod.}","#it{v}_{2}{2,#eta-gap}"};
   // "#it{v}_{2}{#Psi_{1,FHCal}}"
-  const int markerStyle[] = {24,22,27,30,20,25,28,26,23};
+  const int markerStyle[] = {24,30,27,20,22,25,28,26,23};
   const float markerSize = 1.5;
   const float labelSize = 0.07;
   const float titleSize = 0.08;

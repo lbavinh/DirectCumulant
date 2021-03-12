@@ -1,7 +1,7 @@
 
 #define urqmdClass_cxx
 #include "urqmdClass.h"
-
+#include "TRandom3.h"
 #include <TStopwatch.h>
 #include <TChain.h>
 #include <TFile.h>
@@ -9,7 +9,7 @@
 #include <TDatabasePDG.h>
 #include <TVector3.h>
 
-#include "/weekly/idrisov/UrQMD11/Init.C"
+#include "Init.C"
 
 void urqmdClass::Loop(const char *inputFileName, const char *outputFileName)
 {
@@ -46,10 +46,10 @@ void urqmdClass::Loop(const char *inputFileName, const char *outputFileName)
         chain->GetEntry(iEv);
 
         bin_b = GetBinb(bimp);
-        hNpart->Fill(nh);
+        //hNpart->Fill(nh);
         if (bin_b == -1)
             continue;
-
+        hBimp->Fill(bimp);
         for (int i = 0; i < nh; i++)
         {
 
@@ -58,26 +58,22 @@ void urqmdClass::Loop(const char *inputFileName, const char *outputFileName)
             if (!particle)
                 continue;
 
-            float charge = 1. / 3. * particle->Charge();
-            if (charge == 0)
-                continue;
-
             TVector3 vect(momx[i], momy[i], momz[i]);
 
             Vpt = vect.Pt();
             Veta = vect.Eta();
             Vphi = vect.Phi();
-            
+
             LoopVarFHCal(bin_b, Vpt, Veta, Vphi);
-            
-            if (Vpt > pt_max)
-                continue;
-            if (Vpt < pt_min)
-                continue;
-            if (fabs(Veta) > eta_max)
+
+            float charge = 1. / 3. * particle->Charge();
+            if (charge == 0)
                 continue;
 
-            //LoopVar1ch(bin_b, Vpt, Veta, Vphi,charge);
+            if (fabs(Veta) > eta_max)
+                continue;
+            // if (Veta < eta_min)
+            //continue;
             LoopVar1(bin_b, Vpt, Veta, Vphi);
         }
 
@@ -85,7 +81,6 @@ void urqmdClass::Loop(const char *inputFileName, const char *outputFileName)
 
         for (int i = 0; i < nh; i++)
         {
-
             // PID-related cut (or to cut out neutral particles)
             auto particle = (TParticlePDG *)TDatabasePDG::Instance()->GetParticle(pdg[i]);
             if (!particle)
@@ -101,16 +96,11 @@ void urqmdClass::Loop(const char *inputFileName, const char *outputFileName)
             Veta = vect.Eta();
             Vphi = vect.Phi();
 
-            if (Vpt > pt_max)
-                continue;
-            if (Vpt < pt_min)
-                continue;
             if (fabs(Veta) > eta_max)
                 continue;
 
-            //LoopVar2ch(bin_b, Vpt, Veta, Vphi,charge);
-            //LoopVarEPch(bin_b, Vpt, Veta, Vphi,charge);
             LoopVar2(bin_b, Vpt, Veta, Vphi);
+            //if (pdg[i] == 211 || pdg[i] == -211)
             LoopVarEP(bin_b, Vpt, Veta, Vphi);
         }
 

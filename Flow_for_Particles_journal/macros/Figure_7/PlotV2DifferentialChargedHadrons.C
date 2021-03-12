@@ -231,8 +231,9 @@ void PlotV2DifferentialChargedHadrons()
       {
         graph[i][ien][j]->RemovePoint(0);
         graph[i][ien][j]->SetTitle("");// title[i].Data()
-        
-        graph[i][ien][j]->SetMarkerSize(markerSize);
+        if (j==0) graph[i][ien][j]->SetMarkerSize(markerSize);
+        if (j==1) graph[i][ien][j]->SetMarkerSize(markerSize-0.1);
+        // graph[i][ien][j]->SetMarkerSize(markerSize);
         graph[i][ien][j]->GetXaxis()->SetTitle("#it{p}_{T}, GeV/c");
         graph[i][ien][j]->GetYaxis()->SetTitle("#it{v}_{2}");
         graph[i][ien][j]->SetDrawOption("P PLC PMC");
@@ -244,8 +245,8 @@ void PlotV2DifferentialChargedHadrons()
     graph[0][ien][1]->SetMarkerStyle(kOpenCircle);
     graph[1][ien][0]->SetMarkerStyle(kFullTriangleUp);
     graph[1][ien][1]->SetMarkerStyle(kOpenTriangleUp);
-    graph[2][ien][0]->SetMarkerStyle(kFullStar);
-    graph[2][ien][1]->SetMarkerStyle(kOpenStar);
+    graph[2][ien][0]->SetMarkerStyle(kFullSquare);
+    graph[2][ien][1]->SetMarkerStyle(kOpenSquare);
   }
 
   TCanvas *can = new TCanvas("can","",1000,600);

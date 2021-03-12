@@ -96,8 +96,8 @@ void RatioV24V22vsCentralityPID_new(){
       grRatioV2[ien][imod][1] -> SetMarkerStyle(kFullTriangleUp); // k-
       grRatioV2[ien][imod][4] -> SetMarkerStyle(kOpenTriangleUp); // k+
       grRatioV2[ien][imod][2] -> SetMarkerStyle(kOpenSquare); // p
-      grRatioV2[ien][imod][5] -> SetMarkerStyle(kFullTriangleDown);  // pi
-      grRatioV2[ien][imod][6] -> SetMarkerStyle(kOpenCross); // k
+      grRatioV2[ien][imod][5] -> SetMarkerStyle(kFullCircle);  // pi kFullCircle
+      grRatioV2[ien][imod][6] -> SetMarkerStyle(kFullTriangleDown); // k
 
 
       // for (int id=0;id<npid;id++){
@@ -261,9 +261,9 @@ void RatioV24V22vsCentralityPID_new(){
       // }
     }
   }
-  can->SaveAs("Ratiov24v22_vs_cent_PID_withK.pdf");
+  can->SaveAs("v24v22Cent_PID.pdf");
   gROOT->SetStyle("Pub");
-  can->SaveAs("Ratiov24v22_vs_cent_PID_withK.png");
+  can->SaveAs("v24v22Cent_PID.png");
 
 
 }

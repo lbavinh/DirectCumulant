@@ -18,10 +18,12 @@ const Int_t mult_EP_cut = 4; // multiplicity cut for TPC event plane & SP
 
 // LYZ
 const Int_t rbins = 2500;
-const Double_t rMax = 1.;
-const Double_t rMin = 0.;
+// const Double_t rMax = 1.;
+// const Double_t rMin = 0.;
 // const Double_t rMaxSum = 1.;
 // const Double_t rMinSum = 0.;
+const Double_t rMax = 250.;
+const Double_t rMin = 0.;
 const Double_t rMaxSum = 250.;
 const Double_t rMinSum = 0.;
 const Int_t thetabins = 5;

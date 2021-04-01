@@ -241,7 +241,7 @@ TGraphErrors* PlotV2LYZ(TString inputFileName1 = "FirstRun_11.5.root", TString i
           thetacount++;
         }
       }
-      if (thetacount!=0) v2int /= (float)thetacount*refmult;
+      if (thetacount!=0) v2int /= (float)thetacount; // refmult
       else {v2int = 0.;}
       
       float modQ2sqmean = prQ2ModSq->GetBinContent(ic+1);
@@ -572,7 +572,7 @@ TGraphErrors* PlotV2LYZ(TString inputFileName1 = "FirstRun_11.5.root", TString i
         thetacount++;
       }
     }
-    if (thetacount!=0) v2int /= thetacount*refmult; // 
+    if (thetacount!=0) v2int /= thetacount; // refmult
     else {v2int = 0.;}
     float modQ2sqmean=0, Q2xmean=0, Q2ymean=0, mult=0;
     for (int ic = 2; ic < 5; ic++)

@@ -81,13 +81,14 @@ const double v22Gape1040[16] = {5.80092e-05, 3.80523e-05, 5.36513e-05, 7.92862e-
   vGr.push_back(gr[4]);
   vGr.push_back(gr[1]);
   // vGr.push_back(gr[3]);
-  vGr.push_back(gr[6]);
-  TCanvas *can = (TCanvas*)DrawTGraph(vGr,"10-40%",0.75, 1.25, minpt, 2.8, -0.005, 0.25,
+  // vGr.push_back(gr[6]);
+  TCanvas *can = (TCanvas*)DrawTGraph(vGr,"10-40%",0.85, 1.11, minpt, 2.8, -0.005, 0.14,
                                       // 0.65, 0.05, 0.9, 0.5,
                                       0.2, 0.45, 0.4, 0.88,
-                                      "UrQMD, Au+Au at #sqrt{s_{NN}}=7.7GeV", Form("Ch. hadrons, |#eta|<%1.1f",eta_cut));
+                                      "UrQMD, Au+Au at #sqrt{s_{NN}}=7.7GeV", Form("Ch. hadrons, |#eta|<%1.1f",eta_cut), true, "v_{2}{2}");
   can->SetName("Cent1040");
   can->SaveAs("v2pT_UrQMD_ener7_10_40.pdf");
+  can->SaveAs("v2pT_UrQMD_ener7_10_40.png");
   
 
 

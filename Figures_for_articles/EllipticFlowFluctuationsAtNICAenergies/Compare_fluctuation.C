@@ -10,7 +10,7 @@ void Compare_fluctuation(){
   const float labelSize = 0.085;
   const float titleSize = 0.1;
   const float markerSize = 1.7;
-  const float textFont = 42;
+  const float textFont = 132;
   TString legendEntries[nmodel]={"STAR data","UrQMD","SMASH","AMPT, #sigma_{p}=1.5mb","AMPT, #sigma_{p}=0.8mb","vHLLE+UrQMD"}; //(Phys.Rev.C.86.054908)
   TString energy[nenergy]={"4.5","7.7","11.5"};
   TString model[nmodel]={"STAR data","UrQMD","SMASH","AMPT15","AMPT08","vHLLEUrQMD"};
@@ -74,22 +74,22 @@ void Compare_fluctuation(){
 
     grRatioV2[ien][1] -> SetMarkerColor(kGreen+3);
     grRatioV2[ien][1] -> SetLineColor(kGreen+3);
-    grRatioV2[ien][1] -> SetMarkerStyle(kFullTriangleUp);
+    grRatioV2[ien][1] -> SetMarkerStyle(kFullCircle); //kFullCircle
 
-    grRatioV2[ien][2] -> SetMarkerColor(kBlack);
-    grRatioV2[ien][2] -> SetLineColor(kBlack);
-    grRatioV2[ien][2] -> SetMarkerStyle(kOpenCross);
+    grRatioV2[ien][2] -> SetMarkerColor(kAzure+3);
+    grRatioV2[ien][2] -> SetLineColor(kAzure+3);
+    grRatioV2[ien][2] -> SetMarkerStyle(kFullTriangleUp); // kOpenTriangleDown
 
-    grRatioV2[ien][3] -> SetMarkerColor(kYellow+2);
-    grRatioV2[ien][3] -> SetLineColor(kYellow+2);
-    grRatioV2[ien][3] -> SetMarkerStyle(kFullCrossX);
+    grRatioV2[ien][3] -> SetMarkerColor(kSpring-7);
+    grRatioV2[ien][3] -> SetLineColor(kSpring-7);
+    grRatioV2[ien][3] -> SetMarkerStyle(kOpenTriangleDown);
 
-    grRatioV2[ien][4] -> SetMarkerColor(kGray+2);
-    grRatioV2[ien][4] -> SetLineColor(kGray+2);
+    grRatioV2[ien][4] -> SetMarkerColor(kBlack);
+    grRatioV2[ien][4] -> SetLineColor(kBlack);
     grRatioV2[ien][4] -> SetMarkerStyle(kOpenSquare);
 
-    grRatioV2[ien][5] -> SetMarkerColor(kBlue+2);
-    grRatioV2[ien][5] -> SetLineColor(kBlue+2);
+    grRatioV2[ien][5] -> SetMarkerColor(kGray+2);
+    grRatioV2[ien][5] -> SetLineColor(kGray+2);
     grRatioV2[ien][5] -> SetMarkerStyle(kOpenCircle);
 
   }
@@ -97,6 +97,7 @@ void Compare_fluctuation(){
     for (int ien=0;ien<nenergy;ien++){
       if (ien==0 && imod!=1 && imod!=2) continue;  // at 39 GeV ony AMPT15 & vHLLE+UrQMD
       grRatioV2[ien][imod]->SetMarkerSize(markerSize);
+      grRatioV2[ien][imod]->RemovePoint(0);
     }
   }
 
@@ -151,7 +152,7 @@ void Compare_fluctuation(){
   can->SetRightMargin(0.01);
   can->SetBottomMargin(0.18);
   can->SetTopMargin(0.12);
-  TPaveLabel* title = new TPaveLabel(0.1,0.915,0.9,0.95,"Au+Au, Ch. hadrons, 0.2<p_{T}^{}<3.0 GeV/c");
+  TPaveLabel* title = new TPaveLabel(0.1,0.915,0.9,0.95,"Au+Au, Charged hadrons, 0.2 < #it{p}_{T}< 3.0 GeV/c");
   title->SetBorderSize(0);
   title->SetFillColor(0);
   title->SetTextFont(textFont);
@@ -165,13 +166,14 @@ void Compare_fluctuation(){
   TH2F *h[nenergy];
   for (int ipad=0;ipad<nenergy;ipad++){
     can->cd(ipad+1);
-    if (ipad==0) h[ipad] = new TH2F(Form("pad_%i",ipad+1),";;v_{2}{4}/v_{2}{2}",1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
-    else if (ipad==1) h[ipad] = new TH2F(Form("pad_%i",ipad+1),";Centrality (%);",1,mincent,maxcent,1,minV2Ratio,maxV2Ratio); // 
+    if (ipad==0) h[ipad] = new TH2F(Form("pad_%i",ipad+1),";;#it{v}_{2}{4}/#it{v}_{2}{2}",1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
+    else if (ipad==1) h[ipad] = new TH2F(Form("pad_%i",ipad+1),";Centrality, %;",1,mincent,maxcent,1,minV2Ratio,maxV2Ratio); // 
     else h[ipad] = new TH2F(Form("pad_%i",ipad+1),"",1,mincent,maxcent,1,minV2Ratio,maxV2Ratio);
     
     h[ipad]->GetXaxis()->SetLabelSize(labelSize);
     h[ipad]->GetXaxis()->SetTitleSize(titleSize);
     h[ipad]->GetXaxis()->SetLabelFont(textFont);
+    h[ipad]->GetXaxis()->SetTitleFont(textFont);
     h[ipad]->GetXaxis()->SetNdivisions(504);
     h[ipad]->GetXaxis()->SetTitleOffset(0.9);
     h[ipad]->GetXaxis()->SetLabelOffset(0.01);
@@ -180,6 +182,7 @@ void Compare_fluctuation(){
     h[ipad]->GetYaxis()->SetLabelSize(labelSize);
     h[ipad]->GetYaxis()->SetTitleSize(titleSize);
     h[ipad]->GetYaxis()->SetLabelFont(textFont);
+    h[ipad]->GetYaxis()->SetTitleFont(textFont);
     h[ipad]->GetYaxis()->SetLabelOffset(0.01);
     h[ipad]->GetYaxis()->SetNdivisions(504);
     h[ipad]->GetYaxis()->SetTitleOffset(0.9);
@@ -192,7 +195,7 @@ void Compare_fluctuation(){
     tex.SetTextSize(labelSize);
     if (ipad==0) tex.SetTextSize(labelSize);
     tex.DrawLatex(mincent+2,maxV2Ratio*0.98,padName[ipad].Data());
-    tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("%s GeV",energy[ipad].Data())); // #sqrt{s_{NN}}=
+    tex.DrawLatex(mincent+11,maxV2Ratio*0.98,Form("#sqrt{#it{s}_{NN}} = %s GeV",energy[ipad].Data())); // #sqrt{s_{NN}}=
     if (ipad==0) {
       // tex.DrawLatex(mincent+10,maxV2Ratio*0.98,Form("Au+Au at"));
       TLegend *leg_pt = new TLegend(leg_coordinate[0]+0.1,leg_coordinate[1],leg_coordinate[2],leg_coordinate[3]);
@@ -239,9 +242,9 @@ void Compare_fluctuation(){
     }
   }
 
-  can->SaveAs("Figure_Ratiov24v22_v2cent_4.5-11.5GeV.pdf");
+  can->SaveAs("Ratiov24v22_v2cent_45_115GeV_models_vs_STAR.pdf");
   gROOT->SetStyle("Pub");
-  can->SaveAs("Figure_Ratiov24v22_v2cent_4.5-11.5GeV.png");
+  can->SaveAs("Ratiov24v22_v2cent_45_115GeV_models_vs_STAR.png");
 
 
 }

@@ -28,3 +28,16 @@ const double rMin = 0.005;
 const double rMaxSum = 0.5;
 const double rMinSum = 0.005;
 const int thetabins = 5;
+
+// QCumulant - High Order
+// Pick up randomly some harmonics:
+const Int_t h1=2, h2=-2, h3=2, h4=-2, h5=2, h6=-2, h7=2, h8=-2;
+// Book Q-vector components: 
+const Int_t sum = (h1<0?-1*h1:h1)+(h2<0?-1*h2:h2)+(h3<0?-1*h3:h3)+(h4<0?-1*h4:h4) 
+                + (h5<0?-1*h5:h5)+(h6<0?-1*h6:h6)+(h7<0?-1*h7:h7)+(h8<0?-1*h8:h8);
+const Int_t maxCorrelator = 8; // We will not go beyond 8-p correlations
+const Int_t maxHarmonic = sum+1;
+const Int_t maxPower = maxCorrelator+1;
+
+// LYZ-EP
+const Double_t rootJ0 = 2.4048256;

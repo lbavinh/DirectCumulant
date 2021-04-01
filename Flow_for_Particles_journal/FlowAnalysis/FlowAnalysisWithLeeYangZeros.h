@@ -21,6 +21,7 @@ public:
   void SetUseProduct(Bool_t kt) {this->fUseProduct = kt; }
   Bool_t GetUseProduct() const { return this->fUseProduct; }
   void SetFirstRun(Bool_t kt) { this->fFirstRun = kt; }
+  void SetWeight(Double_t kt) { this->fWeight = kt; }
   void Init();
   void Zero(); // Reset variables for new event loop
   void ProcessFirstTrackLoop(const Double_t &phi, const Double_t &pt, const Int_t &icent);
@@ -53,6 +54,7 @@ private:
   Double_t fRSum[rbins];
   Double_t fRProduct[rbins];
   Double_t fMult;
+  Double_t fWeight;
   TComplex fGenFunS[rbins][thetabins]; // sum
   TComplex fGenFunP[rbins][thetabins]; // product
 

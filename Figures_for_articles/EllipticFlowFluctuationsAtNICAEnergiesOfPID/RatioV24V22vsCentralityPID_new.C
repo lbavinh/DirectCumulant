@@ -10,15 +10,15 @@ void RatioV24V22vsCentralityPID_new(){
   const float leg_coordinate[4]={0.5,0.3,0.95,0.35}; //  0.05,0.7,0.35,0.99
   const float labelSize = 0.1;
   const float titleSize = 0.12;
-  const float labelSize1 = 0.08;
-  const float titleSize1 = 0.09;
+  const float labelSize1 = 0.085;
+  const float titleSize1 = 0.1;
   const float markerSize = 1.7;
-  const float textFont = 42;
+  const float textFont = 132;
   TString legendEntries[npid]={"#pi^{#pm}","p"}; //(Phys.Rev.C.86.054908)
   TString energy[nenergy]={"7.7","11.5"};
   TString model[nmodel]={"UrQMD","SMASH","AMPT15","AMPT08","vHLLEUrQMD"};
   TString padName[]={"(a)","(b)","(c)","(d)","(e)","(f)","(g)","(h)","(i)","(j)","(k)","(l)","(m)","(n)","(o)"};
-  TString padFancyName[nmodel]={"UrQMD","SMASH","AMPT, #sigma_{p}=1.5mb","AMPT, #sigma_{p}=0.8mb","vHLLE+UrQMD"};
+  TString padFancyName[nmodel]={"UrQMD","SMASH","AMPT SM, #it{#sigma}_{p}=1.5mb","AMPT SM, #it{#sigma}_{p}=0.8mb","vHLLE+UrQMD"};
   // int color[]={205,102,96,87,81,69,104,154,213};
   // int color[]={99,94,91,63,213};
   int color[]={206,218,1,226,212,206,213};
@@ -103,8 +103,8 @@ void RatioV24V22vsCentralityPID_new(){
       grRatioV2[ien][imod][1] -> SetMarkerStyle(kFullTriangleUp); // k-
       grRatioV2[ien][imod][4] -> SetMarkerStyle(kOpenTriangleUp); // k+
       grRatioV2[ien][imod][2] -> SetMarkerStyle(kOpenSquare); // p
-      grRatioV2[ien][imod][5] -> SetMarkerStyle(kFullTriangleDown);  // pi
-      grRatioV2[ien][imod][6] -> SetMarkerStyle(kOpenCross); // k
+      grRatioV2[ien][imod][5] -> SetMarkerStyle(kFullCircle);  // pi
+      grRatioV2[ien][imod][6] -> SetMarkerStyle(kFullTriangleUp); // k
 
 
       for (int id=0;id<npid;id++){
@@ -160,7 +160,7 @@ void RatioV24V22vsCentralityPID_new(){
   can->SetBottomMargin(0.21);
   can->SetTopMargin(0.13);
 
-  TPaveLabel* title = new TPaveLabel(0.1,0.962,0.9,0.979,"Au+Au, 0.2<p_{T}^{}<3.0 GeV/c");
+  TPaveLabel* title = new TPaveLabel(0.1,0.962,0.9,0.979,"Au+Au, 0.2 < #it{p}_{T}^{}< 3.0 GeV/c");
   title->SetBorderSize(0);
   title->SetFillColor(0);
   title->SetTextFont(textFont);
@@ -177,12 +177,13 @@ void RatioV24V22vsCentralityPID_new(){
     if (ien==0) can->cd(imod+1);
     if (ien==1) can->cd(imod+6);
 
-    if (ien==0 && imod==0) h[imod][ien] = new TH2F(Form("pad_%i_%i",imod,ien),";;v_{2}{4}/v_{2}{2}",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
-    else if (ien==1 && imod==2) h[imod][ien] = new TH2F(Form("pad_%i_%i",imod,ien),";centrality (%);",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
+    if (ien==0 && imod==0) h[imod][ien] = new TH2F(Form("pad_%i_%i",imod,ien),";;#it{v}_{2}{4}/#it{v}_{2}{2}",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
+    else if (ien==1 && imod==2) h[imod][ien] = new TH2F(Form("pad_%i_%i",imod,ien),";Centrality, %;",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
     else h[imod][ien] = new TH2F(Form("pad_%i_%i",imod,ien),"",1,minpt,maxpt,1,minV2Ratio,maxV2Ratio);
     h[imod][ien]->GetXaxis()->SetLabelSize(labelSize);
     h[imod][ien]->GetXaxis()->SetTitleSize(titleSize);
     h[imod][ien]->GetXaxis()->SetLabelFont(textFont);
+    h[imod][ien]->GetXaxis()->SetTitleFont(textFont);
     h[imod][ien]->GetXaxis()->SetNdivisions(504);
     h[imod][ien]->GetXaxis()->SetTitleOffset(0.8);
     h[imod][ien]->GetXaxis()->SetLabelOffset(0.01);
@@ -191,6 +192,7 @@ void RatioV24V22vsCentralityPID_new(){
     h[imod][ien]->GetYaxis()->SetLabelSize(labelSize);
     h[imod][ien]->GetYaxis()->SetTitleSize(titleSize);
     h[imod][ien]->GetYaxis()->SetLabelFont(textFont);
+    h[imod][ien]->GetYaxis()->SetTitleFont(textFont);
     h[imod][ien]->GetYaxis()->SetNdivisions(504);
     h[imod][ien]->GetYaxis()->SetLabelOffset(0.015);
     h[imod][ien]->GetYaxis()->SetTitleOffset(1.);
@@ -211,7 +213,7 @@ void RatioV24V22vsCentralityPID_new(){
     if (imod==0 && ien==1) tex.SetTextSize(labelSize1);
     // tex.DrawLatex(minpt+0.1,maxV2Ratio*0.98,padName[imod+ien].Data());
     if (ien==0) tex.DrawLatex(minpt+2,maxV2Ratio*0.98,Form("%s",padFancyName[imod].Data())); // #sqrt{s_{NN}}=
-    if (imod==0) tex.DrawLatex(minpt+10,minV2Ratio+0.1,Form("#sqrt{s_{NN}}=%s GeV",energy[ien].Data()));
+    if (imod==0) tex.DrawLatex(minpt+10,minV2Ratio+0.1,Form("#sqrt{#it{s}_{NN}} = %s GeV",energy[ien].Data()));
     // if (ien==2 && imod==1) tex.DrawLatex(minpt+0.3,minV2Ratio+0.1,"open - p");
     // if (ien==2 && imod==2) tex.DrawLatex(minpt+0.3,minV2Ratio+0.1,"filled - #pi^{#pm}");
     if (imod==1 && ien==1) {
@@ -255,9 +257,9 @@ void RatioV24V22vsCentralityPID_new(){
   
   }
   }
-  can->SaveAs("Figure_Ratiov24v22_vs_cent_PID_withK.pdf");
+  can->SaveAs("v24v22_vs_cent_PID_withK.pdf");
   gROOT->SetStyle("Pub");
-  can->SaveAs("Figure_Ratiov24v22_vs_cent_PID_withK.png");
+  can->SaveAs("v24v22_vs_cent_PID_withK.png");
 
 
 }

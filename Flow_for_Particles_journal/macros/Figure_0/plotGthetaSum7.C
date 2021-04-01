@@ -195,7 +195,7 @@ void plotGthetaSum7()
   }
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
-
+  const int markerStyle[] = {20,20,25,24,22,20,24,25,26,27,28};
   TCanvas c;
   const int textFont = 132;
   gStyle->SetLegendFont(textFont);
@@ -205,14 +205,16 @@ void plotGthetaSum7()
   c.SetBottomMargin(0.16);
   for (int ic=0; ic<ncent; ic++)
   {
+    // hGtheta[ic] -> SetMarkerStyle(markerStyle[ic]);
     hGtheta[ic] -> SetMarkerStyle(20);
+
     hGtheta[ic] -> SetMarkerSize(1.);
     hGtheta[ic] -> GetXaxis()->SetRangeUser(0.,0.4);
   }
   gStyle->SetPalette(kDarkRainBow);
   // hGthetaSum[0][thetaDraw] -> GetYaxis()->SetRangeUser(0,1);
   
-  hGtheta[4]->SetTitle(";#it{r};|#it{G}^{#it{#theta}}(i#it{r})|");
+  hGtheta[4]->SetTitle(";#it{r};|#it{G}^{#it{#theta}}(i#it{r})|^{2}");
   hGtheta[4]->GetXaxis()->SetTitleSize(0.06);
   hGtheta[4]->GetXaxis()->SetLabelSize(0.05);
   hGtheta[4]->GetYaxis()->SetTitleSize(0.06);
@@ -229,9 +231,10 @@ void plotGthetaSum7()
   }
   TString legEntry[ncent] = {"0-5%","5-10%","10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%"};
 
-  TLegend *leg = new TLegend(0.2,0.2,0.4,0.5);
+  TLegend *leg = new TLegend(0.2,0.2,0.35,0.6);
   leg->SetBorderSize(0);
-  
+  leg->SetTextAlign(22);
+  leg->SetTextSize(0.05);
   TString sTheta[5] = {"0","#pi/10","#pi/5","3#pi/10","2#pi/5"};
 
   leg->SetHeader(Form("#it{#theta} = %s",sTheta[thetaDraw].Data()));

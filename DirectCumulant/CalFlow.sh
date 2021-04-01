@@ -26,17 +26,17 @@ export CONFIG_FILE=${MAIN_DIR}/../.qcumulant.cfg
 mkdir -p $OUT_LOG
 touch $LOG
 
-${MAIN_DIR}/FlowQCumulant -i ${IN_FILE} -config ${CONFIG_FILE} -o ${OUT_FILE} &>> $LOG
-# ./FlowQCumulant -i /weekly/lbavinh/lbavinh/Runlist/split/runlist_Reco_UrQMD_7.7_9225 -config ../.qcumulant.cfg -o test.root
+${MAIN_DIR}/RunFlowAnalysis -i ${IN_FILE} -config ${CONFIG_FILE} -o ${OUT_FILE} &>> $LOG
+# ./RunFlowAnalysis -i /weekly/lbavinh/lbavinh/Runlist/split/runlist_Reco_UrQMD_7.7_9225 -config ../.qcumulant.cfg -o test.root
 # export TMP_DIR=${MAIN_DIR}/TMP
 # export TMP=${TMP_DIR}/TMP_${JOB_ID}_${SGE_TASK_ID}
 # mkdir -p $TMP
-# eos cp --streams=16 $MAIN_DIR/FlowQCumulant.C $TMP
+# eos cp --streams=16 $MAIN_DIR/RunFlowAnalysis.C $TMP
 # eos cp --streams=16 $MAIN_DIR/utilities.C $TMP
 # eos cp --streams=16 $MAIN_DIR/constants.C $TMP
 # source /opt/fairsoft/bmn/may18p1/bin/thisroot.sh
 # source /weekly/lbavinh/Soft/PicoDst/build/setPicoDst.sh
 # cd
-# root -l -b -q $TMP/FlowQCumulant.C+'("'${IN_FILE}'", "'${OUT_FILE}'", "'${CONFIG_FILE}'")' &>> $LOG
+# root -l -b -q $TMP/RunFlowAnalysis.C+'("'${IN_FILE}'", "'${OUT_FILE}'", "'${CONFIG_FILE}'")' &>> $LOG
 # rm -rf ${TMP}
 

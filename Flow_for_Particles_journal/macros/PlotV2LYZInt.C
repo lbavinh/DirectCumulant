@@ -1,8 +1,8 @@
 #define sqr(x) ((x)*(x))
 #include "PlotV2LYZ.C"
 #include "DrawTGraphImp.C"
-TString energy = "11.5";
-TString input1 = Form("FirstRun_%s.root",energy.Data());
+TString energy = "7.7";
+TString input1 = Form("FirstRun_%s_new.root",energy.Data());
 TString input2 = Form("SecondRun_%s.root",energy.Data());
 void PlotV2LYZInt(TString inputFileName1 = input1, TString inputFileName2 = input2)
 {
@@ -115,7 +115,7 @@ void PlotV2LYZInt(TString inputFileName1 = input1, TString inputFileName2 = inpu
           thetacount++;
         }
       }
-      if (thetacount!=0) v2int /= (float)thetacount*refmult;
+      if (thetacount!=0) v2int /= (float)thetacount;// refmult
       else {v2int = 0.;}
       
       float modQ2sqmean = prQ2ModSq->GetBinContent(ic+1);

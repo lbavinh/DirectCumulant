@@ -35,7 +35,7 @@ using std::cout;
 using std::endl;
 
 bool ETASUBEVENTPLANE_1 = 0;
-bool ETASUBEVENTPLANE_2 = 0;
+bool ETASUBEVENTPLANE_2 = 1;
 bool THREEETASUBEVENTPLANE_1 = 0;
 bool THREEETASUBEVENTPLANE_2 = 0;
 bool FHCALEVENTPLANE_1 = 0;
@@ -43,9 +43,9 @@ bool FHCALEVENTPLANE_2 = 1;
 bool LYZ_SUM_1 = 0;
 bool LYZ_SUM_2 = 0;
 bool LYZ_SUM_PRODUCT_1 = 0;
-bool LYZ_SUM_PRODUCT_2 = 0;
+bool LYZ_SUM_PRODUCT_2 = 1;
 bool SCALARPRODUCT_1 = 0;
-bool SCALARPRODUCT_2 = 0;
+bool SCALARPRODUCT_2 = 1;
 bool QCUMULANT = 0;
 bool HIGHORDERQCUMULANT = 0;
 bool LYZEP = 0;
@@ -61,7 +61,7 @@ Double_t minpt = 0.;     // min pt for differential flow
 Double_t maxptRF = 3.;   // max pt for reference flow
 Double_t minptRF = 0.2;  // min pt for reference flow
 Double_t eta_cut = 1.5;  // pseudorapidity acceptance window for flow measurements
-Double_t eta_gap = 0.05; // +-0.05, eta-gap between 2 eta sub-event of two-particle cumulants method with eta-gap
+Double_t eta_gap = 0.0; // +-0.05, eta-gap between 2 eta sub-event of two-particle cumulants method with eta-gap
 Long64_t Nevents = -1;
 
 Int_t debug = 1;
@@ -331,7 +331,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     if (cent == -1)
       continue;
     Int_t icent = GetCentBin(cent);
-
+    Double_t dMultTPC = 0.;
     if (ETASUBEVENTPLANE_1 || ETASUBEVENTPLANE_2)
       flowEtaSub->Zero();
     if (THREEETASUBEVENTPLANE_1 || THREEETASUBEVENTPLANE_2)
@@ -356,6 +356,24 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     if (FHCALEVENTPLANEWRTSECHARM_1 || FHCALEVENTPLANEWRTSECHARM_2)
       flowFHCalEPWRTSecHarm->Zero();
 
+    for (Int_t iTrk = 0; iTrk < nh; iTrk++)
+    { // Track loop
+      TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
+      pt  = vect.Pt();
+      eta = vect.Eta();
+      phi = vect.Phi();
+      if (pt < minpt || pt > maxpt || fabs(eta)>eta_cut) continue; // track selection
+      auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+      if (!particle) continue;
+      charge = 1./3.*particle->Charge();
+      if (charge == 0) continue;
+      if (pt > minptRF && pt < maxptRF)
+      { // Reference Flow pt cut
+        dMultTPC++;
+      }
+    }
+    if (dMultTPC == 0) continue;
+    else { flowLYZ->SetWeight(1./dMultTPC); }
     for (Int_t iTrk = 0; iTrk < nh; iTrk++)
     { // Track loop
       TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
@@ -411,7 +429,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
       if (QCUMULANT)
         flowQC->ProcessFirstTrackLoopPOI(ipt, eta, phi, fId, charge);
     } // end of track loop
-    // Q2->WeightQVector();
+    Q2->WeightQVector();
     if (ETASUBEVENTPLANE_1 || ETASUBEVENTPLANE_2)
       flowEtaSub->ProcessEventAfterFirstTrackLoop(cent);
     if (THREEETASUBEVENTPLANE_1 || THREEETASUBEVENTPLANE_2)

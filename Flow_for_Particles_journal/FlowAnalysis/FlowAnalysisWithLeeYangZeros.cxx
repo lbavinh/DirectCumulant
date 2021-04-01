@@ -140,6 +140,7 @@ void FlowAnalysisWithLeeYangZeros::Init()
 void FlowAnalysisWithLeeYangZeros::Zero()
 {
   fMult = 0.;
+  fWeight = 1.;
   for (Int_t i = 0; i < thetabins; ++i)
   {
     fQtheta[i] = 0.;
@@ -193,7 +194,7 @@ void FlowAnalysisWithLeeYangZeros::ProcessFirstTrackLoop(const Double_t &phi, co
         Double_t dCosTerm = TMath::Cos(2. * (phi - fTheta[it]));
         for (Int_t rbin = 0; rbin < rbins; ++rbin)
         {
-          fGenFunP[rbin][it] *= TComplex(1.0, fRProduct[rbin] * dCosTerm);
+          fGenFunP[rbin][it] *= TComplex(1.0, fWeight * fRProduct[rbin] * dCosTerm);
         }
       }
     }
@@ -202,9 +203,11 @@ void FlowAnalysisWithLeeYangZeros::ProcessFirstTrackLoop(const Double_t &phi, co
       for (Int_t it = 0; it < thetabins; ++it)
       {
         Double_t dCosTerm = TMath::Cos(2. * (phi - fTheta[it]));
-        fGenfunPror0[it] *= TComplex(1.0, fR02Pro[icent][it] * dCosTerm);
-        TComplex cCosTermComplex(1., fR02Pro[icent][it] * dCosTerm);
-        fdGr0[it] += (dCosTerm / cCosTermComplex);
+        fGenfunPror0[it] *= TComplex(1.0, fWeight * fR02Pro[icent][it] * dCosTerm);
+        // TComplex cCosTermComplex(1., fR02Pro[icent][it] * dCosTerm);
+        TComplex cCosTermComplex(1., fWeight * fR02Pro[icent][it] * dCosTerm);
+        // fdGr0[it] += (dCosTerm / cCosTermComplex);
+        fdGr0[it] += (fWeight * dCosTerm / cCosTermComplex);
       }
     }
   }
@@ -308,7 +311,8 @@ void FlowAnalysisWithLeeYangZeros::ProcessSecondTrackLoop(const Double_t &phi, c
       fPrImNumer[it][icent]->Fill(pt, cNumeratorPOI.Im());
       if (fUseProduct)
       {
-        TComplex cCosTermComplex(1., fR02Pro[icent][it] * dCosTerm);
+        // TComplex cCosTermComplex(1., fR02Pro[icent][it] * dCosTerm);
+        TComplex cCosTermComplex(1., fWeight * fR02Pro[icent][it] * dCosTerm);
         TComplex cNumeratorPOIPro = fGenfunPror0[it] * dCosTerm / cCosTermComplex;
         fPrReNumerPro[it][icent]->Fill(pt, cNumeratorPOIPro.Re());
         fPrImNumerPro[it][icent]->Fill(pt, cNumeratorPOIPro.Im());

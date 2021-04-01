@@ -81,6 +81,22 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
     vGr77_ratio.at(i)->SetMarkerSize(markerSize);
     vGr115_ratio.at(i)->SetMarkerSize(markerSize);
   }
+
+  Green(vGr77.at(0));
+  Green(vGr115.at(0));
+  Green(vGr77_ratio.at(0));
+  Green(vGr115_ratio.at(0));
+
+  Blue(vGr77.at(1));
+  Blue(vGr115.at(1));
+  Blue(vGr77_ratio.at(1));
+  Blue(vGr115_ratio.at(1));
+
+  Red(vGr77.at(3));
+  Red(vGr115.at(3));
+  Red(vGr77_ratio.at(3));
+  Red(vGr115_ratio.at(3));
+
   TCanvas *can = new TCanvas("can","",1000,600);
   TPaveLabel* label = new TPaveLabel(0.1,0.95,0.9,0.99,Form("UrQMD, Au+Au, Charged Hadrons, 0.2< #it{p}_{T}<3.0 GeV/c"));
   label->SetTextFont(132);
@@ -108,7 +124,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   can->cd(1);
 
 
-  vGr77.at(ratioToMethod)->Draw("AP PLC PMC");
+  vGr77.at(ratioToMethod)->Draw("AP"); // P PLC PMC
   vGr77.at(ratioToMethod)->GetYaxis()->SetTitleSize(titleSize+0.015);
   vGr77.at(ratioToMethod)->GetYaxis()->SetLabelSize(labelSize+0.015);
   vGr77.at(ratioToMethod)->GetYaxis()->SetTitleFont(textFont);
@@ -121,7 +137,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   for (int i=0; i<vGr77.size(); i++)
   {
     if (i==excludeMethod1 || i==excludeMethod2 || i==excludeMethod3 || i==excludeMethod4 || i==excludeMethod5 || i==excludeMethod6 || i==ratioToMethod) continue;
-    vGr77.at(i)->Draw("P PLC PMC");
+    vGr77.at(i)->Draw("P");
   }
   cout << vGr77.size() << endl;
   TLegend *leg1 = new TLegend(0.6,0.15,0.85,0.4);
@@ -138,7 +154,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
 
   
   can->cd(2);
-  vGr115.at(ratioToMethod)->Draw("AP PLC PMC");
+  vGr115.at(ratioToMethod)->Draw("AP");
   vGr115.at(ratioToMethod)->GetYaxis()->SetTitleSize(titleSize);
   vGr115.at(ratioToMethod)->GetYaxis()->SetLabelSize(labelSize);
   vGr115.at(ratioToMethod)->GetYaxis()->SetTitleFont(textFont);
@@ -151,7 +167,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   for (int i=0; i<vGr115.size(); i++)
   {
     if (i==excludeMethod1 || i==excludeMethod2 || i==excludeMethod3 || i==excludeMethod4 || i==excludeMethod5 || i==excludeMethod6 || i==ratioToMethod) continue;
-    vGr115.at(i)->Draw("P PLC PMC");
+    vGr115.at(i)->Draw("P");
   }
   TLegend *leg2 = new TLegend(0.6,0.15,0.85,0.4);
   leg2->SetBorderSize(0);
@@ -165,7 +181,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   tex.DrawLatex(3,0.065,"(b)   #sqrt{#it{s}_{NN}} = 11.5 GeV");
   vGr115.at(ratioToMethod)->SetTitle("");
   can->cd(3);
-  vGr77_ratio.at(ratioToMethod-5)->Draw("AP PLC PMC");
+  vGr77_ratio.at(ratioToMethod-5)->Draw("AP");
   vGr77_ratio.at(ratioToMethod-5)->GetYaxis()->SetTitleSize(titleSize);
   vGr77_ratio.at(ratioToMethod-5)->GetYaxis()->SetLabelSize(labelSize);
   vGr77_ratio.at(ratioToMethod-5)->GetYaxis()->SetTitleFont(textFont);
@@ -179,13 +195,13 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   for (int i=0; i<vGr77_ratio.size(); i++)
   {
     if (i==excludeMethod1 || i==excludeMethod2 || i==excludeMethod3 || i==excludeMethod4 || i==excludeMethod5 || i==excludeMethod6 || i==ratioToMethod) continue;
-    vGr77_ratio.at(i)->Draw("P PLC PMC");
+    vGr77_ratio.at(i)->Draw("P");
   }
   vGr77_ratio.at(ratioToMethod-5)->SetTitle(Form(";Centrality, %%;Ratio to %s", title[ratioToMethod].Data()));
   tex.SetTextSize(titleSize);
   tex.DrawLatex(3,1.08,"(c)");
   can->cd(4);
-  vGr115_ratio.at(ratioToMethod-5)->Draw("AP PLC PMC");
+  vGr115_ratio.at(ratioToMethod-5)->Draw("AP");
   vGr115_ratio.at(ratioToMethod-5)->GetYaxis()->SetTitleSize(titleSize);
   vGr115_ratio.at(ratioToMethod-5)->GetYaxis()->SetLabelSize(labelSize);
   vGr115_ratio.at(ratioToMethod-5)->GetYaxis()->SetTitleFont(textFont);
@@ -199,7 +215,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy()
   for (int i=0; i<vGr115_ratio.size(); i++)
   {
     if (i==excludeMethod1 || i==excludeMethod2 || i==excludeMethod3 || i==excludeMethod4 || i==excludeMethod5 || i==excludeMethod6 || i==ratioToMethod) continue;
-    vGr115_ratio.at(i)->Draw("P PLC PMC");
+    vGr115_ratio.at(i)->Draw("P");
   }
   vGr115_ratio.at(ratioToMethod-5)->SetTitle(Form(";Centrality, %%;Ratio to %s", title[ratioToMethod].Data()));
   tex.DrawLatex(3,1.08,"(d)");

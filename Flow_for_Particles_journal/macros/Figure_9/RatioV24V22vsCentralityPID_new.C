@@ -1,3 +1,4 @@
+#include "../DrawTGraphImp.C"
 void RatioV24V22vsCentralityPID_new(){
   const int nmodel = 5; // "STAR data","AMPT15","vHLLE+UrQMD"
   const int npid = 7;
@@ -98,7 +99,9 @@ void RatioV24V22vsCentralityPID_new(){
       grRatioV2[ien][imod][2] -> SetMarkerStyle(kOpenSquare); // p
       grRatioV2[ien][imod][5] -> SetMarkerStyle(kFullCircle);  // pi kFullCircle
       grRatioV2[ien][imod][6] -> SetMarkerStyle(kFullTriangleDown); // k
-
+      Red(grRatioV2[ien][imod][5]);
+      Blue(grRatioV2[ien][imod][6]);
+      Green(grRatioV2[ien][imod][2]);
 
       // for (int id=0;id<npid;id++){
       // grRatioV2[ien][imod][id] -> SetMarkerColor(color[id]);
@@ -141,7 +144,7 @@ void RatioV24V22vsCentralityPID_new(){
     for (int ien=0;ien<nenergy;ien++){
       for (int id=0;id<npid;id++){
       grRatioV2[ien][imod][id]->SetMarkerSize(markerSize);
-      grRatioV2[ien][imod][id]->SetDrawOption("P PLC PMC");
+      grRatioV2[ien][imod][id]->SetDrawOption("P");
       }
     }
   }
@@ -224,7 +227,7 @@ void RatioV24V22vsCentralityPID_new(){
       for (int id=0;id<npid;id++){
         if (id==2 || id==5 || id==6) { 
         // grRatioV2[ien][imod][id]->Draw("P");
-        grRatioV2[ien][imod][id]->Draw("P PLC PMC");
+        grRatioV2[ien][imod][id]->Draw("P"); //  PLC PMC
         }
       }
 

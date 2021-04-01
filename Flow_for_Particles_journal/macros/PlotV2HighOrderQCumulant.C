@@ -1,3 +1,4 @@
+#include "DrawTGraphImp.C"
 struct term{
   term(){
     mVal = 0;
@@ -181,11 +182,37 @@ TGraphErrors** PlotV2HighOrderQCumulant(TString inputFileName){
     vRatioToUniformAcceptance.clear();
     vRatioToUniformAcceptanceErr.clear();
   }
+  TCanvas *cV2CentRF;
+  gr[1]->SetMarkerStyle(22);
+  gr[2]->SetMarkerStyle(25);
+  gr[3]->SetMarkerStyle(20);
+  for (int imeth=1;imeth<nMethod;imeth++){
+    gr[imeth]->RemovePoint(0);
+    gr[imeth]->SetMarkerSize(1.5);
+  }
+  vector<TGraphErrors*> vgrv2cent_chargedHardons;
+  vgrv2cent_chargedHardons.push_back(gr[1]);
+
+  for (int imeth=2;imeth<nMethod;imeth++){
+    vgrv2cent_chargedHardons.push_back(gr[imeth]);
+    
+  }
+  // cV2CentRF = (TCanvas*) DrawTGraph(vgrv2cent_chargedHardons,"",0.89, 1.11, 0, 60, -0.01, 0.1,
+  //                                   0.18,0.63,0.45,0.889,
+  //                                   "AMPT SM, #sigma_{p}=0.8mb at #sqrt{s_{NN}}=7.7 GeV", Form("Ch. hadrons, %1.1f<p_{T}<%1.1f GeV/c",0.2,3.0),true,grName[1]);
+  // cV2CentRF -> SetName("Reference flow");
+  // cV2CentRF -> SaveAs(Form("IntegratedFlow_HighQC_hadron.png"));
   
 
+  cV2CentRF = (TCanvas*) DrawTGraph(vgrv2cent_chargedHardons,"",0.89, 1.11, 0, 60, -0.01, 0.1,
+                                    0.18,0.63,0.45,0.889,
+                                    "UrQMD at #sqrt{s_{NN}}=7.7 GeV", Form("Ch. hadrons, %1.1f<p_{T}<%1.1f GeV/c",0.2,3.0),true,grName[1]);
+  cV2CentRF -> SetName("Reference flow");
+  cV2CentRF -> SaveAs(Form("IntegratedFlow_HighQC_hadron_UrQMD.png"));
   
   // TCanvas *c = new TCanvas("c","",200,10,800,600);
 
+  // TCanvas *c = new TCanvas("c","",200,10,800,600);
   // gStyle->SetOptStat(0);
   // gStyle->SetPalette(kDarkRainBow);
   // gStyle->SetErrorX(0);

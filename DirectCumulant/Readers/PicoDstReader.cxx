@@ -76,6 +76,12 @@ Int_t PicoDstReader::GetRecoTrackSize()
     return recoTracks->GetEntriesFast();
 }
 
+Int_t PicoDstReader::GetNFHCalModules()
+{
+    if (!fhcalmodules) return 0;
+    return fhcalmodules->GetEntriesFast();
+}
+
 PicoDstMCTrack *PicoDstReader::ReadMcTrack(Int_t tr_num)
 {
     if (!fChain)
@@ -96,4 +102,15 @@ PicoDstRecoTrack *PicoDstReader::ReadRecoTrack(Int_t tr_num)
         return nullptr;
     
     return track;
+}
+
+PicoDstFHCal *PicoDstReader::ReadFHCalModule(Int_t module_num)
+{
+    if (!fChain)
+        return nullptr;
+    auto module = (PicoDstFHCal *)fhcalmodules->UncheckedAt(module_num);
+    if (!module)
+        return nullptr;
+    
+    return module;  
 }

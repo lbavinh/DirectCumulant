@@ -108,24 +108,30 @@ void UrQMD_config2(TString inputFileName, TString outputFileName)
 
   // Constant declaration
   const Int_t npt = 16; // 0-3.6 GeV/c - number of pT bins
-  // const Double_t pTBin[npt + 1] = {0., 0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.2, 3.6};
-  const Double_t pTBin[npt + 1] = {0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6};
+  const Double_t pTBin[npt + 1] = {0., 0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.2, 3.6};
+  // const Double_t pTBin[npt + 1] = {0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6};
   // const Double_t pTBin[npt + 1] = {0., 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8};
   const Int_t netaBin = 14;
   const Double_t etaBin[netaBin+1] = {-1.5,-1.2,-1.,-0.8,-0.6,-0.4,-0.2,0.,0.2,0.4,0.6,0.8,1.,1.2,1.5};
   const int ncent = 9; // 0-80%
   const double bin_cent[ncent+1] = {0,5,10,20,30,40,50,60,70,80};
-  const double maxptRF = 0.4;
+  const double maxptRF = 3.0;
   const double minptRF = 0.2;
+  const double maxpt = 3.6;
+  const double minpt = 0.0;
   const float eta_cut =  1.5;
   const float eta_gap = 1.0;
   const int mult_cut = 2;
-  const double harmonic = 1.;
+  const double harmonic = 2.;
   const double k = 1.;
   bool multcut;
-  const double eta_min = 0.75;
-  const double res1[ncent] = {0.539752, 0.776864, 0.87774, 0.91216, 0.918623, 0.909002, 0.886465, 0.844807, 0.79559};
-  const double res1TPC[ncent] = {0.211062, 0.261323, 0.303503, 0.31116, 0.296341, 0.270871, 0.241148, 0.20907, 0.197559};
+  bool firstrun = 0;
+  const double eta_min = 0.0;
+  // const double res1FHCalHalf[ncent] = {0.407205, 0.626196, 0.757241, 0.815136, 0.825202, 0.809979, 0.775182, 0.722192, 0.658852};
+  // const double res1FHCalFull[ncent] = {0.545496, 0.775456, 0.877405, 0.912753, 0.9183, 0.909844, 0.888997, 0.85309, 0.803634};
+  const double res1FHCalHalf[ncent] = {0.0704917, 0.133345, 0.193088, 0.197226, 0.156257, 0.0919394, 0.0366138, 0.0495409, 0.0697342}; // res2psi2 FHCal
+  const double res1FHCalFull[ncent] = {0.0995326, 0.187511, 0.269827, 0.275466, 0.219263, 0.129672, 0.0517576, 0.0700067, 0.0984664};
+
   // Configure input information
   TChain *chain = new TChain("mctree");
 
@@ -196,16 +202,17 @@ void UrQMD_config2(TString inputFileName, TString outputFileName)
   QVector *Q2_TPC_R = new QVector(harmonic);
   QVector *Q2_FHCal_L = new QVector(harmonic);
   QVector *Q2_FHCal_R = new QVector(harmonic);
-  TProfile *prV1[ncent];
-  TProfile *prV1_TPCEP[ncent];
+  TProfile *prV1_FHCalEP[ncent];
+  TProfile *prV1_FHCalHalfEP[ncent];
   TProfile *prV1eta[ncent];
   for (int ic = 0; ic < ncent; ic++)
   {
-    prV1[ic] = new TProfile(Form("prV1_%i",ic),"",npt,&pTBin[0]);
-    prV1_TPCEP[ic] = new TProfile(Form("prV1_TPCEP_%i",ic),"",npt,&pTBin[0]);
+    prV1_FHCalEP[ic] = new TProfile(Form("prV1_FHCalEP_%i",ic),"",npt,&pTBin[0]);
+    prV1_FHCalHalfEP[ic] = new TProfile(Form("prV1_FHCalHalfEP_%i",ic),"",npt,&pTBin[0]);
     prV1eta[ic] = new TProfile(Form("prV1eta_%i",ic),"",netaBin,&etaBin[0]);
   }
   // Start event loop
+  float PsiFHCal, PsiTPC_L, PsiTPC_R, PsiFHCal_L, PsiFHCal_R, PsiTPC;
   int n_entries = chain->GetEntries();
   for (int iEv=0; iEv<n_entries; iEv++)
   {
@@ -221,7 +228,6 @@ void UrQMD_config2(TString inputFileName, TString outputFileName)
     Q2_TPC_R->Zero();
     Q2_FHCal_L->Zero();
     Q2_FHCal_R->Zero();
-    float Psi2FHCal = -999, Psi2TPCL = -999., Psi2TPCR = -999.;
     for (int iTrk=0; iTrk<nh; iTrk++)
     { // 1st track loop
       TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
@@ -229,141 +235,116 @@ void UrQMD_config2(TString inputFileName, TString outputFileName)
       float eta = vect.Eta();
       float phi = vect.Phi();
       float weight = pt;
+      if (eta<-2. && eta>-5.) { if (harmonic==1) Q2_FHCal_L->CalQVector(phi,-weight); else { Q2_FHCal_L->CalQVector(phi,weight); } }
+      if (eta> 2. && eta< 5.) Q2_FHCal_R->CalQVector(phi,weight);
+      if (pt < minptRF || pt > maxptRF || fabs(eta)>eta_cut) continue; // track selection
       auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
       if (!particle) continue;
-      // if (pt < minptRF || pt > maxptRF) continue; // track selection
-      if (eta<-2. && eta>-5.) { if (harmonic==1) Q2_FHCal_L->CalQVector(phi,-weight); else { Q2_FHCal_L->CalQVector(phi,weight);} }
-      if (eta> 2. && eta< 5.) Q2_FHCal_R->CalQVector(phi,weight);
-      // if (eta<-2. && eta>-5.) { if (harmonic==1) Q2_FHCal_L->CalQVector(phi,-ene[iTrk]); else { Q2_FHCal_L->CalQVector(phi,ene[iTrk]);} }
-      // if (eta> 2. && eta< 5.) Q2_FHCal_R->CalQVector(phi,ene[iTrk]);      
-      if (pt < minptRF || pt > maxptRF || abs(eta)>eta_cut) continue; // track selection
-      // if (harmonic == 1. && pt > 0.2) continue; // pt cut for first harmonic
-      // auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
-      // if (!particle) continue;
-      // if (pdg[iTrk]!=2212 && pdg[iTrk]!=-2212) continue;
       float charge = 1./3.*particle->Charge();
       if (charge == 0) continue;
-
       if (eta<-eta_gap) { if (harmonic==1) Q2_TPC_L->CalQVector(phi,-weight); else { Q2_TPC_L->CalQVector(phi,weight);} }
       if (eta> eta_gap) Q2_TPC_R->CalQVector(phi,weight);
       
     } // end of 1st track loop
     if (Q2_FHCal_L->GetMult() > mult_cut && Q2_FHCal_R->GetMult() > mult_cut && Q2_TPC_R->GetMult() > mult_cut && Q2_TPC_L->GetMult() > mult_cut)
     {
-      multcut = 0;
-      // Q2_FHCal_L->WeightQVector();
-      // Q2_FHCal_R->WeightQVector();
-      // Q2_TPC_L->WeightQVector();
-      // Q2_TPC_R->WeightQVector();
-      Psi2TPCL = TMath::ATan2(Q2_TPC_L->Y(),Q2_TPC_L->X()) / harmonic;
-      Psi2TPCR = TMath::ATan2(Q2_TPC_R->Y(),Q2_TPC_R->X()) / harmonic;
-      float Psi2TPC = TMath::ATan2(Q2_TPC_L->Y()+Q2_TPC_R->Y(),Q2_TPC_R->X()+Q2_TPC_L->X()) / harmonic;
-      float Psi2FHCalL = TMath::ATan2(Q2_FHCal_L->Y(),Q2_FHCal_L->X()) / harmonic;
-      float Psi2FHCalR = TMath::ATan2(Q2_FHCal_R->Y(),Q2_FHCal_R->X()) / harmonic;
-      Psi2FHCal = TMath::ATan2(Q2_FHCal_R->Y()+Q2_FHCal_L->Y(),Q2_FHCal_R->X()+Q2_FHCal_L->X()) / harmonic;
+      multcut = false;
+      Q2_FHCal_L->WeightQVector();
+      Q2_FHCal_R->WeightQVector();
+      Q2_TPC_L->WeightQVector();
+      Q2_TPC_R->WeightQVector();
+      PsiTPC_L = TMath::ATan2(Q2_TPC_L->Y(),Q2_TPC_L->X()) / harmonic;
+      PsiTPC_R = TMath::ATan2(Q2_TPC_R->Y(),Q2_TPC_R->X()) / harmonic;
+      PsiTPC = TMath::ATan2(Q2_TPC_L->Y()+Q2_TPC_R->Y(),Q2_TPC_R->X()+Q2_TPC_L->X()) / harmonic;
+      PsiFHCal_L = TMath::ATan2(Q2_FHCal_L->Y(),Q2_FHCal_L->X()) / harmonic;
+      PsiFHCal_R = TMath::ATan2(Q2_FHCal_R->Y(),Q2_FHCal_R->X()) / harmonic;
+      PsiFHCal = TMath::ATan2(Q2_FHCal_R->Y()+Q2_FHCal_L->Y(),Q2_FHCal_R->X()+Q2_FHCal_L->X()) / harmonic;
 
-      // prFHCalLTPC->Fill(cent,TMath::Cos( harmonic * (Psi2FHCalL-Psi2TPC) ));
-      // prFHCalRTPC->Fill(cent,TMath::Cos( harmonic * (Psi2FHCalR-Psi2TPC) ));
-      prFHCalLR->Fill(cent,TMath::Cos( harmonic * (Psi2FHCalL-Psi2FHCalR) ));
-
-      // configuration 2
-      prFHCalTPCL->Fill(cent,TMath::Cos( harmonic * k * (Psi2FHCal-Psi2TPCL) ));
-      prFHCalTPCR->Fill(cent,TMath::Cos( harmonic * k * (Psi2FHCal-Psi2TPCR) ));
-      prTPCLR->Fill(cent,TMath::Cos( harmonic * k * (Psi2TPCL-Psi2TPCR) ));      
+      if (firstrun)
+      {
+        // prFHCalLTPC->Fill(cent,TMath::Cos( harmonic * (PsiFHCal_L-PsiTPC) ));
+        // prFHCalRTPC->Fill(cent,TMath::Cos( harmonic * (PsiFHCal_R-PsiTPC) ));
+        prFHCalLR->Fill(cent,TMath::Cos( harmonic * (PsiFHCal_L-PsiFHCal_R) ));
+        // configuration 2
+        prFHCalTPCL->Fill(cent,TMath::Cos( harmonic * k * (PsiFHCal-PsiTPC_L) ));
+        prFHCalTPCR->Fill(cent,TMath::Cos( harmonic * k * (PsiFHCal-PsiTPC_R) ));
+        prTPCLR->Fill(cent,TMath::Cos( harmonic * k * (PsiTPC_L-PsiTPC_R) ));      
+      }
     }
-    else {multcut=1;}
-    // if (!multcut)
-    // {
-    //   for (int iTrk=0; iTrk<nh; iTrk++)
-    //   { // 1st track loop
-    //     TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
-    //     float pt  = vect.Pt();
-    //     float eta = vect.Eta();
-    //     float phi = vect.Phi();
-    //     if (pt < 0. || pt > 1.6 || abs(eta)>eta_cut) continue; // track selection
-    //     auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
-    //     if (!particle) continue;
-    //     float charge = 1./3.*particle->Charge();
-    //     if (charge == 0) continue;
-    //     if (Psi2FHCal==-999) cout << "Error!" << endl;
-    //     // if (pdg[iTrk]!=2212 && pdg[iTrk]!=-2212) continue;
-    //     if (eta <-eta_min) prV1[fcent]->Fill(pt,(-1.0)*TMath::Cos(phi-Psi2FHCal)/res1[fcent]);
-    //     if (eta > eta_min) prV1[fcent]->Fill(pt,TMath::Cos(phi-Psi2FHCal)/res1[fcent]);
-    //     if (eta <-eta_min) prV1_TPCEP[fcent]->Fill(pt,TMath::Cos(phi-Psi2TPCR)/res1TPC[fcent]);
-    //     if (eta > eta_min) prV1_TPCEP[fcent]->Fill(pt,(-1.0)*TMath::Cos(phi-Psi2TPCL)/res1TPC[fcent]);        
-        
-    //     if (pt > 0.15 && pt < 0.5) prV1eta[fcent]->Fill(eta,TMath::Cos(phi-Psi2FHCal)/res1[fcent]);
-    //   }
-    // }
+    else { multcut = true; }
+    if (!multcut && !firstrun)
+    {
+      for (int iTrk=0; iTrk<nh; iTrk++)
+      { // 1st track loop
+        TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
+        float pt  = vect.Pt();
+        float eta = vect.Eta();
+        float phi = vect.Phi();
+        if (pt < minpt || pt > maxpt || fabs(eta)>eta_cut) continue; // track selection
+        auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(pdg[iTrk]);
+        if (!particle) continue;
+        float charge = 1./3.*particle->Charge();
+        if (charge == 0) continue;
+        // if (eta <-eta_min) prV1_FHCalEP[fcent]->Fill(pt,(-1.0)*TMath::Cos(phi-PsiFHCal)/res1FHCalFull[fcent]);
+        // if (eta > eta_min) prV1_FHCalEP[fcent]->Fill(pt,TMath::Cos(phi-PsiFHCal)/res1FHCalFull[fcent]);
+        // if (eta <-eta_min) prV1_FHCalHalfEP[fcent]->Fill(pt,(-1.0)*TMath::Cos(phi-PsiFHCal_R)/res1FHCalHalf[fcent]);
+        // if (eta > eta_min) prV1_FHCalHalfEP[fcent]->Fill(pt,TMath::Cos(phi-PsiFHCal_L)/res1FHCalHalf[fcent]);
+        // if (pt > minptRF && pt < maxptRF) prV1eta[fcent]->Fill(eta,TMath::Cos(phi-PsiFHCal)/res1FHCalFull[fcent]);
+        prV1_FHCalEP[fcent]->Fill(pt,TMath::Cos(harmonic*(phi-PsiFHCal))/res1FHCalFull[fcent]);
+        if (eta > eta_min) prV1_FHCalHalfEP[fcent]->Fill(pt,TMath::Cos(harmonic*k*(phi-PsiFHCal_L))/res1FHCalHalf[fcent]);
+        if (eta <-eta_min) prV1_FHCalHalfEP[fcent]->Fill(pt,TMath::Cos(harmonic*k*(phi-PsiFHCal_R))/res1FHCalHalf[fcent]);
+      }
+    }
 
   } // end event loop
-  cout << "Harmonic = " << harmonic <<", Eta-gap = " << eta_gap << endl;
-  cout << "FHCal L/R resolution:" << endl;
-  for (int ic=0; ic<ncent; ic++)
+  if (firstrun)
   {
-    cout << TMath::Sqrt(prFHCalLR->GetBinContent(ic+1)) << ", ";
+    // cout << "Harmonic = " << harmonic <<", Eta-gap = " << eta_gap << endl;
+    // cout << "FHCal L/R resolution:" << endl;
+    // for (int ic=0; ic<ncent; ic++)
+    // {
+    //   cout << TMath::Sqrt(prFHCalLR->GetBinContent(ic+1)) << ", ";
+    // }
+
+    // cout << endl;
+    // cout << "FHCal resolution (approx.):" << endl;
+    // Double_t chi, res, res2, chiF, resF; 
+    // for (Int_t ic = 0; ic < ncent; ic++)
+    // {
+    //   res2 = prFHCalLR->GetBinContent(ic+1);
+    //   res = (res2>0) ? TMath::Sqrt(res2) : 0.;
+    //   chi = GetChi(res,1.,50);
+    //   chiF = TMath::Sqrt(2.)*chi;
+    //   resF = Res(chiF,k);
+    //   // fRes2[ic]=(res!=0) ? resF : 0.;
+    //   cout << resF << ", ";
+    // }
+    // cout << endl;
+    // cout << "FHCal 3-sub resolution:" << endl;
+    // for (int ic=0; ic<ncent; ic++)
+    // {
+    //   cout << TMath::Sqrt(prFHCalTPCL->GetBinContent(ic+1)*prFHCalTPCR->GetBinContent(ic+1)/prTPCLR->GetBinContent(ic+1)) << ", ";
+    // }
+    // cout << endl;
+    // cout << "TPC L/R resolution:" << endl;
+    // for (int ic=0; ic<ncent; ic++)
+    // {
+    //   cout << TMath::Sqrt(prTPCLR->GetBinContent(ic+1)) << ", ";
+    // }
+    // cout << endl;
+    // cout << "TPC L 3-sub resolution:" << endl;
+    // for (int ic=0; ic<ncent; ic++)
+    // {
+    //   cout << TMath::Sqrt(prFHCalTPCL->GetBinContent(ic+1)*prTPCLR->GetBinContent(ic+1)/prFHCalTPCR->GetBinContent(ic+1)) << ", ";
+    // }
+    // cout << endl;
+    // cout << "TPC R 3-sub resolution:" << endl;
+    // for (int ic=0; ic<ncent; ic++)
+    // {
+    //   cout << TMath::Sqrt(prFHCalTPCR->GetBinContent(ic+1)*prTPCLR->GetBinContent(ic+1)/prFHCalTPCL->GetBinContent(ic+1)) << ", ";
+    // }
+    // cout << endl;
   }
-
-  cout << endl;
-  cout << "FHCal resolution (approx.):" << endl;
-  Double_t chi, res, res2, chiF, resF; 
-  for (Int_t ic = 0; ic < ncent; ic++)
-  {
-    res2 = prFHCalLR->GetBinContent(ic+1);
-    res = (res2>0) ? TMath::Sqrt(res2) : 0.;
-    chi = GetChi(res,k,50);
-    chiF = TMath::Sqrt(2.)*chi;
-    resF = Res(chiF,k);
-    // fRes2[ic]=(res!=0) ? resF : 0.;
-    cout << resF << ", ";
-  }
-  cout << endl;
-
-  cout << "FHCal 3-sub resolution:" << endl;
-  for (int ic=0; ic<ncent; ic++)
-  {
-    cout << TMath::Sqrt(prFHCalTPCL->GetBinContent(ic+1)*prFHCalTPCR->GetBinContent(ic+1)/prTPCLR->GetBinContent(ic+1)) << ", ";
-  }
-  cout << endl;
-
-  cout << "TPC L/R resolution:" << endl;
-  for (int ic=0; ic<ncent; ic++)
-  {
-    cout << TMath::Sqrt(prTPCLR->GetBinContent(ic+1)) << ", ";
-  }
-  cout << endl;
-  cout << "TPC L 3-sub resolution:" << endl;
-  for (int ic=0; ic<ncent; ic++)
-  {
-    cout << TMath::Sqrt(prFHCalTPCL->GetBinContent(ic+1)*prTPCLR->GetBinContent(ic+1)/prFHCalTPCR->GetBinContent(ic+1)) << ", ";
-  }
-  cout << endl;
-
-  cout << "TPC R 3-sub resolution:" << endl;
-  for (int ic=0; ic<ncent; ic++)
-  {
-    cout << TMath::Sqrt(prFHCalTPCR->GetBinContent(ic+1)*prTPCLR->GetBinContent(ic+1)/prFHCalTPCL->GetBinContent(ic+1)) << ", ";
-  }
-  cout << endl;
-
-  // cout << "V1 versus pt:" << endl;
-  // for (int ic = 0; ic < ncent; ic++)
-  // {
-  //   cout << bin_cent[ic] << "-" << bin_cent[ic+1] << "%\t";
-  //   for (int ipt = 0; ipt < npt; ipt++)
-  //   {
-  //     cout << prV1[ic]->GetBinContent(ipt+1) << ", ";
-  //   }
-  //   cout << endl;
-  //   cout << bin_cent[ic] << "-" << bin_cent[ic+1] << "%\t";
-  //   for (int ipt = 0; ipt < npt; ipt++)
-  //   {
-  //     cout << prV1_TPCEP[ic]->GetBinContent(ipt+1) << ", ";
-  //   }
-  //   cout << endl;
-
-  // }
-
 
   // Writing output
   fo->cd();

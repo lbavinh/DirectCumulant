@@ -18,8 +18,10 @@ public:
     virtual PicoDstRecoEvent* ReadRecoEvent(Int_t ev_num) = 0;
     virtual Int_t GetMcTrackSize() = 0;
     virtual Int_t GetRecoTrackSize() = 0;
+    virtual Int_t GetNFHCalModules() = 0;
     virtual PicoDstMCTrack* ReadMcTrack(Int_t tr_num) = 0;
     virtual PicoDstRecoTrack* ReadRecoTrack(Int_t tr_num) = 0;
+    virtual PicoDstFHCal* ReadFHCalModule(Int_t module_num) = 0;
     virtual ~IReader();
 
     ClassDef(IReader,0);

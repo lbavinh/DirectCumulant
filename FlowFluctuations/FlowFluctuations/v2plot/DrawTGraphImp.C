@@ -4,7 +4,8 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
                     Double_t x_low=0.0, Double_t x_high=1.0,
                     Double_t y_low=0.0, Double_t y_high=1.0,
                     Double_t leg_x_low=0.22, Double_t leg_y_low=0.55,
-                    Double_t leg_x_high=0.55, Double_t leg_y_high=0.89,TString strModel="", TString strCent="", bool drawLeg=1)
+                    Double_t leg_x_high=0.55, Double_t leg_y_high=0.89,TString strModel="",
+                    TString strCent="", bool drawLeg=true, TString ratioToMethod = "")
 {
   // Setting up global variables for the plot
   gROOT->SetStyle("Pub");
@@ -96,7 +97,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   if (drawLeg) leg_pt->Draw();
 
   //==============================================
-  TPaveText *pt = new TPaveText(0.56,0.74,0.85,0.85,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
+  TPaveText *pt = new TPaveText(0.36,0.74,0.85,0.85,"NDC NB"); // right corner 0.56,0.72,0.89,0.89
   pt->SetBorderSize(0);
   pt->SetFillColor(0);
   char hname[400];
@@ -171,7 +172,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     vgrRatio.at(igr)->GetYaxis()->SetTitleSize(0.12);
 
     // vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("%s/%s",vgr.at(igr+1)->GetTitle(),vgr.at(0)->GetTitle()));
-    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("#frac{[2,3]}{[1]}"));
+    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("Ratio to %s",ratioToMethod.Data()));
     vgrRatio.at(igr)->GetYaxis()->SetTitleOffset(0.5);
     vgrRatio.at(igr)->GetXaxis()->SetTitle(Form("%s",vgr.at(0)->GetXaxis()->GetTitle()));
     vgrRatio.at(igr)->GetYaxis()->SetNdivisions(504);

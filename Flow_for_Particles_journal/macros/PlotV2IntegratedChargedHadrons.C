@@ -113,6 +113,7 @@ vector<TGraphErrors*> PlotV2IntegratedChargedHadrons(TString inputFirstRunFileNa
   } // end of V2RP calculation
   
   // Product
+  cout << "Chi = ";
   if (bUseProduct) {
     for (int ic = 0; ic < ncent; ic++)
     {
@@ -131,14 +132,14 @@ vector<TGraphErrors*> PlotV2IntegratedChargedHadrons(TString inputFirstRunFileNa
           thetacount++;
         }
       }
-      if (thetacount!=0) v2int /= (float)thetacount*refmult;
+      if (thetacount!=0) v2int /= (float)thetacount; // refmult
       else {v2int = 0.;}
       
       float modQ2sqmean = prQ2ModSq->GetBinContent(ic+1);
       float Q2xmean = prQ2x->GetBinContent(ic+1);
       float Q2ymean = prQ2y->GetBinContent(ic+1);
       float chi2 = v2int/sqrt(modQ2sqmean-Q2xmean*Q2xmean-Q2ymean*Q2ymean-pow(v2int,2));
-      
+      cout << sqrt(chi2) << ", ";
       float temp=0.;
       for(int it=0; it<thetabins; it++)
       {
@@ -157,7 +158,7 @@ vector<TGraphErrors*> PlotV2IntegratedChargedHadrons(TString inputFirstRunFileNa
 
     } // end of V2RP calculation    
   } 
-
+  cout << endl;
   gr[6] = new TGraphErrors(ncent, X, v2LYZInt, errX, v2eLYZInt);
   gr[7] = new TGraphErrors(ncent, X, v2LYZIntPro, errX, v2eLYZIntPro);
 

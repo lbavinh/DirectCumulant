@@ -87,7 +87,7 @@ void FlowAnalysisWithFHCalEventPlane::GetRes()
     {
       res2 = fPrRes->GetBinContent(ic+1);
       res = (res2>0) ? TMath::Sqrt(res2) : 0.;
-      chi = GetChi(res,2.,50);
+      chi = GetChi(res,1.,50);
       chiF = TMath::Sqrt(2.)*chi;
       resF = Res(chiF,2.);
       fRes2[ic]=(res!=0) ? resF : 0.;

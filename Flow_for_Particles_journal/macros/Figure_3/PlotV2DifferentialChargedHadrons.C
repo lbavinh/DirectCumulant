@@ -3,7 +3,7 @@
 #include "../PlotV2ScalarProduct.C"
 #include "../PlotV2HighOrderQCumulant.C"
 #include "../DrawTGraphImp.C"
-const TString energy = "11.5";
+const TString energy = "7.7";
 TString input1 = Form("../FirstRun_%s.root",energy.Data());
 TString input2  = Form("../SecondRun_%s.root",energy.Data());
 void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TString inputSecondRunFileName = input2)
@@ -25,13 +25,13 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
   int excludeMethod5 = -1;
   int excludeMethod6 = -1;  
   const int markerStyle[] = {24,22,25,27,20,28,26};
-  const float markerSize = 1.5;
+  const float markerSize = 1.3;
   const float labelSize = 0.07;
   const float titleSize = 0.08;
   const float titleOffSet = 1.2;
   const int textFont = 132;
-  const double maxRatio = 1.11;
-  const double minRatio = 0.79;
+  const double maxRatio = 1.22;
+  const double minRatio = 0.69;
   const double maxX = 2.8;
   const double minX = -0.08;
   const double maxY = 0.24;
@@ -490,10 +490,14 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
     gr[ic][i]->SetMarkerSize(markerSize);
     gr[ic][i]->GetXaxis()->SetTitle("#it{p}_{T}, GeV/c");
     gr[ic][i]->GetYaxis()->SetTitle("#it{v}_{2}");
-    gr[ic][i]->SetDrawOption("P PLC PMC");
+    gr[ic][i]->SetDrawOption("P");
     gr[ic][i]->GetXaxis()->SetLimits(minX,maxX);
     gr[ic][i]->GetYaxis()->SetRangeUser(minY,maxY);
     }
+    Green(gr[ic][0]);
+    Blue(gr[ic][1]);
+    Red(gr[ic][4]);
+    Black(gr[ic][2]);
   }
 
   vector<TGraphErrors*> vGr[ncent];
@@ -513,6 +517,10 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
     for (int i=0; i<vGr[ic].size(); i++)
     {
       TGraphErrors *grRatio = Ratio(vGr[ic].at(i), vGr[ic].at(ratioToMethod));
+      if (i==0)Green(grRatio);
+      if (i==1)Blue(grRatio);
+      if (i==4)Red(grRatio);
+      if (i==2)Black(grRatio);
       grRatio->GetXaxis()->SetLimits(minX,maxX);
       grRatio->GetYaxis()->SetRangeUser(minRatio,maxRatio);
       grRatio->SetMarkerSize(markerSize);
@@ -539,7 +547,7 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
   tex.SetTextFont(textFont);
   tex.SetTextSize(titleSize+0.015);
   lineOne.SetLineStyle(2);
-  gStyle->SetPalette(kDarkRainBow);
+  // gStyle->SetPalette(kDarkRainBow);
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
   gStyle->SetOptStat(0);
@@ -548,7 +556,7 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
   {
     int padID = ic+1-firstCentToDraw;
     can->cd(padID);
-    vGr[ic].at(ratioToMethod)->Draw("AP PLC PMC");
+    vGr[ic].at(ratioToMethod)->Draw("AP");
     vGr[ic].at(ratioToMethod)->GetYaxis()->SetTitleSize(titleSize+0.015);
     vGr[ic].at(ratioToMethod)->GetYaxis()->SetLabelSize(labelSize+0.015);
     vGr[ic].at(ratioToMethod)->GetYaxis()->SetTitleFont(textFont);
@@ -561,15 +569,15 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
     for (int i=0; i<vGr[ic].size(); i++)
     {
       if (i==excludeMethod1 || i==excludeMethod2 || i==excludeMethod3 || i==excludeMethod4 || i==excludeMethod5 || i==excludeMethod6 || i==ratioToMethod) continue;
-      vGr[ic].at(i)->Draw("P PLC PMC");
+      vGr[ic].at(i)->Draw("P");
       
     }
     // cout << vGr[ic].size() << endl;
-    tex.DrawLatex(0.2,0.22,padName[padID-1].Data());
-    tex.DrawLatex(0.55,0.22,Form("%i-%i%%",centrality.at(ic).first, centrality.at(ic).second));
+    tex.DrawLatex(0.2,0.21,padName[padID-1].Data());
+    tex.DrawLatex(0.55,0.21,Form("%i-%i%%",centrality.at(ic).first, centrality.at(ic).second));
     if (ic==firstCentToDraw+1)
     {
-    TLegend *leg1 = new TLegend(0.4,0.1,0.85,0.3);
+    TLegend *leg1 = new TLegend(0.4,0.08,0.85,0.3);
     leg1->SetBorderSize(0);
     leg1->SetTextSize(titleSize+0.015);
     
@@ -583,7 +591,7 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
     }
     if (ic==firstCentToDraw+2)
     {
-      TLegend *leg2 = new TLegend(0.4,0.1,0.85,0.3);
+      TLegend *leg2 = new TLegend(0.4,0.08,0.85,0.3);
       leg2->SetBorderSize(0);
       leg2->SetTextSize(titleSize+0.015);
       for (int i=2; i<vGr[ic].size(); i++)
@@ -602,7 +610,7 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
   {
     int padID = ic+1-firstCentToDraw+numberOfCentToDraw;
     can->cd(padID);
-    vGr_ratio[ic].at(ratioToMethod-1)->Draw("AP PLC PMC");
+    vGr_ratio[ic].at(ratioToMethod-1)->Draw("AP");
     if (ic==firstCentToDraw)
     {
     vGr_ratio[ic].at(ratioToMethod-1)->GetYaxis()->SetTitleSize(titleSize);
@@ -638,11 +646,11 @@ void PlotV2DifferentialChargedHadrons(TString inputFirstRunFileName = input1, TS
     for (int i=0; i<vGr_ratio[ic].size(); i++)
     {
       if (i==excludeMethod1 || i==excludeMethod2 || i==excludeMethod3 || i==excludeMethod4 || i==excludeMethod5 || i==excludeMethod6 || i==ratioToMethod) continue;
-      vGr_ratio[ic].at(i)->Draw("P PLC PMC");
+      vGr_ratio[ic].at(i)->Draw("P");
     }
     vGr_ratio[ic].at(ratioToMethod-1)->SetTitle(Form(";#it{p}_{T}, GeV/c;Ratio to %s", title[ratioToMethod].Data()));
     
-    tex.DrawLatex(0.2,1.08,padName[padID-1].Data());
+    tex.DrawLatex(0.2,1.15,padName[padID-1].Data());
   }
   can->SaveAs(Form("V2pT_AMPT_at_%s.png",energy.Data()));
   can->SaveAs(Form("V2pT_AMPT_at_%s.pdf",energy.Data()));

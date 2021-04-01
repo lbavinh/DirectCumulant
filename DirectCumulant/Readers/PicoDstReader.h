@@ -31,8 +31,10 @@ public:
     virtual PicoDstRecoEvent *ReadRecoEvent(Int_t ev_num);
     virtual Int_t GetMcTrackSize();
     virtual Int_t GetRecoTrackSize();
+    virtual Int_t GetNFHCalModules();
     virtual PicoDstMCTrack* ReadMcTrack(Int_t tr_num);
     virtual PicoDstRecoTrack* ReadRecoTrack(Int_t tr_num);
+    virtual PicoDstFHCal* ReadFHCalModule(Int_t module_num);
 };
 
 #endif

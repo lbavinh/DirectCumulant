@@ -4,7 +4,7 @@
 #include "PlotV2HighOrderQCumulant.C"
 #include "DrawTGraphImp.C"
 
-vector<TGraphErrors*> PlotV2DifferentialChargedHadronsFor10_40Centrality(TString inputFirstRunFileName = "FirstRun_7.7.root", TString inputSecondRunFileName = "SecondRun_7.7.root")
+vector<TGraphErrors*> PlotV2DifferentialChargedHadronsFor10_40Centrality(TString inputFirstRunFileName = "FirstRun_7.7_new.root", TString inputSecondRunFileName = "SecondRun_7.7_new.root")
 {
 
   Double_t maxpt = 3.6;    // max pt for differential flow
@@ -13,7 +13,7 @@ vector<TGraphErrors*> PlotV2DifferentialChargedHadronsFor10_40Centrality(TString
   Double_t minptRF = 0.2;  // min pt for reference flow
   Double_t eta_cut = 1.5;  // pseudorapidity acceptance window for flow measurements
   Double_t eta_gap = 0.05; // +-0.05, eta-gap between 2 eta sub-event of two-particle cumulants method with eta-gap
-  const int ratioToMethod = 4;
+  const int ratioToMethod = 2;
   const double J1rootJ0 = 0.519147;
   double X[npt];
   for (int ipt=0; ipt<npt; ipt++)
@@ -23,7 +23,9 @@ vector<TGraphErrors*> PlotV2DifferentialChargedHadronsFor10_40Centrality(TString
   const double errX[npt] = {0.};
   bool bUseProduct = 1;
   Int_t nmethod = 6;
-  TString title[]={"v_{2}{#Psi_{2,TPC}}","v_{2}{SP}","v_{2}{2,#eta-gap}","v_{2}{2}","v_{2}{4}","v_{2}{LYZ, Prod.}"}; //"v_{2}{LYZ, Sum}"
+  TString title[]={"v_{2}{#Psi_{2,TPC}}","v_{2}{SP}","v_{2}{2}","v_{2}{2}","v_{2}{4}","v_{2}{LYZ}"}; //"v_{2}{LYZ, Sum}"
+                                                      //,#eta-gap
+  
   const int markerStyle[] = {24,22,27,21,20,25,28,26,23};
   const float markerSize = 1.3;
   TGraphErrors *gr[nmethod];
@@ -70,11 +72,10 @@ const double v22Gape1040[16] = {5.86977e-05, 4.02059e-05, 6.13738e-05, 9.64514e-
   //   if (i==ratioToMethod) continue;
   //   vGr.push_back(gr[i]);
   // }
-  // vGr.push_back(gr[5]);
-
+  vGr.push_back(gr[5]);
   vGr.push_back(gr[0]);
   vGr.push_back(gr[1]);
-  vGr.push_back(gr[3]);
+  vGr.push_back(gr[4]);
   TCanvas *can = (TCanvas*)DrawTGraph(vGr,"10-40%",0.89, 1.11, minpt, 2.8, -0.005, 0.25,
                                       // 0.65, 0.05, 0.9, 0.5,
                                       0.2, 0.45, 0.4, 0.88,

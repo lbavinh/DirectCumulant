@@ -1,9 +1,54 @@
 #define PLOTV2QCUMULANT
 #include "DrawTGraph.C"
 #include "PlotV2QCumulant_Model.C"
-TGraphErrors* PlotV2QCumulant(TString inFileName = "FirstRun_vHLLEUrQMD_11.5_Reco.root", int METHOD=2, int CENT=3, int ID=8){
-  // 2QC, 4QC, 2QC-gapped
+
+TGraphErrors* PlotV2QCumulant(TString inFileName = "FirstRun_vHLLEUrQMD_11.5_Reco.root"){
   TFile *inFile = new TFile(inFileName.Data(),"read");
+  TString outDirName = "vHLLEUrQMD_Reco";
+  
+  // // Flags
+  // bool saveAsPNG = false;
+  // int excludeMethod = -1; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively
+  // int drawDifferentialFlowTill = 3; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
+  // // Constants
+  // const int npid = 12; // CH+, pion+, kaon+, proton, CH-, pion-, kaon-, antiproton, CH, pions, kaons, protons+antiproton
+  // const std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton", "hadron_neg", "pion_neg", "kaon_neg", "proton_bar", "hadron", "pion", "kaon","proton_antiproton"};
+  // const std::vector<TString> pidFancyNames = {"h^{+}", "#pi^{+}", "K^{+}", "p", "h^{-}", "#pi^{-}", "K^{-}", "#bar{p}", "h^{#pm}","#pi^{#pm}","K^{#pm}","p(#bar{p})"};
+
+  // const int nmethod = 3; // 2QC, 4QC, 2QC-gapped
+
+  // const int npt = 16; // 0.5 - 3.6 GeV/c - number of pT bins
+  // const double bin_pT[npt+1]={0.,0.2,0.4,0.6,0.8,1.,1.2,1.4,1.6,1.8,2.0,2.2,2.4,2.6,2.8,3.2,3.6};
+  // const int binMinPtRFP = 1;  // 0.2 GeV 
+  // const int binMaxPtRFP = 14; // 2.8 GeV
+  // const double minptRFP = 0.2;
+  // const double maxptRFP = 3.0;
+
+  // const double maxpt = 2.5; // for v2 vs pt plotting
+  // const double minpt = 0.;  // for v2 vs pt plotting
+
+  // const int ncent = 9; // 0-80 %
+  // const double bin_cent[ncent] = {2.5,7.5,15,25,35,45,55,65,75};
+  // const double bin_centE[ncent] = {0};
+  // const vector<pair<int,int>> centrality = {{0,5},{5,10},{10,20},{20,30},{30,40},{40,50},{50,60},{60,70},{70,80}};
+  // const float eta_gap = 0.05;
+
+  // const double mincent = 0.;  // for v2 vs centrality
+  // const double maxcent = 60.; // for v2 vs centrality
+
+  // const double minV2int = -0.005; // for v2 vs centrality plotting
+  // const double maxV2int = 0.1; // for v2 vs centrality plotting
+  // const double minV2dif = -0.01; // for v2 vs pt plotting
+  // const double maxV2dif = 0.2; // for v2 vs pt plotting
+
+
+  // vector <Double_t> coordinateLeg = {0.18,0.63,0.45,0.889};
+  // vector<pair<Double_t,Double_t>> rangeRatio = {{0.84,1.16},{0.84,1.16}};
+  // vector<pair<Double_t,Double_t>> rangeRatioRF ={{0.65,1.11},{0.65,1.11}};
+  // int marker[]={21,20,22}; // 2QC, 4QC, 2QC-gapped
+
+  // Input hist
+
   TProfile *pCorrelator2EtaGap = (TProfile*)inFile->Get("pCorrelator2EtaGap");
   TProfile *pCorrelator2 = (TProfile*)inFile->Get("pCorrelator2");
   TProfile *pCorrelator4 = (TProfile*)inFile->Get("pCorrelator4");
@@ -17,6 +62,7 @@ TGraphErrors* PlotV2QCumulant(TString inFileName = "FirstRun_vHLLEUrQMD_11.5_Rec
   TProfile2D *pCov42Red[npid];
   TProfile2D *pCov44Red[npid];
   TProfile2D *pCov2Red4Red[npid];
+
   for (int i=0; i<npid-4; i++)
   {
     pReducedCorrelator2EtaGap[i] = (TProfile2D*)inFile->Get(Form("pReducedCorrelator2EtaGap_pid%i",i));
@@ -167,7 +213,7 @@ TGraphErrors* PlotV2QCumulant(TString inFileName = "FirstRun_vHLLEUrQMD_11.5_Rec
       }
     } // end of loop over PID
   } // end of loop over centrality classes
-  // cout << endl;
+  cout << endl;
   const char *grTitleDF[nmethod]={"v_{3}{2};p_{T} [GeV/c];v_{3}",
                                   "v_{3}{4};p_{T} [GeV/c];v_{3}",
                                   "v_{3}{2,#eta-gap};p_{T} [GeV/c];v_{3}"};
@@ -178,7 +224,26 @@ TGraphErrors* PlotV2QCumulant(TString inFileName = "FirstRun_vHLLEUrQMD_11.5_Rec
       }
     }
   }
-
+  TString level = (TString) Form("UrQMD, Au+Au at #sqrt{s_{NN}}=7.7 GeV");
+  if (saveAsPNG) gSystem->Exec(Form("mkdir -p ./%s/",outDirName.Data()));
+  TCanvas *cV2PT[ncent][npid];
+  char hname[800];
+  for (int icent=0; icent<drawDifferentialFlowTill; icent++){
+    for (int id=0;id<npid;id++){
+      std::vector<TGraphErrors*> vgrv2pt;
+      vgrv2pt.push_back(grDifFl[2][icent][id]); // v2{gapped 2QC}
+      for (int i=0; i<nmethod-1; i++){
+        if (i==excludeMethod) continue;
+        vgrv2pt.push_back(grDifFl[i][icent][id]);
+      }
+      sprintf(hname,"%s, %i-%i%%",pidFancyNames.at(id).Data(),centrality.at(icent).first,centrality.at(icent).second);
+      cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt,"",rangeRatio.at(0).first, rangeRatio.at(0).second, minpt, maxpt, minV2dif, maxV2dif,
+                                               coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                               level.Data(), hname);
+      cV2PT[icent][id] -> SetName(hname);
+      if (saveAsPNG) cV2PT[icent][id] -> SaveAs(Form("./%s/DifferentialFlow_Centrality%i-%i_%s.png",outDirName.Data(),centrality.at(icent).first,centrality.at(icent).second,pidNames.at(id).Data()));
+    }
+  }
 
   //==========================================================================================================================
   TGraphErrors *grIntFlPID[nmethod][npid];    // v2(pt); 3 = {2QC, 4QC, EP, gapped 2QC}
@@ -237,7 +302,8 @@ TGraphErrors* PlotV2QCumulant(TString inFileName = "FirstRun_vHLLEUrQMD_11.5_Rec
     double ev22 = sqrt(1./(4.*cor2.mVal)*cor2.mMSE);
     v2_RF[0][icent] = v22;
     v2e_RF[0][icent] = ev22;
-
+    // cout << v22 << ", ";
+    // cout << ev22 << ", ";
     // 4QC
     term cor4 = term(pCorrelator4,icent);
     double cov24 = Covariance(pCov24,pCorrelator2,pCorrelator4,icent,icent,icent);
@@ -245,12 +311,15 @@ TGraphErrors* PlotV2QCumulant(TString inFileName = "FirstRun_vHLLEUrQMD_11.5_Rec
     double ev24 = sqrt( 1./pow(v24,6)*(cor2.mVal*cor2.mVal*cor2.mMSE+1./16*cor4.mMSE-0.5*cor2.mVal*cov24) );
     v2_RF[1][icent] = v24;
     v2e_RF[1][icent] = ev24;
+    cout << v24 << ", ";
+    // cout << ev24 << ", ";
     // 2QC Gapped
     term cor2Gap = term(pCorrelator2EtaGap,icent);
     double v22Gap = sqrt(cor2Gap.mVal);
     double ev22Gap = sqrt(1./(4.*cor2Gap.mVal)*cor2Gap.mMSE);
     v2_RF[2][icent] = v22Gap;
     v2e_RF[2][icent] = ev22Gap;
+    // cout << v22Gap << ", ";
     for (int id=0;id<npid;id++){
       // v22
       term cor2red = term(pReducedCorrelator2_PID[id],icent);
@@ -260,6 +329,7 @@ TGraphErrors* PlotV2QCumulant(TString inFileName = "FirstRun_vHLLEUrQMD_11.5_Rec
                           + 4*pow(cor2.mVal,2)*cor2red.mMSE - 4*cor2.mVal*cor2red.mVal*cov22prime));
       v2[0][id][icent] = v22Dif;
       v2e[0][id][icent] = ev22Dif;
+      // if (id==9) cout << v22Dif <<" ";
       // v24
       term cor4red = term(pReducedCorrelator4_PID[id],icent);
       double cov24prime = Covariance(pCov24Red_PID[id],pCorrelator2,pReducedCorrelator4_PID[id],icent,icent,icent);
@@ -297,8 +367,10 @@ TGraphErrors* PlotV2QCumulant(TString inFileName = "FirstRun_vHLLEUrQMD_11.5_Rec
                           + 4*pow(cor2Gap.mVal,2)*cor2redGap.mMSE - 4*cor2Gap.mVal*cor2redGap.mVal*cov22primeGap));
       v2[2][id][icent] = v22DifGap;
       v2e[2][id][icent] = ev22DifGap;
+      // if (id==9) cout << v22DifGap <<" ";
     } // end of loop over PID
   } // end of loop over centrality classes
+  cout << endl;
   for (int imeth=0; imeth<nmethod; imeth++){
     grRefFl[imeth] = new TGraphErrors(ncent,bin_cent,v2_RF[imeth],bin_centE,v2e_RF[imeth]);
     grRefFl[imeth] -> SetMarkerStyle(marker[imeth]);
@@ -322,8 +394,48 @@ TGraphErrors* PlotV2QCumulant(TString inFileName = "FirstRun_vHLLEUrQMD_11.5_Rec
   
   }
 
-  inFile->Close();
-  return grDifFl[METHOD][CENT][ID];
-  // return grRefFl[2];
+  std::vector<TGraphErrors*> vgrv2cent[npid];
+    for (int id=0;id<npid;id++){
+      if (id==8) continue;  
+      vgrv2cent[id].push_back(grIntFlPID[2][id]); // v2{gapped 2QC}
+      for (int i=0; i<nmethod-1; i++){
+        if (i==excludeMethod) continue;
+        vgrv2cent[id].push_back(grIntFlPID[i][id]);
+      }
+    }
   
+  TCanvas *cV2Cent[npid];
+  for (int id=0;id<npid;id++){
+    if (id==8) continue;
+    cV2Cent[id] = (TCanvas*) DrawTGraph(vgrv2cent[id],"",rangeRatioRF.at(0).first, rangeRatioRF.at(0).second, mincent, maxcent, minV2int, maxV2int,
+                                        coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                        level.Data(), Form("%s, %1.1f<p_{T}<%1.1f",pidFancyNames.at(id).Data(),bin_pT[binMinPtRFP],bin_pT[binMaxPtRFP]));
+
+    cV2Cent[id] -> SetName(pidFancyNames.at(id).Data());
+    if (saveAsPNG) cV2Cent[id] -> SaveAs(Form("./%s/IntegratedFlow_%s.png",outDirName.Data(),pidNames.at(id).Data()));
+  }
+  
+
+  TCanvas *cV2CentRF;
+
+  std::vector<TGraphErrors*> vgrv2cent_chargedHardons;
+  for (int imeth=0; imeth<nmethod; imeth++){
+    // grRefFl[imeth][id] -> SetTitle(Form("V2 vs. pT, %s, centrality 10-40%%, %s",pidNames.at(id).Data(),grTitleDF[imeth]));
+    grRefFl[imeth] -> SetTitle(grTitleRF[imeth]);
+  }
+  vgrv2cent_chargedHardons.push_back(grRefFl[2]);
+  for (int imeth=0;imeth<nmethod-1;imeth++){
+    if (imeth==excludeMethod) continue;
+    vgrv2cent_chargedHardons.push_back(grRefFl[imeth]);
+  }
+  cV2CentRF = (TCanvas*) DrawTGraph(vgrv2cent_chargedHardons,"",rangeRatioRF.at(0).first, rangeRatioRF.at(0).second, mincent, maxcent, minV2int, maxV2int,
+                                    coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                    level.Data(), Form("Ch. hadrons, %1.1f<p_{T}<%1.1f GeV/c",minptRFP,maxptRFP));
+  cV2CentRF -> SetName("Reference flow");
+  if (saveAsPNG) cV2CentRF -> SaveAs(Form("./%s/IntegratedFlow_hadron.png",outDirName.Data()));
+
+  inFile->Close();
+  return grDifFl[2][3][8]; // v22gap 20-30%
+  // return grRefFl[2];
+  // 2QC, 4QC, 2QC-gapped
 }

@@ -1,11 +1,6 @@
 #define PERFORMANCEQC
-// #include "PlotV2EtaSubEventPlane.C"
-// #include "PlotV2ScalarProduct.C"
 #include "PlotV2QCumulant.C"
-// #include "PlotV2QCumulant_Model.C"
-// #include "constants.C"
-// vector<TGraphErrors*>*
-void Performance_QC(TString inputModel = "FirstRun_vHLLEUrQMD_11.5_Model.root", TString inputMC = "FirstRun_vHLLEUrQMD_11.5_Reco_Nhits_16.root", TString inputRECO = "FirstRun_vHLLEUrQMD_11.5_Reco_Nhits_32.root")
+void Performance_QC(TString inputMC = "FirstRun_UrQMD_7.7.root", TString inputRECO = "FirstRun_UrQMD_7.7_Reco.root")
 {
 const Int_t npt = 16; // 0-3.6 GeV/c - number of pT bins
 const Double_t pTBin[npt + 1] = {0., 0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.2, 3.6};
@@ -23,16 +18,16 @@ const Double_t pTBin[npt + 1] = {0., 0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8,
   }
   const double errX[npt] = {0.};
   bool bUseProduct = 1;
-  Int_t nmethod = 3;
-  TString title[]={"Model","N_{hits}=16","N_{hits}=32"};// MC GEANT4 Reco
-  const int markerStyle[] = {24,20,20,21,20,25,28,26,23};
+  Int_t nmethod = 2;
+  TString title[]={"Model","Reco"};// 
+  const int markerStyle[] = {24,20,27,21,20,25,28,26,23};
   const float markerSize = 1.3;
   TGraphErrors *graph[1][nmethod];
   for (int i = 0; i < 1; i++)
   {
-    graph[i][0] = PlotV2QCumulant_Model(inputModel);
-    graph[i][1] = PlotV2QCumulant(inputMC);
-    graph[i][2] = PlotV2QCumulant(inputRECO);
+    graph[i][0] = PlotV2QCumulant_Model(inputMC);
+    // graph[i][0] = PlotV2QCumulant(inputMC);
+    graph[i][1] = PlotV2QCumulant(inputRECO);
   }
   
 
@@ -45,7 +40,7 @@ const Double_t pTBin[npt + 1] = {0., 0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8,
     graph[ic][i]->SetMarkerStyle(markerStyle[i]);
     graph[ic][i]->SetMarkerSize(markerSize);
     graph[ic][i]->GetXaxis()->SetTitle("p_{T}, GeV/c");
-    graph[ic][i]->GetYaxis()->SetTitle("v_{2}{4}"); // 2,|#Delta#eta|>0.1
+    graph[ic][i]->GetYaxis()->SetTitle("v_{2}{2,|#Delta#eta|>0.1}");
     graph[ic][i]->SetDrawOption("P PLC PMC");
     }
   }
@@ -65,12 +60,12 @@ const Double_t pTBin[npt + 1] = {0., 0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8,
     // vGr[ic].push_back(graph[ic][3]);
     // vGr[ic].push_back(graph[ic][4]);
 
-  TCanvas *can = (TCanvas*)DrawTGraph(vGr[ic],"10-20%",0.89, 1.11, minpt, 3.6, -0.005, 0.25,
+  TCanvas *can = (TCanvas*)DrawTGraph(vGr[ic],"20-30%",0.84, 1.16, minpt, 3.6, -0.005, 0.25,
                                       // 0.65, 0.05, 0.9, 0.5,
                                       0.2, 0.65, 0.4, 0.88,
-                                      "vHLLE+UrQMD, Au+Au", Form("#sqrt{s_{NN}} = 11.5 GeV, h^{#pm}, |#eta|<%1.1f",eta_cut),1,"Ratio to Model");
+                                      "UrQMD, Au+Au", Form("#sqrt{s_{NN}} = 7.7 GeV, h^{#pm}, |#eta|<%1.1f",eta_cut),1,"Reco/MC");
   can->SetName(Form("10-40%%"));
-  can->SaveAs(Form("Performance_v2_4QC_1020_Model_vs_Reco_Nhits_16.pdf"));
+  can->SaveAs(Form("Performance_v2_2QC_2030.pdf"));
   }
 
 

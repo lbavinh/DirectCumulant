@@ -1,5 +1,5 @@
 #include "PlotV2QCumulant.C"
-nmethod = 4; // 2QC, 4QC, 2QC-gapped, 4QC-gapped
+// nmethod = 4; // 2QC, 4QC, 2QC-gapped, 4QC-gapped
 // const int npid = 12; // CH+, pion+, kaon+, proton, CH-, pion-, kaon-, antiproton, CH, pions, kaons, protons+antiproton
 // const int npt = 16; // 0.0 - 3.6 GeV/c - number of pT bins
 void CalStatErrCent1040(TString inputFileName,double v2eDif1040[nmethod][npid][npt]){
@@ -224,7 +224,7 @@ TGraphErrors* PlotV2QCumulantCentrality1040(TString inputFileName, int METH, int
   int centBinLow = 2; // 10%-20%
   int centBinHigh = 4; // 30-40%
 
-  bool saveTGraph = false;
+  bool saveTGraph = true;
   saveAsPNG = false;
   excludeMethod = 2;
   // int excludeMethod = -1; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively

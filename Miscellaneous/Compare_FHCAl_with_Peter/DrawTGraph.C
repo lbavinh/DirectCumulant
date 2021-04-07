@@ -1,10 +1,10 @@
 // Draws N TGraphErrors (upper panel) with their grN/gr1 ratio (lower pannel)
-TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str, 
+TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str, TString strModel="",TString strCent="",TString titleRatioPlot = "Ratio",
                     Double_t yRatio_low=0.89, Double_t yRatio_high=1.11,
-                    Double_t x_low=0.0, Double_t x_high=1.0,
-                    Double_t y_low=0.0, Double_t y_high=1.0,
-                    Double_t leg_x_low=0.22, Double_t leg_y_low=0.55,
-                    Double_t leg_x_high=0.55, Double_t leg_y_high=0.89,TString strModel="", TString strCent="", bool drawLeg=1, TString titleRatioPlot = "Ratio")
+                    Double_t x_low=0.0, Double_t x_high=3.0,
+                    Double_t y_low=0.0, Double_t y_high=0.25,
+                    Double_t leg_x_low=0.22, Double_t leg_y_low=0.65,
+                    Double_t leg_x_high=0.45, Double_t leg_y_high=0.89, bool drawLeg=1)
 {
   // Setting up global variables for the plot
   gROOT->SetStyle("Pub");
@@ -327,7 +327,7 @@ TProfile *PlotPtIntegratedV2(TProfile3D *const &prV2,
                              const Double_t pt_high = 3.0,
                              const Double_t eta_cut = 1.5)
 {
-  // prV2->GetZaxis()->SetRange(-eta_cut, eta_cut); // this is a bug, apparently - need to cross-check with TProfile2D
+  prV2->GetZaxis()->SetRange(-eta_cut, eta_cut); // this is a bug, apparently - need to cross-check with TProfile2D
   TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("yx");
   prV2_2D->SetName(Form("%s_eta_cut_%1.1f",prV2->GetName(),eta_cut));
   Int_t pt_bin_low = prV2_2D->GetYaxis()->FindBin(pt_low);
@@ -354,7 +354,7 @@ TProfile *PlotV2vsEta(TProfile3D *const &prV2,
                       const Double_t cent_low = 10.,
                       const Double_t cent_high = 40.)
 {
-  // prV2->GetYaxis()->SetRange(pt_low, pt_high); // this is a bug, apparently - need to cross-check with TProfile2D
+  prV2->GetYaxis()->SetRange(pt_low, pt_high); // this is a bug, apparently - need to cross-check with TProfile2D
   TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("zx");
   prV2_2D->SetName(Form("%s_pt_%1.1f_%1.1f",prV2->GetName(),pt_low,pt_high));
   Int_t cent_bin_low = prV2_2D->GetXaxis()->FindBin(cent_low);

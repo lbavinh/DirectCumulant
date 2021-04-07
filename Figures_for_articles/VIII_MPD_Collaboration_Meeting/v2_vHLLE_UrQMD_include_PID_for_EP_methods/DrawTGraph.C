@@ -327,7 +327,7 @@ TProfile *PlotPtIntegratedV2(TProfile3D *const &prV2,
                              const Double_t pt_high = 3.0,
                              const Double_t eta_cut = 1.5)
 {
-  // prV2->GetZaxis()->SetRange(-eta_cut, eta_cut); // this is a bug, apparently - need to cross-check with TProfile2D
+  prV2->GetZaxis()->SetRange(-eta_cut, eta_cut); // this is a bug, apparently - need to cross-check with TProfile2D
   TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("yx");
   prV2_2D->SetName(Form("%s_eta_cut_%1.1f",prV2->GetName(),eta_cut));
   Int_t pt_bin_low = prV2_2D->GetYaxis()->FindBin(pt_low);
@@ -354,7 +354,7 @@ TProfile *PlotV2vsEta(TProfile3D *const &prV2,
                       const Double_t cent_low = 10.,
                       const Double_t cent_high = 40.)
 {
-  // prV2->GetYaxis()->SetRange(pt_low, pt_high); // this is a bug, apparently - need to cross-check with TProfile2D
+  prV2->GetYaxis()->SetRange(pt_low, pt_high); // this is a bug, apparently - need to cross-check with TProfile2D
   TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("zx");
   prV2_2D->SetName(Form("%s_pt_%1.1f_%1.1f",prV2->GetName(),pt_low,pt_high));
   Int_t cent_bin_low = prV2_2D->GetXaxis()->FindBin(cent_low);
@@ -379,7 +379,7 @@ TProfile *PlotV2vsPt(TProfile3D *const &prV2,
                      const Double_t cent_high = 40,
                      const Double_t eta_cut = 1.5)
 {
-  // prV2->GetZaxis()->SetRange(-eta_cut, eta_cut); // this is a bug, apparently - need to cross-check with TProfile2D
+  prV2->GetZaxis()->SetRange(-eta_cut, eta_cut); // this is a bug, apparently - need to cross-check with TProfile2D
   TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("yx");
   prV2_2D->SetName(Form("%s_eta_cut_%1.1f",prV2->GetName(),eta_cut));
   Int_t cent_bin_low = prV2_2D->GetXaxis()->FindBin(cent_low);

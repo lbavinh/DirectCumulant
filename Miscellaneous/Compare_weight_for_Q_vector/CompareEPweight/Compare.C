@@ -1,11 +1,10 @@
 #include "DrawTGraph.C"
 // #include "constants.C"
 // vector<TGraphErrors*>*
-void Performance_SP()
+void Compare()
 {
-  TString inputName[3] = {"./Data/SecondRun_vHLLEUrQMD_11.5_Model.root",
-                          "./Data/SecondRun_vHLLEUrQMD_11.5_Reco_Nhits_32_MotherID.root",
-                          "./Data/SecondRun_vHLLEUrQMD_11.5_Reco_Nhits_32_DCA_0.5.root"};
+  TString inputName[3] = {"./SecondRun_vHLLEUrQMD_11.5_Model_EP_1_weight.root",
+                          "./SecondRun_vHLLEUrQMD_11.5_Model.root"};
 
 
   Int_t centlow = 10;
@@ -14,25 +13,32 @@ void Performance_SP()
   Double_t minpt = 0.;     // min pt for differential flow
   Double_t eta_cut = 1.5;  // pseudorapidity acceptance window for flow measurements
   const int ratioToMethod = 0;
-  const Int_t nmethod = 3;
+  const Int_t nmethod = 2;
   const Int_t npid = 3;
   int pidCode[npid]={8,9,3};
   TString pidName[npid]={"hadrons","pions","protons"};
   TString pidNameFancy[npid]={"h^{#pm}","#pi^{#pm}","p"};
-  TString title[]={"Model","motherID","DCA<0.5cm"};
+  TString title[]={"Unit weight","p_{T} weight"};
   const int markerStyle[] = {24,20,23,21,20,25,28,26,23};
   const float markerSize = 1.3;
   TGraphErrors *graph[npid][nmethod];
   TFile *fi[3];
-  for (int i = 0; i < nmethod; i++){
-    fi[i] = new TFile(inputName[i].Data(),"READ");
-    for (int j=0; j<npid; j++)
-    {
-      auto pr = (TProfile2D*) fi[i]->Get(Form("SP/prV2SPvsPt_pid%i",pidCode[j]));
-      TProfile *tmp = PlotV2vsPt(pr,10,40);
-      graph[j][i] = Converter(tmp);
-    }
+  fi[0] = new TFile(inputName[0].Data(),"READ");
+  fi[1] = new TFile(inputName[1].Data(),"READ");
+  for (int j=0; j<npid; j++)
+  {
+    auto pr = (TProfile2D*) fi[0]->Get(Form("ETASUBEP/prV2EtaSubvsPt_pid%i",pidCode[j]));
+    TProfile *tmp = PlotV2vsPt(pr,10,40);
+    graph[j][0] = Converter(tmp);
   }
+
+  for (int j=0; j<npid; j++)
+  {
+    auto pr = (TProfile2D*) fi[1]->Get(Form("ETASUBEP/prV2EtaSubvsPt_pid%i",pidCode[j]));
+    TProfile *tmp = PlotV2vsPt(pr,10,40);
+    graph[j][1] = Converter(tmp);
+  }
+  
 
   for (int id = 0; id < npid; id++)
   {
@@ -43,7 +49,7 @@ void Performance_SP()
     graph[id][i]->SetMarkerStyle(markerStyle[i]);
     graph[id][i]->SetMarkerSize(markerSize);
     graph[id][i]->GetXaxis()->SetTitle("p_{T}, GeV/c");
-    graph[id][i]->GetYaxis()->SetTitle("v_{2}{SP}");
+    graph[id][i]->GetYaxis()->SetTitle("v_{2}{eta-sub,EP}");
     graph[id][i]->SetDrawOption("P PLC PMC");
     }
   }
@@ -54,12 +60,12 @@ void Performance_SP()
     vGr[id].push_back(graph[id][ratioToMethod]);
     vGr[id].push_back(graph[id][1]);
     // vGr[id].push_back(graph[id][2]);
-    TCanvas *can = (TCanvas*)DrawTGraph(vGr[id],Form("%i-%i%%",centlow,centhigh),0.89, 1.11, minpt, 3.0, -0.005, 0.25,
+    TCanvas *can = (TCanvas*)DrawTGraph(vGr[id],Form("%i-%i%%",centlow,centhigh),0.89, 1.11, minpt, 2.8, -0.005, 0.25,
                                       // 0.65, 0.05, 0.9, 0.5,
                                       0.2, 0.5, 0.45, 0.88,
-                                      "vHLLE+UrQMD, Au+Au", Form("#sqrt{s_{NN}} = 11.5 GeV, %s, |#eta|<%1.1f",pidNameFancy[id].Data(), eta_cut),1,"Ratio to Model");
+                                      "vHLLE+UrQMD, Au+Au", Form("#sqrt{s_{NN}} = 11.5 GeV, %s, |#eta|<%1.1f",pidNameFancy[id].Data(), eta_cut),1,"Ratio to Unit weight");
     can->SetName(Form("10-40%%"));
-    can->SaveAs(Form("Performance_v2_SP_%i%i_Model_vs_Nhits_32_%s.pdf",centlow,centhigh,pidName[id].Data()));
+    can->SaveAs(Form("Compare_EP_%i%i_Model_%s.pdf",centlow,centhigh,pidName[id].Data()));
   }
 
 

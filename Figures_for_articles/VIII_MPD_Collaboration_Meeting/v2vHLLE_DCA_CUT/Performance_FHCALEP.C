@@ -1,7 +1,7 @@
 #include "DrawTGraph.C"
 // #include "constants.C"
 // vector<TGraphErrors*>*
-void Performance_SP()
+void Performance_FHCALEP()
 {
   TString inputName[3] = {"./Data/SecondRun_vHLLEUrQMD_11.5_Model.root",
                           "./Data/SecondRun_vHLLEUrQMD_11.5_Reco_Nhits_32_MotherID.root",
@@ -28,7 +28,7 @@ void Performance_SP()
     fi[i] = new TFile(inputName[i].Data(),"READ");
     for (int j=0; j<npid; j++)
     {
-      auto pr = (TProfile2D*) fi[i]->Get(Form("SP/prV2SPvsPt_pid%i",pidCode[j]));
+      auto pr = (TProfile2D*) fi[i]->Get(Form("FHCALEP/prV2FHCalEPvsPt_pid%i",pidCode[j]));
       TProfile *tmp = PlotV2vsPt(pr,10,40);
       graph[j][i] = Converter(tmp);
     }
@@ -43,7 +43,7 @@ void Performance_SP()
     graph[id][i]->SetMarkerStyle(markerStyle[i]);
     graph[id][i]->SetMarkerSize(markerSize);
     graph[id][i]->GetXaxis()->SetTitle("p_{T}, GeV/c");
-    graph[id][i]->GetYaxis()->SetTitle("v_{2}{SP}");
+    graph[id][i]->GetYaxis()->SetTitle("v_{2}{#Psi_{1,FHCal}}");
     graph[id][i]->SetDrawOption("P PLC PMC");
     }
   }
@@ -53,13 +53,13 @@ void Performance_SP()
   {
     vGr[id].push_back(graph[id][ratioToMethod]);
     vGr[id].push_back(graph[id][1]);
-    // vGr[id].push_back(graph[id][2]);
-    TCanvas *can = (TCanvas*)DrawTGraph(vGr[id],Form("%i-%i%%",centlow,centhigh),0.89, 1.11, minpt, 3.0, -0.005, 0.25,
+    vGr[id].push_back(graph[id][2]);
+    TCanvas *can = (TCanvas*)DrawTGraph(vGr[id],Form("%i-%i%%",centlow,centhigh),0.79, 1.21, minpt, 3.6, -0.005, 0.25,
                                       // 0.65, 0.05, 0.9, 0.5,
                                       0.2, 0.5, 0.45, 0.88,
                                       "vHLLE+UrQMD, Au+Au", Form("#sqrt{s_{NN}} = 11.5 GeV, %s, |#eta|<%1.1f",pidNameFancy[id].Data(), eta_cut),1,"Ratio to Model");
     can->SetName(Form("10-40%%"));
-    can->SaveAs(Form("Performance_v2_SP_%i%i_Model_vs_Nhits_32_%s.pdf",centlow,centhigh,pidName[id].Data()));
+    can->SaveAs(Form("Performance_v2_FHCalEP_%i%i_Model_vs_Nhits_32_%s.pdf",centlow,centhigh,pidName[id].Data()));
   }
 
 

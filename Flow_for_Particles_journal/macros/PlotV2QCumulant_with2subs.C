@@ -629,8 +629,8 @@ void PlotV2QCumulant_with2subs(){
       grDifFl1040[imeth][id] -> Write(Form("gr_cent10-40_%i_%i",imeth,id));
       for (int icent=0;icent<ncent;icent++){
         grDifFl[imeth][icent][id] -> SetTitle(grTitle[imeth]);
-        grDifFl1040[imeth][id]->GetYaxis()-> SetTitle("v_{2}");
-        grDifFl1040[imeth][id]->GetXaxis()-> SetTitle("p_{T}, GeV/c");
+        grDifFl[imeth][icent][id]->GetYaxis()-> SetTitle("v_{2}");
+        grDifFl[imeth][icent][id]->GetXaxis()-> SetTitle("p_{T}, GeV/c");
         grDifFl[imeth][icent][id] -> Write(Form("gr_cent%i_%i_%i",icent,imeth,id));
       }
     }

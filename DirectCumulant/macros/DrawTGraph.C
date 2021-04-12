@@ -4,7 +4,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
                     Double_t x_low=0.0, Double_t x_high=1.0,
                     Double_t y_low=0.0, Double_t y_high=1.0,
                     Double_t leg_x_low=0.22, Double_t leg_y_low=0.55,
-                    Double_t leg_x_high=0.55, Double_t leg_y_high=0.89,TString strModel="", TString strCent="", bool drawLeg=1)
+                    Double_t leg_x_high=0.55, Double_t leg_y_high=0.89,TString strModel="", TString strCent="", bool drawLeg=1, TString titleRatioPlot = "Ratio")
 {
   // Setting up global variables for the plot
   gROOT->SetStyle("Pub");
@@ -14,9 +14,9 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
 
   std::vector<Double_t*> vx_gr, vy_gr, ex_gr, ey_gr;
   std::vector<Int_t> nbins;
-  for (int i=0; i<vgr.size();i++)
+  for (Int_t i=0; i<vgr.size();i++)
   {
-    // Read points
+    // Read poInt_ts
     vx_gr.push_back(vgr.at(i)->GetX());
     vy_gr.push_back(vgr.at(i)->GetY());
 
@@ -38,10 +38,10 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   TPad *padUp = new TPad(Form("padUp"),"v2 vs pt",0.,0.33,1.,1.,0,-1,0);
   TPad *padDown = new TPad(Form("padDown"),"Ratio v2",0.,0.,1.,0.33,0,-1,0);
 
-  double padUW;
-	double padUH;
-	double padDW;
-	double padDH;
+  Double_t padUW;
+	Double_t padUH;
+	Double_t padDW;
+	Double_t padDH;
 
   padUp->SetBorderSize(0);
   padDown->SetBorderSize(0);
@@ -77,10 +77,11 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   vgr.at(0)->GetXaxis()->SetTitleSize(0.07);
   vgr.at(0)->GetYaxis()->SetTitleSize(0.07);
   vgr.at(0)->GetYaxis()->SetTitleOffset(1.08);
-
+  vgr.at(0)->SetLineWidth(1.);
   vgr.at(0)->Draw("AP PLC PMC");
-  for (int i=1; i<vgr.size();i++)
+  for (Int_t i=1; i<vgr.size();i++)
   {
+    vgr.at(i)->SetLineWidth(1.);
     vgr.at(i)->Draw("P PLC PMC");
   }
 
@@ -88,7 +89,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   TLegend *leg_pt = new TLegend(leg_x_low,leg_y_low,leg_x_high,leg_y_high);
   leg_pt->SetBorderSize(0);
   leg_pt->SetHeader(str.Data(),"C");
-  for (int i=0; i<vgr.size();i++)
+  for (Int_t i=0; i<vgr.size();i++)
   {
     leg_pt->AddEntry(vgr.at(i),Form("%s",vgr.at(i)->GetTitle()),"p");
   }
@@ -128,7 +129,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
 	std::vector<Double_t> vRatioYerr;
 
   std::vector<TGraphErrors*> vgrRatio;
-  for (int igr=1; igr<vgr.size();igr++)
+  for (Int_t igr=1; igr<vgr.size();igr++)
   {
     v1X.clear();
     v1Y.clear();
@@ -140,7 +141,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     v2Yerr.clear();
     vRatioY.clear();
     vRatioYerr.clear();
-    for (int i=0; i<vgr.at(igr)->GetN();i++)
+    for (Int_t i=0; i<vgr.at(igr)->GetN();i++)
     {
       v1X.push_back(vx_gr.at(igr)[i]);
       v1Y.push_back(abs(vy_gr.at(igr)[i]));
@@ -163,7 +164,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   
   padDown->SetBottomMargin(0.3);
 
-  for (int igr=0; igr<vgrRatio.size();igr++)
+  for (Int_t igr=0; igr<vgrRatio.size();igr++)
   {
     vgrRatio.at(igr)->GetXaxis()->SetLabelSize(0.11);
     vgrRatio.at(igr)->GetYaxis()->SetLabelSize(0.11);
@@ -171,7 +172,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     vgrRatio.at(igr)->GetYaxis()->SetTitleSize(0.12);
 
     // vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("%s/%s",vgr.at(igr+1)->GetTitle(),vgr.at(0)->GetTitle()));
-    vgrRatio.at(igr)->GetYaxis()->SetTitle(Form("#frac{[1,2]}{[3]}"));
+    vgrRatio.at(igr)->GetYaxis()->SetTitle(titleRatioPlot.Data());
     vgrRatio.at(igr)->GetYaxis()->SetTitleOffset(0.5);
     vgrRatio.at(igr)->GetXaxis()->SetTitle(Form("%s",vgr.at(0)->GetXaxis()->GetTitle()));
     vgrRatio.at(igr)->GetYaxis()->SetNdivisions(504);
@@ -183,7 +184,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
     vgrRatio.at(igr)->SetMarkerSize(1.6);
     vgrRatio.at(igr)->SetLineColor(vgr.at(igr+1)->GetMarkerStyle());
     vgrRatio.at(igr)->SetMarkerColor(vgr.at(igr+1)->GetMarkerStyle());
-    // vgrRatio.at(igr)->SetLineWidth(1.);
+    vgrRatio.at(igr)->SetLineWidth(1.);
     // grRatio->GetXaxis()->SetLimits(0.95*vx_gr1[0],1.05*vx_gr1[n1bins-1]);
     if (igr==0)
     {
@@ -245,4 +246,157 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str,
   }
 
   return canv;
+}
+
+TGraphErrors* Converter(const TProfile* const &pr)
+{
+  const Int_t iNbins = pr->GetNbinsX();
+  std::vector<Double_t> x, errX;
+  std::vector<Double_t> y, errY;
+  for (Int_t i = 0; i < iNbins; i++)
+  {
+    x.push_back( pr->GetBinCenter(i+1) );
+    y.push_back( pr->GetBinContent(i+1) );
+    errX.push_back(0.);
+    errY.push_back( pr->GetBinError(i+1) );
+  }
+  TGraphErrors *gr = new TGraphErrors(iNbins, &x[0], &y[0], &errX[0], &errY[0]);
+  return gr;
+}
+
+TGraphErrors* Ratio(const TGraphErrors* const& gr1, const TGraphErrors* const& gr2)
+{
+  Int_t iNbins = gr2->GetN();
+  Double_t *vx = (Double_t*) gr2->GetX();
+  Double_t *vy2 = (Double_t*) gr2->GetY();
+  Double_t *vy1 = (Double_t*) gr1->GetY();
+  Double_t *vey2 = (Double_t*) gr2->GetEY();
+  Double_t *vey1 = (Double_t*) gr1->GetEY();
+  vector<Double_t> ratio, ratioErr, XErr;
+  for (Int_t i = 0; i < iNbins; i++)
+  {
+    XErr.push_back(0.);
+    Double_t dRatio = vy1[i] / vy2[i];
+    ratio.push_back(dRatio);
+    Double_t dRatioErr = dRatio*(TMath::Sqrt(TMath::Power(vey2[i]/vy2[i],2)+TMath::Power(vey1[i]/vy1[i],2)));
+    ratioErr.push_back(dRatioErr);
+  }
+  TGraphErrors *grRatio = new TGraphErrors(iNbins, &vx[0], &ratio[0], &XErr[0], &ratioErr[0]);
+  grRatio->SetMarkerStyle(gr1->GetMarkerStyle());
+  grRatio->SetMarkerColor(gr1->GetMarkerStyle());
+  grRatio->SetLineColor(gr1->GetMarkerStyle());
+  return grRatio;
+}
+
+TGraphErrors* Blue(TGraphErrors *const &gr)
+{
+  gr->SetMarkerColor(kBlue+3);
+  gr->SetLineColor(kBlue+3);
+  return gr;
+}
+
+TGraphErrors* Green(TGraphErrors *const &gr)
+{
+  gr->SetMarkerColor(kGreen+2);
+  gr->SetLineColor(kGreen+2);
+  return gr;
+}
+
+TGraphErrors* Yellow(TGraphErrors *const &gr)
+{
+  gr->SetMarkerColor(kYellow+3);
+  gr->SetLineColor(kYellow+3);
+  return gr;
+}
+
+TGraphErrors* Red(TGraphErrors *const &gr)
+{
+  gr->SetMarkerColor(kRed+2);
+  gr->SetLineColor(kRed+2);
+  return gr;
+}
+
+TGraphErrors* Black(TGraphErrors *const &gr)
+{
+  gr->SetMarkerColor(kBlack);
+  gr->SetLineColor(kBlack);
+  return gr;
+}
+
+TProfile *PlotPtIntegratedV2(TProfile3D *const &prV2,
+                             const Double_t pt_low = 0.2,
+                             const Double_t pt_high = 3.0,
+                             const Double_t eta_cut = 1.5)
+{
+  prV2->GetZaxis()->SetRange(-eta_cut, eta_cut); // this is a bug, apparently - need to cross-check with TProfile2D
+  TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("yx");
+  prV2_2D->SetName(Form("%s_eta_cut_%1.1f",prV2->GetName(),eta_cut));
+  Int_t pt_bin_low = prV2_2D->GetYaxis()->FindBin(pt_low);
+  Int_t pt_bin_high = prV2_2D->GetYaxis()->FindBin(pt_high-0.001);
+  TProfile *prV2Integrated = (TProfile *)prV2_2D->ProfileX(Form("%s_pt_%1.1f_%1.1f",prV2_2D->GetName(),pt_low, pt_high), pt_bin_low, pt_bin_high);
+  prV2Integrated->SetTitle(Form("|#eta|<%.1f, %.1f<p_{T}<%.1f GeV/c;Centrality, %%;v_{2}", eta_cut, pt_low, pt_high));
+  return prV2Integrated;
+}
+
+TProfile *PlotPtIntegratedV2(TProfile2D *const &prV2,
+                             const Double_t pt_low = 0.2,
+                             const Double_t pt_high = 3.0)
+{
+  Int_t pt_bin_low = prV2->GetYaxis()->FindBin(pt_low);
+  Int_t pt_bin_high = prV2->GetYaxis()->FindBin(pt_high-0.001);
+  TProfile *prV2Integrated = (TProfile *)prV2->ProfileX(Form("%s_pt_%1.1f_%1.1f",prV2->GetName(),pt_low, pt_high), pt_bin_low, pt_bin_high);
+  prV2Integrated->SetTitle(Form("%.1f<p_{T}<%.1f GeV/c;Centrality, %%;v_{2}", pt_low, pt_high));
+  return prV2Integrated;
+}
+
+TProfile *PlotV2vsEta(TProfile3D *const &prV2,
+                      const Double_t pt_low = 0.2,
+                      const Double_t pt_high = 3.0,
+                      const Double_t cent_low = 10.,
+                      const Double_t cent_high = 40.)
+{
+  prV2->GetYaxis()->SetRange(pt_low, pt_high); // this is a bug, apparently - need to cross-check with TProfile2D
+  TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("zx");
+  prV2_2D->SetName(Form("%s_pt_%1.1f_%1.1f",prV2->GetName(),pt_low,pt_high));
+  Int_t cent_bin_low = prV2_2D->GetXaxis()->FindBin(cent_low);
+  Int_t cent_bin_high = prV2_2D->GetXaxis()->FindBin(cent_high-1.);
+  TProfile *prV2diffEta = (TProfile *)prV2_2D->ProfileY(Form("%s_cent_%1.0f_%1.0f",prV2_2D->GetName(),cent_low, cent_high), cent_bin_low, cent_bin_high);
+  prV2diffEta->SetTitle(Form("%.1f<p_{T}<%.1f GeV/c, %.0f-%.0f%%;#eta;v_{2}", pt_low, pt_high, cent_low, cent_high));
+  return prV2diffEta;
+}
+TProfile *PlotV2vsEta(TProfile2D *const &prV2,
+                      const Double_t cent_low = 10.,
+                      const Double_t cent_high = 40.)
+{
+  Int_t cent_bin_low = prV2->GetXaxis()->FindBin(cent_low);
+  Int_t cent_bin_high = prV2->GetXaxis()->FindBin(cent_high-1.);
+  TProfile *prV2diffEta = (TProfile *)prV2->ProfileY(Form("%s_cent_%1.0f_%1.0f",prV2->GetName(),cent_low, cent_high), cent_bin_low, cent_bin_high);
+  prV2diffEta->SetTitle(Form("%.0f-%.0f%%;#eta;v_{2}", cent_low, cent_high));
+  return prV2diffEta;
+}
+
+TProfile *PlotV2vsPt(TProfile3D *const &prV2,
+                     const Double_t cent_low = 10,
+                     const Double_t cent_high = 40,
+                     const Double_t eta_cut = 1.5)
+{
+  prV2->GetZaxis()->SetRange(-eta_cut, eta_cut); // this is a bug, apparently - need to cross-check with TProfile2D
+  TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("yx");
+  prV2_2D->SetName(Form("%s_eta_cut_%1.1f",prV2->GetName(),eta_cut));
+  Int_t cent_bin_low = prV2_2D->GetXaxis()->FindBin(cent_low);
+  Int_t cent_bin_high = prV2_2D->GetXaxis()->FindBin(cent_high-1);
+  TProfile *prV2diffpt = (TProfile *)prV2_2D->ProfileY(Form("%s_cent_%1.0f_%1.0f",prV2_2D->GetName(),cent_low, cent_high), cent_bin_low, cent_bin_high);
+  prV2diffpt->SetTitle(Form("|#eta|<%.1f, %.0f-%.0f%%;p_{T}, GeV/c;v_{2}", eta_cut, cent_low, cent_high));
+  return prV2diffpt;
+}
+
+TProfile *PlotV2vsPt(TProfile2D *const &prV2,
+                     const Double_t cent_low = 10,
+                     const Double_t cent_high = 40)
+{
+  Int_t cent_bin_low = prV2->GetXaxis()->FindBin(cent_low);
+  Int_t cent_bin_high = prV2->GetXaxis()->FindBin(cent_high-1);
+  TProfile *prV2diffpt = (TProfile *)prV2->ProfileY(Form("%s_cent_%1.0f_%1.0f",prV2->GetName(),cent_low, cent_high), cent_bin_low, cent_bin_high);
+  prV2diffpt->SetTitle(Form("%.0f-%.0f%%;p_{T}, GeV/c;v_{2}", cent_low, cent_high));
+  return prV2diffpt;
 }

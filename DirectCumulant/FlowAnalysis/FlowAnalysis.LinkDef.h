@@ -14,5 +14,6 @@
 #pragma link C++ class FlowAnalysisWithQCumulant+;
 #pragma link C++ class FlowAnalysisWithHighOrderQCumulant+;
 #pragma link C++ class FlowAnalysisWithLeeYangZerosEventPlane+;
+#pragma link C++ class FlowAnalysisWithMCEventPlane+;
 
 #endif

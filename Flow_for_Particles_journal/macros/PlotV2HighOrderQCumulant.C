@@ -187,7 +187,7 @@ TGraphErrors** PlotV2HighOrderQCumulant(TString inputFileName){
   gr[2]->SetMarkerStyle(25);
   gr[3]->SetMarkerStyle(20);
   for (int imeth=1;imeth<nMethod;imeth++){
-    gr[imeth]->RemovePoint(0);
+    // gr[imeth]->RemovePoint(0);
     gr[imeth]->SetMarkerSize(1.5);
   }
   vector<TGraphErrors*> vgrv2cent_chargedHardons;

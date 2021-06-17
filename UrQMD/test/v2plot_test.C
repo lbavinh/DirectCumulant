@@ -13,7 +13,7 @@ TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",model.Data(),energ
 
 // Flags
 bool bDrawQAHist = false; // auxiliary plots: eta, bimp, mult, etc.
-bool bMergeCharged = true; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
+bool bMergeCharged = false; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
 bool saveAsPNG = true;
 int excludeMethod = 6; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively
 int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
@@ -840,6 +840,7 @@ void v2plot_differential_flow(){
       }
       cV2PT[icent][id] -> SetName(hname);
       if (saveAsPNG) cV2PT[icent][id] -> SaveAs(Form("./%s/%sDFCent%1.0f-%1.0f.png",outDirName.Data(),pidNames.at(id).Data(),centRange.at(icent).first,centRange.at(icent).second));
+
     }
   }
 
@@ -885,6 +886,10 @@ void v2plot_differential_flow(){
     for (int imeth=0;imeth<nmethod;imeth++){
       if (imeth==excludeMethod) continue;
       if (imeth==ratioToMethod) continue;
+      if (imeth==4) continue;
+      if (imeth==5) continue;
+      if (imeth==6) continue;
+
       vgrv2pt1040.push_back(grDifFl1040[imeth][id]);
     }
     
@@ -894,8 +899,10 @@ void v2plot_differential_flow(){
     cV2PT1040[id] = (TCanvas*) DrawTGraph(vgrv2pt1040,"",rangeRatio.at(ncent).first, rangeRatio.at(ncent).second, minpt, maxpt, minV2dif, maxV2dif,
                                           coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
                                           level.Data(), hname);
-    cV2PT1040[id] -> SetName(hname);
+    cV2PT1040[id] -> SetName("");
     if (saveAsPNG) cV2PT1040[id] -> SaveAs(Form("./%s/%sDFCent10-40.png",outDirName.Data(),pidNames.at(id).Data()));
+    if (saveAsPNG) cV2PT1040[id] -> SaveAs(Form("./%s/%sDFCent10_40.C",outDirName.Data(),pidNames.at(id).Data()));
+
   }
 
   delete pCorrelator2EtaGap_FHCal;

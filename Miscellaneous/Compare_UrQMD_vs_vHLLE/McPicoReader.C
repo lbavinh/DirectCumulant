@@ -172,6 +172,7 @@ void McPicoReader(TString inputFileName, TString outputFileName)
       if (!particle) continue;
       float charge = 1./3.*particle->Charge();
       if (charge == 0) continue;
+      if (pt<0.2 || pt>3.0 || fabs(eta)>1.5) continue;
       hPt -> Fill(pt);
       hEta[icent] -> Fill(eta);
       hPhi -> Fill(phi);

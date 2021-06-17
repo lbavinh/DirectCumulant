@@ -42,8 +42,8 @@ void PlotV2IntegratedChargedHadronsTwoEnergy_AMPT08()
   const float titleSize = 0.08;
   const float titleOffSet = 0.8;
   const int textFont = 132;
-  const double maxRatio = 1.14;
-  const double minRatio = 0.86;
+  const double maxRatio = 1.03;
+  const double minRatio = 0.97;
   const double maxX = 62.;
   const double minX = -1.;
   vector<TGraphErrors*> vGr77 = PlotV2IntegratedChargedHadrons("../FirstRun_AMPT08_7.7_new.root","../SecondRun_AMPT08_7.7_new.root");
@@ -67,8 +67,13 @@ void PlotV2IntegratedChargedHadronsTwoEnergy_AMPT08()
 
     vGr77.at(i)->GetYaxis()->SetNdivisions(504);
     vGr115.at(i)->GetYaxis()->SetNdivisions(504);
-    vGr77_ratio.at(i)->GetYaxis()->SetNdivisions(506);
-    vGr115_ratio.at(i)->GetYaxis()->SetNdivisions(506);
+    vGr77_ratio.at(i)->GetYaxis()->SetNdivisions(504);
+    vGr115_ratio.at(i)->GetYaxis()->SetNdivisions(504);
+
+    vGr77.at(i)->GetXaxis()->SetNdivisions(504);
+    vGr115.at(i)->GetXaxis()->SetNdivisions(504);
+    vGr77_ratio.at(i)->GetXaxis()->SetNdivisions(504);
+    vGr115_ratio.at(i)->GetXaxis()->SetNdivisions(504);
 
     vGr77.at(i)->GetYaxis()->SetRangeUser(-0.005,0.075);
     vGr115.at(i)->GetYaxis()->SetRangeUser(-0.005,0.075);
@@ -133,7 +138,7 @@ void PlotV2IntegratedChargedHadronsTwoEnergy_AMPT08()
   can->SetLeftMargin(0.12);
   can->SetRightMargin(0.04);
   can->SetBottomMargin(0.16);
-  // gROOT->SetStyle("Pub");
+  // gROOT->SetStyle("Plain");
   TLine lineOne;
   TLatex tex;
   tex.SetTextFont(textFont);

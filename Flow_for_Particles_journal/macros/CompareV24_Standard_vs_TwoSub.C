@@ -66,9 +66,9 @@ void CompareV24_Standard_vs_TwoSub(){
   const double maxV2dif = 0.2; // for v2 vs pt plotting
 
 
-  vector <Double_t> coordinateLeg = {0.18,0.63,0.45,0.889};
-  vector<pair<Double_t,Double_t>> rangeRatioRF ={{0.88,1.22},{0.88,1.22}};
-  int marker[]={21,20,22,25}; // 2QC, 4QC, EP, 2QC-gapped
+  vector <Double_t> coordinateLeg = {0.18,0.55,0.45,0.8};
+  vector<pair<Double_t,Double_t>> rangeRatioRF ={{0.92,1.08},{0.88,1.22}};
+  int marker[]={21,25,22,20}; // 2QC, 4QC, EP, 2QC-gapped
 
   // TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
   TString outDirName=(TString)Form("%s_%s",model.Data(),energy.Data());
@@ -151,13 +151,14 @@ void CompareV24_Standard_vs_TwoSub(){
     grRefFl[imeth] -> SetTitle(grTitleRF[imeth]);
   }
   vgrv2cent_chargedHardons.push_back(grRefFl[ratioToMethod]);
-  for (int imeth=0;imeth<nmethod;imeth++){
-    if (imeth==ratioToMethod) continue;
-    vgrv2cent_chargedHardons.push_back(grRefFl[imeth]);
-  }
+  vgrv2cent_chargedHardons.push_back(grRefFl[3]);
+  // for (int imeth=0;imeth<nmethod;imeth++){
+  //   if (imeth==ratioToMethod) continue;
+  //   vgrv2cent_chargedHardons.push_back(grRefFl[imeth]);
+  // }
   cV2CentRF = (TCanvas*) DrawTGraph(vgrv2cent_chargedHardons,"",rangeRatioRF.at(0).first, rangeRatioRF.at(0).second, mincent, maxcent, minV2int, maxV2int,
                                     coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
-                                    level.Data(), Form("Charged hadrons, %1.1f<p_{T}<%1.1f GeV/c",minptRFP,maxptRFP),1,"v_{2}{4}");
+                                    level.Data(), Form("Charged hadrons, %1.1f < p_{T}< %1.1f GeV/c",minptRFP,maxptRFP),1,"v_{2}{4}");
   cV2CentRF -> SetName("Reference flow");
   if (saveAsPNG) cV2CentRF -> SaveAs(Form("CompareV24_Standard_vs_TwoSub.pdf"));
   if (saveAsPNG) cV2CentRF -> SaveAs(Form("CompareV24_Standard_vs_TwoSub.png"));

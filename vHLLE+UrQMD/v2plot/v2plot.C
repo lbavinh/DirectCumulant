@@ -1,6 +1,6 @@
 #include "DrawTGraphImp.C"
 TString model = {"vHLLE+UrQMD"};
-TString energy = {"39GeV"};
+TString energy = {"7.7GeV"};
 TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
 TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");
 TString outDirName=(TString)Form("%s_%s",model.Data(),energy.Data());
@@ -10,7 +10,7 @@ TString level= (TString) Form("%s, Au+Au@#sqrt{s_{NN}}=%s",model.Data(),energy.D
 bool drawDistributions = false; // auxiliary plots: eta, bimp, mult, etc.
 bool bMergeCharged = true; // merge CH(+) with CH(-); Pion(+) with Pion(-) and so on
 bool saveAsPNG = true;
-int excludeMethod = 0; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively
+int excludeMethod = -1; // not including i-th method in v2 plotting, where i=0,1,2,3 correspond v22,v24,v2eta-sub,v22eta-gap, respectively
 int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
 // Constants
 const int npid = 8; // charged hadrons, pions, kaons, protons

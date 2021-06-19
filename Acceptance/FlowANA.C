@@ -13,6 +13,11 @@
 #include <fstream>
 using namespace std;
 
+const  float A = TMath::Pi()/3.;
+const  float B = TMath::Pi()/2.;
+const  float C = TMath::Pi();
+const  float D = 5.*TMath::Pi()/4.;
+
 void FlowANA::Booking(TString outFile)
 {
   d_outfile = new TFile(outFile.Data(), "recreate");
@@ -30,7 +35,10 @@ void FlowANA::Booking(TString outFile)
   hcos2phi123 = new TProfile("hcos2phi123","hcos2phi123",ncent,0.,ncent);
   hsin2phi123 = new TProfile("hsin2phi123","hsin2phi123",ncent,0.,ncent);
   pRes = new TProfile("pRes","pRes", ncent,0.,ncent);
+  pResRAW = new TProfile("pResRAW","pResRAW", ncent,0.,ncent);
+
   pV2etasub = new TProfile2D("pV2etasub","", ncent, 0. ,ncent, npt, &bin_pT[0]);
+  pV2etasubRAW = new TProfile2D("pV2etasubRAW","", ncent, 0. ,ncent, npt, &bin_pT[0]);
   pV2MC = new TProfile2D("pV2MC","", ncent, 0. ,ncent, npt, &bin_pT[0]);
 
   for( int ieta=0; ieta<neta; ieta++ ){
@@ -121,8 +129,8 @@ void FlowANA::Loop_a_file(TString file)
     }
     for (int i = 0; i < nh; i++)
     { // track loop
-
       if( pt0[i]<minpt  || pt0[i]>maxpt || TMath::Abs(eta0[i])>eta_cut) continue;
+      if ( (phi0[i]>A && phi0[i]<B) || (phi0[i]>C && phi0[i]<D) ) continue; // acceptance filter
       int fEta = -1;
       if (eta0[i] <-0.05 && eta0[i] >-eta_cut) fEta = 0;
       if (eta0[i] > 0.05 && eta0[i] < eta_cut) fEta = 1;
@@ -139,7 +147,7 @@ void FlowANA::Loop_a_file(TString file)
     else if (fRunNum >= 2)
     {
       for (int ieta=0; ieta<neta; ieta++){
-        if( multQv[ieta]>5 ){ // multiplicity > 5
+        if( multQv[ieta]>mult_cut ){ // multiplicity > 5
           
           // Raw
           hQMultRaw[centrality][ieta]->Fill( multQv[ieta] );
@@ -159,8 +167,8 @@ void FlowANA::Loop_a_file(TString file)
           // L. Adamczyk et al. (STAR Collaboration). Phys. Rev. C 86, 054908 (2012)
           // formula (15)
           dPsi=0;
-          for (int iharm=1;iharm<nharm;iharm++){
-            dPsi += 2./iharm * (-sinNPhiMean[ieta][iharm][centrality]*cos(2*iharm*fPsiRec[ieta]) + cosNPhiMean[ieta][iharm][centrality]*sin(2*iharm*fPsiRec[ieta]));
+          for (int iharm=0;iharm<nharm;iharm++){
+            dPsi += 2./(iharm+1) * (-sinNPhiMean[ieta][iharm][centrality]*cos(2*(iharm+1)*fPsiRec[ieta]) + cosNPhiMean[ieta][iharm][centrality]*sin(2*(iharm+1)*fPsiRec[ieta]));
           }
           fPsiFlat[ieta] = fPsiRec[ieta] + dPsi;
           hPsiFlattened[centrality][ieta] -> Fill(fPsiFlat[ieta]);
@@ -173,7 +181,11 @@ void FlowANA::Loop_a_file(TString file)
       // Resolution
 
       if (fPsiFlat[0]<-9000 || fPsiFlat[1]<-9000) return;
-      if (fRunNum == 2) pRes -> Fill(centrality+0.5, TMath::Cos(2. *(fPsiFlat[0] - fPsiFlat[1])) );
+      if (fRunNum == 2) 
+      {
+        pRes -> Fill(centrality+0.5, TMath::Cos(2. *(fPsiFlat[0] - fPsiFlat[1])) );
+        pResRAW -> Fill(centrality+0.5, TMath::Cos(2. *(fPsiRaw[0] - fPsiRaw[1])) );
+      }
       else
       {
         Double_t Qx2 = 0., Qy2 = 0., Qx4 = 0., Qy4 = 0.;
@@ -208,9 +220,10 @@ void FlowANA::Loop_a_file(TString file)
             hPT[ipt]->Fill(0.5+centrality, pt, 1);
             pV2MC->Fill(0.5+centrality, pt, v2);
           }
+          if ( (phi0[itrk]>A && phi0[itrk]<B) || (phi0[itrk]>C && phi0[itrk]<D) ) continue; // acceptance filter
           // ================= Direct cumulants ================= //
           // RFP
-          if (eta0[itrk] < -0.05)
+          if (eta0[itrk] < -eta_gap)
           {
             Qx2 += TMath::Cos(2. * phi0[itrk]);
             Qy2 += TMath::Sin(2. * phi0[itrk]);
@@ -219,24 +232,29 @@ void FlowANA::Loop_a_file(TString file)
             M++;
           }
           // POI
-          if (eta0[itrk] > 0.05)
+          if (eta0[itrk] > eta_gap)
           {
             px2[ipt] += TMath::Cos(2. * phi0[itrk]);
             py2[ipt] += TMath::Sin(2. * phi0[itrk]); 
             mp[ipt]++;
           }
 
-          float v2=-999.0;
+          float v2,v2RAW;
           
           if(eta0[itrk]>eta_gap){ // eta+
             v2 = cos(2.0 * (phi0[itrk]-fPsiFlat[0]) )/res2[centrality];
+            v2RAW = cos(2.0 * (phi0[itrk]-fPsiRaw[0]) )/res2RAW[centrality];
+
           }
           if(eta0[itrk]<-eta_gap){ // eta-
             v2 = cos(2.0 * (phi0[itrk]-fPsiFlat[1]) )/res2[centrality];
+            v2RAW = cos(2.0 * (phi0[itrk]-fPsiRaw[1]) )/res2RAW[centrality];
+
           }
 
-          if (eta0[itrk] < -0.05) { // Reference flow
+          if (eta0[itrk] < -eta_gap) { // Reference flow
             pV2etasub->Fill(0.5+centrality, pt, v2);
+            pV2etasubRAW->Fill(0.5+centrality, pt, v2RAW);
           }
           
           // } // end of |eta| < 1.0
@@ -368,9 +386,12 @@ void FlowANA::Ana_end()
     hPsiRecMB->Write();
     hPsiFlatMB->Write();
     pRes->Write();
+    pResRAW->Write();
+
   }
   else
   {
+    pV2etasubRAW->Write();
     pV2etasub->Write();
     pV2MC->Write();
 
@@ -445,8 +466,8 @@ void FlowANA::Flattening()
 
     // Fill Flattening profiles
     for (int iharm=0;iharm<nharm;iharm++){
-      pCosNPsi[ieta][iharm]->Fill(0.5+centrality, TMath::Cos( 2*iharm*psi2));
-      pSinNPsi[ieta][iharm]->Fill(0.5+centrality, TMath::Sin( 2*iharm*psi2));
+      pCosNPsi[ieta][iharm]->Fill(0.5+centrality, TMath::Cos( 2*(iharm+1)*psi2));
+      pSinNPsi[ieta][iharm]->Fill(0.5+centrality, TMath::Sin( 2*(iharm+1)*psi2));
     }
   }
 }
@@ -454,7 +475,7 @@ void FlowANA::FinishFlattening(){
   cout << "Flattening..." << endl;
   TFile *fi = new TFile("SecondRun.root","read");
   for( int ieta=0; ieta<neta; ieta++ ){
-    for( int iharm=1; iharm<nharm; iharm++ ){
+    for( int iharm=0; iharm<nharm; iharm++ ){
 
       TProfile *tmp1 = dynamic_cast<TProfile*> (fi->Get(Form("pCosNPsi_%i_%i_rec", ieta,iharm)));
       TProfile *tmp2 = dynamic_cast<TProfile*> (fi->Get(Form("pSinNPsi_%i_%i_rec", ieta,iharm)));
@@ -474,9 +495,13 @@ void FlowANA::FinishResolution(){
   cout << "Resolution..." << endl;
   TFile *fi = new TFile("ThirdRun.root","read");
   TProfile *tmp1 = dynamic_cast<TProfile*> (fi->Get("pRes"));
+  TProfile *tmp2 = dynamic_cast<TProfile*> (fi->Get("pResRAW"));
+
   cout << " Double_t res2[" << ncent <<"] = {";
   for (int icent=0; icent<ncent; icent++){
     res2[icent] = TMath::Sqrt(tmp1->GetBinContent(icent+1));
+    res2RAW[icent] = TMath::Sqrt(tmp2->GetBinContent(icent+1));
+
     cout << res2[icent];
     if (icent!= (ncent-1)) cout << ", ";
   }

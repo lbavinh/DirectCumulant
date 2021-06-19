@@ -27,8 +27,9 @@ const double bin_pT[npt + 1] ={0.2, 0.4, 0.6, 0.8, 1.0, 1.2,
                                       1.4, 1.6, 1.8, 2.2, 2.6, 3.0, 3.5};
 const int neta = 2; // [eta-,eta+]
 const float eta_cut = 1.5;
-const float eta_gap = 0.05;
-const int nharm = 10; // v2,v3,...,v6
+const float eta_gap = 0.0;
+const int mult_cut = 2;
+const int nharm = 12; // v2,v3,...,v6
 
 
 class FlowANA
@@ -112,6 +113,7 @@ public:
   Double_t dPsi;
   // for resolution
   TProfile *pRes;		          // resolution
+  TProfile *pResRAW;
   Double_t fPsiRaw[2];
   Double_t fPsiRec[2];
   Double_t fPsiFlat[2];
@@ -119,8 +121,9 @@ public:
   Double_t fQv[2];
   // for flow
   Double_t res2[ncent];  // Resolution Psi2
+  Double_t res2RAW[ncent];  // Resolution Psi2
   TProfile2D *pV2etasub;	   // elliptic flow from EP method
-
+  TProfile2D *pV2etasubRAW;	   // elliptic flow from EP method w/o correction for acceptance effect
   // ================= Direct cumulants ================= //
 
   // TProfile for reference flow (RF)

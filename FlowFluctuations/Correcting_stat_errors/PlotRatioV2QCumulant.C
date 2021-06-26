@@ -25,7 +25,7 @@ TString energy = "7.7GeV";
 // TString inputFileName = Form("QCumulant_AMPT15_4.5.root");
 TString inputFileName = Form("FirstRun_AMPT08_7.7_new.root");
 
-const int nmethod = 4; // 2QC, 4QC, 2QC-gapped, 4QC-gapped
+const int nmethod = 3; // 2QC, 4QC, 2QC-gapped, 4QC-gapped
 
 const int npt = 16; // 0.5 - 3.6 GeV/c - number of pT bins
 const double bin_pT[npt+1]={0.,0.2,0.4,0.6,0.8,1.,1.2,1.4,1.6,1.8,2.0,2.2,2.4,2.6,2.8,3.2,3.6};
@@ -46,19 +46,19 @@ const std::vector<std::pair<int,int>> centrality = {{0,5},{5,10},{10,20},{20,30}
 
 
 const double mincent = 0.;  // for v2 vs centrality
-const double maxcent = 60.; // for v2 vs centrality
+const double maxcent = 80.; // for v2 vs centrality
 
-const double minV2int = -0.005; // for v2 vs centrality plotting
-const double maxV2int = 0.1; // for v2 vs centrality plotting
-const double minV2dif = -0.01; // for v2 vs pt plotting
-const double maxV2dif = 0.2; // for v2 vs pt plotting
+const double minV2int = 0.7; // for v2 vs centrality plotting
+const double maxV2int = 1.3; // for v2 vs centrality plotting
+const double minV2dif = 0.7; // for v2 vs pt plotting
+const double maxV2dif = 1.3; // for v2 vs pt plotting
 
 
 std::vector <Double_t> coordinateLeg = {0.18,0.63,0.45,0.889};
 std::vector<std::pair<Double_t,Double_t>> rangeRatio = {{0.84,1.16},{0.84,1.16}};
 // std::vector<std::pair<Double_t,Double_t>> rangeRatioRF ={{0.65,1.11},{0.65,1.11}};
 std::vector<std::pair<Double_t,Double_t>> rangeRatioRF ={{0.89,1.11},{0.89,1.11}};
-int marker[]={23,25,26,20}; // v22,v24,v22eta-sub,v24eta-gap
+int marker[]={20,22,25,24}; // v22,v24,v22eta-sub,v24eta-gap
 
 void CalStatErrCent1040(TString model, TString energy,double v2eDif1040[nmethod][npid][npt]){
 
@@ -196,10 +196,25 @@ void CalStatErrCent1040(TString model, TString energy,double v2eDif1040[nmethod]
           hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
           zero, zero);
 
-        v2eDif1040[0][id][ipt] = standardQC->GetV22DifErr();
-        v2eDif1040[1][id][ipt] = standardQC->GetV24DifErr();
-        v2eDif1040[2][id][ipt] = subeventQC->GetV22DifErr();
-        v2eDif1040[3][id][ipt] = subeventQC->GetV24DifErr();
+        MultiparticleCorrelation *subevent2QCstandard4QC = new MultiparticleCorrelation(
+          hv22Gap[icent], hv24[icent], hv22ptGap[icent][ipt][id], hv24pt[icent][ipt][id],
+          hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
+          hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
+          zero, zero);
+
+        // MultiparticleCorrelation *standard2QCsubevent4QC = new MultiparticleCorrelation(
+        //   hv22[icent], hv24Gap[icent], hv22pt[icent][ipt][id], hv24ptGap[icent][ipt][id],
+        //   hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
+        //   hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
+        //   zero, zero);
+
+        v2eDif1040[0][id][ipt] = standardQC->GetRatioV24V22DifErr();
+        v2eDif1040[1][id][ipt] = subeventQC->GetRatioV24V22DifErr();
+        // v2eDif1040[2][id][ipt] = subevent2QCstandard4QC->GetRatioV24V22DifErr();
+        v2eDif1040[2][id][ipt] = standardQC->GetV24Dif() /  subeventQC->GetV22Dif() * TMath::Sqrt(
+          TMath::Power(standardQC->GetV24DifErr()/standardQC->GetV24Dif(), 2.) 
+        + TMath::Power(subeventQC->GetV22DifErr()/subeventQC->GetV22Dif(), 2.) );
+        // v2eDif1040[3][id][ipt] = standard2QCsubevent4QC->GetRatioV24V22DifErr();
 
       } // end of loop for all pT bin
     } // end of loop for PID
@@ -207,11 +222,11 @@ void CalStatErrCent1040(TString model, TString energy,double v2eDif1040[nmethod]
   inFile->Close();
 }
 
-void PlotV2QCumulant(){
+void PlotRatioV2QCumulant(){
 
   // TString inFileName= (TString) Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data());
   TFile *outFile = new TFile(Form("./v2_%s_%s.root",model.Data(),energy.Data()),"recreate");
-  TString outDirName=(TString)Form("%s_%s_eta_gap_%1.1f",model.Data(),energy.Data(),eta_gap*2);
+  TString outDirName=(TString)Form("V24_Over_V22_Ratio_%s_%s_eta_gap_%1.1f",model.Data(),energy.Data(),eta_gap*2);
   TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",modelFancy.Data(),energy.Data());
   double v2eDif1040[nmethod][npid][npt];
   CalStatErrCent1040(model,energy,v2eDif1040);
@@ -352,20 +367,38 @@ void PlotV2QCumulant(){
           hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
           zero, zero);
 
-        v2Dif[0][icent][id][ipt] = standardQC->GetV22Dif();
-        v2eDif[0][icent][id][ipt] = standardQC->GetV22DifErr();
-        v2Dif[1][icent][id][ipt] = standardQC->GetV24Dif();
-        v2eDif[1][icent][id][ipt] = standardQC->GetV24DifErr();
-        v2Dif[2][icent][id][ipt] = subeventQC->GetV22Dif();
-        v2eDif[2][icent][id][ipt] = subeventQC->GetV22DifErr();
-        v2Dif[3][icent][id][ipt] = subeventQC->GetV24Dif();
-        v2eDif[3][icent][id][ipt] = subeventQC->GetV24DifErr();
+        // MultiparticleCorrelation *subevent2QCstandard4QC = new MultiparticleCorrelation(
+        //   hv22Gap[icent], hv24[icent], hv22ptGap[icent][ipt][id], hv24pt[icent][ipt][id],
+        //   hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
+        //   hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
+        //   zero, zero);
+
+        // MultiparticleCorrelation *standard2QCsubevent4QC = new MultiparticleCorrelation(
+        //   hv22[icent], hv24Gap[icent], hv22pt[icent][ipt][id], hv24ptGap[icent][ipt][id],
+        //   hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
+        //   hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
+        //   zero, zero);
+
+        v2Dif[0][icent][id][ipt] = standardQC->GetRatioV24V22Dif();
+        v2eDif[0][icent][id][ipt] = standardQC->GetRatioV24V22DifErr();
+        v2Dif[1][icent][id][ipt] = subeventQC->GetRatioV24V22Dif();
+        v2eDif[1][icent][id][ipt] = subeventQC->GetRatioV24V22DifErr();
+        // v2Dif[2][icent][id][ipt] = subevent2QCstandard4QC->GetRatioV24V22Dif();
+        v2Dif[2][icent][id][ipt] = standardQC->GetV24Dif() / subeventQC->GetV22Dif();
+
+        // v2eDif[2][icent][id][ipt] = subevent2QCstandard4QC->GetRatioV24V22DifErr();
+        v2eDif[2][icent][id][ipt] = v2Dif[2][icent][id][ipt] * TMath::Sqrt( 
+          TMath::Power(standardQC->GetV24DifErr()/standardQC->GetV24Dif(), 2.) 
+        + TMath::Power(subeventQC->GetV22DifErr()/subeventQC->GetV22Dif(), 2.) );
+
+        // v2Dif[3][icent][id][ipt] = standard2QCsubevent4QC->GetRatioV24V22Dif();
+        // v2eDif[3][icent][id][ipt] = standard2QCsubevent4QC->GetRatioV24V22DifErr();
         if (icent>=2 && icent <=4) { // 10-40%
 
-          prV2Dif1040[0][id] -> Fill(0.5+ipt,standardQC->GetV22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(1));
-          prV2Dif1040[1][id] -> Fill(0.5+ipt,standardQC->GetV24Dif(),hcounter[icent][ipt][id] -> GetBinEntries(1));
-          prV2Dif1040[2][id] -> Fill(0.5+ipt,subeventQC->GetV22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(2));
-          prV2Dif1040[3][id] -> Fill(0.5+ipt,subeventQC->GetV24Dif(),hcounter[icent][ipt][id] -> GetBinEntries(2));
+          prV2Dif1040[0][id] -> Fill(0.5+ipt,standardQC->GetRatioV24V22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(1));
+          prV2Dif1040[1][id] -> Fill(0.5+ipt,subeventQC->GetRatioV24V22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(2));
+          prV2Dif1040[2][id] -> Fill(0.5+ipt,v2Dif[2][icent][id][ipt],hcounter[icent][ipt][id] -> GetBinEntries(2));
+          // prV2Dif1040[3][id] -> Fill(0.5+ipt,standard2QCsubevent4QC->GetRatioV24V22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(2));
         }
         // delete standardQC;
         // delete subeventQC;
@@ -395,17 +428,17 @@ void PlotV2QCumulant(){
     }
   }
 
-  const char *grTitle[nmethod]={"v_{2}{2}","v_{2}{4}","v_{2}{2,|#Delta#eta|>0.1}","v_{2}{4,|#Delta#eta|>0.1}"};
+  const char *grTitle[]={"v_{2}{4}/v_{2}{2}","v_{2}{4,|#Delta#eta|>0.1}/v_{2}{2,|#Delta#eta|>0.1}","v_{2}{4}/v_{2}{2,|#Delta#eta|>0.1}","v_{2}{4,|#Delta#eta|>0.1}//v_{2}{2}"};
   outFile -> cd();
   for (int imeth=0; imeth<nmethod; imeth++){
     for (int id=0;id<npid;id++){
       grDifFl1040[imeth][id] -> SetTitle(grTitle[imeth]);
-      grDifFl1040[imeth][id]->GetYaxis()-> SetTitle("v_{2}");
+      grDifFl1040[imeth][id]->GetYaxis()-> SetTitle("v_{2}{4}/v_{2}{2}");
       grDifFl1040[imeth][id]->GetXaxis()-> SetTitle("p_{T}, GeV/c");
       grDifFl1040[imeth][id] -> Write(Form("gr_cent10-40_%i_%i",imeth,id));
       for (int icent=0;icent<ncent;icent++){
         grDifFl[imeth][icent][id] -> SetTitle(grTitle[imeth]);
-        grDifFl[imeth][icent][id]->GetYaxis()-> SetTitle("v_{2}");
+        grDifFl[imeth][icent][id]->GetYaxis()-> SetTitle("v_{2}{4}/v_{2}{2}");
         grDifFl[imeth][icent][id]->GetXaxis()-> SetTitle("p_{T}, GeV/c");
         grDifFl[imeth][icent][id] -> Write(Form("gr_cent%i_%i_%i",icent,imeth,id));
       }
@@ -427,7 +460,7 @@ void PlotV2QCumulant(){
                                                coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
                                                level.Data(), hname, true, grTitle[ratioToMethod]);
       cV2PT[icent][id] -> SetName(hname);
-      if (saveAsPNG) cV2PT[icent][id] -> SaveAs(Form("./%s/DifferentialFlow_Centrality%i-%i_%s.png",outDirName.Data(),centrality.at(icent).first,centrality.at(icent).second,pidNames.at(id).Data()));
+      if (saveAsPNG) cV2PT[icent][id] -> SaveAs(Form("./%s/DifferentialFlowRatio_Centrality%i-%i_%s.png",outDirName.Data(),centrality.at(icent).first,centrality.at(icent).second,pidNames.at(id).Data()));
     }
   }
 
@@ -445,8 +478,8 @@ void PlotV2QCumulant(){
                                           coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
                                           level.Data(), hname, true, grTitle[ratioToMethod]);
     cV2PT1040[id] -> SetName(hname);
-    if (saveAsPNG) cV2PT1040[id] -> SaveAs(Form("./%s/DifferentialFlow_Centrality10-40%%_%s.png",outDirName.Data(),pidNames.at(id).Data()));
-    // if (saveAsPNG) cV2PT1040[id] -> SaveAs(Form("./%s/DifferentialFlow_Centrality10-40%%_%s.pdf",outDirName.Data(),pidNames.at(id).Data()));
+    if (saveAsPNG) cV2PT1040[id] -> SaveAs(Form("./%s/DifferentialFlowRatio_Centrality10-40%%_%s.png",outDirName.Data(),pidNames.at(id).Data()));
+    // if (saveAsPNG) cV2PT1040[id] -> SaveAs(Form("./%s/DifferentialFlowRatio_Centrality10-40%%_%s.pdf",outDirName.Data(),pidNames.at(id).Data()));
   }
   //==========================================================================================================================
   TGraphErrors *grIntFlPID[nmethod][npid];    // v2(pt); 3 = {2QC, 4QC, 2QCgap, 4QCgap}
@@ -479,17 +512,41 @@ void PlotV2QCumulant(){
 
     MultiparticleCorrelation *standardQCRef = new MultiparticleCorrelation(hv22[icent], hv24[icent], hcov24[icent], zero);
     MultiparticleCorrelation *subeventQCRef = new MultiparticleCorrelation(hv22Gap[icent], hv24Gap[icent], hcov24Gap[icent], zero);
+    MultiparticleCorrelation *subevent2QCstandard4QCRef = new MultiparticleCorrelation(hv22Gap[icent], hv24[icent], hcov24Gap[icent], zero);
+    // MultiparticleCorrelation *standard2QCsubevent4QCRef = new MultiparticleCorrelation(hv22[icent], hv24Gap[icent], hcov24Gap[icent], zero);
 
-    v2_RF[0][icent] = standardQCRef->GetV22Ref();
-    v2e_RF[0][icent] = standardQCRef->GetV22RefErr();
-    v2_RF[1][icent] = standardQCRef->GetV24Ref();
-    v2e_RF[1][icent] = standardQCRef->GetV24RefErr();
-    v2_RF[2][icent] = subeventQCRef->GetV22Ref();
-    v2e_RF[2][icent] = subeventQCRef->GetV22RefErr();
-    v2_RF[3][icent] = subeventQCRef->GetV24Ref();
-    v2e_RF[3][icent] = subeventQCRef->GetV24RefErr();
-    std::cout << "v22etasub = " << subeventQCRef->GetV22Ref() << ", v22 = " << standardQCRef->GetV22Ref() << std::endl;
+    v2_RF[0][icent] = standardQCRef->GetRatioV24V22Ref();
+    v2e_RF[0][icent] = standardQCRef->GetRatioV24V22RefErr();
+    // std::cout << "New Ratio v24 over v22 stat. error = " <<  v2e_RF[0][icent] << "\t";
 
+    // v2e_RF[0][icent] = v2_RF[0][icent] * TMath::Sqrt( 
+    //   TMath::Power(standardQCRef->GetV24RefErr()/standardQCRef->GetV24Ref(), 2.) 
+    // + TMath::Power(standardQCRef->GetV22RefErr()/standardQCRef->GetV22Ref(), 2.) );
+    // std::cout << "Old Ratio v24 over v22 stat. error = " <<  v2e_RF[0][icent] << std::endl;
+    
+    
+    v2_RF[1][icent] = subeventQCRef->GetRatioV24V22Ref();
+    v2e_RF[1][icent] = subeventQCRef->GetRatioV24V22RefErr();
+    // std::cout << "New Ratio v24 over v22 stat. error = " <<  v2e_RF[1][icent] << "\t";
+    // v2e_RF[1][icent] = v2_RF[1][icent] 
+    // * TMath::Sqrt( 
+    //   TMath::Power(subeventQCRef->GetV24RefErr()/subeventQCRef->GetV24Ref(), 2.) 
+    // + TMath::Power(subeventQCRef->GetV22RefErr()/subeventQCRef->GetV22Ref(), 2.) 
+    //   );
+    // std::cout << "Old Ratio v24 over v22 stat. error = " <<  v2e_RF[1][icent] << std::endl;
+
+    // v2_RF[2][icent] = subevent2QCstandard4QCRef->GetRatioV24V22Ref();
+    v2_RF[2][icent] = standardQCRef->GetV24Ref() / subeventQCRef->GetV22Ref();
+    v2e_RF[2][icent] = v2_RF[2][icent] 
+    * TMath::Sqrt( 
+      TMath::Power(standardQCRef->GetV24RefErr()/standardQCRef->GetV24Ref(), 2.) 
+    + TMath::Power(subeventQCRef->GetV22RefErr()/subeventQCRef->GetV22Ref(), 2.) 
+      );
+
+    
+    // v2_RF[3][icent] = standard2QCsubevent4QCRef->GetRatioV24V22Ref();
+    // v2e_RF[3][icent] = standard2QCsubevent4QCRef->GetRatioV24V22RefErr();
+    // std::cout << "v24 = " << standardQCRef->GetV24Ref() << ", v24 = " << subeventQCRef->GetV24Ref() << std::endl;
   } // end of loop over centrality classes
   // Differential flow calculation
   for (Int_t id = 0; id<npid; id++){
@@ -506,14 +563,29 @@ void PlotV2QCumulant(){
           hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
           zero, zero);
 
-        v2[0][id][icent] = standardQC->GetV22Dif();
-        v2e[0][id][icent] = standardQC->GetV22DifErr();
-        v2[1][id][icent] = standardQC->GetV24Dif();
-        v2e[1][id][icent] = standardQC->GetV24DifErr();
-        v2[2][id][icent] = subeventQC->GetV22Dif();
-        v2e[2][id][icent] = subeventQC->GetV22DifErr();
-        v2[3][id][icent] = subeventQC->GetV24Dif();
-        v2e[3][id][icent] = subeventQC->GetV24DifErr();
+        MultiparticleCorrelation *subevent2QCstandard4QC = new MultiparticleCorrelation(
+          hv22Gap[icent], hv24[icent], hv22ptGap[icent][ipt][id], hv24pt[icent][ipt][id],
+          hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
+          hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
+          zero, zero);
+
+        // MultiparticleCorrelation *standard2QCsubevent4QC = new MultiparticleCorrelation(
+        //   hv22[icent], hv24Gap[icent], hv22pt[icent][ipt][id], hv24ptGap[icent][ipt][id],
+        //   hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
+        //   hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
+        //   zero, zero);
+
+        v2[0][id][icent] = standardQC->GetRatioV24V22Dif();
+        v2e[0][id][icent] = standardQC->GetRatioV24V22DifErr();
+        v2[1][id][icent] = subeventQC->GetRatioV24V22Dif();
+        v2e[1][id][icent] = subeventQC->GetRatioV24V22DifErr();
+        v2[2][id][icent] = subevent2QCstandard4QC->GetRatioV24V22Dif();
+        v2[2][id][icent] = standardQC->GetV24Dif() / subeventQC->GetV22Dif();
+
+        
+        // v2e[2][id][icent] = subevent2QCstandard4QC->GetRatioV24V22DifErr();
+        // v2[3][id][icent] = standard2QCsubevent4QC->GetRatioV24V22Dif();
+        // v2e[3][id][icent] = standard2QCsubevent4QC->GetRatioV24V22DifErr();
 
         
       } // end of loop for all pT bin
@@ -536,7 +608,7 @@ void PlotV2QCumulant(){
     for (int id=0;id<npid;id++){
       if (id==8) continue;
       grIntFlPID[imeth][id] -> SetTitle(grTitle[imeth]);
-      grIntFlPID[imeth][id] -> GetYaxis()-> SetTitle("v_{2}");
+      grIntFlPID[imeth][id] -> GetYaxis()-> SetTitle("v_{2}{4}/v_{2}{2}");
       grIntFlPID[imeth][id] -> GetXaxis()-> SetTitle("Centrality, %");
       grIntFlPID[imeth][id] -> Write(Form("grRF_%i_%i",imeth,id));
     }
@@ -561,7 +633,7 @@ void PlotV2QCumulant(){
                                         level.Data(), Form("%s, %1.1f<p_{T}<%1.1f",pidFancyNames.at(id).Data(),bin_pT[binMinPtRFP],bin_pT[binMaxPtRFP]),true,grTitle[ratioToMethod]);
 
     cV2Cent[id] -> SetName(pidFancyNames.at(id).Data());
-    if (saveAsPNG) cV2Cent[id] -> SaveAs(Form("./%s/IntegratedFlow_%s.png",outDirName.Data(),pidNames.at(id).Data()));
+    if (saveAsPNG) cV2Cent[id] -> SaveAs(Form("./%s/IntegratedFlowRatio_%s.png",outDirName.Data(),pidNames.at(id).Data()));
   }
   
 
@@ -573,17 +645,14 @@ void PlotV2QCumulant(){
     grRefFl[imeth] -> SetTitle(grTitle[imeth]);
     grRefFl[imeth]->GetYaxis()-> SetTitle("v_{2}");
     grRefFl[imeth]->GetXaxis()-> SetTitle("Centrality, %");
+    grRefFl[imeth]->RemovePoint(0);
   }
   grRefFl[0] -> Write(Form("grRF_%i_0",0)); // v22
   grRefFl[1] -> Write(Form("grRF_%i_0",1)); // v24
   grRefFl[2] -> Write(Form("grRF_%i_0",3)); // v22gap
-  grRefFl[3] -> Write(Form("grRF_%i_0",2)); // v24gap
+  // grRefFl[3] -> Write(Form("grRF_%i_0",2)); // v24gap
 
-  // vgrv2cent_chargedHardons.push_back(grRefFl[ratioToMethod]);
-  grRefFl[ratioToMethod]->RemovePoint(0);
-  grRefFl[3]->RemovePoint(0);
   vgrv2cent_chargedHardons.push_back(grRefFl[ratioToMethod]);
-  // vgrv2cent_chargedHardons.push_back(grRefFl[3]);
   for (int imeth=0;imeth<nmethod;imeth++){
     if (imeth==ratioToMethod) continue;
     vgrv2cent_chargedHardons.push_back(grRefFl[imeth]);
@@ -592,15 +661,14 @@ void PlotV2QCumulant(){
   cV2CentRF = (TCanvas*) DrawTGraph(vgrv2cent_chargedHardons,"",rangeRatioRF.at(0).first, rangeRatioRF.at(0).second, mincent, maxcent, minV2int, maxV2int,
                                     coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
                                     level.Data(), Form("h^{#pm}, %1.1f<p_{T}<%1.1f GeV/c",minptRFP,maxptRFP),true,grTitle[ratioToMethod]);
-  cV2CentRF -> SetName("Reference flow");
-  if (saveAsPNG) cV2CentRF -> SaveAs(Form("./%s/IntegratedFlow_hadron.png",outDirName.Data()));
-  // if (saveAsPNG) cV2CentRF -> SaveAs(Form("./%s/IntegratedFlow_hadron.pdf",outDirName.Data()));
+  cV2CentRF -> SetName("Reference FlowRatio");
+  if (saveAsPNG) cV2CentRF -> SaveAs(Form("./%s/IntegratedFlowRatio_hadron.png",outDirName.Data()));
 
   inFile->Close();
 }
 
 int main()
 {
-  PlotV2QCumulant();
+  PlotRatioV2QCumulant();
   return 0;
 }

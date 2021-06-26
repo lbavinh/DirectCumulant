@@ -15,7 +15,7 @@ void Performance()
   
   const Int_t npt_Rebin = 7; // 0-3.6 GeV/c - number of pT bins
   const Double_t pTBin_Rebin[npt_Rebin + 1] = {0.2, 0.4, 0.6, 1.0, 1.4, 1.8, 2.2, 3.0};
-
+  const Int_t textFont = 132;
   const int ratioToMethod = 0;
   const Int_t nlevel = 2;
   const Int_t nmethod = 3;
@@ -24,8 +24,8 @@ void Performance()
   TString pidName[npid]={"hadrons","pions","protons"};
   TString pidNameFancy[npid]={"h^{#pm}","#pi^{#pm}","p"};
   TString title[]={"Model","Reco"};
-  TString methodName[nmethod] = {"v_{3}{SP}","v_{3}{#Psi_{3,TPC}}","v_{3}{2}"};
-  const int markerStyle[] = {24,20,23,22,20,25,28,26,23};
+  TString methodName[nmethod] = {"#it{v}^{SP}_{3}{Q_{3,TPC}}","#it{v}_{3}{#Psi_{3,TPC}}","#it{v}_{3}{2}"};
+  const int markerStyle[] = {20,24,23,22,20,25,28,26,23};
   const float markerSize = 1.2;
   TGraphErrors *graph[npid][nlevel][nmethod];
   TFile *fi[2];
@@ -71,16 +71,23 @@ void Performance()
       graph[id][i][k]->SetTitle("");
       graph[id][i][k]->SetMarkerStyle(markerStyle[i]);
       graph[id][i][k]->SetMarkerSize(markerSize);
-      graph[id][i][k]->GetXaxis()->SetTitle("p_{T}, GeV/c");
-      graph[id][i][k]->GetYaxis()->SetTitle("v_{3}");
-      graph[id][i][k]->GetYaxis()->SetRangeUser(0., 0.07);
-      graph[id][i][k]->GetXaxis()->SetLimits(-0.05, 3.1);
-      graph[id][i][k]->GetXaxis()->SetNdivisions(506);
-      graph[id][i][k]->GetYaxis()->SetNdivisions(506);
-      graph[id][i][k]->GetYaxis()->SetLabelSize(.06);
-      graph[id][i][k]->GetYaxis()->SetTitleSize(.07);
-      graph[id][i][k]->GetXaxis()->SetLabelSize(.06);
-      graph[id][i][k]->GetXaxis()->SetTitleSize(.07);
+      graph[id][i][k]->GetXaxis()->SetTitle("#it{p}_{T}, GeV/#it{c}");
+      graph[id][i][k]->GetYaxis()->SetTitle("#it{v}_{3}");
+      graph[id][i][k]->GetYaxis()->SetRangeUser(0., 0.05);
+      graph[id][i][k]->GetXaxis()->SetLimits(-0.05, 2.3);
+      graph[id][i][k]->GetXaxis()->SetNdivisions(504);
+      graph[id][i][k]->GetYaxis()->SetNdivisions(504);
+      graph[id][i][k]->GetYaxis()->SetLabelSize(.09);
+      graph[id][i][k]->GetYaxis()->SetTitleSize(.1);
+      graph[id][i][k]->GetXaxis()->SetLabelSize(.09);
+      graph[id][i][k]->GetXaxis()->SetTitleSize(.1);
+      graph[id][i][k]->GetXaxis()->SetTitleFont(textFont);
+      graph[id][i][k]->GetYaxis()->SetTitleFont(textFont);
+      graph[id][i][k]->GetXaxis()->SetLabelFont(textFont);
+      graph[id][i][k]->GetYaxis()->SetLabelFont(textFont);
+      graph[id][i][k]->GetXaxis()->CenterTitle(true);
+      graph[id][i][k]->GetXaxis()->SetTitleOffset(0.9);
+      graph[id][i][k]->GetYaxis()->SetTitleOffset(0.9);
 
       graph[id][i][k]->SetDrawOption("P PLC PMC");
       }
@@ -97,7 +104,7 @@ void Performance()
     TCanvas c("","",1200,400);
     c.SetLeftMargin(0.16);
     c.SetRightMargin(0.01);
-    c.SetBottomMargin(0.15);
+    c.SetBottomMargin(0.19);
     c.Divide(3,1,0,0);
     for (int i=0;i<3;i++)
     {
@@ -108,13 +115,13 @@ void Performance()
         graph[id][1][i]->Draw("P PLC PMC");
       // }
       TLatex tex;
-      tex.SetTextFont(42);
+      tex.SetTextFont(textFont);
       // tex.SetTextAlign(13);
-      tex.SetTextSize(0.07);
-      if (i==0) tex.DrawLatex(0.1,0.063,"vHLLE+UrQMD, Au+Au");
-      if (i==1) tex.DrawLatex(0.1,0.063,Form("#sqrt{s_{NN}} = 11.5 GeV, 10-40%%, %s",pidNameFancy[id].Data()));
-      if (i==2) tex.DrawLatex(0.1,0.063,"open - true, closed - reco");
-      tex.DrawLatex(0.1,0.055,methodName[i].Data());
+      tex.SetTextSize(0.09);
+      if (i==0) tex.DrawLatex(0.1,0.044,"vHLLE+UrQMD, Au+Au");
+      if (i==1) tex.DrawLatex(0.1,0.044,Form("#sqrt{s_{NN}} = 11.5 GeV, 10-40%%, %s",pidNameFancy[id].Data()));
+      if (i==2) tex.DrawLatex(0.1,0.044,"open - reco, closed - true");
+      tex.DrawLatex(0.1,0.037,methodName[i].Data());
     }
     c.SaveAs(Form("Performance_v3_%i%i_Model_vs_Reco_%s.pdf",centlow,centhigh,pidName[id].Data()));
   }

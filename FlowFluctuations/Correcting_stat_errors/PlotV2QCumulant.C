@@ -6,6 +6,8 @@
 #include <TGraphErrors.h>
 #include <TLine.h>
 
+#include "constants.C"
+
 #include <vector>
 #include <iostream>
 
@@ -14,39 +16,46 @@ bool saveAsPNG = true;
 int ratioToMethod = 2; // v22,v24,v22eta-sub,v24eta-gap
 int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
 // Constants
-const int npid = 12; // CH+, pion+, kaon+, proton, CH-, pion-, kaon-, antiproton, CH, pions, kaons, protons+antiproton
-const std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton", "hadron_neg", "pion_neg", "kaon_neg", "proton_bar", "hadron", "pion", "kaon","proton_antiproton"};
+// const int npid = 12; // CH+, pion+, kaon+, proton, CH-, pion-, kaon-, antiproton, CH, pions, kaons, protons+antiproton
+// const std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton", "hadron_neg", "pion_neg", "kaon_neg", "proton_bar", "hadron", "pion", "kaon","proton_antiproton"};
 const std::vector<TString> pidFancyNames = {"h^{+}", "#pi^{+}", "K^{+}", "p", "h^{-}", "#pi^{-}", "K^{-}", "#bar{p}", "h^{#pm}","#pi^{#pm}","K^{#pm}","p(#bar{p})"};
 const float eta_gap = 0.05;
 // TString inputFileName = Form("QCumulant_eta_gap_%1.1f.root",eta_gap*2);
-TString model = "AMPT08";
-TString modelFancy = "AMPT SM, #sigma_{p}=0.8mb";
+// TString model = "AMPT08";
+TString model = "UrQMD";
+
+// TString modelFancy = "AMPT SM, #sigma_{p}=0.8mb";
+TString modelFancy = model;
 TString energy = "7.7GeV";
-// TString inputFileName = Form("QCumulant_AMPT15_4.5.root");
-TString inputFileName = Form("FirstRun_AMPT08_7.7_new.root");
+TString inputFileName = Form("./Data/FirstRun_UrQMD_7.7_Model.root");
+// TString inputFileName = Form("FirstRun_AMPT08_7.7_new.root");
 
 const int nmethod = 4; // 2QC, 4QC, 2QC-gapped, 4QC-gapped
 
-const int npt = 16; // 0.5 - 3.6 GeV/c - number of pT bins
-const double bin_pT[npt+1]={0.,0.2,0.4,0.6,0.8,1.,1.2,1.4,1.6,1.8,2.0,2.2,2.4,2.6,2.8,3.2,3.6};
-const int binMinPtRFP = 1;  // 0.2 GeV 
-const int binMaxPtRFP = 14; // 2.8 GeV
+// const int npt = 16; // 0.5 - 3.6 GeV/c - number of pT bins
+// const double pTBin[npt+1]={0.,0.2,0.4,0.6,0.8,1.,1.2,1.4,1.6,1.8,2.0,2.2,2.4,2.6,2.8,3.2,3.6};
+// const int binMinPtRFP = 1;  // 0.2 GeV 
+// const int binMaxPtRFP = 14; // 2.8 GeV
 // const int binMaxPtRFP = 10; // 2.0 GeV
 // const int binMaxPtRFP = 16; // 3.6 GeV
+
+const int binMinPtRFP = 0;  // 0.2 GeV 
+const int binMaxPtRFP = npt; // 2.8 GeV
+
 const double minptRFP = 0.2;
 const double maxptRFP = 3.0;
 
 const double maxpt = 2.4; // for v2 vs pt plotting
 const double minpt = 0.;  // for v2 vs pt plotting
 
-const int ncent = 9; // 0-80 %
-const double bin_cent[ncent] = {2.5,7.5,15,25,35,45,55,65,75};
+// const int ncent = 9; // 0-80 %
+const double centrality_bin_center[ncent] = {2.5,7.5,15,25,35,45,55,65,75};
 const double bin_centE[ncent] = {0};
 const std::vector<std::pair<int,int>> centrality = {{0,5},{5,10},{10,20},{20,30},{30,40},{40,50},{50,60},{60,70},{70,80}};
 
 
 const double mincent = 0.;  // for v2 vs centrality
-const double maxcent = 60.; // for v2 vs centrality
+const double maxcent = 80.; // for v2 vs centrality
 
 const double minV2int = -0.005; // for v2 vs centrality plotting
 const double maxV2int = 0.1; // for v2 vs centrality plotting
@@ -60,9 +69,8 @@ std::vector<std::pair<Double_t,Double_t>> rangeRatio = {{0.84,1.16},{0.84,1.16}}
 std::vector<std::pair<Double_t,Double_t>> rangeRatioRF ={{0.89,1.11},{0.89,1.11}};
 int marker[]={23,25,26,20}; // v22,v24,v22eta-sub,v24eta-gap
 
-void CalStatErrCent1040(TString model, TString energy,double v2eDif1040[nmethod][npid][npt]){
+void CalStatErrCent1040(double v2eDif1040[nmethod][npid][npt]){
 
-  // TFile *inFile = new TFile(Form("../ROOTFile/%s_%s.root",model.Data(),energy.Data()),"read");
   TFile *inFile = new TFile(inputFileName.Data(),"read");
   
   // 2,4 QC
@@ -90,28 +98,28 @@ void CalStatErrCent1040(TString model, TString energy,double v2eDif1040[nmethod]
   TProfile *hcov2prime4primeGap[ncent][npt][npid];  // <2'><4'>
 
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
-    hv24[icent] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
-    hcov24[icent] = (TProfile*)inFile->Get(Form("hcov24_%i",icent));
-    hv22Gap[icent] = (TProfile*)inFile->Get(Form("hv22Gap_%i", icent));
-    hv24Gap[icent] = (TProfile*)inFile->Get(Form("hv24Gap_%i", icent));
-    hcov24Gap[icent] = (TProfile*)inFile->Get(Form("hcov24Gap_%i", icent));
+    hv22[icent] = (TProfile*)inFile->FindObjectAny(Form("hv22_%i",icent));
+    hv24[icent] = (TProfile*)inFile->FindObjectAny(Form("hv24_%i",icent));
+    hcov24[icent] = (TProfile*)inFile->FindObjectAny(Form("hcov24_%i",icent));
+    hv22Gap[icent] = (TProfile*)inFile->FindObjectAny(Form("hv22Gap_%i", icent));
+    hv24Gap[icent] = (TProfile*)inFile->FindObjectAny(Form("hv24Gap_%i", icent));
+    hcov24Gap[icent] = (TProfile*)inFile->FindObjectAny(Form("hcov24Gap_%i", icent));
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid-4;id++){
-        hv22pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22pt_%i_%i_%i",icent,ipt,id));
-        hv24pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv24pt_%i_%i_%i",icent,ipt,id));
-        hcov22prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov22prime_%i_%i_%i",icent,ipt,id));
-        hcov24prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov24prime_%i_%i_%i",icent,ipt,id));
-        hcov42prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov42prime_%i_%i_%i",icent,ipt,id));
-        hcov44prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov44prime_%i_%i_%i",icent,ipt,id));
-        hcov2prime4prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
-        hv22ptGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22ptGap_%i_%i_%i",icent,ipt,id));
-        hv24ptGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv24ptGap_%i_%i_%i",icent,ipt,id));
-        hcov22primeGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov22primeGap_%i_%i_%i",icent,ipt,id)); 
-        hcov24primeGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov24primeGap_%i_%i_%i",icent,ipt,id));
-        hcov42primeGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov42primeGap_%i_%i_%i",icent,ipt,id));
-        hcov44primeGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov44primeGap_%i_%i_%i",icent,ipt,id));
-        hcov2prime4primeGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov2prime4primeGap_%i_%i_%i",icent,ipt,id));      
+        hv22pt[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv22pt_%i_%i_%i",icent,ipt,id));
+        hv24pt[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv24pt_%i_%i_%i",icent,ipt,id));
+        hcov22prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov22prime_%i_%i_%i",icent,ipt,id));
+        hcov24prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov24prime_%i_%i_%i",icent,ipt,id));
+        hcov42prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov42prime_%i_%i_%i",icent,ipt,id));
+        hcov44prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov44prime_%i_%i_%i",icent,ipt,id));
+        hcov2prime4prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
+        hv22ptGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv22ptGap_%i_%i_%i",icent,ipt,id));
+        hv24ptGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv24ptGap_%i_%i_%i",icent,ipt,id));
+        hcov22primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov22primeGap_%i_%i_%i",icent,ipt,id)); 
+        hcov24primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov24primeGap_%i_%i_%i",icent,ipt,id));
+        hcov42primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov42primeGap_%i_%i_%i",icent,ipt,id));
+        hcov44primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov44primeGap_%i_%i_%i",icent,ipt,id));
+        hcov2prime4primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov2prime4primeGap_%i_%i_%i",icent,ipt,id));      
       }
     } // end of loop over pt bin
   } // end of loop over centrality classes
@@ -214,7 +222,7 @@ void PlotV2QCumulant(){
   TString outDirName=(TString)Form("%s_%s_eta_gap_%1.1f",model.Data(),energy.Data(),eta_gap*2);
   TString level= (TString) Form("%s, Au+Au at #sqrt{s_{NN}}=%s",modelFancy.Data(),energy.Data());
   double v2eDif1040[nmethod][npid][npt];
-  CalStatErrCent1040(model,energy,v2eDif1040);
+  CalStatErrCent1040(v2eDif1040);
 
   TFile *inFile = new TFile(inputFileName.Data(),"read");
 
@@ -253,32 +261,32 @@ void PlotV2QCumulant(){
   TGraphErrors *grDifFl[nmethod][ncent][npid];    // v2(pt); 3 = {2QC, 4QC, EP, gapped 2QC}
   TGraphErrors *grDifFl1040[nmethod][npid];
   
-  // Get TProfile histograms from ROOTFile
+  // FindObjectAny TProfile histograms from ROOTFile
 
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    hv22[icent] = (TProfile*)inFile->Get(Form("hv22_%i",icent));
-    hv24[icent] = (TProfile*)inFile->Get(Form("hv24_%i",icent));
-    hcov24[icent] = (TProfile*)inFile->Get(Form("hcov24_%i",icent));
-    hv22Gap[icent] = (TProfile*)inFile->Get(Form("hv22Gap_%i", icent));
-    hv24Gap[icent] = (TProfile*)inFile->Get(Form("hv24Gap_%i", icent));
-    hcov24Gap[icent] = (TProfile*)inFile->Get(Form("hcov24Gap_%i", icent));
+    hv22[icent] = (TProfile*)inFile->FindObjectAny(Form("hv22_%i",icent));
+    hv24[icent] = (TProfile*)inFile->FindObjectAny(Form("hv24_%i",icent));
+    hcov24[icent] = (TProfile*)inFile->FindObjectAny(Form("hcov24_%i",icent));
+    hv22Gap[icent] = (TProfile*)inFile->FindObjectAny(Form("hv22Gap_%i", icent));
+    hv24Gap[icent] = (TProfile*)inFile->FindObjectAny(Form("hv24Gap_%i", icent));
+    hcov24Gap[icent] = (TProfile*)inFile->FindObjectAny(Form("hcov24Gap_%i", icent));
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid-4;id++){
-        hv22pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22pt_%i_%i_%i",icent,ipt,id));
-        hv24pt[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv24pt_%i_%i_%i",icent,ipt,id));
-        hcov22prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov22prime_%i_%i_%i",icent,ipt,id));
-        hcov24prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov24prime_%i_%i_%i",icent,ipt,id));
-        hcov42prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov42prime_%i_%i_%i",icent,ipt,id));
-        hcov44prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov44prime_%i_%i_%i",icent,ipt,id));
-        hcov2prime4prime[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
-        hv22ptGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv22ptGap_%i_%i_%i",icent,ipt,id));
-        hv24ptGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hv24ptGap_%i_%i_%i",icent,ipt,id));
-        hcov22primeGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov22primeGap_%i_%i_%i",icent,ipt,id)); 
-        hcov24primeGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov24primeGap_%i_%i_%i",icent,ipt,id));
-        hcov42primeGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov42primeGap_%i_%i_%i",icent,ipt,id));
-        hcov44primeGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov44primeGap_%i_%i_%i",icent,ipt,id));
-        hcov2prime4primeGap[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcov2prime4primeGap_%i_%i_%i",icent,ipt,id));   
-        hcounter[icent][ipt][id]=(TProfile*)inFile->Get(Form("hcounter_%i_%i_%i",icent,ipt,id));      
+        hv22pt[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv22pt_%i_%i_%i",icent,ipt,id));
+        hv24pt[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv24pt_%i_%i_%i",icent,ipt,id));
+        hcov22prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov22prime_%i_%i_%i",icent,ipt,id));
+        hcov24prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov24prime_%i_%i_%i",icent,ipt,id));
+        hcov42prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov42prime_%i_%i_%i",icent,ipt,id));
+        hcov44prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov44prime_%i_%i_%i",icent,ipt,id));
+        hcov2prime4prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
+        hv22ptGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv22ptGap_%i_%i_%i",icent,ipt,id));
+        hv24ptGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv24ptGap_%i_%i_%i",icent,ipt,id));
+        hcov22primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov22primeGap_%i_%i_%i",icent,ipt,id)); 
+        hcov24primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov24primeGap_%i_%i_%i",icent,ipt,id));
+        hcov42primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov42primeGap_%i_%i_%i",icent,ipt,id));
+        hcov44primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov44primeGap_%i_%i_%i",icent,ipt,id));
+        hcov2prime4primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov2prime4primeGap_%i_%i_%i",icent,ipt,id));   
+        hcounter[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcounter_%i_%i_%i",icent,ipt,id));      
       }
     } // end of loop over pt bin
   } // end of loop over centrality classes
@@ -327,7 +335,7 @@ void PlotV2QCumulant(){
   double ept[npt]={0}; // error bin pT = 0.0
   for (int ipt=0; ipt<npt; ipt++){
     // pt[icent][ipt][id] = hPT[icent][ipt][id] -> GetBinContent(1);
-    pt[ipt] = ( bin_pT[ipt] + bin_pT[ipt+1] ) / 2.;
+    pt[ipt] = ( pTBin[ipt] + pTBin[ipt+1] ) / 2.;
   }
   
   TProfile *prV2Dif1040[nmethod][npid];
@@ -520,11 +528,11 @@ void PlotV2QCumulant(){
     } // end of loop over centrality classes
   } // end of loop over PID
   for (int imeth=0; imeth<nmethod; imeth++){
-    grRefFl[imeth] = new TGraphErrors(ncent,bin_cent,v2_RF[imeth],bin_centE,v2e_RF[imeth]);
+    grRefFl[imeth] = new TGraphErrors(ncent,centrality_bin_center,v2_RF[imeth],bin_centE,v2e_RF[imeth]);
     grRefFl[imeth] -> SetMarkerStyle(marker[imeth]);
     grRefFl[imeth] -> SetMarkerSize(1.5);
     for (int id=0; id<npid; id++){
-      grIntFlPID[imeth][id] = new TGraphErrors(ncent,bin_cent,v2[imeth][id],bin_centE,v2e[imeth][id]);
+      grIntFlPID[imeth][id] = new TGraphErrors(ncent,centrality_bin_center,v2[imeth][id],bin_centE,v2e[imeth][id]);
       grIntFlPID[imeth][id] -> SetMarkerStyle(marker[imeth]);
       grIntFlPID[imeth][id] -> SetMarkerSize(1.5);
     }
@@ -558,7 +566,7 @@ void PlotV2QCumulant(){
     if (id==8) continue;
     cV2Cent[id] = (TCanvas*) DrawTGraph(vgrv2cent[id],"",rangeRatioRF.at(0).first, rangeRatioRF.at(0).second, mincent, maxcent, minV2int, maxV2int,
                                         coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
-                                        level.Data(), Form("%s, %1.1f<p_{T}<%1.1f",pidFancyNames.at(id).Data(),bin_pT[binMinPtRFP],bin_pT[binMaxPtRFP]),true,grTitle[ratioToMethod]);
+                                        level.Data(), Form("%s, %1.1f<p_{T}<%1.1f",pidFancyNames.at(id).Data(),pTBin[binMinPtRFP],pTBin[binMaxPtRFP]),true,grTitle[ratioToMethod]);
 
     cV2Cent[id] -> SetName(pidFancyNames.at(id).Data());
     if (saveAsPNG) cV2Cent[id] -> SaveAs(Form("./%s/IntegratedFlow_%s.png",outDirName.Data(),pidNames.at(id).Data()));
@@ -576,8 +584,8 @@ void PlotV2QCumulant(){
   }
   grRefFl[0] -> Write(Form("grRF_%i_0",0)); // v22
   grRefFl[1] -> Write(Form("grRF_%i_0",1)); // v24
-  grRefFl[2] -> Write(Form("grRF_%i_0",3)); // v22gap
-  grRefFl[3] -> Write(Form("grRF_%i_0",2)); // v24gap
+  grRefFl[2] -> Write(Form("grRF_%i_0",2)); // v22gap
+  grRefFl[3] -> Write(Form("grRF_%i_0",3)); // v24gap
 
   // vgrv2cent_chargedHardons.push_back(grRefFl[ratioToMethod]);
   grRefFl[ratioToMethod]->RemovePoint(0);

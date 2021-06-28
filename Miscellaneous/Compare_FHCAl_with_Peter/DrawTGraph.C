@@ -1,10 +1,10 @@
 // Draws N TGraphErrors (upper panel) with their grN/gr1 ratio (lower pannel)
-TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str, TString strModel="",TString strCent="",TString titleRatioPlot = "Ratio",
+TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str, TString strModel="", TString strCent="", bool drawLeg=1, TString titleRatioPlot = "Ratio",
                     Double_t yRatio_low=0.89, Double_t yRatio_high=1.11,
                     Double_t x_low=0.0, Double_t x_high=3.0,
-                    Double_t y_low=0.0, Double_t y_high=0.25,
-                    Double_t leg_x_low=0.22, Double_t leg_y_low=0.65,
-                    Double_t leg_x_high=0.45, Double_t leg_y_high=0.89, bool drawLeg=1)
+                    Double_t y_low=0.0, Double_t y_high=0.15,
+                    Double_t leg_x_low=0.22, Double_t leg_y_low=0.55,
+                    Double_t leg_x_high=0.55, Double_t leg_y_high=0.89)
 {
   // Setting up global variables for the plot
   gROOT->SetStyle("Pub");
@@ -77,16 +77,18 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str, TString strMode
   vgr.at(0)->GetXaxis()->SetTitleSize(0.07);
   vgr.at(0)->GetYaxis()->SetTitleSize(0.07);
   vgr.at(0)->GetYaxis()->SetTitleOffset(1.08);
-
+  vgr.at(0)->SetLineWidth(1.);
   vgr.at(0)->Draw("AP PLC PMC");
   for (Int_t i=1; i<vgr.size();i++)
   {
+    vgr.at(i)->SetLineWidth(1.);
     vgr.at(i)->Draw("P PLC PMC");
   }
 
   // TLegend *leg_pt = new TLegend(0.568,0.02,0.89,0.295);
   TLegend *leg_pt = new TLegend(leg_x_low,leg_y_low,leg_x_high,leg_y_high);
   leg_pt->SetBorderSize(0);
+  leg_pt->SetTextSize(0.04);
   leg_pt->SetHeader(str.Data(),"C");
   for (Int_t i=0; i<vgr.size();i++)
   {
@@ -183,7 +185,7 @@ TCanvas *DrawTGraph(std::vector<TGraphErrors*> vgr, TString str, TString strMode
     vgrRatio.at(igr)->SetMarkerSize(1.6);
     vgrRatio.at(igr)->SetLineColor(vgr.at(igr+1)->GetMarkerStyle());
     vgrRatio.at(igr)->SetMarkerColor(vgr.at(igr+1)->GetMarkerStyle());
-    // vgrRatio.at(igr)->SetLineWidth(1.);
+    vgrRatio.at(igr)->SetLineWidth(1.);
     // grRatio->GetXaxis()->SetLimits(0.95*vx_gr1[0],1.05*vx_gr1[n1bins-1]);
     if (igr==0)
     {
@@ -379,7 +381,7 @@ TProfile *PlotV2vsPt(TProfile3D *const &prV2,
                      const Double_t cent_high = 40,
                      const Double_t eta_cut = 1.5)
 {
-  // prV2->GetZaxis()->SetRange(-eta_cut, eta_cut); // this is a bug, apparently - need to cross-check with TProfile2D
+  prV2->GetZaxis()->SetRange(-eta_cut, eta_cut); // this is a bug, apparently - need to cross-check with TProfile2D
   TProfile2D *prV2_2D = (TProfile2D *)prV2->Project3DProfile("yx");
   prV2_2D->SetName(Form("%s_eta_cut_%1.1f",prV2->GetName(),eta_cut));
   Int_t cent_bin_low = prV2_2D->GetXaxis()->FindBin(cent_low);

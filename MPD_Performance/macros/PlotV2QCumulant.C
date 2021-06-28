@@ -365,10 +365,15 @@ void PlotV2QCumulant(){
         v2eDif[3][icent][id][ipt] = subeventQC->GetV24DifErr();
         if (icent>=2 && icent <=4) { // 10-40%
 
-          prV2Dif1040[0][id] -> Fill(0.5+ipt,standardQC->GetV22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(1));
-          prV2Dif1040[1][id] -> Fill(0.5+ipt,standardQC->GetV24Dif(),hcounter[icent][ipt][id] -> GetBinEntries(1));
-          prV2Dif1040[2][id] -> Fill(0.5+ipt,subeventQC->GetV22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(2));
-          prV2Dif1040[3][id] -> Fill(0.5+ipt,subeventQC->GetV24Dif(),hcounter[icent][ipt][id] -> GetBinEntries(2));
+          // prV2Dif1040[0][id] -> Fill(0.5+ipt,standardQC->GetV22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(1));
+          // prV2Dif1040[1][id] -> Fill(0.5+ipt,standardQC->GetV24Dif(),hcounter[icent][ipt][id] -> GetBinEntries(1));
+          // prV2Dif1040[2][id] -> Fill(0.5+ipt,subeventQC->GetV22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(2));
+          // prV2Dif1040[3][id] -> Fill(0.5+ipt,subeventQC->GetV24Dif(),hcounter[icent][ipt][id] -> GetBinEntries(2));
+
+          prV2Dif1040[0][id] -> Fill(0.5+ipt,standardQC->GetV22Dif(),hv22pt[icent][ipt][id] -> GetBinEffectiveEntries(1));
+          prV2Dif1040[1][id] -> Fill(0.5+ipt,standardQC->GetV24Dif(),hv24pt[icent][ipt][id] -> GetBinEffectiveEntries(1));
+          prV2Dif1040[2][id] -> Fill(0.5+ipt,subeventQC->GetV22Dif(),hv22ptGap[icent][ipt][id] -> GetBinEffectiveEntries(1));
+          prV2Dif1040[3][id] -> Fill(0.5+ipt,subeventQC->GetV24Dif(),hv24ptGap[icent][ipt][id] -> GetBinEffectiveEntries(1));        
         }
         // delete standardQC;
         // delete subeventQC;
@@ -390,6 +395,7 @@ void PlotV2QCumulant(){
     for (int id=0;id<npid;id++){
       for(int ipt=0; ipt<npt; ipt++){
         v2Dif1040[imeth][id][ipt] = prV2Dif1040[imeth][id] -> GetBinContent(ipt+1);
+        if (imeth==2 && id==8) std::cout << "v22etasub = " << v2Dif1040[imeth][id][ipt]  << std::endl;
       }
       grDifFl1040[imeth][id] = new TGraphErrors(npt,pt,v2Dif1040[imeth][id],ept,v2eDif1040[imeth][id]);
       grDifFl1040[imeth][id] -> SetMarkerStyle(marker[imeth]);
@@ -491,7 +497,7 @@ void PlotV2QCumulant(){
     v2e_RF[2][icent] = subeventQCRef->GetV22RefErr();
     v2_RF[3][icent] = subeventQCRef->GetV24Ref();
     v2e_RF[3][icent] = subeventQCRef->GetV24RefErr();
-    std::cout << "v22etasub = " << subeventQCRef->GetV22Ref() << ", v22 = " << standardQCRef->GetV22Ref() << std::endl;
+    // std::cout << "v22etasub = " << subeventQCRef->GetV22Ref() << ", v22 = " << standardQCRef->GetV22Ref() << std::endl;
 
   } // end of loop over centrality classes
   // Differential flow calculation
@@ -579,8 +585,8 @@ void PlotV2QCumulant(){
   }
   grRefFl[0] -> Write(Form("grRF_%i_0",0)); // v22
   grRefFl[1] -> Write(Form("grRF_%i_0",1)); // v24
-  grRefFl[2] -> Write(Form("grRF_%i_0",3)); // v22gap
-  grRefFl[3] -> Write(Form("grRF_%i_0",2)); // v24gap
+  grRefFl[2] -> Write(Form("grRF_%i_0",2)); // v22gap
+  grRefFl[3] -> Write(Form("grRF_%i_0",3)); // v24gap
 
   // vgrv2cent_chargedHardons.push_back(grRefFl[ratioToMethod]);
   grRefFl[ratioToMethod]->RemovePoint(0);

@@ -14,7 +14,7 @@
 // Flags
 bool saveAsPNG = true;
 int ratioToMethod = 2; // v22,v24,v22eta-sub,v24eta-gap
-int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
+int drawDifferentialFlowTill = 3; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
 // Constants
 // const int npid = 12; // CH+, pion+, kaon+, proton, CH-, pion-, kaon-, antiproton, CH, pions, kaons, protons+antiproton
 // const std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton", "hadron_neg", "pion_neg", "kaon_neg", "proton_bar", "hadron", "pion", "kaon","proton_antiproton"};
@@ -30,7 +30,7 @@ TString energy = "7.7GeV";
 TString inputFileName = Form("./Data/FirstRun_UrQMD_7.7_Model.root");
 // TString inputFileName = Form("FirstRun_AMPT08_7.7_new.root");
 
-const int nmethod = 3; // 2QC, 4QC, 2QC-gapped, 4QC-gapped
+const int nmethod = 3; // v2{4}/v{2}, v2{4,sub-evt}/v2{2,sub-evt}, v2{4}/v2{2,sub-evt}
 
 // const int npt = 16; // 0.5 - 3.6 GeV/c - number of pT bins
 // const double pTBin[npt+1]={0.,0.2,0.4,0.6,0.8,1.,1.2,1.4,1.6,1.8,2.0,2.2,2.4,2.6,2.8,3.2,3.6};
@@ -97,29 +97,67 @@ void CalStatErrCent1040(double v2eDif1040[nmethod][npid][npt]){
   TProfile *hcov44primeGap[ncent][npt][npid];       // <4><4'>
   TProfile *hcov2prime4primeGap[ncent][npt][npid];  // <2'><4'>
 
+  TProfile *hv22_Variance[ncent];                            // <2>
+  TProfile *hv24_Variance[ncent];                            // <4>
+  TProfile *hv22pt_Variance[ncent][npt][npid];               // <2'>
+  TProfile *hv24pt_Variance[ncent][npt][npid];               // <4'>
+  TProfile *hv22Gap_Variance[ncent];                         // <2>
+  TProfile *hv24Gap_Variance[ncent];                         // <4>  
+  TProfile *hv22ptGap_Variance[ncent][npt][npid];            // <2'>
+  TProfile *hv24ptGap_Variance[ncent][npt][npid];            // <4'>
+
+  // covariance for v2{4}/v2{2,subevent} ratio
+  TProfile *hcov2Gap4[ncent];                         // <2>_{a|b}  * <4>  
+  TProfile *hcov2primeGap4[ncent][npt][npid];       // <2'>_{a|b} * <4>
+  TProfile *hcov2Gap4prime[ncent][npt][npid];       // <2>_{a|b}  * <4'>
+  TProfile *hcov2primeGap4prime[ncent][npt][npid];  // <2'>_{a|b} * <4'>
+  TProfile *hcov2Gap2[ncent];                         // <2>_{a|b}  * <2>  
+  TProfile *hcov2primeGap2[ncent][npt][npid];       // <2'>_{a|b} * <2>
+  TProfile *hcov2Gap2prime[ncent][npt][npid];       // <2>_{a|b}  * <2'>
+  TProfile *hcov2primeGap2prime[ncent][npt][npid];  // <2'>_{a|b} * <2'>
+
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    hv22[icent] = (TProfile*)inFile->FindObjectAny(Form("hv22_%i",icent));
-    hv24[icent] = (TProfile*)inFile->FindObjectAny(Form("hv24_%i",icent));
-    hcov24[icent] = (TProfile*)inFile->FindObjectAny(Form("hcov24_%i",icent));
-    hv22Gap[icent] = (TProfile*)inFile->FindObjectAny(Form("hv22Gap_%i", icent));
-    hv24Gap[icent] = (TProfile*)inFile->FindObjectAny(Form("hv24Gap_%i", icent));
-    hcov24Gap[icent] = (TProfile*)inFile->FindObjectAny(Form("hcov24Gap_%i", icent));
+    hv22[icent]             = (TProfile*)inFile->FindObjectAny(Form("hv22_%i",icent));
+    hv24[icent]             = (TProfile*)inFile->FindObjectAny(Form("hv24_%i",icent));
+    hcov24[icent]           = (TProfile*)inFile->FindObjectAny(Form("hcov24_%i",icent));
+    hv22Gap[icent]          = (TProfile*)inFile->FindObjectAny(Form("hv22Gap_%i", icent));
+    hv24Gap[icent]          = (TProfile*)inFile->FindObjectAny(Form("hv24Gap_%i", icent));
+    hcov24Gap[icent]        = (TProfile*)inFile->FindObjectAny(Form("hcov24Gap_%i", icent));
+    hv22_Variance[icent]    = (TProfile*)inFile->FindObjectAny(Form("hv22_Variance_%i",icent));
+    hv24_Variance[icent]    = (TProfile*)inFile->FindObjectAny(Form("hv24_Variance_%i",icent));
+    hv22Gap_Variance[icent] = (TProfile*)inFile->FindObjectAny(Form("hv22Gap_Variance_%i", icent));
+    hv24Gap_Variance[icent] = (TProfile*)inFile->FindObjectAny(Form("hv24Gap_Variance_%i", icent));    
+    // covariance for v2{4}/v2{2,subevent} ratio
+    hcov2Gap4[icent]        = (TProfile*)inFile->FindObjectAny(Form("hcov2Gap4_%i", icent));
+    hcov2Gap2[icent]        = (TProfile*)inFile->FindObjectAny(Form("hcov2Gap2_%i", icent));
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid-4;id++){
-        hv22pt[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv22pt_%i_%i_%i",icent,ipt,id));
-        hv24pt[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv24pt_%i_%i_%i",icent,ipt,id));
-        hcov22prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov22prime_%i_%i_%i",icent,ipt,id));
-        hcov24prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov24prime_%i_%i_%i",icent,ipt,id));
-        hcov42prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov42prime_%i_%i_%i",icent,ipt,id));
-        hcov44prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov44prime_%i_%i_%i",icent,ipt,id));
-        hcov2prime4prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
-        hv22ptGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv22ptGap_%i_%i_%i",icent,ipt,id));
-        hv24ptGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv24ptGap_%i_%i_%i",icent,ipt,id));
-        hcov22primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov22primeGap_%i_%i_%i",icent,ipt,id)); 
-        hcov24primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov24primeGap_%i_%i_%i",icent,ipt,id));
-        hcov42primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov42primeGap_%i_%i_%i",icent,ipt,id));
-        hcov44primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov44primeGap_%i_%i_%i",icent,ipt,id));
-        hcov2prime4primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov2prime4primeGap_%i_%i_%i",icent,ipt,id));      
+        hv22pt[icent][ipt][id]              = (TProfile*) inFile->FindObjectAny(Form("hv22pt_%i_%i_%i",icent,ipt,id));
+        hv24pt[icent][ipt][id]              = (TProfile*) inFile->FindObjectAny(Form("hv24pt_%i_%i_%i",icent,ipt,id));
+        hcov22prime[icent][ipt][id]         = (TProfile*) inFile->FindObjectAny(Form("hcov22prime_%i_%i_%i",icent,ipt,id));
+        hcov24prime[icent][ipt][id]         = (TProfile*) inFile->FindObjectAny(Form("hcov24prime_%i_%i_%i",icent,ipt,id));
+        hcov42prime[icent][ipt][id]         = (TProfile*) inFile->FindObjectAny(Form("hcov42prime_%i_%i_%i",icent,ipt,id));
+        hcov44prime[icent][ipt][id]         = (TProfile*) inFile->FindObjectAny(Form("hcov44prime_%i_%i_%i",icent,ipt,id));
+        hcov2prime4prime[icent][ipt][id]    = (TProfile*) inFile->FindObjectAny(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
+        hv22ptGap[icent][ipt][id]           = (TProfile*) inFile->FindObjectAny(Form("hv22ptGap_%i_%i_%i",icent,ipt,id));
+        hv24ptGap[icent][ipt][id]           = (TProfile*) inFile->FindObjectAny(Form("hv24ptGap_%i_%i_%i",icent,ipt,id));
+        hcov22primeGap[icent][ipt][id]      = (TProfile*) inFile->FindObjectAny(Form("hcov22primeGap_%i_%i_%i",icent,ipt,id)); 
+        hcov24primeGap[icent][ipt][id]      = (TProfile*) inFile->FindObjectAny(Form("hcov24primeGap_%i_%i_%i",icent,ipt,id));
+        hcov42primeGap[icent][ipt][id]      = (TProfile*) inFile->FindObjectAny(Form("hcov42primeGap_%i_%i_%i",icent,ipt,id));
+        hcov44primeGap[icent][ipt][id]      = (TProfile*) inFile->FindObjectAny(Form("hcov44primeGap_%i_%i_%i",icent,ipt,id));
+        hcov2prime4primeGap[icent][ipt][id] = (TProfile*) inFile->FindObjectAny(Form("hcov2prime4primeGap_%i_%i_%i",icent,ipt,id));      
+        hv22pt_Variance[icent][ipt][id]     = (TProfile*) inFile->FindObjectAny(Form("hv22pt_Variance_%i_%i_%i",icent,ipt,id));
+        hv24pt_Variance[icent][ipt][id]     = (TProfile*) inFile->FindObjectAny(Form("hv24pt_Variance_%i_%i_%i",icent,ipt,id));
+        hv22ptGap_Variance[icent][ipt][id]  = (TProfile*) inFile->FindObjectAny(Form("hv22ptGap_Variance_%i_%i_%i",icent,ipt,id));
+        hv24ptGap_Variance[icent][ipt][id]  = (TProfile*) inFile->FindObjectAny(Form("hv24ptGap_Variance_%i_%i_%i",icent,ipt,id));      
+        
+        // covariance for v2{4}/v2{2,subevent} ratio
+        hcov2primeGap4[icent][ipt][id]      = (TProfile*)inFile->FindObjectAny(Form("hcov2primeGap4_%i_%i_%i",icent,ipt,id));
+        hcov2Gap4prime[icent][ipt][id]      = (TProfile*)inFile->FindObjectAny(Form("hcov2Gap4prime_%i_%i_%i",icent,ipt,id));
+        hcov2primeGap4prime[icent][ipt][id] = (TProfile*)inFile->FindObjectAny(Form("hcov2primeGap4prime_%i_%i_%i",icent,ipt,id));
+        hcov2primeGap2[icent][ipt][id]      = (TProfile*)inFile->FindObjectAny(Form("hcov2primeGap2_%i_%i_%i",icent,ipt,id));
+        hcov2Gap2prime[icent][ipt][id]      = (TProfile*)inFile->FindObjectAny(Form("hcov2Gap2prime_%i_%i_%i",icent,ipt,id));
+        hcov2primeGap2prime[icent][ipt][id] = (TProfile*)inFile->FindObjectAny(Form("hcov2primeGap2prime_%i_%i_%i",icent,ipt,id));
       }
     } // end of loop over pt bin
   } // end of loop over centrality classes
@@ -128,35 +166,60 @@ void CalStatErrCent1040(double v2eDif1040[nmethod][npid][npt]){
   for (int icent=0;icent<ncent;icent++){
     for (int ipt=0;ipt<npt;ipt++){
       for (int id=8;id<npid;id++){
-        hv22pt[icent][ipt][id] = (TProfile*)  hv22pt[icent][ipt][id-8] -> Clone();
-        hv24pt[icent][ipt][id] = (TProfile*)  hv24pt[icent][ipt][id-8] -> Clone();
-        hcov22prime[icent][ipt][id] = (TProfile*)  hcov22prime[icent][ipt][id-8] -> Clone();
-        hcov24prime[icent][ipt][id] = (TProfile*)  hcov24prime[icent][ipt][id-8] -> Clone();
-        hcov42prime[icent][ipt][id] = (TProfile*)  hcov42prime[icent][ipt][id-8] -> Clone();
-        hcov44prime[icent][ipt][id] = (TProfile*)  hcov44prime[icent][ipt][id-8] -> Clone();
-        hcov2prime4prime[icent][ipt][id] = (TProfile*)  hcov2prime4prime[icent][ipt][id-8] -> Clone();
-        hv22ptGap[icent][ipt][id] = (TProfile*)  hv22ptGap[icent][ipt][id-8] -> Clone();
-        hv24ptGap[icent][ipt][id] = (TProfile*)  hv24ptGap[icent][ipt][id-8] -> Clone();
-        hcov22primeGap[icent][ipt][id] = (TProfile*)  hcov22primeGap[icent][ipt][id-8] -> Clone();
-        hcov24primeGap[icent][ipt][id] = (TProfile*)  hcov24primeGap[icent][ipt][id-8] -> Clone();
-        hcov42primeGap[icent][ipt][id] = (TProfile*)  hcov42primeGap[icent][ipt][id-8] -> Clone();
-        hcov44primeGap[icent][ipt][id] = (TProfile*)  hcov44primeGap[icent][ipt][id-8] -> Clone();
+        hv22pt[icent][ipt][id]              = (TProfile*)  hv22pt[icent][ipt][id-8] -> Clone();
+        hv24pt[icent][ipt][id]              = (TProfile*)  hv24pt[icent][ipt][id-8] -> Clone();
+        hcov22prime[icent][ipt][id]         = (TProfile*)  hcov22prime[icent][ipt][id-8] -> Clone();
+        hcov24prime[icent][ipt][id]         = (TProfile*)  hcov24prime[icent][ipt][id-8] -> Clone();
+        hcov42prime[icent][ipt][id]         = (TProfile*)  hcov42prime[icent][ipt][id-8] -> Clone();
+        hcov44prime[icent][ipt][id]         = (TProfile*)  hcov44prime[icent][ipt][id-8] -> Clone();
+        hcov2prime4prime[icent][ipt][id]    = (TProfile*)  hcov2prime4prime[icent][ipt][id-8] -> Clone();
+        hv22ptGap[icent][ipt][id]           = (TProfile*)  hv22ptGap[icent][ipt][id-8] -> Clone();
+        hv24ptGap[icent][ipt][id]           = (TProfile*)  hv24ptGap[icent][ipt][id-8] -> Clone();
+        hcov22primeGap[icent][ipt][id]      = (TProfile*)  hcov22primeGap[icent][ipt][id-8] -> Clone();
+        hcov24primeGap[icent][ipt][id]      = (TProfile*)  hcov24primeGap[icent][ipt][id-8] -> Clone();
+        hcov42primeGap[icent][ipt][id]      = (TProfile*)  hcov42primeGap[icent][ipt][id-8] -> Clone();
+        hcov44primeGap[icent][ipt][id]      = (TProfile*)  hcov44primeGap[icent][ipt][id-8] -> Clone();
         hcov2prime4primeGap[icent][ipt][id] = (TProfile*)  hcov2prime4primeGap[icent][ipt][id-8] -> Clone();
+        hv22pt_Variance[icent][ipt][id]     = (TProfile*)  hv22pt_Variance[icent][ipt][id-8] -> Clone();
+        hv24pt_Variance[icent][ipt][id]     = (TProfile*)  hv24pt_Variance[icent][ipt][id-8] -> Clone();
+        hv22ptGap_Variance[icent][ipt][id]  = (TProfile*)  hv22ptGap_Variance[icent][ipt][id-8] -> Clone();
+        hv24ptGap_Variance[icent][ipt][id]  = (TProfile*)  hv24ptGap_Variance[icent][ipt][id-8] -> Clone();
+        
+        // covariance for v2{4}/v2{2,subevent} ratio
+        hcov2primeGap4[icent][ipt][id]      = (TProfile*) hcov2primeGap4[icent][ipt][id-8] -> Clone();
+        hcov2Gap4prime[icent][ipt][id]      = (TProfile*) hcov2Gap4prime[icent][ipt][id-8] -> Clone();
+        hcov2primeGap4prime[icent][ipt][id] = (TProfile*) hcov2primeGap4prime[icent][ipt][id-8] -> Clone();
+        hcov2primeGap2[icent][ipt][id]      = (TProfile*) hcov2primeGap2[icent][ipt][id-8] -> Clone();
+        hcov2Gap2prime[icent][ipt][id]      = (TProfile*) hcov2Gap2prime[icent][ipt][id-8] -> Clone();
+        hcov2primeGap2prime[icent][ipt][id] = (TProfile*) hcov2primeGap2prime[icent][ipt][id-8] -> Clone();
 
-        hv22pt[icent][ipt][id] -> Add(hv22pt[icent][ipt][id-4]);
-        hv24pt[icent][ipt][id] -> Add(hv24pt[icent][ipt][id-4]);
-        hcov22prime[icent][ipt][id] -> Add(hcov22prime[icent][ipt][id-4]);
-        hcov24prime[icent][ipt][id] -> Add(hcov24prime[icent][ipt][id-4]);
-        hcov42prime[icent][ipt][id] -> Add(hcov42prime[icent][ipt][id-4]);
-        hcov44prime[icent][ipt][id] -> Add(hcov44prime[icent][ipt][id-4]);
-        hcov2prime4prime[icent][ipt][id] -> Add(hcov2prime4prime[icent][ipt][id-4]);
-        hv22ptGap[icent][ipt][id] -> Add(hv22ptGap[icent][ipt][id-4]);
-        hv24ptGap[icent][ipt][id] -> Add(hv24ptGap[icent][ipt][id-4]);
-        hcov22primeGap[icent][ipt][id] -> Add(hcov22primeGap[icent][ipt][id-4]);
-        hcov24primeGap[icent][ipt][id] -> Add(hcov24primeGap[icent][ipt][id-4]);
-        hcov42primeGap[icent][ipt][id] -> Add(hcov42primeGap[icent][ipt][id-4]);
-        hcov44primeGap[icent][ipt][id] -> Add(hcov44primeGap[icent][ipt][id-4]);
+        hv22pt[icent][ipt][id]              -> Add(hv22pt[icent][ipt][id-4]);
+        hv24pt[icent][ipt][id]              -> Add(hv24pt[icent][ipt][id-4]);
+        hcov22prime[icent][ipt][id]         -> Add(hcov22prime[icent][ipt][id-4]);
+        hcov24prime[icent][ipt][id]         -> Add(hcov24prime[icent][ipt][id-4]);
+        hcov42prime[icent][ipt][id]         -> Add(hcov42prime[icent][ipt][id-4]);
+        hcov44prime[icent][ipt][id]         -> Add(hcov44prime[icent][ipt][id-4]);
+        hcov2prime4prime[icent][ipt][id]    -> Add(hcov2prime4prime[icent][ipt][id-4]);
+        hv22ptGap[icent][ipt][id]           -> Add(hv22ptGap[icent][ipt][id-4]);
+        hv24ptGap[icent][ipt][id]           -> Add(hv24ptGap[icent][ipt][id-4]);
+        hcov22primeGap[icent][ipt][id]      -> Add(hcov22primeGap[icent][ipt][id-4]);
+        hcov24primeGap[icent][ipt][id]      -> Add(hcov24primeGap[icent][ipt][id-4]);
+        hcov42primeGap[icent][ipt][id]      -> Add(hcov42primeGap[icent][ipt][id-4]);
+        hcov44primeGap[icent][ipt][id]      -> Add(hcov44primeGap[icent][ipt][id-4]);
         hcov2prime4primeGap[icent][ipt][id] -> Add(hcov2prime4primeGap[icent][ipt][id-4]);
+        hv22pt_Variance[icent][ipt][id]     -> Add(hv22pt_Variance[icent][ipt][id-4]);
+        hv24pt_Variance[icent][ipt][id]     -> Add(hv24pt_Variance[icent][ipt][id-4]);
+        hv22ptGap_Variance[icent][ipt][id]  -> Add(hv22ptGap_Variance[icent][ipt][id-4]);
+        hv24ptGap_Variance[icent][ipt][id]  -> Add(hv24ptGap_Variance[icent][ipt][id-4]);
+        
+        // covariance for v2{4}/v2{2,subevent} ratio
+        hcov2primeGap4[icent][ipt][id]      -> Add(hcov2primeGap4[icent][ipt][id-4]);
+        hcov2Gap4prime[icent][ipt][id]      -> Add(hcov2Gap4prime[icent][ipt][id-4]);
+        hcov2primeGap4prime[icent][ipt][id] -> Add(hcov2primeGap4prime[icent][ipt][id-4]);
+        hcov2primeGap2[icent][ipt][id]      -> Add(hcov2primeGap2[icent][ipt][id-4]);
+        hcov2Gap2prime[icent][ipt][id]      -> Add(hcov2Gap2prime[icent][ipt][id-4]);
+        hcov2primeGap2prime[icent][ipt][id] -> Add(hcov2primeGap2prime[icent][ipt][id-4]);
+
       }
     }
   }
@@ -164,28 +227,47 @@ void CalStatErrCent1040(double v2eDif1040[nmethod][npid][npt]){
 
   // Add
   for (int icent=3; icent<5; icent++){ // add 20-30% & 30-40% to 10-20%
-    hv22[2] -> Add(hv22[icent]);
-    hv24[2] -> Add(hv24[icent]);
-    hcov24[2] -> Add(hcov24[icent]);
-    hv22Gap[2]-> Add(hv22Gap[icent]);
-    hv24Gap[2] -> Add(hv24Gap[icent]);
-    hcov24Gap[2] -> Add(hcov24Gap[icent]);
+    hv22[2]             -> Add(hv22[icent]);
+    hv24[2]             -> Add(hv24[icent]);
+    hcov24[2]           -> Add(hcov24[icent]);
+    hv22Gap[2]          -> Add(hv22Gap[icent]);
+    hv24Gap[2]          -> Add(hv24Gap[icent]);
+    hcov24Gap[2]        -> Add(hcov24Gap[icent]);
+    hv22_Variance[2]    -> Add(hv22_Variance[icent]);
+    hv24_Variance[2]    -> Add(hv24_Variance[icent]);
+    hv22Gap_Variance[2] -> Add(hv22Gap_Variance[icent]);
+    hv24Gap_Variance[2] -> Add(hv24Gap_Variance[icent]);
+    // covariance for v2{4}/v2{2,subevent} ratio
+    hcov2Gap2[2]        -> Add(hcov2Gap2[icent]);
+    hcov2Gap4[2]        -> Add(hcov2Gap4[icent]); 
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid;id++){ // loop over pid
-        hv22pt[2][ipt][id]-> Add(hv22pt[icent][ipt][id]);
-        hv24pt[2][ipt][id]-> Add(hv24pt[icent][ipt][id]);
-        hcov22prime[2][ipt][id]-> Add(hcov22prime[icent][ipt][id]);
-        hcov24prime[2][ipt][id]-> Add(hcov24prime[icent][ipt][id]);
-        hcov42prime[2][ipt][id]-> Add(hcov42prime[icent][ipt][id]);
-        hcov44prime[2][ipt][id]-> Add(hcov44prime[icent][ipt][id]);
-        hcov2prime4prime[2][ipt][id]-> Add(hcov2prime4prime[icent][ipt][id]);
-        hv22ptGap[2][ipt][id]->Add(hv22ptGap[icent][ipt][id]);
-        hv24ptGap[2][ipt][id]-> Add(hv24ptGap[icent][ipt][id]);
-        hcov22primeGap[2][ipt][id]->Add(hcov22primeGap[icent][ipt][id]);
-        hcov24primeGap[2][ipt][id]-> Add(hcov24primeGap[icent][ipt][id]);
-        hcov42primeGap[2][ipt][id]-> Add(hcov42primeGap[icent][ipt][id]);
-        hcov44primeGap[2][ipt][id]-> Add(hcov44primeGap[icent][ipt][id]);
-        hcov2prime4primeGap[2][ipt][id]-> Add(hcov2prime4primeGap[icent][ipt][id]);
+        hv22pt[2][ipt][id]              -> Add(hv22pt[icent][ipt][id]);
+        hv24pt[2][ipt][id]              -> Add(hv24pt[icent][ipt][id]);
+        hcov22prime[2][ipt][id]         -> Add(hcov22prime[icent][ipt][id]);
+        hcov24prime[2][ipt][id]         -> Add(hcov24prime[icent][ipt][id]);
+        hcov42prime[2][ipt][id]         -> Add(hcov42prime[icent][ipt][id]);
+        hcov44prime[2][ipt][id]         -> Add(hcov44prime[icent][ipt][id]);
+        hcov2prime4prime[2][ipt][id]    -> Add(hcov2prime4prime[icent][ipt][id]);
+        hv22ptGap[2][ipt][id]           -> Add(hv22ptGap[icent][ipt][id]);
+        hv24ptGap[2][ipt][id]           -> Add(hv24ptGap[icent][ipt][id]);
+        hcov22primeGap[2][ipt][id]      -> Add(hcov22primeGap[icent][ipt][id]);
+        hcov24primeGap[2][ipt][id]      -> Add(hcov24primeGap[icent][ipt][id]);
+        hcov42primeGap[2][ipt][id]      -> Add(hcov42primeGap[icent][ipt][id]);
+        hcov44primeGap[2][ipt][id]      -> Add(hcov44primeGap[icent][ipt][id]);
+        hcov2prime4primeGap[2][ipt][id] -> Add(hcov2prime4primeGap[icent][ipt][id]);
+        hv22pt_Variance[2][ipt][id]     -> Add(hv22pt_Variance[icent][ipt][id]);
+        hv24pt_Variance[2][ipt][id]     -> Add(hv24pt_Variance[icent][ipt][id]);
+        hv22ptGap_Variance[2][ipt][id]  -> Add(hv22ptGap_Variance[icent][ipt][id]);
+        hv24ptGap_Variance[2][ipt][id]  -> Add(hv24ptGap_Variance[icent][ipt][id]);
+        
+        // covariance for v2{4}/v2{2,subevent} ratio
+        hcov2primeGap2[2][ipt][id]      -> Add(hcov2primeGap2[icent][ipt][id]);
+        hcov2primeGap4[2][ipt][id]      -> Add(hcov2primeGap4[icent][ipt][id]);
+        hcov2Gap2prime[2][ipt][id]      -> Add(hcov2Gap2prime[icent][ipt][id]);
+        hcov2Gap4prime[2][ipt][id]      -> Add(hcov2Gap4prime[icent][ipt][id]);
+        hcov2primeGap2prime[2][ipt][id] -> Add(hcov2primeGap2prime[icent][ipt][id]);
+        hcov2primeGap4prime[2][ipt][id] -> Add(hcov2primeGap4prime[icent][ipt][id]);
       }
     } // end of loop over pt bin
   }
@@ -195,35 +277,34 @@ void CalStatErrCent1040(double v2eDif1040[nmethod][npid][npt]){
       for(int ipt=0; ipt<npt; ipt++){
         MultiparticleCorrelation *standardQC = new MultiparticleCorrelation(
           hv22[icent], hv24[icent], hv22pt[icent][ipt][id], hv24pt[icent][ipt][id],
+          hv22_Variance[icent], hv24_Variance[icent], hv22pt_Variance[icent][ipt][id], hv24pt_Variance[icent][ipt][id],
           hcov22prime[icent][ipt][id], hcov24[icent], hcov24prime[icent][ipt][id],
           hcov42prime[icent][ipt][id], hcov2prime4prime[icent][ipt][id], hcov44prime[icent][ipt][id],
           zero, zero);
         MultiparticleCorrelation *subeventQC = new MultiparticleCorrelation(
           hv22Gap[icent], hv24Gap[icent], hv22ptGap[icent][ipt][id], hv24ptGap[icent][ipt][id],
+          hv22Gap_Variance[icent], hv24Gap_Variance[icent], hv22ptGap_Variance[icent][ipt][id], hv24ptGap_Variance[icent][ipt][id],
           hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
           hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
           zero, zero);
 
         MultiparticleCorrelation *subevent2QCstandard4QC = new MultiparticleCorrelation(
-          hv22Gap[icent], hv24[icent], hv22ptGap[icent][ipt][id], hv24pt[icent][ipt][id],
-          hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
-          hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
+          hv22[icent], hv24[icent], hv22pt[icent][ipt][id], hv24pt[icent][ipt][id], hv22Gap[icent], hv22ptGap[icent][ipt][id],
+          hv22_Variance[icent], hv24_Variance[icent], hv22pt_Variance[icent][ipt][id], hv24pt_Variance[icent][ipt][id], hv22Gap_Variance[icent], hv22ptGap_Variance[icent][ipt][id],
+          hcov22prime[icent][ipt][id], hcov24[icent], hcov24prime[icent][ipt][id],
+          hcov42prime[icent][ipt][id], hcov2prime4prime[icent][ipt][id], hcov44prime[icent][ipt][id],
+          hcov22primeGap[icent][ipt][id], hcov2Gap2[icent], hcov2Gap4[icent],
+          hcov2primeGap2[icent][ipt][id], hcov2primeGap4[icent][ipt][id], 
+          hcov2Gap2prime[icent][ipt][id], hcov2Gap4prime[icent][ipt][id],
+          hcov2primeGap2prime[icent][ipt][id], hcov2primeGap4prime[icent][ipt][id],
           zero, zero);
-
-        // MultiparticleCorrelation *standard2QCsubevent4QC = new MultiparticleCorrelation(
-        //   hv22[icent], hv24Gap[icent], hv22pt[icent][ipt][id], hv24ptGap[icent][ipt][id],
-        //   hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
-        //   hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
-        //   zero, zero);
 
         v2eDif1040[0][id][ipt] = standardQC->GetRatioV24V22DifErr();
         v2eDif1040[1][id][ipt] = subeventQC->GetRatioV24V22DifErr();
-        // v2eDif1040[2][id][ipt] = subevent2QCstandard4QC->GetRatioV24V22DifErr();
         v2eDif1040[2][id][ipt] = standardQC->GetV24Dif() /  subeventQC->GetV22Dif() * TMath::Sqrt(
           TMath::Power(standardQC->GetV24DifErr()/standardQC->GetV24Dif(), 2.) 
         + TMath::Power(subeventQC->GetV22DifErr()/subeventQC->GetV22Dif(), 2.) );
-        // v2eDif1040[3][id][ipt] = standard2QCsubevent4QC->GetRatioV24V22DifErr();
-
+        v2eDif1040[2][id][ipt] = subevent2QCstandard4QC->GetRatioV24V22DifErr();
       } // end of loop for all pT bin
     } // end of loop for PID
   } // end of loop for centrality
@@ -272,6 +353,27 @@ void PlotRatioV2QCumulant(){
   TProfile *hcov2prime4primeGap[ncent][npt][npid];  // <2'><4'>
 
   TProfile *hcounter[ncent][npt][npid];
+  // TProfile *hmult[ncent][npt][npid];
+
+  TProfile *hv22_Variance[ncent];                            // <2>
+  TProfile *hv24_Variance[ncent];                            // <4>
+  TProfile *hv22pt_Variance[ncent][npt][npid];               // <2'>
+  TProfile *hv24pt_Variance[ncent][npt][npid];               // <4'>
+  TProfile *hv22Gap_Variance[ncent];                         // <2>
+  TProfile *hv24Gap_Variance[ncent];                         // <4>  
+  TProfile *hv22ptGap_Variance[ncent][npt][npid];            // <2'>
+  TProfile *hv24ptGap_Variance[ncent][npt][npid];            // <4'>
+
+  // covariance for v2{4}/v2{2,subevent} ratio
+  TProfile *hcov2Gap4[ncent];                         // <2>_{a|b}  * <4>  
+  TProfile *hcov2primeGap4[ncent][npt][npid];         // <2'>_{a|b} * <4>
+  TProfile *hcov2Gap4prime[ncent][npt][npid];         // <2>_{a|b}  * <4'>
+  TProfile *hcov2primeGap4prime[ncent][npt][npid];    // <2'>_{a|b} * <4'>
+  TProfile *hcov2Gap2[ncent];                         // <2>_{a|b}  * <2>  
+  TProfile *hcov2primeGap2[ncent][npt][npid];         // <2'>_{a|b} * <2>
+  TProfile *hcov2Gap2prime[ncent][npt][npid];         // <2>_{a|b}  * <2'>
+  TProfile *hcov2primeGap2prime[ncent][npt][npid];    // <2'>_{a|b} * <2'>
+
   // OUTPUT
   TGraphErrors *grDifFl[nmethod][ncent][npid];    // v2(pt); 3 = {2QC, 4QC, EP, gapped 2QC}
   TGraphErrors *grDifFl1040[nmethod][npid];
@@ -279,29 +381,48 @@ void PlotRatioV2QCumulant(){
   // FindObjectAny TProfile histograms from ROOTFile
 
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
-    hv22[icent] = (TProfile*)inFile->FindObjectAny(Form("hv22_%i",icent));
-    hv24[icent] = (TProfile*)inFile->FindObjectAny(Form("hv24_%i",icent));
-    hcov24[icent] = (TProfile*)inFile->FindObjectAny(Form("hcov24_%i",icent));
-    hv22Gap[icent] = (TProfile*)inFile->FindObjectAny(Form("hv22Gap_%i", icent));
-    hv24Gap[icent] = (TProfile*)inFile->FindObjectAny(Form("hv24Gap_%i", icent));
-    hcov24Gap[icent] = (TProfile*)inFile->FindObjectAny(Form("hcov24Gap_%i", icent));
+    hv22[icent]             = (TProfile*) inFile->FindObjectAny(Form("hv22_%i",icent));
+    hv24[icent]             = (TProfile*) inFile->FindObjectAny(Form("hv24_%i",icent));
+    hcov24[icent]           = (TProfile*) inFile->FindObjectAny(Form("hcov24_%i",icent));
+    hv22Gap[icent]          = (TProfile*) inFile->FindObjectAny(Form("hv22Gap_%i", icent));
+    hv24Gap[icent]          = (TProfile*) inFile->FindObjectAny(Form("hv24Gap_%i", icent));
+    hcov24Gap[icent]        = (TProfile*) inFile->FindObjectAny(Form("hcov24Gap_%i", icent));
+    hv22_Variance[icent]    = (TProfile*) inFile->FindObjectAny(Form("hv22_Variance_%i",icent));
+    hv24_Variance[icent]    = (TProfile*) inFile->FindObjectAny(Form("hv24_Variance_%i",icent));
+    hv22Gap_Variance[icent] = (TProfile*) inFile->FindObjectAny(Form("hv22Gap_Variance_%i", icent));
+    hv24Gap_Variance[icent] = (TProfile*) inFile->FindObjectAny(Form("hv24Gap_Variance_%i", icent));
+    // covariance for v2{4}/v2{2,subevent} ratio
+    hcov2Gap4[icent] = (TProfile*)inFile->FindObjectAny(Form("hcov2Gap4_%i", icent));
+    hcov2Gap2[icent] = (TProfile*)inFile->FindObjectAny(Form("hcov2Gap2_%i", icent));
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid-4;id++){
-        hv22pt[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv22pt_%i_%i_%i",icent,ipt,id));
-        hv24pt[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv24pt_%i_%i_%i",icent,ipt,id));
-        hcov22prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov22prime_%i_%i_%i",icent,ipt,id));
-        hcov24prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov24prime_%i_%i_%i",icent,ipt,id));
-        hcov42prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov42prime_%i_%i_%i",icent,ipt,id));
-        hcov44prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov44prime_%i_%i_%i",icent,ipt,id));
-        hcov2prime4prime[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
-        hv22ptGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv22ptGap_%i_%i_%i",icent,ipt,id));
-        hv24ptGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hv24ptGap_%i_%i_%i",icent,ipt,id));
-        hcov22primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov22primeGap_%i_%i_%i",icent,ipt,id)); 
-        hcov24primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov24primeGap_%i_%i_%i",icent,ipt,id));
-        hcov42primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov42primeGap_%i_%i_%i",icent,ipt,id));
-        hcov44primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov44primeGap_%i_%i_%i",icent,ipt,id));
-        hcov2prime4primeGap[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcov2prime4primeGap_%i_%i_%i",icent,ipt,id));   
-        hcounter[icent][ipt][id]=(TProfile*)inFile->FindObjectAny(Form("hcounter_%i_%i_%i",icent,ipt,id));      
+        hv22pt[icent][ipt][id]              = (TProfile*) inFile->FindObjectAny(Form("hv22pt_%i_%i_%i",icent,ipt,id));
+        hv24pt[icent][ipt][id]              = (TProfile*) inFile->FindObjectAny(Form("hv24pt_%i_%i_%i",icent,ipt,id));
+        hcov22prime[icent][ipt][id]         = (TProfile*) inFile->FindObjectAny(Form("hcov22prime_%i_%i_%i",icent,ipt,id));
+        hcov24prime[icent][ipt][id]         = (TProfile*) inFile->FindObjectAny(Form("hcov24prime_%i_%i_%i",icent,ipt,id));
+        hcov42prime[icent][ipt][id]         = (TProfile*) inFile->FindObjectAny(Form("hcov42prime_%i_%i_%i",icent,ipt,id));
+        hcov44prime[icent][ipt][id]         = (TProfile*) inFile->FindObjectAny(Form("hcov44prime_%i_%i_%i",icent,ipt,id));
+        hcov2prime4prime[icent][ipt][id]    = (TProfile*) inFile->FindObjectAny(Form("hcov2prime4prime_%i_%i_%i",icent,ipt,id));
+        hv22ptGap[icent][ipt][id]           = (TProfile*) inFile->FindObjectAny(Form("hv22ptGap_%i_%i_%i",icent,ipt,id));
+        hv24ptGap[icent][ipt][id]           = (TProfile*) inFile->FindObjectAny(Form("hv24ptGap_%i_%i_%i",icent,ipt,id));
+        hcov22primeGap[icent][ipt][id]      = (TProfile*) inFile->FindObjectAny(Form("hcov22primeGap_%i_%i_%i",icent,ipt,id)); 
+        hcov24primeGap[icent][ipt][id]      = (TProfile*) inFile->FindObjectAny(Form("hcov24primeGap_%i_%i_%i",icent,ipt,id));
+        hcov42primeGap[icent][ipt][id]      = (TProfile*) inFile->FindObjectAny(Form("hcov42primeGap_%i_%i_%i",icent,ipt,id));
+        hcov44primeGap[icent][ipt][id]      = (TProfile*) inFile->FindObjectAny(Form("hcov44primeGap_%i_%i_%i",icent,ipt,id));
+        hcov2prime4primeGap[icent][ipt][id] = (TProfile*) inFile->FindObjectAny(Form("hcov2prime4primeGap_%i_%i_%i",icent,ipt,id));           
+        hcounter[icent][ipt][id]            = (TProfile*) inFile->FindObjectAny(Form("hcounter_%i_%i_%i",icent,ipt,id));      
+        // hmult[icent][ipt][id]               = (TProfile*) inFile->FindObjectAny(Form("hmult_%i_%i_%i",icent,ipt,id));        
+        hv22pt_Variance[icent][ipt][id]     = (TProfile*) inFile->FindObjectAny(Form("hv22pt_Variance_%i_%i_%i",icent,ipt,id));
+        hv24pt_Variance[icent][ipt][id]     = (TProfile*) inFile->FindObjectAny(Form("hv24pt_Variance_%i_%i_%i",icent,ipt,id));
+        hv22ptGap_Variance[icent][ipt][id]  = (TProfile*) inFile->FindObjectAny(Form("hv22ptGap_Variance_%i_%i_%i",icent,ipt,id));
+        hv24ptGap_Variance[icent][ipt][id]  = (TProfile*) inFile->FindObjectAny(Form("hv24ptGap_Variance_%i_%i_%i",icent,ipt,id));
+        // covariance for v2{4}/v2{2,subevent} ratio
+        hcov2primeGap4[icent][ipt][id]      = (TProfile*)inFile->FindObjectAny(Form("hcov2primeGap4_%i_%i_%i",icent,ipt,id));
+        hcov2Gap4prime[icent][ipt][id]      = (TProfile*)inFile->FindObjectAny(Form("hcov2Gap4prime_%i_%i_%i",icent,ipt,id));
+        hcov2primeGap4prime[icent][ipt][id] = (TProfile*)inFile->FindObjectAny(Form("hcov2primeGap4prime_%i_%i_%i",icent,ipt,id));
+        hcov2primeGap2[icent][ipt][id]      = (TProfile*)inFile->FindObjectAny(Form("hcov2primeGap2_%i_%i_%i",icent,ipt,id));
+        hcov2Gap2prime[icent][ipt][id]      = (TProfile*)inFile->FindObjectAny(Form("hcov2Gap2prime_%i_%i_%i",icent,ipt,id));
+        hcov2primeGap2prime[icent][ipt][id] = (TProfile*)inFile->FindObjectAny(Form("hcov2primeGap2prime_%i_%i_%i",icent,ipt,id));      
       }
     } // end of loop over pt bin
   } // end of loop over centrality classes
@@ -310,37 +431,62 @@ void PlotRatioV2QCumulant(){
   for (int icent=0;icent<ncent;icent++){
     for (int ipt=0;ipt<npt;ipt++){
       for (int id=8;id<npid;id++){
-        hv22pt[icent][ipt][id] = (TProfile*)  hv22pt[icent][ipt][id-8] -> Clone();
-        hv24pt[icent][ipt][id] = (TProfile*)  hv24pt[icent][ipt][id-8] -> Clone();
-        hcov22prime[icent][ipt][id] = (TProfile*)  hcov22prime[icent][ipt][id-8] -> Clone();
-        hcov24prime[icent][ipt][id] = (TProfile*)  hcov24prime[icent][ipt][id-8] -> Clone();
-        hcov42prime[icent][ipt][id] = (TProfile*)  hcov42prime[icent][ipt][id-8] -> Clone();
-        hcov44prime[icent][ipt][id] = (TProfile*)  hcov44prime[icent][ipt][id-8] -> Clone();
-        hcov2prime4prime[icent][ipt][id] = (TProfile*)  hcov2prime4prime[icent][ipt][id-8] -> Clone();
-        hv22ptGap[icent][ipt][id] = (TProfile*)  hv22ptGap[icent][ipt][id-8] -> Clone();
-        hv24ptGap[icent][ipt][id] = (TProfile*)  hv24ptGap[icent][ipt][id-8] -> Clone();
-        hcov22primeGap[icent][ipt][id] = (TProfile*)  hcov22primeGap[icent][ipt][id-8] -> Clone();
-        hcov24primeGap[icent][ipt][id] = (TProfile*)  hcov24primeGap[icent][ipt][id-8] -> Clone();
-        hcov42primeGap[icent][ipt][id] = (TProfile*)  hcov42primeGap[icent][ipt][id-8] -> Clone();
-        hcov44primeGap[icent][ipt][id] = (TProfile*)  hcov44primeGap[icent][ipt][id-8] -> Clone();
+        hv22pt[icent][ipt][id]              = (TProfile*)  hv22pt[icent][ipt][id-8] -> Clone();
+        hv24pt[icent][ipt][id]              = (TProfile*)  hv24pt[icent][ipt][id-8] -> Clone();
+        hcov22prime[icent][ipt][id]         = (TProfile*)  hcov22prime[icent][ipt][id-8] -> Clone();
+        hcov24prime[icent][ipt][id]         = (TProfile*)  hcov24prime[icent][ipt][id-8] -> Clone();
+        hcov42prime[icent][ipt][id]         = (TProfile*)  hcov42prime[icent][ipt][id-8] -> Clone();
+        hcov44prime[icent][ipt][id]         = (TProfile*)  hcov44prime[icent][ipt][id-8] -> Clone();
+        hcov2prime4prime[icent][ipt][id]    = (TProfile*)  hcov2prime4prime[icent][ipt][id-8] -> Clone();
+        hv22ptGap[icent][ipt][id]           = (TProfile*)  hv22ptGap[icent][ipt][id-8] -> Clone();
+        hv24ptGap[icent][ipt][id]           = (TProfile*)  hv24ptGap[icent][ipt][id-8] -> Clone();
+        hcov22primeGap[icent][ipt][id]      = (TProfile*)  hcov22primeGap[icent][ipt][id-8] -> Clone();
+        hcov24primeGap[icent][ipt][id]      = (TProfile*)  hcov24primeGap[icent][ipt][id-8] -> Clone();
+        hcov42primeGap[icent][ipt][id]      = (TProfile*)  hcov42primeGap[icent][ipt][id-8] -> Clone();
+        hcov44primeGap[icent][ipt][id]      = (TProfile*)  hcov44primeGap[icent][ipt][id-8] -> Clone();
         hcov2prime4primeGap[icent][ipt][id] = (TProfile*)  hcov2prime4primeGap[icent][ipt][id-8] -> Clone();
-        hcounter[icent][ipt][id] = (TProfile*)  hcounter[icent][ipt][id-8] -> Clone();
+        hcounter[icent][ipt][id]            = (TProfile*)  hcounter[icent][ipt][id-8] -> Clone();
+        // hmult[icent][ipt][id]               = (TProfile*)  hmult[icent][ipt][id-8] -> Clone();        
+        hv22pt_Variance[icent][ipt][id]     = (TProfile*)  hv22pt_Variance[icent][ipt][id-8] -> Clone();
+        hv24pt_Variance[icent][ipt][id]     = (TProfile*)  hv24pt_Variance[icent][ipt][id-8] -> Clone();
+        hv22ptGap_Variance[icent][ipt][id]  = (TProfile*)  hv22ptGap_Variance[icent][ipt][id-8] -> Clone();
+        hv24ptGap_Variance[icent][ipt][id]  = (TProfile*)  hv24ptGap_Variance[icent][ipt][id-8] -> Clone();
 
-        hv22pt[icent][ipt][id] -> Add(hv22pt[icent][ipt][id-4]);
-        hv24pt[icent][ipt][id] -> Add(hv24pt[icent][ipt][id-4]);
-        hcov22prime[icent][ipt][id] -> Add(hcov22prime[icent][ipt][id-4]);
-        hcov24prime[icent][ipt][id] -> Add(hcov24prime[icent][ipt][id-4]);
-        hcov42prime[icent][ipt][id] -> Add(hcov42prime[icent][ipt][id-4]);
-        hcov44prime[icent][ipt][id] -> Add(hcov44prime[icent][ipt][id-4]);
-        hcov2prime4prime[icent][ipt][id] -> Add(hcov2prime4prime[icent][ipt][id-4]);
-        hv22ptGap[icent][ipt][id] -> Add(hv22ptGap[icent][ipt][id-4]);
-        hv24ptGap[icent][ipt][id] -> Add(hv24ptGap[icent][ipt][id-4]);
-        hcov22primeGap[icent][ipt][id] -> Add(hcov22primeGap[icent][ipt][id-4]);
-        hcov24primeGap[icent][ipt][id] -> Add(hcov24primeGap[icent][ipt][id-4]);
-        hcov42primeGap[icent][ipt][id] -> Add(hcov42primeGap[icent][ipt][id-4]);
-        hcov44primeGap[icent][ipt][id] -> Add(hcov44primeGap[icent][ipt][id-4]);
+        // covariance for v2{4}/v2{2,subevent} ratio
+        hcov2primeGap4[icent][ipt][id]      = (TProfile*) hcov2primeGap4[icent][ipt][id-8] -> Clone();
+        hcov2Gap4prime[icent][ipt][id]      = (TProfile*) hcov2Gap4prime[icent][ipt][id-8] -> Clone();
+        hcov2primeGap4prime[icent][ipt][id] = (TProfile*) hcov2primeGap4prime[icent][ipt][id-8] -> Clone();
+        hcov2primeGap2[icent][ipt][id]      = (TProfile*) hcov2primeGap2[icent][ipt][id-8] -> Clone();
+        hcov2Gap2prime[icent][ipt][id]      = (TProfile*) hcov2Gap2prime[icent][ipt][id-8] -> Clone();
+        hcov2primeGap2prime[icent][ipt][id] = (TProfile*) hcov2primeGap2prime[icent][ipt][id-8] -> Clone();
+
+        hv22pt[icent][ipt][id]              -> Add(hv22pt[icent][ipt][id-4]);
+        hv24pt[icent][ipt][id]              -> Add(hv24pt[icent][ipt][id-4]);
+        hcov22prime[icent][ipt][id]         -> Add(hcov22prime[icent][ipt][id-4]);
+        hcov24prime[icent][ipt][id]         -> Add(hcov24prime[icent][ipt][id-4]);
+        hcov42prime[icent][ipt][id]         -> Add(hcov42prime[icent][ipt][id-4]);
+        hcov44prime[icent][ipt][id]         -> Add(hcov44prime[icent][ipt][id-4]);
+        hcov2prime4prime[icent][ipt][id]    -> Add(hcov2prime4prime[icent][ipt][id-4]);
+        hv22ptGap[icent][ipt][id]           -> Add(hv22ptGap[icent][ipt][id-4]);
+        hv24ptGap[icent][ipt][id]           -> Add(hv24ptGap[icent][ipt][id-4]);
+        hcov22primeGap[icent][ipt][id]      -> Add(hcov22primeGap[icent][ipt][id-4]);
+        hcov24primeGap[icent][ipt][id]      -> Add(hcov24primeGap[icent][ipt][id-4]);
+        hcov42primeGap[icent][ipt][id]      -> Add(hcov42primeGap[icent][ipt][id-4]);
+        hcov44primeGap[icent][ipt][id]      -> Add(hcov44primeGap[icent][ipt][id-4]);
         hcov2prime4primeGap[icent][ipt][id] -> Add(hcov2prime4primeGap[icent][ipt][id-4]);
-        hcounter[icent][ipt][id] -> Add(hcounter[icent][ipt][id-4]);
+        hcounter[icent][ipt][id]            -> Add(hcounter[icent][ipt][id-4]);
+        // hmult[icent][ipt][id]               -> Add(hmult[icent][ipt][id-4]);
+        hv22pt_Variance[icent][ipt][id]     -> Add(hv22pt_Variance[icent][ipt][id-4]);
+        hv24pt_Variance[icent][ipt][id]     -> Add(hv24pt_Variance[icent][ipt][id-4]);
+        hv22ptGap_Variance[icent][ipt][id]  -> Add(hv22ptGap_Variance[icent][ipt][id-4]);
+        hv24ptGap_Variance[icent][ipt][id]  -> Add(hv24ptGap_Variance[icent][ipt][id-4]);
+        // covariance for v2{4}/v2{2,subevent} ratio
+        hcov2primeGap4[icent][ipt][id]      -> Add(hcov2primeGap4[icent][ipt][id-4]);
+        hcov2Gap4prime[icent][ipt][id]      -> Add(hcov2Gap4prime[icent][ipt][id-4]);
+        hcov2primeGap4prime[icent][ipt][id] -> Add(hcov2primeGap4prime[icent][ipt][id-4]);
+        hcov2primeGap2[icent][ipt][id]      -> Add(hcov2primeGap2[icent][ipt][id-4]);
+        hcov2Gap2prime[icent][ipt][id]      -> Add(hcov2Gap2prime[icent][ipt][id-4]);
+        hcov2primeGap2prime[icent][ipt][id] -> Add(hcov2primeGap2prime[icent][ipt][id-4]);      
       }
     }
   }
@@ -366,55 +512,46 @@ void PlotRatioV2QCumulant(){
       for(int ipt=0; ipt<npt; ipt++){
         MultiparticleCorrelation *standardQC = new MultiparticleCorrelation(
           hv22[icent], hv24[icent], hv22pt[icent][ipt][id], hv24pt[icent][ipt][id],
+          hv22_Variance[icent], hv24_Variance[icent], hv22pt_Variance[icent][ipt][id], hv24pt_Variance[icent][ipt][id],
           hcov22prime[icent][ipt][id], hcov24[icent], hcov24prime[icent][ipt][id],
           hcov42prime[icent][ipt][id], hcov2prime4prime[icent][ipt][id], hcov44prime[icent][ipt][id],
           zero, zero);
         MultiparticleCorrelation *subeventQC = new MultiparticleCorrelation(
           hv22Gap[icent], hv24Gap[icent], hv22ptGap[icent][ipt][id], hv24ptGap[icent][ipt][id],
+          hv22Gap_Variance[icent], hv24Gap_Variance[icent], hv22ptGap_Variance[icent][ipt][id], hv24ptGap_Variance[icent][ipt][id],
           hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
           hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
           zero, zero);
 
-        // MultiparticleCorrelation *subevent2QCstandard4QC = new MultiparticleCorrelation(
-        //   hv22Gap[icent], hv24[icent], hv22ptGap[icent][ipt][id], hv24pt[icent][ipt][id],
-        //   hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
-        //   hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
-        //   zero, zero);
-
-        // MultiparticleCorrelation *standard2QCsubevent4QC = new MultiparticleCorrelation(
-        //   hv22[icent], hv24Gap[icent], hv22pt[icent][ipt][id], hv24ptGap[icent][ipt][id],
-        //   hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
-        //   hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
-        //   zero, zero);
+        MultiparticleCorrelation *subevent2QCstandard4QC = new MultiparticleCorrelation(
+          hv22[icent], hv24[icent], hv22pt[icent][ipt][id], hv24pt[icent][ipt][id], hv22Gap[icent], hv22ptGap[icent][ipt][id],
+          hv22_Variance[icent], hv24_Variance[icent], hv22pt_Variance[icent][ipt][id], hv24pt_Variance[icent][ipt][id], hv22Gap_Variance[icent], hv22ptGap_Variance[icent][ipt][id],
+          hcov22prime[icent][ipt][id], hcov24[icent], hcov24prime[icent][ipt][id],
+          hcov42prime[icent][ipt][id], hcov2prime4prime[icent][ipt][id], hcov44prime[icent][ipt][id],
+          hcov22primeGap[icent][ipt][id], hcov2Gap2[icent], hcov2Gap4[icent],
+          hcov2primeGap2[icent][ipt][id], hcov2primeGap4[icent][ipt][id], 
+          hcov2Gap2prime[icent][ipt][id], hcov2Gap4prime[icent][ipt][id],
+          hcov2primeGap2prime[icent][ipt][id], hcov2primeGap4prime[icent][ipt][id],
+          zero, zero);
 
         v2Dif[0][icent][id][ipt] = standardQC->GetRatioV24V22Dif();
         v2eDif[0][icent][id][ipt] = standardQC->GetRatioV24V22DifErr();
         v2Dif[1][icent][id][ipt] = subeventQC->GetRatioV24V22Dif();
         v2eDif[1][icent][id][ipt] = subeventQC->GetRatioV24V22DifErr();
-        // v2Dif[2][icent][id][ipt] = subevent2QCstandard4QC->GetRatioV24V22Dif();
         v2Dif[2][icent][id][ipt] = standardQC->GetV24Dif() / subeventQC->GetV22Dif();
+        // v2Dif[2][icent][id][ipt] = subevent2QCstandard4QC->GetRatioV24V22Dif();
 
-        // v2eDif[2][icent][id][ipt] = subevent2QCstandard4QC->GetRatioV24V22DifErr();
         v2eDif[2][icent][id][ipt] = v2Dif[2][icent][id][ipt] * TMath::Sqrt( 
           TMath::Power(standardQC->GetV24DifErr()/standardQC->GetV24Dif(), 2.) 
         + TMath::Power(subeventQC->GetV22DifErr()/subeventQC->GetV22Dif(), 2.) );
+        v2eDif[2][icent][id][ipt] = subevent2QCstandard4QC->GetRatioV24V22DifErr();
 
-        // v2Dif[3][icent][id][ipt] = standard2QCsubevent4QC->GetRatioV24V22Dif();
-        // v2eDif[3][icent][id][ipt] = standard2QCsubevent4QC->GetRatioV24V22DifErr();
         if (icent>=2 && icent <=4) { // 10-40%
 
           prV2Dif1040[0][id] -> Fill(0.5+ipt,standardQC->GetRatioV24V22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(1));
           prV2Dif1040[1][id] -> Fill(0.5+ipt,subeventQC->GetRatioV24V22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(2));
           prV2Dif1040[2][id] -> Fill(0.5+ipt,v2Dif[2][icent][id][ipt],hcounter[icent][ipt][id] -> GetBinEntries(2));
-
-          // prV2Dif1040[0][id] -> Fill(0.5+ipt,standardQC->GetRatioV24V22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(1));
-          // prV2Dif1040[1][id] -> Fill(0.5+ipt,subeventQC->GetRatioV24V22Dif(),hcounter[icent][ipt][id] -> GetBinEntries(2));
-          // prV2Dif1040[2][id] -> Fill(0.5+ipt,v2Dif[2][icent][id][ipt],hcounter[icent][ipt][id] -> GetBinEntries(2));
-
         }
-        // delete standardQC;
-        // delete subeventQC;
-
       } // end of loop for all pT bin
       
       for (int i=0; i<nmethod; i++){
@@ -432,6 +569,10 @@ void PlotRatioV2QCumulant(){
     for (int id=0;id<npid;id++){
       for(int ipt=0; ipt<npt; ipt++){
         v2Dif1040[imeth][id][ipt] = prV2Dif1040[imeth][id] -> GetBinContent(ipt+1);
+        // if (id == 8 && imeth == 2)
+        // {
+        //   std::cout << "v2{4}/v2{2,sub-event} = " << v2Dif1040[imeth][id][ipt] << "\t" << "Err(v2{4}/v2{2,sub-event}) = " << v2eDif1040[imeth][id][ipt] << std::endl;
+        // } 
       }
       grDifFl1040[imeth][id] = new TGraphErrors(npt,pt,v2Dif1040[imeth][id],ept,v2eDif1040[imeth][id]);
       grDifFl1040[imeth][id] -> SetMarkerStyle(marker[imeth]);
@@ -439,8 +580,39 @@ void PlotRatioV2QCumulant(){
       grDifFl1040[imeth][id] -> SetDrawOption("P");
     }
   }
+// old 10-40%  
+// v2{4}/v2{2,sub-event} = 0.956546        Err(v2{4}/v2{2,sub-event}) = 0.00986807
+// v2{4}/v2{2,sub-event} = 0.94771         Err(v2{4}/v2{2,sub-event}) = 0.00933946
+// v2{4}/v2{2,sub-event} = 0.94463         Err(v2{4}/v2{2,sub-event}) = 0.0109596
+// v2{4}/v2{2,sub-event} = 0.941355        Err(v2{4}/v2{2,sub-event}) = 0.0128761
+// v2{4}/v2{2,sub-event} = 0.953779        Err(v2{4}/v2{2,sub-event}) = 0.0149396
+// v2{4}/v2{2,sub-event} = 0.940569        Err(v2{4}/v2{2,sub-event}) = 0.0153194
+// v2{4}/v2{2,sub-event} = 0.957959        Err(v2{4}/v2{2,sub-event}) = 0.0198962
+// v2{4}/v2{2,sub-event} = 0.951688        Err(v2{4}/v2{2,sub-event}) = 0.0234984
+// v2{4}/v2{2,sub-event} = 0.954436        Err(v2{4}/v2{2,sub-event}) = 0.0682721
 
-  const char *grTitle[]={"v_{2}{4}/v_{2}{2}","v_{2}{4,|#Delta#eta|>0.1}/v_{2}{2,|#Delta#eta|>0.1}","v_{2}{4}/v_{2}{2,|#Delta#eta|>0.1}","v_{2}{4,|#Delta#eta|>0.1}//v_{2}{2}"};
+// accounting for covariance terms
+// v2{4}/v2{2,sub-event} = 0.956546        Err(v2{4}/v2{2,sub-event}) = 0.00975519
+// v2{4}/v2{2,sub-event} = 0.94771         Err(v2{4}/v2{2,sub-event}) = 0.00924456
+// v2{4}/v2{2,sub-event} = 0.94463         Err(v2{4}/v2{2,sub-event}) = 0.0108693
+// v2{4}/v2{2,sub-event} = 0.941355        Err(v2{4}/v2{2,sub-event}) = 0.0127884
+// v2{4}/v2{2,sub-event} = 0.953779        Err(v2{4}/v2{2,sub-event}) = 0.0148474
+// v2{4}/v2{2,sub-event} = 0.940569        Err(v2{4}/v2{2,sub-event}) = 0.0152287
+// v2{4}/v2{2,sub-event} = 0.957959        Err(v2{4}/v2{2,sub-event}) = 0.01976
+// v2{4}/v2{2,sub-event} = 0.951688        Err(v2{4}/v2{2,sub-event}) = 0.0233128
+// v2{4}/v2{2,sub-event} = 0.954436        Err(v2{4}/v2{2,sub-event}) = 0.0673973
+
+// accounting for covariance terms and using Cochran's variance
+// v2{4}/v2{2,sub-event} = 0.956546        Err(v2{4}/v2{2,sub-event}) = -nan
+// v2{4}/v2{2,sub-event} = 0.94771         Err(v2{4}/v2{2,sub-event}) = 0.00175221
+// v2{4}/v2{2,sub-event} = 0.94463         Err(v2{4}/v2{2,sub-event}) = 0.00396169
+// v2{4}/v2{2,sub-event} = 0.941355        Err(v2{4}/v2{2,sub-event}) = 0.00540666
+// v2{4}/v2{2,sub-event} = 0.953779        Err(v2{4}/v2{2,sub-event}) = 0.0067763
+// v2{4}/v2{2,sub-event} = 0.940569        Err(v2{4}/v2{2,sub-event}) = 0.00714721
+// v2{4}/v2{2,sub-event} = 0.957959        Err(v2{4}/v2{2,sub-event}) = 0.0106689
+// v2{4}/v2{2,sub-event} = 0.951688        Err(v2{4}/v2{2,sub-event}) = 0.0139992
+// v2{4}/v2{2,sub-event} = 0.954436        Err(v2{4}/v2{2,sub-event}) = 0.0518673
+  const char *grTitle[]={"v_{2}{4}/v_{2}{2}","v_{2}{4,|#Delta#eta|>0.1}/v_{2}{2,|#Delta#eta|>0.1}","v_{2}{4}/v_{2}{2,|#Delta#eta|>0.1}"};
   outFile -> cd();
   for (int imeth=0; imeth<nmethod; imeth++){
     for (int id=0;id<npid;id++){
@@ -515,6 +687,17 @@ void PlotRatioV2QCumulant(){
         hcov42primeGap[icent][binMinPtRFP][id]      -> Add(hcov42primeGap[icent][ipt][id]);
         hcov44primeGap[icent][binMinPtRFP][id]      -> Add(hcov44primeGap[icent][ipt][id]);
         hcov2prime4primeGap[icent][binMinPtRFP][id] -> Add(hcov2prime4primeGap[icent][ipt][id]);
+        hv24pt_Variance[icent][binMinPtRFP][id]     -> Add(hv24pt_Variance[icent][ipt][id]);
+        hv22pt_Variance[icent][binMinPtRFP][id]     -> Add(hv22pt_Variance[icent][ipt][id]);
+        hv22ptGap_Variance[icent][binMinPtRFP][id]  -> Add(hv22ptGap_Variance[icent][ipt][id]);
+        hv24ptGap_Variance[icent][binMinPtRFP][id]  -> Add(hv24ptGap_Variance[icent][ipt][id]);
+        // covariance for v2{4}/v2{2,subevent} ratio
+        hcov2primeGap4[icent][binMinPtRFP][id]      -> Add(hcov2primeGap4[icent][ipt][id]);
+        hcov2Gap4prime[icent][binMinPtRFP][id]      -> Add(hcov2Gap4prime[icent][ipt][id]);
+        hcov2primeGap4prime[icent][binMinPtRFP][id] -> Add(hcov2primeGap4prime[icent][ipt][id]);
+        hcov2primeGap2[icent][binMinPtRFP][id]      -> Add(hcov2primeGap2[icent][ipt][id]);
+        hcov2Gap2prime[icent][binMinPtRFP][id]      -> Add(hcov2Gap2prime[icent][ipt][id]);
+        hcov2primeGap2prime[icent][binMinPtRFP][id] -> Add(hcov2primeGap2prime[icent][ipt][id]);
       }
     }
   }
@@ -522,10 +705,20 @@ void PlotRatioV2QCumulant(){
   double v2_RF[nmethod][ncent],    v2e_RF[nmethod][ncent];
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
 
-    MultiparticleCorrelation *standardQCRef = new MultiparticleCorrelation(hv22[icent], hv24[icent], hcov24[icent], zero);
-    MultiparticleCorrelation *subeventQCRef = new MultiparticleCorrelation(hv22Gap[icent], hv24Gap[icent], hcov24Gap[icent], zero);
-    MultiparticleCorrelation *subevent2QCstandard4QCRef = new MultiparticleCorrelation(hv22Gap[icent], hv24[icent], hcov24Gap[icent], zero);
-    // MultiparticleCorrelation *standard2QCsubevent4QCRef = new MultiparticleCorrelation(hv22[icent], hv24Gap[icent], hcov24Gap[icent], zero);
+    // MultiparticleCorrelation *standardQCRef = new MultiparticleCorrelation(hv22[icent], hv24[icent], hcov24[icent], zero);
+    // MultiparticleCorrelation *subeventQCRef = new MultiparticleCorrelation(hv22Gap[icent], hv24Gap[icent], hcov24Gap[icent], zero);
+    MultiparticleCorrelation *standardQCRef = new MultiparticleCorrelation(hv22[icent], hv24[icent],
+                                                                           hv22_Variance[icent], hv24_Variance[icent], 
+                                                                           hcov24[icent], zero);
+    MultiparticleCorrelation *subeventQCRef = new MultiparticleCorrelation(hv22Gap[icent], hv24Gap[icent], 
+                                                                           hv22Gap_Variance[icent], hv24Gap_Variance[icent],  
+                                                                           hcov24Gap[icent], zero);
+    // new v2{4}/v2{2,sub-event} stat. err.
+
+
+    MultiparticleCorrelation *subevent2QCstandard4QCRef = new MultiparticleCorrelation(hv22[icent], hv24[icent], hv22_Variance[icent], hv24_Variance[icent],
+                                                                                       hv22Gap[icent], hv22Gap_Variance[icent], 
+                                                                                       hcov24[icent], hcov2Gap4[icent], hcov2Gap2[icent], zero);
 
     v2_RF[0][icent] = standardQCRef->GetRatioV24V22Ref();
     v2e_RF[0][icent] = standardQCRef->GetRatioV24V22RefErr();
@@ -547,18 +740,42 @@ void PlotRatioV2QCumulant(){
     //   );
     // std::cout << "Old Ratio v24 over v22 stat. error = " <<  v2e_RF[1][icent] << std::endl;
 
-    // v2_RF[2][icent] = subevent2QCstandard4QCRef->GetRatioV24V22Ref();
     v2_RF[2][icent] = standardQCRef->GetV24Ref() / subeventQCRef->GetV22Ref();
-    v2e_RF[2][icent] = v2_RF[2][icent] 
-    * TMath::Sqrt( 
-      TMath::Power(standardQCRef->GetV24RefErr()/standardQCRef->GetV24Ref(), 2.) 
-    + TMath::Power(subeventQCRef->GetV22RefErr()/subeventQCRef->GetV22Ref(), 2.) 
-      );
+    // v2e_RF[2][icent] = v2_RF[2][icent] 
+    // * TMath::Sqrt( 
+    //   TMath::Power(standardQCRef->GetV24RefErr()/standardQCRef->GetV24Ref(), 2.) 
+    // + TMath::Power(subeventQCRef->GetV22RefErr()/subeventQCRef->GetV22Ref(), 2.) 
+    //   );
+    v2_RF[2][icent] = subevent2QCstandard4QCRef->GetRatioV24V22Ref();
+    v2e_RF[2][icent] = subevent2QCstandard4QCRef->GetRatioV24V22RefErr();
 
     
     // v2_RF[3][icent] = standard2QCsubevent4QCRef->GetRatioV24V22Ref();
     // v2e_RF[3][icent] = standard2QCsubevent4QCRef->GetRatioV24V22RefErr();
     // std::cout << "v24 = " << standardQCRef->GetV24Ref() << ", v24 = " << subeventQCRef->GetV24Ref() << std::endl;
+    // std::cout << "v2{4}/v2{2,sub-event} = " << v2_RF[2][icent] << "\t" << "Err(v2{4}/v2{2,sub-event}) = " << v2e_RF[2][icent] << std::endl;
+// stat. err. propagation
+// Err(v2{4}/v2{2,sub-event}) = -nan
+// Err(v2{4}/v2{2,sub-event}) = 0.0129058
+// Err(v2{4}/v2{2,sub-event}) = 0.00360814
+// Err(v2{4}/v2{2,sub-event}) = 0.00288657
+// Err(v2{4}/v2{2,sub-event}) = 0.00418879
+// Err(v2{4}/v2{2,sub-event}) = 0.00935042
+// Err(v2{4}/v2{2,sub-event}) = 0.0294775
+// Err(v2{4}/v2{2,sub-event}) = 0.124009
+// Err(v2{4}/v2{2,sub-event}) = 0.402933
+
+// accounting for covariance terms
+// v2{4}/v2{2,sub-event} = -nan            Err(v2{4}/v2{2,sub-event}) = nan
+// v2{4}/v2{2,sub-event} = 0.913835        Err(v2{4}/v2{2,sub-event}) = 3.04499
+// v2{4}/v2{2,sub-event} = 0.947107        Err(v2{4}/v2{2,sub-event}) = 0.580843
+// v2{4}/v2{2,sub-event} = 0.958971        Err(v2{4}/v2{2,sub-event}) = 0.322685
+// v2{4}/v2{2,sub-event} = 0.940829        Err(v2{4}/v2{2,sub-event}) = 0.341163
+// v2{4}/v2{2,sub-event} = 0.900506        Err(v2{4}/v2{2,sub-event}) = 0.548532
+// v2{4}/v2{2,sub-event} = 0.864756        Err(v2{4}/v2{2,sub-event}) = 1.16599
+// v2{4}/v2{2,sub-event} = 0.784396        Err(v2{4}/v2{2,sub-event}) = 3.03026
+// v2{4}/v2{2,sub-event} = 0.864494        Err(v2{4}/v2{2,sub-event}) = 2.64791
+
   } // end of loop over centrality classes
   // Differential flow calculation
   for (Int_t id = 0; id<npid; id++){
@@ -566,38 +783,37 @@ void PlotRatioV2QCumulant(){
       for(int ipt=binMinPtRFP; ipt<binMinPtRFP+1; ipt++){ // loop for all pT bin
         MultiparticleCorrelation *standardQC = new MultiparticleCorrelation(
           hv22[icent], hv24[icent], hv22pt[icent][ipt][id], hv24pt[icent][ipt][id],
+          // hv22_Variance[icent], hv24_Variance[icent], hv22pt_Variance[icent][ipt][id], hv24pt_Variance[icent][ipt][id],
           hcov22prime[icent][ipt][id], hcov24[icent], hcov24prime[icent][ipt][id],
           hcov42prime[icent][ipt][id], hcov2prime4prime[icent][ipt][id], hcov44prime[icent][ipt][id],
           zero, zero);
         MultiparticleCorrelation *subeventQC = new MultiparticleCorrelation(
           hv22Gap[icent], hv24Gap[icent], hv22ptGap[icent][ipt][id], hv24ptGap[icent][ipt][id],
+          // hv22Gap_Variance[icent], hv24Gap_Variance[icent], hv22ptGap_Variance[icent][ipt][id], hv24ptGap_Variance[icent][ipt][id],
           hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
           hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
           zero, zero);
 
         MultiparticleCorrelation *subevent2QCstandard4QC = new MultiparticleCorrelation(
-          hv22Gap[icent], hv24[icent], hv22ptGap[icent][ipt][id], hv24pt[icent][ipt][id],
-          hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
-          hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
+          hv22[icent], hv24[icent], hv22pt[icent][ipt][id], hv24pt[icent][ipt][id], hv22Gap[icent], hv22ptGap[icent][ipt][id],
+          hv22_Variance[icent], hv24_Variance[icent], hv22pt_Variance[icent][ipt][id], hv24pt_Variance[icent][ipt][id], hv22Gap_Variance[icent], hv22ptGap_Variance[icent][ipt][id],
+          hcov22prime[icent][ipt][id], hcov24[icent], hcov24prime[icent][ipt][id],
+          hcov42prime[icent][ipt][id], hcov2prime4prime[icent][ipt][id], hcov44prime[icent][ipt][id],
+          hcov22primeGap[icent][ipt][id], hcov2Gap2[icent], hcov2Gap4[icent],
+          hcov2primeGap2[icent][ipt][id], hcov2primeGap4[icent][ipt][id], 
+          hcov2Gap2prime[icent][ipt][id], hcov2Gap4prime[icent][ipt][id],
+          hcov2primeGap2prime[icent][ipt][id], hcov2primeGap4prime[icent][ipt][id],
           zero, zero);
 
-        // MultiparticleCorrelation *standard2QCsubevent4QC = new MultiparticleCorrelation(
-        //   hv22[icent], hv24Gap[icent], hv22pt[icent][ipt][id], hv24ptGap[icent][ipt][id],
-        //   hcov22primeGap[icent][ipt][id], hcov24Gap[icent], hcov24primeGap[icent][ipt][id],
-        //   hcov42primeGap[icent][ipt][id], hcov2prime4primeGap[icent][ipt][id], hcov44primeGap[icent][ipt][id],
-        //   zero, zero);
-
-        v2[0][id][icent] = standardQC->GetRatioV24V22Dif();
+        v2[0][id][icent]  = standardQC->GetRatioV24V22Dif();
         v2e[0][id][icent] = standardQC->GetRatioV24V22DifErr();
-        v2[1][id][icent] = subeventQC->GetRatioV24V22Dif();
+        v2[1][id][icent]  = subeventQC->GetRatioV24V22Dif();
         v2e[1][id][icent] = subeventQC->GetRatioV24V22DifErr();
-        v2[2][id][icent] = subevent2QCstandard4QC->GetRatioV24V22Dif();
-        v2[2][id][icent] = standardQC->GetV24Dif() / subeventQC->GetV22Dif();
-
-        
-        // v2e[2][id][icent] = subevent2QCstandard4QC->GetRatioV24V22DifErr();
-        // v2[3][id][icent] = standard2QCsubevent4QC->GetRatioV24V22Dif();
-        // v2e[3][id][icent] = standard2QCsubevent4QC->GetRatioV24V22DifErr();
+        // v2[2][id][icent]  = standardQC->GetV24Dif() / subeventQC->GetV22Dif();
+        v2[2][id][icent]  = subevent2QCstandard4QC->GetRatioV24V22Dif();
+        // std::cout << standardQC->GetV24Dif() / subeventQC->GetV22Dif() << " " << subevent2QCstandard4QC->GetRatioV24V22Dif() << std::endl;
+        v2e[2][id][icent]  = subevent2QCstandard4QC->GetRatioV24V22DifErr();
+        if (id==9) std::cout << v2e[0][id][icent] << "\t" << v2e[1][id][icent] << "\t" << v2e[2][id][icent] << std::endl;
 
         
       } // end of loop for all pT bin

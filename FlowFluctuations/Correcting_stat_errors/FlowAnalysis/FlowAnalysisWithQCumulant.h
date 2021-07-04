@@ -100,6 +100,10 @@ private:
   TProfile *hcov2primeGap4[ncent][npt][npidQC];       // <2'>_{a|b} * <4>
   TProfile *hcov2Gap4prime[ncent][npt][npidQC];       // <2>_{a|b}  * <4'>
   TProfile *hcov2primeGap4prime[ncent][npt][npidQC];  // <2'>_{a|b} * <4'>
+  TProfile *hcov2Gap2[ncent];                         // <2>_{a|b}  * <2>  
+  TProfile *hcov2primeGap2[ncent][npt][npidQC];       // <2'>_{a|b} * <2>
+  TProfile *hcov2Gap2prime[ncent][npt][npidQC];       // <2>_{a|b}  * <2'>
+  TProfile *hcov2primeGap2prime[ncent][npt][npidQC];  // <2'>_{a|b} * <2'>
 
   // testing Cochran-Endlich variance of the weighted mean (Eq. 17) http://arxiv.org/abs/2104.00588
   TProfile *hv22_Variance[ncent];  // profile <<2>> from 2nd Q-Cumulants

@@ -50,6 +50,7 @@ void FlowAnalysisWithQCumulant::Init()
   for (Int_t icent = 0; icent < ncent; icent++)
   { // loop over centrality classes
     hcov2Gap4[icent] = new TProfile(Form("hcov2Gap4_%i", icent), Form("hcov2Gap4_%i", icent), 1, 0., 1.);
+    hcov2Gap2[icent] = new TProfile(Form("hcov2Gap2_%i", icent), Form("hcov2Gap2_%i", icent), 1, 0., 1.);
     for (Int_t id = 0; id < npidQC; id++)
     {
       for (Int_t ipt = 0; ipt < npt; ipt++)
@@ -57,6 +58,9 @@ void FlowAnalysisWithQCumulant::Init()
         hcov2primeGap4[icent][ipt][id] = new TProfile(Form("hcov2primeGap4_%i_%i_%i", icent, ipt, id), Form("hcov2primeGap4_%i_%i_%i", icent, ipt, id), 1, 0., 1.);
         hcov2Gap4prime[icent][ipt][id] = new TProfile(Form("hcov2Gap4prime_%i_%i_%i", icent, ipt, id), Form("hcov2Gap4prime_%i_%i_%i", icent, ipt, id), 1, 0., 1.);
         hcov2primeGap4prime[icent][ipt][id] = new TProfile(Form("hcov2primeGap4prime_%i_%i_%i", icent, ipt, id), Form("hcov2primeGap4prime_%i_%i_%i", icent, ipt, id), 1, 0., 1.);
+        hcov2primeGap2[icent][ipt][id] = new TProfile(Form("hcov2primeGap2_%i_%i_%i", icent, ipt, id), Form("hcov2primeGap2_%i_%i_%i", icent, ipt, id), 1, 0., 1.);
+        hcov2Gap2prime[icent][ipt][id] = new TProfile(Form("hcov2Gap2prime_%i_%i_%i", icent, ipt, id), Form("hcov2Gap2prime_%i_%i_%i", icent, ipt, id), 1, 0., 1.);
+        hcov2primeGap2prime[icent][ipt][id] = new TProfile(Form("hcov2primeGap2prime_%i_%i_%i", icent, ipt, id), Form("hcov2primeGap2prime_%i_%i_%i", icent, ipt, id), 1, 0., 1.);
       }
     }
   }
@@ -376,9 +380,14 @@ void FlowAnalysisWithQCumulant::ProcessEventAfterFirstTrackLoop(const Int_t &ice
     cor24Gap = CalCor24TwoSub(Q2Gap[0], Q4Gap[0], Q2Gap[1], Q4Gap[1], MGap[0], MGap[1]);  // <4>
     // pCorrelator2EtaGap->Fill(0.5 + icent, cor22Gap, w2Gap);
     hv22Gap[icent]->Fill(0.5, cor22Gap, w2Gap);
-    hv24Gap[icent]->Fill(0.5, cor24Gap, w4Gap);
+    hv24Gap[icent]->Fill(0.5, cor24Gap, w4Gap);    
+    hv22Gap_Variance[icent]->Fill(0.5, cor22Gap, w2Gap*w2Gap);
+    hv24Gap_Variance[icent]->Fill(0.5, cor24Gap, w4Gap*w4Gap);
+
     hcov24Gap[icent]->Fill(0.5, cor22Gap * cor24Gap, w2Gap * w4Gap);           // <2>*<4>
+    // covariance for v2{4}/v2{2,subevent} ratio
     hcov2Gap4[icent]->Fill(0.5, cor22Gap * cor24, w2Gap * w4);                 // <2>_{a|b}*<4>
+    hcov2Gap2[icent]->Fill(0.5, cor22Gap * cor22, w2Gap * w2);                 // <2>_{a|b}*<2>    
     for (Int_t ieta = 0; ieta < neta; ieta++)
     {
       for (Int_t ipt = 0; ipt < npt; ipt++)
@@ -424,6 +433,9 @@ void FlowAnalysisWithQCumulant::ProcessEventAfterFirstTrackLoop(const Int_t &ice
           if (mp[ipt][id] == 0 || wred2[ipt][id] == 0 || wred4[ipt][id] == 0) std::cout << "Error: (mp[ipt][id] == 0 || wred2[ipt][id] == 0 || wred4[ipt][id] == 0)" << std::endl;
           hcov2primeGap4[icent][ipt][id]->Fill(0.5, redCor22Gap[ieta][ipt][id] * cor24, wred2Gap[ieta][ipt][id] * w4);                                                // <2'>_{a|b} * <4>
           hcov2primeGap4prime[icent][ipt][id]->Fill(0.5, redCor22Gap[ieta][ipt][id] * redCor24[ipt][id], wred2Gap[ieta][ipt][id] * wred4[ipt][id]);                   // <2'>_{a|b} * <4'>
+          hcov2primeGap2[icent][ipt][id]->Fill(0.5, redCor22Gap[ieta][ipt][id] * cor22, wred2Gap[ieta][ipt][id] * w2);                                                // <2'>_{a|b} * <4>
+          hcov2primeGap2prime[icent][ipt][id]->Fill(0.5, redCor22Gap[ieta][ipt][id] * redCor22[ipt][id], wred2Gap[ieta][ipt][id] * wred2[ipt][id]);                   // <2'>_{a|b} * <4'>
+        
         }
       }
     }
@@ -437,9 +449,9 @@ void FlowAnalysisWithQCumulant::ProcessEventAfterFirstTrackLoop(const Int_t &ice
           continue;
         if (wred4[ipt][id] == 0) { std::cout << "Error: (wred4[ipt][id] == 0)" << std::endl; return; }
         hcov2Gap4prime[icent][ipt][id]->Fill(0.5, cor22Gap * redCor24[ipt][id], w2Gap * wred4[ipt][id]);                                          // <2>_{a|b}  * <4'>
+        hcov2Gap2prime[icent][ipt][id]->Fill(0.5, cor22Gap * redCor22[ipt][id], w2Gap * wred2[ipt][id]);                                          // <2>_{a|b}  * <4'>
       }
     }
-
   }
 }
 
@@ -462,6 +474,7 @@ void FlowAnalysisWithQCumulant::SaveHist()
         hcov44prime[icent][ipt][id]->Write();
         hcov2prime4prime[icent][ipt][id]->Write();
         hcounter[icent][ipt][id]->Write();
+        hmult[icent][ipt][id]->Write();
         hv22ptGap[icent][ipt][id]->Write();
         hv24ptGap[icent][ipt][id]->Write();
         hcov22primeGap[icent][ipt][id]->Write();
@@ -477,6 +490,7 @@ void FlowAnalysisWithQCumulant::SaveHist()
   for (Int_t icent = 0; icent < ncent; icent++)
   {
     hcov2Gap4[icent]->Write();
+    hcov2Gap2[icent]->Write();
     for (Int_t id = 0; id < npidQC; id++)
     {
       for (Int_t ipt = 0; ipt < npt; ipt++)
@@ -484,6 +498,9 @@ void FlowAnalysisWithQCumulant::SaveHist()
         hcov2primeGap4[icent][ipt][id]->Write();
         hcov2Gap4prime[icent][ipt][id]->Write();
         hcov2primeGap4prime[icent][ipt][id]->Write();
+        hcov2primeGap2[icent][ipt][id]->Write();
+        hcov2Gap2prime[icent][ipt][id]->Write();
+        hcov2primeGap2prime[icent][ipt][id]->Write();
       }
     }
   }
@@ -525,6 +542,7 @@ void FlowAnalysisWithQCumulant::SaveHist(TDirectoryFile *const &outputDir)
         outputDir->Add(hcov44prime[icent][ipt][id]);
         outputDir->Add(hcov2prime4prime[icent][ipt][id]);
         outputDir->Add(hcounter[icent][ipt][id]);
+        outputDir->Add(hmult[icent][ipt][id]);
         outputDir->Add(hv22ptGap[icent][ipt][id]);
         outputDir->Add(hv24ptGap[icent][ipt][id]);
         outputDir->Add(hcov22primeGap[icent][ipt][id]);
@@ -540,6 +558,7 @@ void FlowAnalysisWithQCumulant::SaveHist(TDirectoryFile *const &outputDir)
   for (Int_t icent = 0; icent < ncent; icent++)
   {
     outputDir->Add(hcov2Gap4[icent]);
+    outputDir->Add(hcov2Gap2[icent]);
     for (Int_t id = 0; id < npidQC; id++)
     {
       for (Int_t ipt = 0; ipt < npt; ipt++)
@@ -547,6 +566,9 @@ void FlowAnalysisWithQCumulant::SaveHist(TDirectoryFile *const &outputDir)
         outputDir->Add(hcov2primeGap4[icent][ipt][id]);
         outputDir->Add(hcov2Gap4prime[icent][ipt][id]);
         outputDir->Add(hcov2primeGap4prime[icent][ipt][id]);
+        outputDir->Add(hcov2primeGap2[icent][ipt][id]);
+        outputDir->Add(hcov2Gap2prime[icent][ipt][id]);
+        outputDir->Add(hcov2primeGap2prime[icent][ipt][id]);
       }
     }
   }

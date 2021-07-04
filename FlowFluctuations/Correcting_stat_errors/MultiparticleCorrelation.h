@@ -17,6 +17,16 @@ struct term{ // structure for "Mean squared error of MEAN" calculation, using un
 
     // Eq. (17) http://arxiv.org/abs/2104.00588
   };
+  term(TProfile *const &pr1, TProfile *const &pr2, Int_t bin=0)
+  {
+    Double_t Neff = pr1 -> GetBinEffectiveEntries(bin+1);
+    Double_t N = pr1 -> GetEntries();
+    mVal = pr1 -> GetBinContent(bin+1);
+    pr2 -> SetErrorOption("s");
+    Double_t stdevW = pr2 -> GetBinError(bin+1);
+    mMSE = N/(N-1.)*stdevW*stdevW/Neff;
+    // mMSE = stdevW*stdevW/Neff;
+  };
  public: 
   Double_t mVal; // weithted mean value
   Double_t mMSE; // Mean squared error of mean, https://en.wikipedia.org/wiki/Mean_squared_error
@@ -27,11 +37,47 @@ class MultiparticleCorrelation
 {
  public:
   MultiparticleCorrelation();
+  // 2-particle correlations only
+  MultiparticleCorrelation(TProfile *const &pCor2, Int_t &cent);
+  MultiparticleCorrelation(TProfile *const &pCor2, TProfile *const &pCor2Var, Int_t &cent);
+  MultiparticleCorrelation(TProfile *const &pCor2, TProfile *const &pCor2red, 
+                           TProfile *const &pCov22prime,
+                           Int_t &cent, Int_t &pt);
+  MultiparticleCorrelation(TProfile *const &pCor2, TProfile *const &pCor2red, 
+                           TProfile *const &pCor2Var, TProfile *const &pCor2redVar, TProfile *const &pCov22prime,
+                           Int_t &cent, Int_t &pt);
+  // 2- and 4-particle correlations of RFP (statistical uncertainties calculated according to Ante's thesis)
   MultiparticleCorrelation(TProfile *const &pCor2, TProfile *const &pCor4, TProfile *const &pCov24, Int_t &cent);
+  // 2- and 4-particle correlations of RFP (statistical uncertainties calculated according to Cochran)
+  MultiparticleCorrelation(TProfile *const &pCor2, TProfile *const &pCor4, 
+                           TProfile *const &pCor2Var, TProfile *const &pCor4Var, 
+                           TProfile *const &pCov24, Int_t &cent);
+  // 2- and 4-particle correlations of POI (statistical uncertainties calculated according to Ante's thesis)
   MultiparticleCorrelation(TProfile *const &pCor2, TProfile *const &pCor4, TProfile *const &pCor2red, TProfile *const &pCor4red,
                            TProfile *const &pCov22prime, TProfile *const &pCov24, TProfile *const & pCov24prime,
                            TProfile *const &pCov42prime, TProfile *const &pCov2prime4prime, TProfile *const &pCov44prime,
                            Int_t &cent, Int_t &pt);
+  // 2- and 4-particle correlations of POI (statistical uncertainties calculated according to Cochran)
+  MultiparticleCorrelation(TProfile *const &pCor2, TProfile *const &pCor4, TProfile *const &pCor2red, TProfile *const &pCor4red,
+                           TProfile *const &pCor2Var, TProfile *const &pCor4Var, TProfile *const &pCor2redVar, TProfile *const &pCor4redVar,
+                           TProfile *const &pCov22prime, TProfile *const &pCov24, TProfile *const & pCov24prime,
+                           TProfile *const &pCov42prime, TProfile *const &pCov2prime4prime, TProfile *const &pCov44prime,
+                           Int_t &cent, Int_t &pt);
+  // for ratio v2{4}/v2{2,2-sub}
+  MultiparticleCorrelation(TProfile *const &pCor2, TProfile *const &pCor4, 
+                           TProfile *const &pCor2Var, TProfile *const &pCor4Var,
+                           TProfile *const &pCor2Gap, TProfile *const &pCor2GapVar,
+                           TProfile *const &pCov24, TProfile *const &pCov2Gap4, TProfile *const &pCov2Gap2, Int_t &cent);
+  MultiparticleCorrelation(TProfile *const &pCor2, TProfile *const &pCor4, TProfile *const &pCor2red, TProfile *const &pCor4red, TProfile *const &pCor2Gap, TProfile *const &pCor2redGap,
+                           TProfile *const &pCor2Var, TProfile *const &pCor4Var, TProfile *const &pCor2redVar, TProfile *const &pCor4redVar, TProfile *const &pCor2GapVar, TProfile *const &pCor2redGapVar,
+                           TProfile *const &pCov22prime, TProfile *const &pCov24, TProfile *const &pCov24prime,
+                           TProfile *const &hcov42prime, TProfile *const &hcov2prime4prime, TProfile *const &hcov44prime,
+                           TProfile *const &pCov22primeGap, TProfile *const &pCov2Gap2, TProfile *const &pCov2Gap4,
+                           TProfile *const &hcov2primeGap2, TProfile *const &hcov2primeGap4,
+                           TProfile *const &hcov2Gap2prime, TProfile *const &hcov2Gap4prime,
+                           TProfile *const &hcov2primeGap2prime, TProfile *const &hcov2primeGap4prime,
+                           Int_t &cent, Int_t &pt);
+
   virtual ~MultiparticleCorrelation();
   Double_t GetV22Ref() const { return this->v22Ref; }
   Double_t GetV22RefErr() const { return this->v22Refe; }
@@ -47,6 +93,17 @@ class MultiparticleCorrelation
   Double_t GetRatioV24V22RefErr() const { return this->ratioV24OverV22Refe; }
   Double_t GetRatioV24V22Dif() const { return this->ratioV24OverV22Dif; }
   Double_t GetRatioV24V22DifErr() const { return this->ratioV24OverV22Dife; }  
+
+  Double_t GetCor2Ref() const { return this->cor2.mVal; }
+  Double_t GetCor2MSERef() const { return this->cor2.mMSE; }
+  Double_t GetCor4Ref() const { return this->cor4.mVal; }
+  Double_t GetCor4MSERef() const { return this->cor4.mMSE; }
+
+  Double_t GetCor2Dif() const { return this->cor2red.mVal; }
+  Double_t GetCor2MSEDif() const { return this->cor2red.mMSE; }
+  Double_t GetCor4Dif() const { return this->cor4red.mVal; }
+  Double_t GetCor4MSEDif() const { return this->cor4red.mMSE; }
+
  private: 
   Int_t fCentBin;
   Int_t fPtBin;

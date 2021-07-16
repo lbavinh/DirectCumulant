@@ -7,6 +7,7 @@ fDebug(kFALSE),
 fUseProduct(kFALSE),
 fFirstRun(kTRUE),
 fUseMultWeight(kTRUE),
+fHarmonic(2),
 fTheta(),
 fQtheta(),
 fQn(nullptr),
@@ -53,10 +54,10 @@ FlowAnalysisWithLeeYangZeros::~FlowAnalysisWithLeeYangZeros()
 
 void FlowAnalysisWithLeeYangZeros::Init()
 {
-  fQn = new QVector();
+  fQn = new QVector((Double_t) fHarmonic);
   for (Int_t ith = 0; ith < nTheta; ith++)
   {
-    fTheta[ith] = ith * TMath::Pi() / (2.0 * nTheta);
+    fTheta[ith] = ith * TMath::Pi() / (fHarmonic * nTheta);
   }
   if (fFirstRun)
   { // First run
@@ -214,14 +215,14 @@ void FlowAnalysisWithLeeYangZeros::ProcessFirstTrackLoopRP(const Double_t &phi, 
   {
     if (fFirstRun) {
       for (Int_t it = 0; it < nTheta; ++it) {
-        Double_t dCosTerm = TMath::Cos(2. * (phi - fTheta[it]));
+        Double_t dCosTerm = TMath::Cos(fHarmonic * (phi - fTheta[it]));
         for (Int_t rbin = 0; rbin < rbins; ++rbin) {
           fGenFunP[rbin][it] *= TComplex(1.0, fWeight * fRProduct[rbin] * dCosTerm);
         }
       }
     }else{
       for (Int_t it = 0; it < nTheta; ++it) {
-        Double_t dCosTerm = TMath::Cos(2. * (phi - fTheta[it]));
+        Double_t dCosTerm = TMath::Cos(fHarmonic * (phi - fTheta[it]));
         fGenfunPror0[it] *= TComplex(1.0, fWeight * fR02Pro[icent][it] * dCosTerm);
         TComplex cCosTermComplex(1., fWeight * fR02Pro[icent][it] * dCosTerm);
         fdGr0[it] += (fWeight * dCosTerm / cCosTermComplex);
@@ -252,7 +253,7 @@ void FlowAnalysisWithLeeYangZeros::ProcessEventAfterFirstTrackLoop(const Int_t &
       if (fUseMultWeight) dWeight = 1./fQn->GetMult();
       else { dWeight = 1.; }
       for (Int_t ith = 0; ith < nTheta; ith++) {
-        fQtheta[ith] = dWeight * (Qx * TMath::Cos(2.0 * fTheta[ith]) + Qy * TMath::Sin(2.0 * fTheta[ith]));
+        fQtheta[ith] = dWeight * (Qx * TMath::Cos(fHarmonic * fTheta[ith]) + Qy * TMath::Sin(fHarmonic * fTheta[ith]));
       }
     }
     if (fFirstRun)
@@ -327,7 +328,7 @@ void FlowAnalysisWithLeeYangZeros::ProcessSecondTrackLoop(Double_t &phi, Double_
   {
     for (Int_t it = 0; it < nTheta; ++it)
     {
-      Double_t dCosTerm = TMath::Cos(2.0 * (phi - fTheta[it]));
+      Double_t dCosTerm = TMath::Cos(fHarmonic * (phi - fTheta[it]));
       if (fUseProduct)
       {
         TComplex cCosTermComplex(1., fWeight * fR02Pro[icent][it] * dCosTerm);
@@ -436,13 +437,12 @@ TH1F *FlowAnalysisWithLeeYangZeros::FillHistGtheta(const TProfile *const &prReGt
     Double_t dRe = prReGtheta->GetBinContent(rbin + 1);
     Double_t dIm = prImGtheta->GetBinContent(rbin + 1);
     TComplex cGtheta(dRe, dIm);
-    //fill fHistGtheta with the modulus squared of cGtheta
+    //fill hGtheta with the modulus squared of cGtheta
     //to avoid errors when using a merged outputfile use SetBinContent() and not Fill()
     if (cGtheta.Rho2() > 3.)
       hGtheta->SetBinContent(rbin + 1, 0);
     else
       hGtheta->SetBinContent(rbin + 1, cGtheta.Rho2());
-    // hGtheta->SetBinContent(rbin+1,cGtheta.Rho2());
     hGtheta->SetBinError(rbin + 1, 0.0);
   }
   return hGtheta;

@@ -27,7 +27,7 @@ void FlowAnalysisWithMCEventPlane::Init()
   fQvector_L = new QVector(fHarmonic);
   fQvector_R = new QVector(fHarmonic);
 
-  for (Int_t i; i < npid; i++)
+  for (Int_t i = 0; i < npid; i++)
   {
     fPrV2vsPt[i] = new TProfile2D(Form("prV2MCvsPt_pid%i",i), Form("v_{2}{MC EP}(p_{T}) of %s",pidNames.at(i).Data()), ncent, &bin_cent[0], npt, &pTBin[0]);
   }
@@ -95,7 +95,7 @@ void FlowAnalysisWithMCEventPlane::SaveHist()
   fPrRes->Write();
   fPrV2MCEventPlane->Write();
   fPrV2vsEta->Write();
-  for (Int_t i; i < npid; i++)
+  for (Int_t i = 0; i < npid; i++)
   {
     fPrV2vsPt[i]->Write();
   }
@@ -107,7 +107,7 @@ void FlowAnalysisWithMCEventPlane::SaveHist(TDirectoryFile *const &outputDir)
   outputDir->Add(fPrRes); 
   outputDir->Add(fPrV2MCEventPlane);
   outputDir->Add(fPrV2vsEta);
-  for (Int_t i; i < npid; i++)
+  for (Int_t i = 0; i < npid; i++)
   {
     outputDir->Add(fPrV2vsPt[i]);
   }

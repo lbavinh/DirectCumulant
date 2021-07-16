@@ -14,7 +14,7 @@
 // Flags
 bool saveAsPNG = true;
 int ratioToMethod = 2; // v22,v24,v22eta-sub,v24eta-gap
-int drawDifferentialFlowTill = 3; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
+int drawDifferentialFlowTill = 0; // Draw v2 vs pT (10% centrality cut) till: 0: no drawing; 1: till 10%; 2: till 20%; etc.
 // Constants
 // const int npid = 12; // CH+, pion+, kaon+, proton, CH-, pion-, kaon-, antiproton, CH, pions, kaons, protons+antiproton
 // const std::vector<TString> pidNames = {"hadron_pos", "pion_pos", "kaon_pos", "proton", "hadron_neg", "pion_neg", "kaon_neg", "proton_bar", "hadron", "pion", "kaon","proton_antiproton"};
@@ -648,6 +648,48 @@ void PlotRatioV2QCumulant(){
     }
   }
 
+  TCanvas *cV2PTMultPad[npid];
+  TString strCent[5] = {"0-5%","5-10%","10-20%","20-30%","30-40%"};
+  for (int id=0;id<npid;id++)
+  {
+    std::vector<TGraphErrors*> vgrv2pt[5];
+    for (int icent=0; icent<5; icent++)
+    {
+      vgrv2pt[icent].push_back(grDifFl[ratioToMethod][icent][id]);
+      for (int i=0; i<nmethod; i++){
+        if (i==ratioToMethod) continue;
+        vgrv2pt[icent].push_back(grDifFl[i][icent][id]);
+      }
+    }
+    cV2PTMultPad[id] = (TCanvas*) DrawTGraph(vgrv2pt, 5,"",rangeRatio.at(0).first, rangeRatio.at(0).second, minpt, maxpt, minV2dif, maxV2dif,
+                                              coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                              Form("%s, %s", level.Data(), pidFancyNames.at(id).Data()),
+                                              strCent, true, grTitle[ratioToMethod]);
+    cV2PTMultPad[id] -> SetName("");
+    if (saveAsPNG) cV2PTMultPad[id] -> SaveAs(Form("./%s/DifferentialFlowRatio_%s_Cent_0_40.png",outDirName.Data(),pidNames.at(id).Data()));
+  }
+
+  TCanvas *cV2PTMultPad2[npid];
+  TString strCent2[4] = {"40-50%","50-60%","60-70%","70-80%"};
+  for (int id=0;id<npid;id++)
+  {
+    std::vector<TGraphErrors*> vgrv2pt[4];
+    for (int icent=5; icent<ncent; icent++)
+    {
+      vgrv2pt[icent-5].push_back(grDifFl[ratioToMethod][icent][id]);
+      for (int i=0; i<nmethod; i++){
+        if (i==ratioToMethod) continue;
+        vgrv2pt[icent-5].push_back(grDifFl[i][icent][id]);
+      }
+    }
+    cV2PTMultPad2[id] = (TCanvas*) DrawTGraph(vgrv2pt, 4,"",rangeRatio.at(0).first, rangeRatio.at(0).second, minpt, maxpt, minV2dif, maxV2dif,
+                                              coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                              Form("%s, %s", level.Data(), pidFancyNames.at(id).Data()),
+                                              strCent2, true, grTitle[ratioToMethod]);
+    cV2PTMultPad2[id] -> SetName("");
+    if (saveAsPNG) cV2PTMultPad2[id] -> SaveAs(Form("./%s/DifferentialFlowRatio_%s_Cent_40_80.png",outDirName.Data(),pidNames.at(id).Data()));
+  }
+
   TCanvas *cV2PT1040[npid];
   for (int id=0;id<npid;id++){
     std::vector<TGraphErrors*> vgrv2pt1040;
@@ -746,14 +788,10 @@ void PlotRatioV2QCumulant(){
     //   TMath::Power(standardQCRef->GetV24RefErr()/standardQCRef->GetV24Ref(), 2.) 
     // + TMath::Power(subeventQCRef->GetV22RefErr()/subeventQCRef->GetV22Ref(), 2.) 
     //   );
-    v2_RF[2][icent] = subevent2QCstandard4QCRef->GetRatioV24V22Ref();
+    // v2_RF[2][icent] = subevent2QCstandard4QCRef->GetRatioV24V22Ref();
     v2e_RF[2][icent] = subevent2QCstandard4QCRef->GetRatioV24V22RefErr();
 
-    
-    // v2_RF[3][icent] = standard2QCsubevent4QCRef->GetRatioV24V22Ref();
-    // v2e_RF[3][icent] = standard2QCsubevent4QCRef->GetRatioV24V22RefErr();
-    // std::cout << "v24 = " << standardQCRef->GetV24Ref() << ", v24 = " << subeventQCRef->GetV24Ref() << std::endl;
-    // std::cout << "v2{4}/v2{2,sub-event} = " << v2_RF[2][icent] << "\t" << "Err(v2{4}/v2{2,sub-event}) = " << v2e_RF[2][icent] << std::endl;
+    std::cout << "v2{4}/v2{2,sub-event} = " << v2_RF[2][icent] << "\t" << "Err(v2{4}/v2{2,sub-event}) = " << v2e_RF[2][icent] << std::endl;
 // stat. err. propagation
 // Err(v2{4}/v2{2,sub-event}) = -nan
 // Err(v2{4}/v2{2,sub-event}) = 0.0129058
@@ -767,14 +805,25 @@ void PlotRatioV2QCumulant(){
 
 // accounting for covariance terms
 // v2{4}/v2{2,sub-event} = -nan            Err(v2{4}/v2{2,sub-event}) = nan
-// v2{4}/v2{2,sub-event} = 0.913835        Err(v2{4}/v2{2,sub-event}) = 3.04499
-// v2{4}/v2{2,sub-event} = 0.947107        Err(v2{4}/v2{2,sub-event}) = 0.580843
-// v2{4}/v2{2,sub-event} = 0.958971        Err(v2{4}/v2{2,sub-event}) = 0.322685
-// v2{4}/v2{2,sub-event} = 0.940829        Err(v2{4}/v2{2,sub-event}) = 0.341163
-// v2{4}/v2{2,sub-event} = 0.900506        Err(v2{4}/v2{2,sub-event}) = 0.548532
-// v2{4}/v2{2,sub-event} = 0.864756        Err(v2{4}/v2{2,sub-event}) = 1.16599
-// v2{4}/v2{2,sub-event} = 0.784396        Err(v2{4}/v2{2,sub-event}) = 3.03026
-// v2{4}/v2{2,sub-event} = 0.864494        Err(v2{4}/v2{2,sub-event}) = 2.64791
+// v2{4}/v2{2,sub-event} = 0.913835        Err(v2{4}/v2{2,sub-event}) = 0.0128372
+// v2{4}/v2{2,sub-event} = 0.947107        Err(v2{4}/v2{2,sub-event}) = 0.003544
+// v2{4}/v2{2,sub-event} = 0.958971        Err(v2{4}/v2{2,sub-event}) = 0.00281938
+// v2{4}/v2{2,sub-event} = 0.940829        Err(v2{4}/v2{2,sub-event}) = 0.00413956
+// v2{4}/v2{2,sub-event} = 0.900506        Err(v2{4}/v2{2,sub-event}) = 0.00932754
+// v2{4}/v2{2,sub-event} = 0.864756        Err(v2{4}/v2{2,sub-event}) = 0.0294705
+// v2{4}/v2{2,sub-event} = 0.784396        Err(v2{4}/v2{2,sub-event}) = 0.124008
+// v2{4}/v2{2,sub-event} = 0.864494        Err(v2{4}/v2{2,sub-event}) = 0.402923
+
+// accounting for covariance terms and using Cochran's variance
+// v2{4}/v2{2,sub-event} = -nan            Err(v2{4}/v2{2,sub-event}) = nan
+// v2{4}/v2{2,sub-event} = 0.913835        Err(v2{4}/v2{2,sub-event}) = 0.0119366
+// v2{4}/v2{2,sub-event} = 0.947107        Err(v2{4}/v2{2,sub-event}) = 0.00303364
+// v2{4}/v2{2,sub-event} = 0.958971        Err(v2{4}/v2{2,sub-event}) = 0.00240212
+// v2{4}/v2{2,sub-event} = 0.940829        Err(v2{4}/v2{2,sub-event}) = 0.0034363
+// v2{4}/v2{2,sub-event} = 0.900506        Err(v2{4}/v2{2,sub-event}) = 0.00730257
+// v2{4}/v2{2,sub-event} = 0.864756        Err(v2{4}/v2{2,sub-event}) = 0.0203577
+// v2{4}/v2{2,sub-event} = 0.784396        Err(v2{4}/v2{2,sub-event}) = 0.0715017
+// v2{4}/v2{2,sub-event} = 0.864494        Err(v2{4}/v2{2,sub-event}) = 0.086764
 
   } // end of loop over centrality classes
   // Differential flow calculation
@@ -813,7 +862,7 @@ void PlotRatioV2QCumulant(){
         v2[2][id][icent]  = subevent2QCstandard4QC->GetRatioV24V22Dif();
         // std::cout << standardQC->GetV24Dif() / subeventQC->GetV22Dif() << " " << subevent2QCstandard4QC->GetRatioV24V22Dif() << std::endl;
         v2e[2][id][icent]  = subevent2QCstandard4QC->GetRatioV24V22DifErr();
-        if (id==9) std::cout << v2e[0][id][icent] << "\t" << v2e[1][id][icent] << "\t" << v2e[2][id][icent] << std::endl;
+        // if (id==9) std::cout << v2e[0][id][icent] << "\t" << v2e[1][id][icent] << "\t" << v2e[2][id][icent] << std::endl;
 
         
       } // end of loop for all pT bin
@@ -871,7 +920,7 @@ void PlotRatioV2QCumulant(){
   for (int imeth=0; imeth<nmethod; imeth++){
     // grRefFl[imeth][id] -> SetTitle(Form("V2 vs. pT, %s, centrality 10-40%%, %s",pidNames.at(id).Data(),grTitleDF[imeth]));
     grRefFl[imeth] -> SetTitle(grTitle[imeth]);
-    grRefFl[imeth]->GetYaxis()-> SetTitle("v_{2}");
+    grRefFl[imeth]->GetYaxis()-> SetTitle("v_{2}{4}/v_{2}{2}");
     grRefFl[imeth]->GetXaxis()-> SetTitle("Centrality, %");
     grRefFl[imeth]->RemovePoint(0);
   }

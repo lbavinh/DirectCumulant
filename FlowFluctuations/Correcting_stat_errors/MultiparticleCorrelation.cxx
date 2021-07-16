@@ -255,11 +255,6 @@ MultiparticleCorrelation::MultiparticleCorrelation(TProfile *const &pCor2, TProf
   Double_t cov2Gap2 = Covariance(pCov2Gap2,pCor2Gap,pCor2,fCentBin,fCentBin,fCentBin);
   Double_t cov2Gap4 = Covariance(pCov2Gap4,pCor2Gap,pCor4,fCentBin,fCentBin,fCentBin);
   ratioV24OverV22Ref = v24Ref / v22Ref;
-  // ratioV24OverV22Refe = sqrt(
-  //   pow(4. * pow(v24Ref, 3.) * v22Ref, -2.) * (2.*cor2MSE + cor4MSE - 4.*cov24) +
-  //   pow(0.5 * v24Ref / pow(v22Ref, 3.), 2.) * cor2MSEGap +
-  //   1./(4. * pow(v24Ref, 2.) * pow(v22Ref, 4.)) * (cov2Gap4 - 2.*cov2Gap2)
-  //   );
   ratioV24OverV22Refe = sqrt(
      pow( cor2Mean/(v22Ref*pow(v24Ref,3.)), 2.)*cor2MSE
     +pow( 1./(4.*v22Ref*pow(v24Ref,3.)), 2.)*cor4MSE

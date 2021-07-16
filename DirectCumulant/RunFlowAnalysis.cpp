@@ -48,14 +48,14 @@ Bool_t FHCALEVENTPLANE_1 = 0;         // FHCal EP (w.r.t. 1-st order harmonic) (
 Bool_t FHCALEVENTPLANE_2 = 0;         // FHCal EP (w.r.t. 1-st order harmonic) (second run)
 Bool_t LYZ_SUM_1 = 0;                 // Lee-Yang Zeros using sum generating function (first run)
 Bool_t LYZ_SUM_2 = 0;                 // Lee-Yang Zeros using sum generating function (second run)
-Bool_t LYZ_PRODUCT_1 = 0;         // Lee-Yang Zeros using product generating function (first run) (integrated with sum GF at the moment, will be separated soon)
-Bool_t LYZ_PRODUCT_2 = 0;         // Lee-Yang Zeros using product generating function (second run) (integrated with sum GF at the moment, will be separated soon)
+Bool_t LYZ_PRODUCT_1 = 0;             // Lee-Yang Zeros using product generating function (first run) (integrated with sum GF at the moment, will be separated soon)
+Bool_t LYZ_PRODUCT_2 = 0;             // Lee-Yang Zeros using product generating function (second run) (integrated with sum GF at the moment, will be separated soon)
 Bool_t SCALARPRODUCT_1 = 1;           // Scalar product using eta-sub method (first run)
 Bool_t SCALARPRODUCT_2 = 0;           // Scalar product using eta-sub method (second run)
 Bool_t QCUMULANT = 1;                 // Q-Cumulants: 2- and 4-particle cumulants obtained by both standard and subevent methods 
 Bool_t HIGHORDERQCUMULANT = 0;        // Q-Cumulants: 2- up to 8-particle cumulants using recursive algorithm
 Bool_t LYZEP = 0;                     // one needs to run LYZ_SUM_1 & 2 before set this flag to kTRUE
-Bool_t MCEP = 0;                      // MC Event Plane
+Bool_t MCEP = 1;                      // MC Event Plane
 Bool_t readMCTracks = 0; // 0 - read reco tracks, 1 - read MC tracks
 Int_t harmonic = 2; // set harmonic for eta-sub event plane, Q-Cumulants, and scalar product method
 Bool_t bMotherIDcut = 1;
@@ -67,7 +67,7 @@ Double_t minptRF = 0.2;   // min pt for reference flow
 Double_t eta_cut = 1.5;   // pseudorapidity acceptance window for flow measurements 
 Double_t eta_gap = 0.05;  // +-0.05, eta-gap between 2 eta sub-event
 Int_t Nhits_cut = 16;     // minimum nhits of reconstructed tracks
-Double_t DCAcut = 3.0;    // 3*sigma of DCA distribution 
+Double_t DCAcut = 2.0;    // 3*sigma of DCA distribution 
 Double_t pid_probability = 0.9;
 Long64_t Nevents = -1;
 
@@ -142,6 +142,7 @@ Bool_t trackCut(PicoDstRecoTrack *const &recoTrack, TF2 *const &fDCAx, TF2 *cons
 Bool_t trackCut(PicoDstMCTrack *const &mcTrack)
 {
   if (!mcTrack) { return false; }
+  if (format == "picodst" && mcTrack->GetMotherId() != -1) { return false; }
   Double_t pt = mcTrack->GetPt();
   Double_t eta = mcTrack->GetEta();
   auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(mcTrack->GetPdg());
@@ -231,7 +232,6 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString conf
     cout << "MCEP = " << MCEP << endl;
     cout << "readMCTracks = " << readMCTracks << endl;
     cout << "harmonic = " << harmonic << endl;       
-    cout << "bMotherIDcut = " << bMotherIDcut << endl;
     cout << "readMCTracks = " << readMCTracks << endl;
     cout << "harmonic = " << harmonic << endl;
     cout << "bMotherIDcut = " << bMotherIDcut << endl;
@@ -263,6 +263,11 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString conf
   if (!readMCTracks && !bMotherIDcut)
   { // using DCA cuts for primary track cut
     inputDCAfile = new TFile("DCA_FIT.root","read");
+    if (!inputDCAfile) 
+    {
+      cerr << "Cannot find DCA_FIT.root file for DCA cut. Make sure you have run the DCA correction procedure and placed DCA_FIT.root in the executable directory." << endl;
+      return;
+    }
     fDCAx = dynamic_cast<TF2*> (inputDCAfile->Get("f_sigma0"));
     fDCAy = dynamic_cast<TF2*> (inputDCAfile->Get("f_sigma1"));
     fDCAz = dynamic_cast<TF2*> (inputDCAfile->Get("f_sigma2"));
@@ -320,12 +325,14 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString conf
   if (FHCALEVENTPLANE_1) {
     flowFHCalEP = new FlowAnalysisWithFHCalEventPlane();
     flowFHCalEP->SetFirstRun(true);
+    flowFHCalEP->SetHarmonic(harmonic);
     flowFHCalEP->SetEtaGap(eta_gap);
     flowFHCalEP->Init();
   }
   if (FHCALEVENTPLANE_2) {
     flowFHCalEP = new FlowAnalysisWithFHCalEventPlane();
     flowFHCalEP->SetFirstRun(false);
+    flowFHCalEP->SetHarmonic(harmonic);
     flowFHCalEP->SetEtaGap(eta_gap);
     flowFHCalEP->SetDebugFlag(debug);
     flowFHCalEP->SetInputFileFromFirstRun("FirstRun.root");
@@ -335,6 +342,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString conf
   if (LYZ_SUM_1) {
     flowLYZSUM = new FlowAnalysisWithLeeYangZeros();
     flowLYZSUM->SetDebugFlag(debug);
+    flowLYZSUM->SetHarmonic(harmonic);
     flowLYZSUM->SetUseProduct(false);
     flowLYZSUM->SetFirstRun(true);
     // flowLYZSUM->SetUseMultiplicityWeight(false); // true by default
@@ -343,6 +351,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString conf
   if (LYZ_SUM_2) {
     flowLYZSUM = new FlowAnalysisWithLeeYangZeros();
     flowLYZSUM->SetDebugFlag(debug);
+    flowLYZSUM->SetHarmonic(harmonic);
     flowLYZSUM->SetUseProduct(false);
     flowLYZSUM->SetFirstRun(false);
     // flowLYZSUM->SetUseMultiplicityWeight(false); // true by default
@@ -353,6 +362,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString conf
   if (LYZ_PRODUCT_1) {
     flowLYZPROD = new FlowAnalysisWithLeeYangZeros();
     flowLYZPROD->SetDebugFlag(debug);
+    flowLYZPROD->SetHarmonic(harmonic);
     flowLYZPROD->SetUseProduct(true);
     flowLYZPROD->SetFirstRun(true);
     // flowLYZPROD->SetUseMultiplicityWeight(false); // true by default
@@ -361,6 +371,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString conf
   if (LYZ_PRODUCT_2) {
     flowLYZPROD = new FlowAnalysisWithLeeYangZeros();
     flowLYZPROD->SetDebugFlag(debug);
+    flowLYZPROD->SetHarmonic(harmonic);
     flowLYZPROD->SetUseProduct(true);
     flowLYZPROD->SetFirstRun(false);
     // flowLYZPROD->SetUseMultiplicityWeight(false); // true by default
@@ -401,7 +412,8 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString conf
     flowMCEP = new FlowAnalysisWithMCEventPlane();
     flowMCEP->SetDebugFlag(debug);
     flowMCEP->SetHarmonic(harmonic);
-    flowMCEP->SetEtaGap(eta_gap);
+    // flowMCEP->SetEtaGap(eta_gap);
+    flowMCEP->SetEtaGap(0.);
     flowMCEP->Init();
   }
 
@@ -485,11 +497,10 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString conf
         pt = mcTrack->GetPt();
         eta = mcTrack->GetEta();
         phi = mcTrack->GetPhi();
-        energy = mcTrack->GetEnergy();
         if ((FHCALEVENTPLANE_1 || FHCALEVENTPLANE_2 || THREEETASUBEVENTPLANE_1 || THREEETASUBEVENTPLANE_2) && readMCTracks)
         {
-          if (FHCALEVENTPLANE_1 || FHCALEVENTPLANE_2) flowFHCalEP->ProcessFirstTrackLoop(eta, phi, energy);
-          if (THREEETASUBEVENTPLANE_1 || THREEETASUBEVENTPLANE_2) flowThreeEtaSub->ProcessFirstTrackLoopFHCal(eta, phi, energy);
+          if (FHCALEVENTPLANE_1 || FHCALEVENTPLANE_2) flowFHCalEP->ProcessFirstTrackLoop(eta, phi, 1.);
+          if (THREEETASUBEVENTPLANE_1 || THREEETASUBEVENTPLANE_2) flowThreeEtaSub->ProcessFirstTrackLoopFHCal(eta, phi, 1.);
         }
         if (!trackCut(mcTrack)) { continue; } // TPC cut
         auto particle = (TParticlePDG*) TDatabasePDG::Instance()->GetParticle(mcTrack->GetPdg());   
@@ -565,7 +576,6 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString conf
           if (bMotherIDcut) { fId = findId(mcTrack); }
           else { fId = findId(recoTrack); }
         }
-
         if (ETASUBEVENTPLANE_2) flowEtaSub->ProcessSecondTrackLoop(eta, phi, pt, cent, fId, charge);
         if (THREEETASUBEVENTPLANE_2) flowThreeEtaSub->ProcessSecondTrackLoop(eta, phi, pt, cent, fId, charge);
         if (FHCALEVENTPLANE_2) flowFHCalEP->ProcessSecondTrackLoop(eta, phi, pt, cent, fId, charge);

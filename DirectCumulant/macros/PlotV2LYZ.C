@@ -78,9 +78,9 @@ Double_t BesselJ0(Double_t x)
   return temp;
 }
 
-TGraphErrors* PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "SecondRun.root")
+TGraphErrors* PlotV2LYZ(TString inputFileName1 = "FirstRun.root", TString inputFileName2 = "SecondRun.root", Bool_t bUseProduct = 1)
 {
-  Bool_t bUseProduct = 1;
+  
   Bool_t bUseMultWeight = 1;
   Bool_t bDebug = 1;
   const Int_t markerStyle[]={25,20,28,27,23,26};

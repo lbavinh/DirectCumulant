@@ -61,10 +61,9 @@ void PlotV2QCumulant(TString inFileName = "FirstRun.root", TString outFileName =
   //
     bool saveAsPNG = true;
     TString outDirName = "pics"; // save png pics to output directory
-    int drawDifferentialFlowTill = 0; // Draw v2 vs pT till: 0: no drawing; 1: till 0-5%; 2: till 5-10%; etc.
     const char *grTitle[nmethod]={"v_{2}{2,standard}","v_{2}{4,standard}","v_{2}{2,2-sub}","v_{2}{4,2-sub}"};
     int drawRatioToMethod = 2; // Ratio to v2{2,2-sub}
-    TString level = (TString) Form("UrQMD, Au+Au at #sqrt{s_{NN}}=7.7 GeV"); // Title inside plots
+    TString level = (TString) Form("UrQMD, Au+Au at #sqrt{#it{s}_{NN}} = 7.7 GeV"); // Title inside plots
     double centrality_bin[ncent]; // Filling centrality bin for drawing
     for (int ic=0; ic<ncent; ic++){
       centrality_bin[ic] = ( bin_cent[ic] + bin_cent[ic+1] ) / 2.;
@@ -82,12 +81,12 @@ void PlotV2QCumulant(TString inFileName = "FirstRun.root", TString outFileName =
     const double maxcent = 60.;     // for v2 vs centrality
     const double minV2int = -0.005; // for v2 vs centrality
     const double maxV2int = 0.1;    // for v2 vs centrality
-    const double maxpt = 2.5;       // for v2 vs pt
-    const double minpt = 0.;        // for v2 vs pt
+    const double maxpt = 3.1;       // for v2 vs pt
+    const double minpt = -0.1;        // for v2 vs pt
     const double minV2dif = -0.01;  // for v2 vs pt
-    const double maxV2dif = 0.2;    // for v2 vs pt
+    const double maxV2dif = 0.25;    // for v2 vs pt
     // Range of ratio plots
-    vector<pair<Double_t,Double_t>> rangeRatio = {{0.84,1.16},{0.84,1.16}};  // range of ratio pads for pT-differential flow plots
+    vector<pair<Double_t,Double_t>> rangeRatio = {{0.78,1.22},{0.68,1.32}};  // range of ratio pads for pT-differential flow plots
     vector<pair<Double_t,Double_t>> rangeRatioRF ={{0.65,1.11},{0.65,1.11}}; // range of ratio pads for pT-integrated flow plots
     const std::vector<TString> pidFancyNames = {"h^{+}", "#pi^{+}", "K^{+}", "p", "h^{-}", "#pi^{-}", "K^{-}", "#bar{p}", "h^{#pm}","#pi^{#pm}","K^{#pm}","p(#bar{p})"};
     const int marker[nmethod]={24,22,20,26}; // markers for: 2QC, 4QC, 2QC(2-sub), 4QC(2-sub)
@@ -342,23 +341,46 @@ void PlotV2QCumulant(TString inFileName = "FirstRun.root", TString outFileName =
   }
   
   if (saveAsPNG) gSystem->Exec(Form("mkdir -p ./%s/",outDirName.Data()));
-  TCanvas *cV2PT[ncent][npid];
-  char hname[800];
-  for (int icent=0; icent<drawDifferentialFlowTill; icent++){
-    for (int id=0;id<npid;id++){
-      std::vector<TGraphErrors*> vgrv2pt;
-      vgrv2pt.push_back(grDifFl[drawRatioToMethod][icent][id]); // v2{gapped 2QC}
+  TCanvas *cV2PTMultPad[npid];
+  TString strCent[5] = {"0-5%","5-10%","10-20%","20-30%","30-40%"};
+  for (int id=0;id<npid;id++)
+  {
+    std::vector<TGraphErrors*> vgrv2pt[5];
+    for (int icent=0; icent<5; icent++)
+    {
+      vgrv2pt[icent].push_back(grDifFl[drawRatioToMethod][icent][id]);
       for (int i=0; i<nmethod; i++){
         if (i==drawRatioToMethod) continue;
-        vgrv2pt.push_back(grDifFl[i][icent][id]);
+        vgrv2pt[icent].push_back(grDifFl[i][icent][id]);
       }
-      sprintf(hname,"%s, %i-%i%%",pidFancyNames.at(id).Data(),centrality.at(icent).first,centrality.at(icent).second);
-      cV2PT[icent][id] = (TCanvas*) DrawTGraph(vgrv2pt,"",rangeRatio.at(0).first, rangeRatio.at(0).second, minpt, maxpt, minV2dif, maxV2dif,
-                                               coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
-                                               level.Data(), hname, true, Form("Ratio to %s",grTitle[drawRatioToMethod]));
-      cV2PT[icent][id] -> SetName(hname);
-      if (saveAsPNG) cV2PT[icent][id] -> SaveAs(Form("./%s/DifferentialFlow_Centrality%i_%i_%s.png",outDirName.Data(),centrality.at(icent).first,centrality.at(icent).second,pidNames.at(id).Data()));
     }
+    cV2PTMultPad[id] = (TCanvas*) DrawTGraph(vgrv2pt, 5,"",rangeRatio.at(0).first, rangeRatio.at(0).second, minpt, maxpt, minV2dif, maxV2dif,
+                                              coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                              Form("%s, %s", level.Data(), pidFancyNames.at(id).Data()),
+                                              strCent, true, grTitle[drawRatioToMethod]);
+    cV2PTMultPad[id] -> SetName("");
+    if (saveAsPNG) cV2PTMultPad[id] -> SaveAs(Form("./%s/DifferentialFlow_%s_Cent_0_40.png",outDirName.Data(),pidNames.at(id).Data()));
+  }
+
+  TCanvas *cV2PTMultPad2[npid];
+  TString strCent2[4] = {"40-50%","50-60%","60-70%","70-80%"};
+  for (int id=0;id<npid;id++)
+  {
+    std::vector<TGraphErrors*> vgrv2pt[4];
+    for (int icent=5; icent<ncent; icent++)
+    {
+      vgrv2pt[icent-5].push_back(grDifFl[drawRatioToMethod][icent][id]);
+      for (int i=0; i<nmethod; i++){
+        if (i==drawRatioToMethod) continue;
+        vgrv2pt[icent-5].push_back(grDifFl[i][icent][id]);
+      }
+    }
+    cV2PTMultPad2[id] = (TCanvas*) DrawTGraph(vgrv2pt, 4,"",rangeRatio.at(1).first, rangeRatio.at(1).second, minpt, maxpt, minV2dif, maxV2dif,
+                                              coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                              Form("%s, %s", level.Data(), pidFancyNames.at(id).Data()),
+                                              strCent2, true, grTitle[drawRatioToMethod]);
+    cV2PTMultPad2[id] -> SetName("");
+    if (saveAsPNG) cV2PTMultPad2[id] -> SaveAs(Form("./%s/DifferentialFlow_%s_Cent_40_80.png",outDirName.Data(),pidNames.at(id).Data()));
   }
 
   //==========================================================================================================================

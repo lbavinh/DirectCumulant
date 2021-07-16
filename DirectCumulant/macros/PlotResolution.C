@@ -19,7 +19,7 @@ void PlotResolution(TString inputFileName = "SecondRun.root",
     if (methodName=="EtaSub") 
     {
       res[ic] = TMath::Sqrt(prRes->GetBinContent(ic+1));
-      resErr[ic] = prRes->GetBinError(ic+1)/(4.*res[ic]);
+      resErr[ic] = prRes->GetBinError(ic+1)/(2.*res[ic]);
     }
     else if (methodName=="MCEventPlane") 
     {

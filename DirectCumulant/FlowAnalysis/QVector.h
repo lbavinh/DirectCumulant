@@ -10,21 +10,21 @@ class QVector
 {
 public:
   QVector();
-  QVector(double n);
+  QVector(Double_t n);
   virtual ~QVector();
   void Zero();
-  void CalQVector(const double &phi, const double &weight);
+  void CalQVector(const Double_t &phi, const Double_t &weight);
   void WeightQVector();
-  double X() const { return this->fQx; }
-  double Y() const { return this->fQy; }
+  Double_t X() const { return this->fQx; }
+  Double_t Y() const { return this->fQy; }
   int GetMult() const { return this->fMult; }
-  double GetWeight() const { return this->fWeight; }
+  Double_t GetWeight() const { return this->fWeight; }
 
 private:
-  double fNHarmonic;
-  double fQx;
-  double fQy;
-  double fWeight;
+  Double_t fNHarmonic;
+  Double_t fQx;
+  Double_t fQy;
+  Double_t fWeight;
   int fMult;
   ClassDef(QVector,0);
 };

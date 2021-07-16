@@ -386,7 +386,7 @@ void FlowAnalysisWithQCumulant::ProcessEventAfterFirstTrackLoop(const Int_t &ice
           wred2Gap[ieta][ipt][id] = mpGap[ieta][ipt][id] * MGap[ieta];
           if (ieta==0) wred4Gap[ieta][ipt][id] = (mpGap[ieta][ipt][id]*MGap[ieta+1] - mqGap[ieta][ipt][id]) * MGap[ieta]*(MGap[ieta]-1);
           if (ieta==1) wred4Gap[ieta][ipt][id] = (mpGap[ieta][ipt][id]*MGap[ieta-1] - mqGap[ieta][ipt][id]) * MGap[ieta]*(MGap[ieta]-1);
-          if (wred2Gap[ipt]==0 || wred4Gap[ipt]==0) continue;
+          if (wred2Gap[ieta][ipt][id]==0 || wred4Gap[ieta][ipt][id]==0) continue;
           p2Gap[ieta][ipt][id] = TComplex(p2xGap[ieta][ipt][id], p2yGap[ieta][ipt][id]);
           q2Gap[ieta][ipt][id] = TComplex(q2xGap[ieta][ipt][id], q2yGap[ieta][ipt][id]);
           q4Gap[ieta][ipt][id] = TComplex(q4xGap[ieta][ipt][id], q4yGap[ieta][ipt][id]);

@@ -530,6 +530,48 @@ void PlotV2QCumulant(){
     }
   }
 
+  TCanvas *cV2PTMultPad[npid];
+  TString strCent[5] = {"0-5%","5-10%","10-20%","20-30%","30-40%"};
+  for (int id=0;id<npid;id++)
+  {
+    std::vector<TGraphErrors*> vgrv2pt[5];
+    for (int icent=0; icent<5; icent++)
+    {
+      vgrv2pt[icent].push_back(grDifFl[ratioToMethod][icent][id]);
+      for (int i=0; i<nmethod; i++){
+        if (i==ratioToMethod) continue;
+        vgrv2pt[icent].push_back(grDifFl[i][icent][id]);
+      }
+    }
+    cV2PTMultPad[id] = (TCanvas*) DrawTGraph(vgrv2pt, 5,"",rangeRatio.at(0).first, rangeRatio.at(0).second, minpt, maxpt, minV2dif, maxV2dif,
+                                              coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                              Form("%s, %s", level.Data(), pidFancyNames.at(id).Data()),
+                                              strCent, true, grTitle[ratioToMethod]);
+    cV2PTMultPad[id] -> SetName("");
+    if (saveAsPNG) cV2PTMultPad[id] -> SaveAs(Form("./%s/DifferentialFlow_%s_Cent_0_40.png",outDirName.Data(),pidNames.at(id).Data()));
+  }
+
+  TCanvas *cV2PTMultPad2[npid];
+  TString strCent2[4] = {"40-50%","50-60%","60-70%","70-80%"};
+  for (int id=0;id<npid;id++)
+  {
+    std::vector<TGraphErrors*> vgrv2pt[4];
+    for (int icent=5; icent<ncent; icent++)
+    {
+      vgrv2pt[icent-5].push_back(grDifFl[ratioToMethod][icent][id]);
+      for (int i=0; i<nmethod; i++){
+        if (i==ratioToMethod) continue;
+        vgrv2pt[icent-5].push_back(grDifFl[i][icent][id]);
+      }
+    }
+    cV2PTMultPad2[id] = (TCanvas*) DrawTGraph(vgrv2pt, 4,"",rangeRatio.at(0).first, rangeRatio.at(0).second, minpt, maxpt, minV2dif, maxV2dif,
+                                              coordinateLeg.at(0), coordinateLeg.at(1), coordinateLeg.at(2), coordinateLeg.at(3),
+                                              Form("%s, %s", level.Data(), pidFancyNames.at(id).Data()),
+                                              strCent2, true, grTitle[ratioToMethod]);
+    cV2PTMultPad2[id] -> SetName("");
+    if (saveAsPNG) cV2PTMultPad2[id] -> SaveAs(Form("./%s/DifferentialFlow_%s_Cent_40_80.png",outDirName.Data(),pidNames.at(id).Data()));
+  }
+
   TCanvas *cV2PT1040[npid];
   for (int id=0;id<npid;id++){
     std::vector<TGraphErrors*> vgrv2pt1040;

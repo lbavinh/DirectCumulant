@@ -34,7 +34,7 @@ void FlowAnalysisWithLeeYangZerosEventPlane::Init()
   }
   ProcessRootFileWithHistFromFirstRun();
   GetHistFromLYZSecondRun();
-  for (Int_t i; i < npid; i++)
+  for (Int_t i = 0; i < npid; i++)
   {
     fPrV2vsPt[i] = new TProfile2D(Form("prV2LYZEPvsPt_pid%i",i), Form("v_{2}{LYZ EP}(p_{T}) of %s",pidNames.at(i).Data()), ncent, &bin_cent[0], npt, &pTBin[0]);
   }
@@ -223,7 +223,7 @@ void FlowAnalysisWithLeeYangZerosEventPlane::SaveHist()
 {
   fPrV2LYZEP->Write();
   fPrV2vsEta->Write();
-  for (Int_t i; i < npid; i++)
+  for (Int_t i = 0; i < npid; i++)
   {
     fPrV2vsPt[i]->Write();
   }
@@ -233,7 +233,7 @@ void FlowAnalysisWithLeeYangZerosEventPlane::SaveHist(TDirectoryFile *const &out
 {
   outputDir->Add(fPrV2LYZEP);
   outputDir->Add(fPrV2vsEta);
-  for (Int_t i; i < npid; i++)
+  for (Int_t i = 0; i < npid; i++)
   {
     outputDir->Add(fPrV2vsPt[i]);
   }

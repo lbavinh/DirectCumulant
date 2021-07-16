@@ -33,7 +33,7 @@ void FlowAnalysisWithScalarProduct::Init()
   fQvector_R = new QVector(fHarmonic);
   if (!fFirstRun) 
   {
-    for (Int_t i=0; i < npid; i++)
+    for (Int_t i = 0; i < npid; i++)
     {
       fPrV2vsPt[i] = new TProfile2D(Form("prV2SPvsPt_pid%i",i), Form("v_{2}{SP}(p_{T}) of %s",pidNames.at(i).Data()), ncent, &bin_cent[0], npt, &pTBin[0]);
     }
@@ -134,7 +134,7 @@ void FlowAnalysisWithScalarProduct::SaveHist()
   {
     fPrV2ScalarProduct->Write();
     fPrV2vsEta->Write();
-    for (Int_t i; i < npid; i++)
+    for (Int_t i = 0; i < npid; i++)
     {
       fPrV2vsPt[i]->Write();
     }
@@ -148,7 +148,7 @@ void FlowAnalysisWithScalarProduct::SaveHist(TDirectoryFile *const &outputDir)
   {
     outputDir->Add(fPrV2ScalarProduct);
     outputDir->Add(fPrV2vsEta);
-    for (Int_t i; i < npid; i++)
+    for (Int_t i = 0; i < npid; i++)
     {
       outputDir->Add(fPrV2vsPt[i]);
     }

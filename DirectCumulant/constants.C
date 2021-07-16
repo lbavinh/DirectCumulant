@@ -11,6 +11,9 @@ const Int_t npidQC = 8; // due to some specific problems, for QC, I will merged 
 const Int_t npt = 17; // 0-3.6 GeV/c - number of pT bins
 const Double_t pTBin[npt + 1] = {0., 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0};
 
+// const Int_t npt = 9; // 0-3.6 GeV/c - number of pT bins
+// const Double_t pTBin[npt + 1] = {0.2,0.4,0.6,0.8,1.,1.2,1.5,1.8,2.5,3.};
+
 const Int_t neta = 2; // [eta-,eta+]
 
 const Int_t netaBin = 16;

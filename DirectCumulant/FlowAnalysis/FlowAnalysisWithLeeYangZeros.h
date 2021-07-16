@@ -22,6 +22,7 @@ public:
   void SetDebugFlag(Bool_t bDebug) { this->fDebug = bDebug; }
   void SetUseProduct(Bool_t kt) {this->fUseProduct = kt; }
   void SetFirstRun(Bool_t kt) { this->fFirstRun = kt; }
+  void SetHarmonic(Int_t i) { this->fHarmonic = i; }
   void SetUseMultiplicityWeight(Bool_t kt) {this->fUseMultWeight = kt; }
   Bool_t GetUseMultiplicityWeight() const { return this->fUseMultWeight; }
   void Init();
@@ -44,6 +45,7 @@ private:
   Bool_t fUseProduct;
   Bool_t fFirstRun;
   Bool_t fUseMultWeight;
+  Int_t fHarmonic;
   Double_t fTheta[nTheta];
   Double_t fQtheta[nTheta];
   QVector *fQn;

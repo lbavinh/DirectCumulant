@@ -31,7 +31,7 @@ void FlowAnalysisWithEtaSubEventPlane::Init()
   fQvector_R = new QVector(fHarmonic);
   if (!fFirstRun) 
   {
-    for (Int_t i; i < npid; i++)
+    for (Int_t i = 0; i < npid; i++)
     {
       fPrV2vsPt[i] = new TProfile2D(Form("prV2EtaSubvsPt_pid%i",i), Form("v_{2}{eta-sub}(p_{T}) of %s",pidNames.at(i).Data()), ncent, &bin_cent[0], npt, &pTBin[0]);
     }
@@ -143,7 +143,7 @@ void FlowAnalysisWithEtaSubEventPlane::SaveHist()
   {
     fPrV2EtaSubEventPlane->Write();
     fPrV2vsEta->Write();
-    for (Int_t i; i < npid; i++)
+    for (Int_t i = 0; i < npid; i++)
     {
       fPrV2vsPt[i]->Write();
     }
@@ -157,7 +157,7 @@ void FlowAnalysisWithEtaSubEventPlane::SaveHist(TDirectoryFile *const &outputDir
   {
     outputDir->Add(fPrV2EtaSubEventPlane);
     outputDir->Add(fPrV2vsEta);
-    for (Int_t i; i < npid; i++)
+    for (Int_t i = 0; i < npid; i++)
     {
       outputDir->Add(fPrV2vsPt[i]);
     }

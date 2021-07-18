@@ -23,6 +23,7 @@
 #include <FlowAnalysisWithScalarProduct.h>
 #include <FlowAnalysisWithQCumulant.h>
 #include <FlowAnalysisWithHighOrderQCumulant.h>
+#include <FlowAnalysisWithQCumulantGenericFramework.h>
 #include <FlowAnalysisWithLeeYangZerosEventPlane.h>
 #include <FlowAnalysisWithThreeEtaSubFHCalEventPlane.h>
 #include <FlowAnalysisWithThreeEtaSubFHCalEventPlaneWRTSecondHarm.h>
@@ -35,19 +36,20 @@ using std::cout;
 using std::endl;
 
 bool ETASUBEVENTPLANE_1 = 0;
-bool ETASUBEVENTPLANE_2 = 1;
+bool ETASUBEVENTPLANE_2 = 0;
 bool THREEETASUBEVENTPLANE_1 = 0;
 bool THREEETASUBEVENTPLANE_2 = 0;
 bool FHCALEVENTPLANE_1 = 0;
-bool FHCALEVENTPLANE_2 = 1;
+bool FHCALEVENTPLANE_2 = 0;
 bool LYZ_SUM_1 = 0;
 bool LYZ_SUM_2 = 0;
 bool LYZ_SUM_PRODUCT_1 = 0;
-bool LYZ_SUM_PRODUCT_2 = 1;
+bool LYZ_SUM_PRODUCT_2 = 0;
 bool SCALARPRODUCT_1 = 0;
-bool SCALARPRODUCT_2 = 1;
-bool QCUMULANT = 0;
+bool SCALARPRODUCT_2 = 0;
+bool QCUMULANT = 1;
 bool HIGHORDERQCUMULANT = 0;
+bool QCUMULANTGENERICFRAMWORK = 0;
 bool LYZEP = 0;
 // testing with other event plane combinations
 bool THREEETASUBFHCALEVENTPLANE_1 = 0;
@@ -139,6 +141,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
   FlowAnalysisWithScalarProduct *flowSP = NULL;        // Scalar Product
   FlowAnalysisWithQCumulant *flowQC = NULL;            // Q-Cumulant
   FlowAnalysisWithHighOrderQCumulant *flowHighQC = NULL;
+  FlowAnalysisWithQCumulantGenericFramework *flowQCGF = NULL;
   FlowAnalysisWithLeeYangZerosEventPlane *flowLYZEP = NULL;
   // testing with other event plane combinations
   FlowAnalysisWithThreeEtaSubFHCalEventPlane *flowThreeEtaSubFHCal = NULL; // 3-Eta-sub FHCal Event Plane
@@ -254,6 +257,13 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     flowHighQC = new FlowAnalysisWithHighOrderQCumulant();
     flowHighQC->Init();
   }
+
+  if (QCUMULANTGENERICFRAMWORK)
+  {
+    flowQCGF = new FlowAnalysisWithQCumulantGenericFramework();
+    flowQCGF->SetEtaGap(eta_gap);
+    flowQCGF->Init();
+  }
   if (LYZEP)
   {
     if (inputHistogramFileName=="" || inputHistFromLYZSecondRun=="")
@@ -347,6 +357,8 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
       flowQC->Zero();
     if (HIGHORDERQCUMULANT)
       flowHighQC->Zero();
+    if (QCUMULANTGENERICFRAMWORK)
+      flowQCGF->Zero();
     if (LYZEP)
       flowLYZEP->Zero();
     if (THREEETASUBFHCALEVENTPLANE_1 || THREEETASUBFHCALEVENTPLANE_2)
@@ -373,7 +385,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
       }
     }
     if (dMultTPC == 0) continue;
-    else { flowLYZ->SetWeight(1./dMultTPC); }
+    else { if (LYZ_SUM_1 || LYZ_SUM_2 || LYZ_SUM_PRODUCT_1 || LYZ_SUM_PRODUCT_2) flowLYZ->SetWeight(1./dMultTPC); }
     for (Int_t iTrk = 0; iTrk < nh; iTrk++)
     { // Track loop
       TVector3 vect(momx[iTrk], momy[iTrk], momz[iTrk]);
@@ -425,9 +437,13 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
           flowQC->ProcessFirstTrackLoopRP(eta, phi);
         if (HIGHORDERQCUMULANT)
           flowHighQC->ProcessFirstTrackLoopRP(phi);
+        if (QCUMULANTGENERICFRAMWORK)
+          flowQCGF->ProcessFirstTrackLoopRP(eta, phi);
       }
       if (QCUMULANT)
         flowQC->ProcessFirstTrackLoopPOI(ipt, eta, phi, fId, charge);
+      if (QCUMULANTGENERICFRAMWORK)
+        flowQCGF->ProcessFirstTrackLoopPOI(ipt, eta, phi, fId, charge);
     } // end of track loop
     Q2->WeightQVector();
     if (ETASUBEVENTPLANE_1 || ETASUBEVENTPLANE_2)
@@ -450,6 +466,8 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
       flowQC->ProcessEventAfterFirstTrackLoop(icent);
     if (HIGHORDERQCUMULANT)
       flowHighQC->ProcessEventAfterFirstTrackLoop(icent);
+    if (QCUMULANTGENERICFRAMWORK)
+      flowQCGF->ProcessEventAfterFirstTrackLoop(icent);
     if (LYZEP)
       flowLYZEP->ProcessEventAfterFirstTrackLoop(Q2, icent);
     if (ETASUBEVENTPLANE_2 || FHCALEVENTPLANE_2 || THREEETASUBEVENTPLANE_2 ||
@@ -515,6 +533,8 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString inpu
     flowQC->SaveHist();
   if (HIGHORDERQCUMULANT)
     flowHighQC->SaveHist();
+  if (QCUMULANTGENERICFRAMWORK)
+    flowQCGF->SaveHist();
   if (LYZEP)
     flowLYZEP->SaveHist();
   fo->Close();

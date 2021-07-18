@@ -37,13 +37,20 @@ int GetCentBin(float cent)
 TChain *initChain(const TString &inputFileName, const char *chainName)
 {
   TChain *chain = new TChain(chainName);
-  std::ifstream file(inputFileName.Data());
-  std::string line;
-  while (std::getline(file, line))
+  if (inputFileName.Contains(".root"))
   {
-    chain->Add(line.c_str());
+    chain->Add(inputFileName.Data());
   }
-
+  else
+  {
+    std::ifstream file(inputFileName.Data());
+    std::string line;
+    while (std::getline(file, line))
+    {
+      chain->Add(line.c_str());
+    }
+  }
+  if (!chain) std::cout << "Failed to get input ROOT Tree." << std::endl;
   return chain;
 }
 

@@ -2,6 +2,7 @@
 ClassImp(FlowAnalysisWithQCumulantGenericFramework);
 FlowAnalysisWithQCumulantGenericFramework::FlowAnalysisWithQCumulantGenericFramework() :
 M(0),
+fEtaGap(0.),
 fUseWeight(kFALSE)
 {
   Zero();
@@ -21,6 +22,10 @@ void FlowAnalysisWithQCumulantGenericFramework::Init()
     hcov24Gap[icent] = new TProfile(Form("hcov24Gap_%i", icent), Form("hcov24Gap_%i", icent), 1, 0., 1.);
     hv22Gap[icent] = new TProfile(Form("hv22Gap_%i", icent), Form("hv22Gap_%i", icent), 1, 0., 1.);
     hv24Gap[icent] = new TProfile(Form("hv24Gap_%i", icent), Form("hv24Gap_%i", icent), 1, 0., 1.);
+    hv26Gap[icent] = new TProfile(Form("hv26Gap_%i", icent), Form("hv26Gap_%i", icent), 1, 0., 1.);
+    hv28Gap[icent] = new TProfile(Form("hv28Gap_%i", icent), Form("hv28Gap_%i", icent), 1, 0., 1.);
+    hv26[icent] = new TProfile(Form("hv26_%i", icent), Form("hv26_%i", icent), 1, 0., 1.);
+
     for (Int_t id = 0; id < npid; id++)
     {
       for (Int_t ipt = 0; ipt < npt; ipt++)
@@ -40,6 +45,10 @@ void FlowAnalysisWithQCumulantGenericFramework::Init()
         hcov42primeGap[icent][ipt][id] = new TProfile(Form("hcov42primeGap_%i_%i_%i", icent, ipt, id), Form("hcov42primeGap_%i_%i_%i", icent, ipt, id), 1, 0., 1.);      
         hcov44primeGap[icent][ipt][id] = new TProfile(Form("hcov44primeGap_%i_%i_%i", icent, ipt, id), Form("hcov44primeGap_%i_%i_%i", icent, ipt, id), 1, 0., 1.);
         hcov2prime4primeGap[icent][ipt][id] = new TProfile(Form("hcov2prime4primeGap_%i_%i_%i", icent, ipt, id), Form("hcov2prime4primeGap_%i_%i_%i", icent, ipt, id), 1, 0., 1.);
+        hv26ptGap[icent][ipt][id] = new TProfile(Form("hv26ptGap_%i_%i_%i", icent, ipt, id), Form("hv26ptGap_%i_%i_%i", icent, ipt, id), 1, 0., 1.);
+        hv28ptGap[icent][ipt][id] = new TProfile(Form("hv28ptGap_%i_%i_%i", icent, ipt, id), Form("hv28ptGap_%i_%i_%i", icent, ipt, id), 1, 0., 1.);
+        hv26pt[icent][ipt][id] = new TProfile(Form("hv26pt_%i_%i_%i", icent, ipt, id), Form("hv26pt_%i_%i_%i", icent, ipt, id), 1, 0., 1.);
+      
       } // end of loop over pt bin
     }
   } // end of loop over centrality classes
@@ -176,6 +185,25 @@ void FlowAnalysisWithQCumulantGenericFramework::ProcessEventAfterFirstTrackLoop(
     }
   }
 
+  Double_t w6 = Six(0,0,0,0,0,0).Re();
+  if (w6!=0.)
+  {
+    Double_t cor26 = Six(h1,h3,h5,h2,h4,h6).Re() / w6;
+    hv26[icent]->Fill(0.5, cor26, w6); // <<4>>
+    for (Int_t ipt = 0; ipt < npt; ipt++)
+    {
+      for (Int_t id = 0; id < npid; id++)
+      {
+        Double_t wred6 = SixDiff(0,0,0,0,0,0,ipt,id).Re();
+        if (wred6!=0)
+        {
+          Double_t redCor26 = SixDiff(h1,h3,h5,h2,h4,h6,ipt,id).Re() / wred6;
+          hv26pt[icent][ipt][id]->Fill(0.5, redCor26, wred6);
+        }
+      }
+    }
+  }
+
   Double_t w2Gap = TwoGap(0,0).Re();
   Double_t w4Gap = FourGap(0,0,0,0).Re();
   if (w2Gap!=0. && w4Gap!=0.)
@@ -224,12 +252,59 @@ void FlowAnalysisWithQCumulantGenericFramework::ProcessEventAfterFirstTrackLoop(
       }
     }
   }
-}
 
+  Double_t w6Gap = SixGap(0,0,0,0,0,0).Re();
+  if (w6Gap!=0.)
+  {
+    Double_t cor6Gap = SixGap(h1,h3,h5,h2,h4,h6).Re() / w6Gap;
+    hv26Gap[icent]->Fill(0.5, cor6Gap, w6Gap);
+    for (Int_t ipt = 0; ipt < npt; ipt++)
+    {
+      for (Int_t id = 0; id < npid; id++)
+      {
+        Double_t wred6GapPos = SixDiffGapPos(0,0,0,0,0,0,ipt,id).Re();
+        if (wred6GapPos>0.)
+        {
+          Double_t redCor26GapPos = SixDiffGapPos(h1,h3,h5,h2,h4,h6,ipt,id).Re() / wred6GapPos;
+          hv26ptGap[icent][ipt][id]->Fill(0.5, redCor26GapPos, wred6GapPos);
+        }
+        Double_t wred6GapNeg = SixDiffGapNeg(0,0,0,0,0,0,ipt,id).Re();
+        if (wred6GapNeg>0.)
+        {
+          Double_t redCor26GapNeg = SixDiffGapNeg(h1,h3,h5,h2,h4,h6,ipt,id).Re() / wred6GapNeg;
+          hv26ptGap[icent][ipt][id]->Fill(0.5, redCor26GapNeg, wred6GapNeg);
+        }
+      }
+    }
+  }
+
+  Double_t w8Gap = EightGap(0,0,0,0,0,0,0,0).Re();
+  if (w8Gap!=0.)
+  {
+    Double_t cor8Gap = EightGap(h1,h3,h5,h7,h2,h4,h6,h8).Re() / w8Gap;
+    hv28Gap[icent]->Fill(0.5, cor8Gap, w8Gap);
+    for (Int_t ipt = 0; ipt < npt; ipt++)
+    {
+      for (Int_t id = 0; id < npid; id++)
+      {
+        Double_t wred8GapPos = EightDiffGapPos(0,0,0,0,0,0,0,0,ipt,id).Re();
+        if (wred8GapPos>0.)
+        {
+          Double_t redCor28GapPos = EightDiffGapPos(h1,h3,h5,h7,h2,h4,h6,h8,ipt,id).Re() / wred8GapPos;
+          hv28ptGap[icent][ipt][id]->Fill(0.5, redCor28GapPos, wred8GapPos);
+        }
+        Double_t wred8GapNeg = EightDiffGapNeg(0,0,0,0,0,0,0,0,ipt,id).Re();
+        if (wred8GapNeg>0.)
+        {
+          Double_t redCor28GapNeg = EightDiffGapNeg(h1,h3,h5,h7,h2,h4,h6,h8,ipt,id).Re() / wred8GapNeg;
+          hv28ptGap[icent][ipt][id]->Fill(0.5, redCor28GapNeg, wred8GapNeg);
+        }
+      }
+    }
+  }
+}
 void FlowAnalysisWithQCumulantGenericFramework::SaveHist()
 {
-
-
   for (int icent=0; icent<ncent; icent++){ // loop over centrality classes
     hv22[icent]->Write();
     hv24[icent]->Write();
@@ -237,6 +312,9 @@ void FlowAnalysisWithQCumulantGenericFramework::SaveHist()
     hv22Gap[icent]->Write();
     hcov24Gap[icent]->Write();
     hv24Gap[icent]->Write();    
+    hv26Gap[icent]->Write();
+    hv28Gap[icent]->Write();
+    hv26[icent]->Write();
     for(int ipt=0; ipt<npt; ipt++){ // loop over pt bin
       for (int id=0;id<npid;id++){
         hv22pt[icent][ipt][id]->Write();
@@ -254,6 +332,9 @@ void FlowAnalysisWithQCumulantGenericFramework::SaveHist()
         hcov42primeGap[icent][ipt][id]->Write();
         hcov44primeGap[icent][ipt][id]->Write();
         hcov2prime4primeGap[icent][ipt][id]->Write();
+        hv26ptGap[icent][ipt][id]->Write();
+        hv28ptGap[icent][ipt][id]->Write();
+        hv26pt[icent][ipt][id]->Write();
       }
     } // end of loop over pt bin
   } // end of loop over centrality classes
@@ -452,6 +533,47 @@ TComplex FlowAnalysisWithQCumulantGenericFramework::Six(const Int_t n1, const In
   - 120.*Q(n1+n2+n3+n4+n5+n6,6);
   return six;
 }
+TComplex FlowAnalysisWithQCumulantGenericFramework::ThreePos(const Int_t n1, const Int_t n2, const Int_t n3) const
+{
+  TComplex formula = QGapPos(n1,1)*QGapPos(n2,1)*QGapPos(n3,1)-QGapPos(n1+n2,2)*QGapPos(n3,1)-QGapPos(n2,1)*QGapPos(n1+n3,2)
+ 		                 - QGapPos(n1,1)*QGapPos(n2+n3,2)+2.*QGapPos(n1+n2+n3,3);
+  return formula;
+}
+TComplex FlowAnalysisWithQCumulantGenericFramework::ThreeNeg(const Int_t n1, const Int_t n2, const Int_t n3) const
+{
+  TComplex formula = QGapNeg(n1,1)*QGapNeg(n2,1)*QGapNeg(n3,1)-QGapNeg(n1+n2,2)*QGapNeg(n3,1)-QGapNeg(n2,1)*QGapNeg(n1+n3,2)
+ 		                 - QGapNeg(n1,1)*QGapNeg(n2+n3,2)+2.*QGapNeg(n1+n2+n3,3);
+  return formula;
+}
+TComplex FlowAnalysisWithQCumulantGenericFramework::SixGap(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t n4, const Int_t n5, const Int_t n6) const
+{
+  TComplex formula = ThreePos(n1,n2,n3)*ThreeNeg(n4,n5,n6);
+	return formula;
+}
+TComplex FlowAnalysisWithQCumulantGenericFramework::FourPos(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t n4) const
+{
+  TComplex formula = QGapPos(n1,1)*QGapPos(n2,1)*QGapPos(n3,1)*QGapPos(n4,1)-QGapPos(n1+n2,2)*QGapPos(n3,1)*QGapPos(n4,1)-QGapPos(n2,1)*QGapPos(n1+n3,2)*QGapPos(n4,1)
+                    - QGapPos(n1,1)*QGapPos(n2+n3,2)*QGapPos(n4,1)+2.0*QGapPos(n1+n2+n3,3)*QGapPos(n4,1)-QGapPos(n2,1)*QGapPos(n3,1)*QGapPos(n1+n4,2)
+                    + QGapPos(n2+n3,2)*QGapPos(n1+n4,2)-QGapPos(n1,1)*QGapPos(n3,1)*QGapPos(n2+n4,2)+QGapPos(n1+n3,2)*QGapPos(n2+n4,2)
+                    + 2.0*QGapPos(n3,1)*QGapPos(n1+n2+n4,3)-QGapPos(n1,1)*QGapPos(n2,1)*QGapPos(n3+n4,2)+QGapPos(n1+n2,2)*QGapPos(n3+n4,2)
+                    + 2.0*QGapPos(n2,1)*QGapPos(n1+n3+n4,3)+2.0*QGapPos(n1,1)*QGapPos(n2+n3+n4,3)-6.0*QGapPos(n1+n2+n3+n4,4);
+  return formula;
+}
+// ============================================================================
+TComplex FlowAnalysisWithQCumulantGenericFramework::FourNeg(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t n4) const
+{
+  TComplex formula = QGapNeg(n1,1)*QGapNeg(n2,1)*QGapNeg(n3,1)*QGapNeg(n4,1)-QGapNeg(n1+n2,2)*QGapNeg(n3,1)*QGapNeg(n4,1)-QGapNeg(n2,1)*QGapNeg(n1+n3,2)*QGapNeg(n4,1)
+                    - QGapNeg(n1,1)*QGapNeg(n2+n3,2)*QGapNeg(n4,1)+2.0*QGapNeg(n1+n2+n3,3)*QGapNeg(n4,1)-QGapNeg(n2,1)*QGapNeg(n3,1)*QGapNeg(n1+n4,2)
+                    + QGapNeg(n2+n3,2)*QGapNeg(n1+n4,2)-QGapNeg(n1,1)*QGapNeg(n3,1)*QGapNeg(n2+n4,2)+QGapNeg(n1+n3,2)*QGapNeg(n2+n4,2)
+                    + 2.0*QGapNeg(n3,1)*QGapNeg(n1+n2+n4,3)-QGapNeg(n1,1)*QGapNeg(n2,1)*QGapNeg(n3+n4,2)+QGapNeg(n1+n2,2)*QGapNeg(n3+n4,2)
+                    + 2.0*QGapNeg(n2,1)*QGapNeg(n1+n3+n4,3)+2.0*QGapNeg(n1,1)*QGapNeg(n2+n3+n4,3)-6.0*QGapNeg(n1+n2+n3+n4,4);
+  return formula;
+}
+TComplex FlowAnalysisWithQCumulantGenericFramework::EightGap(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t n4, const Int_t n5, const Int_t n6, const Int_t n7, const Int_t n8) const
+{
+  TComplex formula = FourPos(n1,n2,n3,n4)*FourNeg(n5,n6,n7,n8);
+	return formula;
+}
 
 TComplex FlowAnalysisWithQCumulantGenericFramework::Recursion(Int_t n, Int_t* harmonic, Int_t mult /*= 1*/, Int_t skip /*= 0*/) 
 {
@@ -580,5 +702,171 @@ TComplex FlowAnalysisWithQCumulantGenericFramework::FourDiffGapNeg(const Int_t n
                       + SGapNeg(n1+n2,2,ipt,pid)*QGapPos(n3+n4,2);
   // same as
   // TComplex formula = TwoDiffNeg(n1,n2)*TwoPos(n3,n4);
+  return formula;
+}
+
+TComplex FlowAnalysisWithQCumulantGenericFramework::ThreeDiffPos(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t ipt, const Int_t pid) const
+{
+  TComplex formula = PGapPos(n1,1,ipt,pid)*QGapPos(n2,1)*QGapPos(n3,1)-SGapPos(n1+n2,2,ipt,pid)*QGapPos(n3,1)-SGapPos(n1+n3,2,ipt,pid)*QGapPos(n2,1)
+ 		                 - PGapPos(n1,1,ipt,pid)*QGapPos(n2+n3,2)+2.0*SGapPos(n1+n2+n3,3,ipt,pid);
+  return formula;
+}
+// ============================================================================
+TComplex FlowAnalysisWithQCumulantGenericFramework::ThreeDiffNeg(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t ipt, const Int_t pid) const
+{
+  TComplex formula = PGapNeg(n1,1,ipt,pid)*QGapNeg(n2,1)*QGapNeg(n3,1)-SGapNeg(n1+n2,2,ipt,pid)*QGapNeg(n3,1)-SGapNeg(n1+n3,2,ipt,pid)*QGapNeg(n2,1)
+ 		                 - PGapNeg(n1,1,ipt,pid)*QGapNeg(n2+n3,2)+2.0*SGapNeg(n1+n2+n3,3,ipt,pid);
+  return formula;
+}
+
+TComplex FlowAnalysisWithQCumulantGenericFramework::SixDiffGapPos(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t n4, const Int_t n5, const Int_t n6, const Int_t ipt, const Int_t pid) const
+{
+  TComplex formula = ThreeDiffPos(n1,n2,n3,ipt,pid)*ThreeNeg(n4,n5,n6);
+  return formula;
+}
+// ============================================================================
+TComplex FlowAnalysisWithQCumulantGenericFramework::SixDiffGapNeg(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t n4, const Int_t n5, const Int_t n6, const Int_t ipt, const Int_t pid) const
+{
+  TComplex formula = ThreeDiffNeg(n1,n2,n3,ipt,pid)*ThreePos(n4,n5,n6);
+  return formula;
+}
+
+TComplex FlowAnalysisWithQCumulantGenericFramework::SixDiff(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t n4, const Int_t n5, const Int_t n6, const Int_t ipt, const Int_t pid) const
+{
+    TComplex formula = P(n1,1,ipt,pid)*Q(n2,1)*Q(n3,1)*Q(n4,1)*Q(n5,1)*Q(n6,1)-S(n1+n2,2,ipt,pid)*Q(n3,1)*Q(n4,1)*Q(n5,1)*Q(n6,1)
+    - Q(n2,1)*S(n1+n3,2,ipt,pid)*Q(n4,1)*Q(n5,1)*Q(n6,1)-P(n1,1,ipt,pid)*Q(n2+n3,2)*Q(n4,1)*Q(n5,1)*Q(n6,1)
+    + 2.*S(n1+n2+n3,3,ipt,pid)*Q(n4,1)*Q(n5,1)*Q(n6,1)-Q(n2,1)*Q(n3,1)*S(n1+n4,2,ipt,pid)*Q(n5,1)*Q(n6,1)
+    + Q(n2+n3,2)*S(n1+n4,2,ipt,pid)*Q(n5,1)*Q(n6,1)-P(n1,1,ipt,pid)*Q(n3,1)*Q(n2+n4,2)*Q(n5,1)*Q(n6,1)
+    + S(n1+n3,2,ipt,pid)*Q(n2+n4,2)*Q(n5,1)*Q(n6,1)+2.*Q(n3,1)*S(n1+n2+n4,3,ipt,pid)*Q(n5,1)*Q(n6,1)
+    - P(n1,1,ipt,pid)*Q(n2,1)*Q(n3+n4,2)*Q(n5,1)*Q(n6,1)+S(n1+n2,2,ipt,pid)*Q(n3+n4,2)*Q(n5,1)*Q(n6,1)
+    + 2.*Q(n2,1)*S(n1+n3+n4,3,ipt,pid)*Q(n5,1)*Q(n6,1)+2.*P(n1,1,ipt,pid)*Q(n2+n3+n4,3)*Q(n5,1)*Q(n6,1)
+    - 6.*S(n1+n2+n3+n4,4,ipt,pid)*Q(n5,1)*Q(n6,1)-Q(n2,1)*Q(n3,1)*Q(n4,1)*S(n1+n5,2,ipt,pid)*Q(n6,1)
+    + Q(n2+n3,2)*Q(n4,1)*S(n1+n5,2,ipt,pid)*Q(n6,1)+Q(n3,1)*Q(n2+n4,2)*S(n1+n5,2,ipt,pid)*Q(n6,1)
+    + Q(n2,1)*Q(n3+n4,2)*S(n1+n5,2,ipt,pid)*Q(n6,1)-2.*Q(n2+n3+n4,3)*S(n1+n5,2,ipt,pid)*Q(n6,1)
+    - P(n1,1,ipt,pid)*Q(n3,1)*Q(n4,1)*Q(n2+n5,2)*Q(n6,1)+S(n1+n3,2,ipt,pid)*Q(n4,1)*Q(n2+n5,2)*Q(n6,1)
+    + Q(n3,1)*S(n1+n4,2,ipt,pid)*Q(n2+n5,2)*Q(n6,1)+P(n1,1,ipt,pid)*Q(n3+n4,2)*Q(n2+n5,2)*Q(n6,1)
+    - 2.*S(n1+n3+n4,3,ipt,pid)*Q(n2+n5,2)*Q(n6,1)+2.*Q(n3,1)*Q(n4,1)*S(n1+n2+n5,3,ipt,pid)*Q(n6,1)
+    - 2.*Q(n3+n4,2)*S(n1+n2+n5,3,ipt,pid)*Q(n6,1)-P(n1,1,ipt,pid)*Q(n2,1)*Q(n4,1)*Q(n3+n5,2)*Q(n6,1)
+    + S(n1+n2,2,ipt,pid)*Q(n4,1)*Q(n3+n5,2)*Q(n6,1)+Q(n2,1)*S(n1+n4,2,ipt,pid)*Q(n3+n5,2)*Q(n6,1)
+    + P(n1,1,ipt,pid)*Q(n2+n4,2)*Q(n3+n5,2)*Q(n6,1)-2.*S(n1+n2+n4,3,ipt,pid)*Q(n3+n5,2)*Q(n6,1)
+    + 2.*Q(n2,1)*Q(n4,1)*S(n1+n3+n5,3,ipt,pid)*Q(n6,1)-2.*Q(n2+n4,2)*S(n1+n3+n5,3,ipt,pid)*Q(n6,1)
+    + 2.*P(n1,1,ipt,pid)*Q(n4,1)*Q(n2+n3+n5,3)*Q(n6,1)-2.*S(n1+n4,2,ipt,pid)*Q(n2+n3+n5,3)*Q(n6,1)
+    - 6.*Q(n4,1)*S(n1+n2+n3+n5,4,ipt,pid)*Q(n6,1)-P(n1,1,ipt,pid)*Q(n2,1)*Q(n3,1)*Q(n4+n5,2)*Q(n6,1)
+    + S(n1+n2,2,ipt,pid)*Q(n3,1)*Q(n4+n5,2)*Q(n6,1)+Q(n2,1)*S(n1+n3,2,ipt,pid)*Q(n4+n5,2)*Q(n6,1)
+    + P(n1,1,ipt,pid)*Q(n2+n3,2)*Q(n4+n5,2)*Q(n6,1)-2.*S(n1+n2+n3,3,ipt,pid)*Q(n4+n5,2)*Q(n6,1)
+    + 2.*Q(n2,1)*Q(n3,1)*S(n1+n4+n5,3,ipt,pid)*Q(n6,1)-2.*Q(n2+n3,2)*S(n1+n4+n5,3,ipt,pid)*Q(n6,1)
+    + 2.*P(n1,1,ipt,pid)*Q(n3,1)*Q(n2+n4+n5,3)*Q(n6,1)-2.*S(n1+n3,2,ipt,pid)*Q(n2+n4+n5,3)*Q(n6,1)
+    - 6.*Q(n3,1)*S(n1+n2+n4+n5,4,ipt,pid)*Q(n6,1)+2.*P(n1,1,ipt,pid)*Q(n2,1)*Q(n3+n4+n5,3)*Q(n6,1)
+    - 2.*S(n1+n2,2,ipt,pid)*Q(n3+n4+n5,3)*Q(n6,1)-6.*Q(n2,1)*S(n1+n3+n4+n5,4,ipt,pid)*Q(n6,1)
+    - 6.*P(n1,1,ipt,pid)*Q(n2+n3+n4+n5,4)*Q(n6,1)+24.*S(n1+n2+n3+n4+n5,5,ipt,pid)*Q(n6,1)
+    - Q(n2,1)*Q(n3,1)*Q(n4,1)*Q(n5,1)*S(n1+n6,2,ipt,pid)+Q(n2+n3,2)*Q(n4,1)*Q(n5,1)*S(n1+n6,2,ipt,pid)
+    + Q(n3,1)*Q(n2+n4,2)*Q(n5,1)*S(n1+n6,2,ipt,pid)+Q(n2,1)*Q(n3+n4,2)*Q(n5,1)*S(n1+n6,2,ipt,pid)
+    - 2.*Q(n2+n3+n4,3)*Q(n5,1)*S(n1+n6,2,ipt,pid)+Q(n3,1)*Q(n4,1)*Q(n2+n5,2)*S(n1+n6,2,ipt,pid)
+    - Q(n3+n4,2)*Q(n2+n5,2)*S(n1+n6,2,ipt,pid)+Q(n2,1)*Q(n4,1)*Q(n3+n5,2)*S(n1+n6,2,ipt,pid)
+    - Q(n2+n4,2)*Q(n3+n5,2)*S(n1+n6,2,ipt,pid)-2.*Q(n4,1)*Q(n2+n3+n5,3)*S(n1+n6,2,ipt,pid)
+    + Q(n2,1)*Q(n3,1)*Q(n4+n5,2)*S(n1+n6,2,ipt,pid)-Q(n2+n3,2)*Q(n4+n5,2)*S(n1+n6,2,ipt,pid)
+    - 2.*Q(n3,1)*Q(n2+n4+n5,3)*S(n1+n6,2,ipt,pid)-2.*Q(n2,1)*Q(n3+n4+n5,3)*S(n1+n6,2,ipt,pid)
+    + 6.*Q(n2+n3+n4+n5,4)*S(n1+n6,2,ipt,pid)-P(n1,1,ipt,pid)*Q(n3,1)*Q(n4,1)*Q(n5,1)*Q(n2+n6,2)
+    + S(n1+n3,2,ipt,pid)*Q(n4,1)*Q(n5,1)*Q(n2+n6,2)+Q(n3,1)*S(n1+n4,2,ipt,pid)*Q(n5,1)*Q(n2+n6,2)
+    + P(n1,1,ipt,pid)*Q(n3+n4,2)*Q(n5,1)*Q(n2+n6,2)-2.*S(n1+n3+n4,3,ipt,pid)*Q(n5,1)*Q(n2+n6,2)
+    + Q(n3,1)*Q(n4,1)*S(n1+n5,2,ipt,pid)*Q(n2+n6,2)-Q(n3+n4,2)*S(n1+n5,2,ipt,pid)*Q(n2+n6,2)
+    + P(n1,1,ipt,pid)*Q(n4,1)*Q(n3+n5,2)*Q(n2+n6,2)-S(n1+n4,2,ipt,pid)*Q(n3+n5,2)*Q(n2+n6,2)
+    - 2.*Q(n4,1)*S(n1+n3+n5,3,ipt,pid)*Q(n2+n6,2)+P(n1,1,ipt,pid)*Q(n3,1)*Q(n4+n5,2)*Q(n2+n6,2)
+    - S(n1+n3,2,ipt,pid)*Q(n4+n5,2)*Q(n2+n6,2)-2.*Q(n3,1)*S(n1+n4+n5,3,ipt,pid)*Q(n2+n6,2)
+    - 2.*P(n1,1,ipt,pid)*Q(n3+n4+n5,3)*Q(n2+n6,2)+6.*S(n1+n3+n4+n5,4,ipt,pid)*Q(n2+n6,2)
+    + 2.*Q(n3,1)*Q(n4,1)*Q(n5,1)*S(n1+n2+n6,3,ipt,pid)-2.*Q(n3+n4,2)*Q(n5,1)*S(n1+n2+n6,3,ipt,pid)
+    - 2.*Q(n4,1)*Q(n3+n5,2)*S(n1+n2+n6,3,ipt,pid)-2.*Q(n3,1)*Q(n4+n5,2)*S(n1+n2+n6,3,ipt,pid)
+    + 4.*Q(n3+n4+n5,3)*S(n1+n2+n6,3,ipt,pid)-P(n1,1,ipt,pid)*Q(n2,1)*Q(n4,1)*Q(n5,1)*Q(n3+n6,2)
+    + S(n1+n2,2,ipt,pid)*Q(n4,1)*Q(n5,1)*Q(n3+n6,2)+Q(n2,1)*S(n1+n4,2,ipt,pid)*Q(n5,1)*Q(n3+n6,2)
+    + P(n1,1,ipt,pid)*Q(n2+n4,2)*Q(n5,1)*Q(n3+n6,2)-2.*S(n1+n2+n4,3,ipt,pid)*Q(n5,1)*Q(n3+n6,2)
+    + Q(n2,1)*Q(n4,1)*S(n1+n5,2,ipt,pid)*Q(n3+n6,2)-Q(n2+n4,2)*S(n1+n5,2,ipt,pid)*Q(n3+n6,2)
+    + P(n1,1,ipt,pid)*Q(n4,1)*Q(n2+n5,2)*Q(n3+n6,2)-S(n1+n4,2,ipt,pid)*Q(n2+n5,2)*Q(n3+n6,2)
+    - 2.*Q(n4,1)*S(n1+n2+n5,3,ipt,pid)*Q(n3+n6,2)+P(n1,1,ipt,pid)*Q(n2,1)*Q(n4+n5,2)*Q(n3+n6,2)
+    - S(n1+n2,2,ipt,pid)*Q(n4+n5,2)*Q(n3+n6,2)-2.*Q(n2,1)*S(n1+n4+n5,3,ipt,pid)*Q(n3+n6,2)
+    - 2.*P(n1,1,ipt,pid)*Q(n2+n4+n5,3)*Q(n3+n6,2)+6.*S(n1+n2+n4+n5,4,ipt,pid)*Q(n3+n6,2)
+    + 2.*Q(n2,1)*Q(n4,1)*Q(n5,1)*S(n1+n3+n6,3,ipt,pid)-2.*Q(n2+n4,2)*Q(n5,1)*S(n1+n3+n6,3,ipt,pid)
+    - 2.*Q(n4,1)*Q(n2+n5,2)*S(n1+n3+n6,3,ipt,pid)-2.*Q(n2,1)*Q(n4+n5,2)*S(n1+n3+n6,3,ipt,pid)
+    + 4.*Q(n2+n4+n5,3)*S(n1+n3+n6,3,ipt,pid)+2.*P(n1,1,ipt,pid)*Q(n4,1)*Q(n5,1)*Q(n2+n3+n6,3)
+    - 2.*S(n1+n4,2,ipt,pid)*Q(n5,1)*Q(n2+n3+n6,3)-2.*Q(n4,1)*S(n1+n5,2,ipt,pid)*Q(n2+n3+n6,3)
+    - 2.*P(n1,1,ipt,pid)*Q(n4+n5,2)*Q(n2+n3+n6,3)+4.*S(n1+n4+n5,3,ipt,pid)*Q(n2+n3+n6,3)
+    - 6.*Q(n4,1)*Q(n5,1)*S(n1+n2+n3+n6,4,ipt,pid)+6.*Q(n4+n5,2)*S(n1+n2+n3+n6,4,ipt,pid)
+    - P(n1,1,ipt,pid)*Q(n2,1)*Q(n3,1)*Q(n5,1)*Q(n4+n6,2)+S(n1+n2,2,ipt,pid)*Q(n3,1)*Q(n5,1)*Q(n4+n6,2)
+    + Q(n2,1)*S(n1+n3,2,ipt,pid)*Q(n5,1)*Q(n4+n6,2)+P(n1,1,ipt,pid)*Q(n2+n3,2)*Q(n5,1)*Q(n4+n6,2)
+    - 2.*S(n1+n2+n3,3,ipt,pid)*Q(n5,1)*Q(n4+n6,2)+Q(n2,1)*Q(n3,1)*S(n1+n5,2,ipt,pid)*Q(n4+n6,2)
+    - Q(n2+n3,2)*S(n1+n5,2,ipt,pid)*Q(n4+n6,2)+P(n1,1,ipt,pid)*Q(n3,1)*Q(n2+n5,2)*Q(n4+n6,2)
+    - S(n1+n3,2,ipt,pid)*Q(n2+n5,2)*Q(n4+n6,2)-2.*Q(n3,1)*S(n1+n2+n5,3,ipt,pid)*Q(n4+n6,2)
+    + P(n1,1,ipt,pid)*Q(n2,1)*Q(n3+n5,2)*Q(n4+n6,2)-S(n1+n2,2,ipt,pid)*Q(n3+n5,2)*Q(n4+n6,2)
+    - 2.*Q(n2,1)*S(n1+n3+n5,3,ipt,pid)*Q(n4+n6,2)-2.*P(n1,1,ipt,pid)*Q(n2+n3+n5,3)*Q(n4+n6,2)
+    + 6.*S(n1+n2+n3+n5,4,ipt,pid)*Q(n4+n6,2)+2.*Q(n2,1)*Q(n3,1)*Q(n5,1)*S(n1+n4+n6,3,ipt,pid)
+    - 2.*Q(n2+n3,2)*Q(n5,1)*S(n1+n4+n6,3,ipt,pid)-2.*Q(n3,1)*Q(n2+n5,2)*S(n1+n4+n6,3,ipt,pid)
+    - 2.*Q(n2,1)*Q(n3+n5,2)*S(n1+n4+n6,3,ipt,pid)+4.*Q(n2+n3+n5,3)*S(n1+n4+n6,3,ipt,pid)
+    + 2.*P(n1,1,ipt,pid)*Q(n3,1)*Q(n5,1)*Q(n2+n4+n6,3)-2.*S(n1+n3,2,ipt,pid)*Q(n5,1)*Q(n2+n4+n6,3)
+    - 2.*Q(n3,1)*S(n1+n5,2,ipt,pid)*Q(n2+n4+n6,3)-2.*P(n1,1,ipt,pid)*Q(n3+n5,2)*Q(n2+n4+n6,3)
+    + 4.*S(n1+n3+n5,3,ipt,pid)*Q(n2+n4+n6,3)-6.*Q(n3,1)*Q(n5,1)*S(n1+n2+n4+n6,4,ipt,pid)
+    + 6.*Q(n3+n5,2)*S(n1+n2+n4+n6,4,ipt,pid)+2.*P(n1,1,ipt,pid)*Q(n2,1)*Q(n5,1)*Q(n3+n4+n6,3)
+    - 2.*S(n1+n2,2,ipt,pid)*Q(n5,1)*Q(n3+n4+n6,3)-2.*Q(n2,1)*S(n1+n5,2,ipt,pid)*Q(n3+n4+n6,3)
+    - 2.*P(n1,1,ipt,pid)*Q(n2+n5,2)*Q(n3+n4+n6,3)+4.*S(n1+n2+n5,3,ipt,pid)*Q(n3+n4+n6,3)
+    - 6.*Q(n2,1)*Q(n5,1)*S(n1+n3+n4+n6,4,ipt,pid)+6.*Q(n2+n5,2)*S(n1+n3+n4+n6,4,ipt,pid)
+    - 6.*P(n1,1,ipt,pid)*Q(n5,1)*Q(n2+n3+n4+n6,4)+6.*S(n1+n5,2,ipt,pid)*Q(n2+n3+n4+n6,4)
+    + 24.*Q(n5,1)*S(n1+n2+n3+n4+n6,5,ipt,pid)-P(n1,1,ipt,pid)*Q(n2,1)*Q(n3,1)*Q(n4,1)*Q(n5+n6,2)
+    + S(n1+n2,2,ipt,pid)*Q(n3,1)*Q(n4,1)*Q(n5+n6,2)+Q(n2,1)*S(n1+n3,2,ipt,pid)*Q(n4,1)*Q(n5+n6,2)
+    + P(n1,1,ipt,pid)*Q(n2+n3,2)*Q(n4,1)*Q(n5+n6,2)-2.*S(n1+n2+n3,3,ipt,pid)*Q(n4,1)*Q(n5+n6,2)
+    + Q(n2,1)*Q(n3,1)*S(n1+n4,2,ipt,pid)*Q(n5+n6,2)-Q(n2+n3,2)*S(n1+n4,2,ipt,pid)*Q(n5+n6,2)
+    + P(n1,1,ipt,pid)*Q(n3,1)*Q(n2+n4,2)*Q(n5+n6,2)-S(n1+n3,2,ipt,pid)*Q(n2+n4,2)*Q(n5+n6,2)
+    - 2.*Q(n3,1)*S(n1+n2+n4,3,ipt,pid)*Q(n5+n6,2)+P(n1,1,ipt,pid)*Q(n2,1)*Q(n3+n4,2)*Q(n5+n6,2)
+    - S(n1+n2,2,ipt,pid)*Q(n3+n4,2)*Q(n5+n6,2)-2.*Q(n2,1)*S(n1+n3+n4,3,ipt,pid)*Q(n5+n6,2)
+    - 2.*P(n1,1,ipt,pid)*Q(n2+n3+n4,3)*Q(n5+n6,2)+6.*S(n1+n2+n3+n4,4,ipt,pid)*Q(n5+n6,2)
+    + 2.*Q(n2,1)*Q(n3,1)*Q(n4,1)*S(n1+n5+n6,3,ipt,pid)-2.*Q(n2+n3,2)*Q(n4,1)*S(n1+n5+n6,3,ipt,pid)
+    - 2.*Q(n3,1)*Q(n2+n4,2)*S(n1+n5+n6,3,ipt,pid)-2.*Q(n2,1)*Q(n3+n4,2)*S(n1+n5+n6,3,ipt,pid)
+    + 4.*Q(n2+n3+n4,3)*S(n1+n5+n6,3,ipt,pid)+2.*P(n1,1,ipt,pid)*Q(n3,1)*Q(n4,1)*Q(n2+n5+n6,3)
+    - 2.*S(n1+n3,2,ipt,pid)*Q(n4,1)*Q(n2+n5+n6,3)-2.*Q(n3,1)*S(n1+n4,2,ipt,pid)*Q(n2+n5+n6,3)
+    - 2.*P(n1,1,ipt,pid)*Q(n3+n4,2)*Q(n2+n5+n6,3)+4.*S(n1+n3+n4,3,ipt,pid)*Q(n2+n5+n6,3)
+    - 6.*Q(n3,1)*Q(n4,1)*S(n1+n2+n5+n6,4,ipt,pid)+6.*Q(n3+n4,2)*S(n1+n2+n5+n6,4,ipt,pid)
+    + 2.*P(n1,1,ipt,pid)*Q(n2,1)*Q(n4,1)*Q(n3+n5+n6,3)-2.*S(n1+n2,2,ipt,pid)*Q(n4,1)*Q(n3+n5+n6,3)
+    - 2.*Q(n2,1)*S(n1+n4,2,ipt,pid)*Q(n3+n5+n6,3)-2.*P(n1,1,ipt,pid)*Q(n2+n4,2)*Q(n3+n5+n6,3)
+    + 4.*S(n1+n2+n4,3,ipt,pid)*Q(n3+n5+n6,3)-6.*Q(n2,1)*Q(n4,1)*S(n1+n3+n5+n6,4,ipt,pid)
+    + 6.*Q(n2+n4,2)*S(n1+n3+n5+n6,4,ipt,pid)-6.*P(n1,1,ipt,pid)*Q(n4,1)*Q(n2+n3+n5+n6,4)
+    + 6.*S(n1+n4,2,ipt,pid)*Q(n2+n3+n5+n6,4)+24.*Q(n4,1)*S(n1+n2+n3+n5+n6,5,ipt,pid)
+    + 2.*P(n1,1,ipt,pid)*Q(n2,1)*Q(n3,1)*Q(n4+n5+n6,3)-2.*S(n1+n2,2,ipt,pid)*Q(n3,1)*Q(n4+n5+n6,3)
+    - 2.*Q(n2,1)*S(n1+n3,2,ipt,pid)*Q(n4+n5+n6,3)-2.*P(n1,1,ipt,pid)*Q(n2+n3,2)*Q(n4+n5+n6,3)
+    + 4.*S(n1+n2+n3,3,ipt,pid)*Q(n4+n5+n6,3)-6.*Q(n2,1)*Q(n3,1)*S(n1+n4+n5+n6,4,ipt,pid)
+    + 6.*Q(n2+n3,2)*S(n1+n4+n5+n6,4,ipt,pid)-6.*P(n1,1,ipt,pid)*Q(n3,1)*Q(n2+n4+n5+n6,4)
+    + 6.*S(n1+n3,2,ipt,pid)*Q(n2+n4+n5+n6,4)+24.*Q(n3,1)*S(n1+n2+n4+n5+n6,5,ipt,pid)
+    - 6.*P(n1,1,ipt,pid)*Q(n2,1)*Q(n3+n4+n5+n6,4)+6.*S(n1+n2,2,ipt,pid)*Q(n3+n4+n5+n6,4)
+    + 24.*Q(n2,1)*S(n1+n3+n4+n5+n6,5,ipt,pid)+24.*P(n1,1,ipt,pid)*Q(n2+n3+n4+n5+n6,5)
+    - 120.*S(n1+n2+n3+n4+n5+n6,6,ipt,pid);
+    return formula;
+}
+
+TComplex FlowAnalysisWithQCumulantGenericFramework::FourDiffPos(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t n4, const Int_t ipt, const Int_t pid) const
+{
+  TComplex formula = PGapPos(n1,1,ipt,pid)*QGapPos(n2,1)*QGapPos(n3,1)*QGapPos(n4,1)-SGapPos(n1+n2,2,ipt,pid)*QGapPos(n3,1)*QGapPos(n4,1)-QGapPos(n2,1)*SGapPos(n1+n3,2,ipt,pid)*QGapPos(n4,1)
+                    - PGapPos(n1,1,ipt,pid)*QGapPos(n2+n3,2)*QGapPos(n4,1)+2.0*SGapPos(n1+n2+n3,3,ipt,pid)*QGapPos(n4,1)-QGapPos(n2,1)*QGapPos(n3,1)*SGapPos(n1+n4,2,ipt,pid)
+                    + QGapPos(n2+n3,2)*SGapPos(n1+n4,2,ipt,pid)-PGapPos(n1,1,ipt,pid)*QGapPos(n3,1)*QGapPos(n2+n4,2)+SGapPos(n1+n3,2,ipt,pid)*QGapPos(n2+n4,2)
+                    + 2.0*QGapPos(n3,1)*SGapPos(n1+n2+n4,3,ipt,pid)-PGapPos(n1,1,ipt,pid)*QGapPos(n2,1)*QGapPos(n3+n4,2)+SGapPos(n1+n2,2,ipt,pid)*QGapPos(n3+n4,2)
+                    + 2.0*QGapPos(n2,1)*SGapPos(n1+n3+n4,3,ipt,pid)+2.0*PGapPos(n1,1,ipt,pid)*QGapPos(n2+n3+n4,3)-6.0*SGapPos(n1+n2+n3+n4,4,ipt,pid);
+  return formula;
+}
+// ============================================================================
+TComplex FlowAnalysisWithQCumulantGenericFramework::FourDiffNeg(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t n4, const Int_t ipt, const Int_t pid) const
+{
+  TComplex formula = PGapNeg(n1,1,ipt,pid)*QGapNeg(n2,1)*QGapNeg(n3,1)*QGapNeg(n4,1)-SGapNeg(n1+n2,2,ipt,pid)*QGapNeg(n3,1)*QGapNeg(n4,1)-QGapNeg(n2,1)*SGapNeg(n1+n3,2,ipt,pid)*QGapNeg(n4,1)
+                    - PGapNeg(n1,1,ipt,pid)*QGapNeg(n2+n3,2)*QGapNeg(n4,1)+2.0*SGapNeg(n1+n2+n3,3,ipt,pid)*QGapNeg(n4,1)-QGapNeg(n2,1)*QGapNeg(n3,1)*SGapNeg(n1+n4,2,ipt,pid)
+                    + QGapNeg(n2+n3,2)*SGapNeg(n1+n4,2,ipt,pid)-PGapNeg(n1,1,ipt,pid)*QGapNeg(n3,1)*QGapNeg(n2+n4,2)+SGapNeg(n1+n3,2,ipt,pid)*QGapNeg(n2+n4,2)
+                    + 2.0*QGapNeg(n3,1)*SGapNeg(n1+n2+n4,3,ipt,pid)-PGapNeg(n1,1,ipt,pid)*QGapNeg(n2,1)*QGapNeg(n3+n4,2)+SGapNeg(n1+n2,2,ipt,pid)*QGapNeg(n3+n4,2)
+                    + 2.0*QGapNeg(n2,1)*SGapNeg(n1+n3+n4,3,ipt,pid)+2.0*PGapNeg(n1,1,ipt,pid)*QGapNeg(n2+n3+n4,3)-6.0*SGapNeg(n1+n2+n3+n4,4,ipt,pid);
+  return formula;
+}
+
+// ============================================================================
+TComplex FlowAnalysisWithQCumulantGenericFramework::EightDiffGapPos(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t n4, const Int_t n5, const Int_t n6, const Int_t n7, const Int_t n8, const Int_t ipt, const Int_t pid) const
+{
+  TComplex formula = FourDiffPos(n1,n2,n3,n4,ipt,pid)*FourNeg(n5,n6,n7,n8);
+  return formula;
+}
+// ============================================================================
+TComplex FlowAnalysisWithQCumulantGenericFramework::EightDiffGapNeg(const Int_t n1, const Int_t n2, const Int_t n3, const Int_t n4, const Int_t n5, const Int_t n6, const Int_t n7, const Int_t n8, const Int_t ipt, const Int_t pid) const
+{
+  TComplex formula = FourDiffNeg(n1,n2,n3,n4,ipt,pid)*FourPos(n5,n6,n7,n8);
   return formula;
 }

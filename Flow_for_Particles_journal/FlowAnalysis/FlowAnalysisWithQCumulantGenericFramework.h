@@ -34,8 +34,15 @@ public:
   TComplex FourGap(Int_t n1, Int_t n2, Int_t n3, Int_t n4) const;
   TComplex Five(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5) const;
   TComplex Six(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6) const;
-  TComplex Seven(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t n7) const;
-  TComplex Eight(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t n7, Int_t n8) const;
+  // TComplex Seven(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t n7) const;
+  // TComplex Eight(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t n7, Int_t n8) const;
+  TComplex ThreePos(Int_t n1, Int_t n2, Int_t n3) const; // for SixGap and SixDiffGapNeg
+  TComplex ThreeNeg(Int_t n1, Int_t n2, Int_t n3) const; // for SixGap and SixDiffGapPos
+  TComplex SixGap(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6) const;
+  TComplex FourPos(Int_t n1, Int_t n2, Int_t n3, Int_t n4) const; // for EightGap and EightDiffGapNeg
+  TComplex FourNeg(Int_t n1, Int_t n2, Int_t n3, Int_t n4) const; // for EightGap and EightDiffGapPos
+  TComplex EightGap(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t n7, Int_t n8) const;
+
   TComplex Recursion(Int_t n, Int_t* harmonic, Int_t mult = 1, Int_t skip = 0);
 
   TComplex P(Int_t n, Int_t p, Int_t ipt, Int_t pid) const;
@@ -48,10 +55,18 @@ public:
   TComplex TwoDiffGapPos(Int_t n1, Int_t n2, Int_t ipt, Int_t pid) const;
   TComplex TwoDiffGapNeg(Int_t n1, Int_t n2, Int_t ipt, Int_t pid) const;
   TComplex ThreeDiff(Int_t n1, Int_t n2, Int_t n3, Int_t ipt, Int_t pid) const;
+  TComplex ThreeDiffPos(Int_t n1, Int_t n2, Int_t n3, Int_t ipt, Int_t pid) const; // for SixDiffGapPos
+  TComplex ThreeDiffNeg(Int_t n1, Int_t n2, Int_t n3, Int_t ipt, Int_t pid) const; // for SixDiffGapNeg
   TComplex FourDiff(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t ipt, Int_t pid) const;
   TComplex FourDiffGapPos(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t ipt, Int_t pid) const;
   TComplex FourDiffGapNeg(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t ipt, Int_t pid) const;
-
+  TComplex FourDiffPos(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t ipt, Int_t pid) const; // for EightDiffGapPos
+  TComplex FourDiffNeg(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t ipt, Int_t pid) const; // for EightDiffGapNeg
+  TComplex SixDiffGapPos(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t ipt, Int_t pid) const;
+  TComplex SixDiffGapNeg(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t ipt, Int_t pid) const;
+  TComplex SixDiff(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t ipt, Int_t pid) const;
+  TComplex EightDiffGapPos(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t n7, Int_t n8, Int_t ipt, Int_t pid) const;
+  TComplex EightDiffGapNeg(Int_t n1, Int_t n2, Int_t n3, Int_t n4, Int_t n5, Int_t n6, Int_t n7, Int_t n8, Int_t ipt, Int_t pid) const;
 private:
   Int_t M;
   Double_t fEtaGap;
@@ -92,6 +107,16 @@ private:
   TProfile *hcov2prime4primeGap[ncent][npt][npid];  // <2'><4'>
 
   TProfile *hcounter[ncent][npt][npid];             
+
+  TProfile *hv26[ncent];                         // <6>
+  TProfile *hv26pt[ncent][npt][npid];            // <6'>
+
+
+  TProfile *hv26Gap[ncent];                         // <6>
+  TProfile *hv26ptGap[ncent][npt][npid];            // <6'>
+  TProfile *hv28Gap[ncent];                         // <8>
+  TProfile *hv28ptGap[ncent][npt][npid];            // <8'>
+
 
   ClassDef(FlowAnalysisWithQCumulantGenericFramework, 0);
 };

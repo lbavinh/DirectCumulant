@@ -47,9 +47,9 @@ bool LYZ_SUM_PRODUCT_1 = 0;
 bool LYZ_SUM_PRODUCT_2 = 0;
 bool SCALARPRODUCT_1 = 0;
 bool SCALARPRODUCT_2 = 0;
-bool QCUMULANT = 1;
+bool QCUMULANT = 0;
 bool HIGHORDERQCUMULANT = 0;
-bool QCUMULANTGENERICFRAMWORK = 0;
+bool QCUMULANTGENERICFRAMWORK = 1;
 bool LYZEP = 0;
 // testing with other event plane combinations
 bool THREEETASUBFHCALEVENTPLANE_1 = 0;

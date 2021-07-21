@@ -62,6 +62,38 @@ Double_t GetFHCalPhi(Int_t iModule)
   return phi;
 }
 
+std::string GetTreeName(const TString &inputFileName)
+{
+  std::string treeName;
+  TString inputROOTFile;
+  if (inputFileName.Contains(".root"))
+  {
+    inputROOTFile = inputFileName;
+  }
+  else
+  {
+    std::ifstream file(inputFileName.Data());
+    std::string line;
+    std::getline(file, line);
+    inputROOTFile = (TString) line;
+  }
+  TFile *fi = new TFile(inputROOTFile.Data(),"READ");
+  TTree* tree = nullptr;
+  TIter nextkey( fi->GetListOfKeys() );
+  TKey *key = nullptr;
+  while ( (key = (TKey*) nextkey()) ) {
+    TObject *obj = key->ReadObj();
+    if ( obj->IsA()->InheritsFrom( TTree::Class() ) ) {
+      tree = (TTree*)obj;
+      break;
+    }
+  }
+  if (!tree) { std::cout << "Cannot find any TTree in input ROOT file!!!" << std::endl; }
+  else { treeName = (std::string) tree->GetName(); }
+  if (treeName != "picodst" && treeName != "mctree") { std::cout << "Given tree format cannot being read!!!" << std::endl; }
+  return treeName;
+}
+
 TChain* initChain(const TString &inputFileName, const char* chainName)
 {
     TChain *chain = new TChain(chainName);

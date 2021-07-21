@@ -16,3 +16,5 @@
 *.list
 *.dat
 *.odp
+*/build
+*.C~~

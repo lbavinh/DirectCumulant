@@ -73,7 +73,7 @@ Long64_t Nevents = -1;
 
 Int_t debug = 1;
 
-std::string format = "picodst";
+std::string format = "";
 
 void readConfig(const TString& _strFileName)
 {
@@ -98,7 +98,7 @@ void readConfig(const TString& _strFileName)
   debug = env.GetValue("debug", 0);
   Nevents = env.GetValue("Nevents", 0);
 
-  format = env.GetValue("format", "");
+  // format = env.GetValue("format", "");
 
   ETASUBEVENTPLANE_1 = env.GetValue("ETASUBEVENTPLANE_1", 0);
   ETASUBEVENTPLANE_2 = env.GetValue("ETASUBEVENTPLANE_2", 0);
@@ -212,7 +212,7 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString conf
     cout << "eta_gap = " << eta_gap << endl;
     cout << "DCAcut = " << DCAcut << endl;
     cout << "pid_probability = " << pid_probability << endl;
-    cout << "format = " << format << endl;
+    // cout << "format = " << format << endl;
 
     cout << "ETASUBEVENTPLANE_1 = " << ETASUBEVENTPLANE_1 << endl;
     cout << "ETASUBEVENTPLANE_2 = " << ETASUBEVENTPLANE_2 << endl;
@@ -238,6 +238,8 @@ void RunFlowAnalysis(TString inputFileName, TString outputFileName, TString conf
   }
 
   // Configure input information
+  format = GetTreeName(inputFileName);
+  if (debug) { cout << "format = " << format << endl; }
   TChain *chain = initChain(inputFileName, format.c_str());
 
   PicoDstMCEvent *mcEvent = nullptr;
